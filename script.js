@@ -1,4 +1,4 @@
-// ===== دیتابیس پیش‌فرض =====
+// ===== دیتابیس =====
 let dictionary = [];
 
 // ===== بارگذاری لغات از dictionary.json =====
@@ -9,43 +9,26 @@ async function loadDictionary() {
         
         if (data.dictionary && data.dictionary.length > 0) {
             dictionary = data.dictionary;
-            localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
         } else {
-            dictionary = getDefaultDictionary();
+            dictionary = [
+                { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
+                { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
+                { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
+                { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
+                { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
+            ];
         }
     } catch (e) {
         console.log('خطا در بارگذاری dictionary.json:', e);
-        const saved = localStorage.getItem('dictionary_data');
-        if (saved) {
-            dictionary = JSON.parse(saved);
-        } else {
-            dictionary = getDefaultDictionary();
-        }
+        dictionary = [
+            { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
+            { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
+            { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
+            { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
+            { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
+        ];
     }
     return dictionary;
-}
-
-function getDefaultDictionary() {
-    return [
-        { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
-        { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
-        { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
-        { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
-        { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
-    ];
-}
-
-function downloadDictionaryFile() {
-    const data = { dictionary: dictionary };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dictionary.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 
 function normalizeArabic(text) {
@@ -235,15 +218,3 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 });
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { 
-        dictionary, 
-        loadDictionary,
-        downloadDictionaryFile,
-        normalizeArabic, 
-        searchDictionary, 
-        saveLogo, 
-        loadLogo 
-    };
-}
