@@ -5,7 +5,6 @@ let currentAdmin = null;
 // ===== بارگذاری اجباری از admins.json =====
 async function loadAdmins() {
     try {
-        // کش رو کاملاً غیرفعال میکنیم
         const response = await fetch('admins.json?' + Date.now(), {
             cache: 'no-store',
             headers: {
@@ -21,34 +20,26 @@ async function loadAdmins() {
         
         const data = await response.json();
         
-        // چک میکنیم که data.admins وجود داره و آرایه هست
         if (data && Array.isArray(data.admins) && data.admins.length > 0) {
             admins = data.admins;
         } else {
-            // اگر فایل خالی یا بی‌فایده بود، از پیش‌فرض استفاده کن
             admins = [
                 { username: "AliAsgharPZ", password: "09199621557Aa" }
             ];
         }
         
-        console.log('✅ ادمین‌ها با موفقیت بارگذاری شدند:');
-        console.log('📋 تعداد:', admins.length);
-        console.log('📋 لیست:', admins);
+        console.log('✅ ادمین‌ها بارگذاری شدند:', admins);
         
-        // ذخیره در localStorage برای مواقعی که اینترنت قطع هست
         try {
             localStorage.setItem('admins_backup', JSON.stringify(admins));
         } catch(e) {}
         
     } catch (e) {
         console.log('❌ خطا در بارگذاری admins.json:', e);
-        
-        // اگر نتونست از فایل بخونه، از localStorage یا پیش‌فرض استفاده کن
         try {
             const backup = localStorage.getItem('admins_backup');
             if (backup) {
                 admins = JSON.parse(backup);
-                console.log('📋 از localStorage بارگذاری شد:', admins);
             } else {
                 admins = [
                     { username: "AliAsgharPZ", password: "09199621557Aa" }
@@ -60,16 +51,7 @@ async function loadAdmins() {
             ];
         }
     }
-    
-    // حتماً یه چیزی برگردون
     return admins;
-}
-
-// ===== بارگذاری دوباره ادمین‌ها (برای رفرش) =====
-async function refreshAdmins() {
-    await loadAdmins();
-    renderAdminList();
-    showAdminMessage('✅ لیست ادمین‌ها بروزرسانی شد.', 'success');
 }
 
 // ===== DOM Elements =====
@@ -109,7 +91,7 @@ function showAdminMessage(text, type = 'success') {
     adminMessage.textContent = text;
     setTimeout(() => {
         adminMessage.style.display = 'none';
-    }, 4000);
+    }, 5000);
 }
 
 function showLoginMessage(text, type = 'error') {
@@ -155,7 +137,7 @@ function renderAdminList() {
                 admins.splice(index, 1);
                 renderAdminList();
                 showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
-                showAdminMessage('⚠️ برای ذخیره دائمی، فایل رو دانلود و در گیت‌هاب آپلود کن.', 'success');
+                showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
             }
         });
     });
@@ -198,6 +180,7 @@ function renderTable(words) {
                 dictionary.splice(index, 1);
                 renderTable(dictionary);
                 showAdminMessage(`✅ کلمه "${word.arabic}" با موفقیت حذف شد.`, 'success');
+                showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
             }
         });
     });
@@ -242,6 +225,7 @@ function addNewWord() {
     
     renderTable(dictionary);
     showAdminMessage(`✅ کلمه "${word}" با موفقیت افزوده شد.`, 'success');
+    showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
 }
 
 function addNewAdmin() {
@@ -274,7 +258,48 @@ function addNewAdmin() {
     
     renderAdminList();
     showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
-    showAdminMessage('⚠️ برای ذخیره دائمی، روی دکمه دانلود کلیک و فایل رو در گیت‌هاب آپلود کن.', 'success');
+    showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
+}
+
+// ===== انتشار تغییرات (Deploy) =====
+function publishChanges() {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    // ساخت فایل dictionary.json
+    const dictData = { dictionary: dictionary };
+    const dictBlob = new Blob([JSON.stringify(dictData, null, 2)], { type: 'application/json' });
+    const dictUrl = URL.createObjectURL(dictBlob);
+    
+    // ساخت فایل admins.json
+    const adminData = { admins: admins };
+    const adminBlob = new Blob([JSON.stringify(adminData, null, 2)], { type: 'application/json' });
+    const adminUrl = URL.createObjectURL(adminBlob);
+
+    // دانلود هر دو فایل
+    const a1 = document.createElement('a');
+    a1.href = dictUrl;
+    a1.download = 'dictionary.json';
+    document.body.appendChild(a1);
+    a1.click();
+    document.body.removeChild(a1);
+
+    setTimeout(() => {
+        const a2 = document.createElement('a');
+        a2.href = adminUrl;
+        a2.download = 'admins.json';
+        document.body.appendChild(a2);
+        a2.click();
+        document.body.removeChild(a2);
+        
+        URL.revokeObjectURL(dictUrl);
+        URL.revokeObjectURL(adminUrl);
+        
+        showAdminMessage('✅ فایل‌ها دانلود شدند!', 'success');
+        showAdminMessage('📤 حالا هر دو فایل رو در گیت‌هاب آپلود کن و دیپلوی کن.', 'success');
+    }, 500);
 }
 
 // ===== سیستم لاگین =====
@@ -282,10 +307,9 @@ function login() {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    console.log('🔍 لیست ادمین‌های موجود:', admins);
-    console.log('🔍 تلاش برای ورود با:', username);
+    console.log('🔍 لیست ادمین‌ها:', admins);
+    console.log('🔍 تلاش:', username);
 
-    // پیدا کردن ادمین
     const admin = admins.find(a => a.username === username && a.password === password);
     
     if (admin) {
@@ -296,10 +320,8 @@ function login() {
         renderAdminList();
         renderTable(dictionary);
         loadLogo();
-        console.log('✅ ورود موفق');
     } else {
         showLoginMessage('❌ نام کاربری یا رمز عبور اشتباه است.', 'error');
-        console.log('❌ ادمین با این مشخصات پیدا نشد');
     }
 }
 
@@ -405,7 +427,7 @@ function downloadAdminsFile() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showAdminMessage('✅ فایل admins.json دانلود شد. حالا توی گیت‌هاب آپلودش کن.', 'success');
+    showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
 }
 
 function downloadDictionaryFile() {
@@ -425,12 +447,10 @@ function downloadDictionaryFile() {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 شروع بارگذاری...');
     
-    // بارگذاری ادمین‌ها از سرور
     await loadAdmins();
     await loadDictionary();
     
     console.log('📋 لیست نهایی ادمین‌ها:', admins);
-    console.log('📊 تعداد:', admins.length);
     
     loadLogo();
     setupCollapsibleSections();
@@ -455,6 +475,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const downloadAdminsBtn = document.getElementById('downloadAdminsBtn');
     if (downloadAdminsBtn) {
         downloadAdminsBtn.addEventListener('click', downloadAdminsFile);
+    }
+    
+    // دکمه انتشار تغییرات
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) {
+        publishBtn.addEventListener('click', publishChanges);
     }
     
     if (refreshTableBtn) {
