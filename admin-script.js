@@ -2,24 +2,31 @@
 let admins = [];
 let currentAdmin = null;
 
-// ===== بارگذاری ادمین‌ها از admins.json (با کش نکردن) =====
+// ===== بارگذاری اجباری از admins.json =====
 async function loadAdmins() {
     try {
-        // اضافه کردن timestamp برای جلوگیری از کش
-        const timestamp = new Date().getTime();
-        const response = await fetch(`admins.json?t=${timestamp}`);
-        const data = await response.json();
+        // با cache: no-cache مجبورش میکنیم از سرور بخونه
+        const response = await fetch('admins.json', {
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         
-        if (data.admins && data.admins.length > 0) {
-            admins = data.admins;
-            console.log('✅ ادمین‌ها بارگذاری شدند:', admins);
-        } else {
-            admins = [
-                { username: "AliAsgharPZ", password: "09199621557Aa" }
-            ];
+        if (!response.ok) {
+            throw new Error('فایل پیدا نشد');
         }
+        
+        const data = await response.json();
+        admins = data.admins || [];
+        
+        console.log('✅ تعداد ادمین‌های بارگذاری شده:', admins.length);
+        console.log('📋 لیست ادمین‌ها:', admins);
+        
     } catch (e) {
-        console.log('❌ خطا در بارگذاری admins.json:', e);
+        console.log('❌ خطا:', e);
+        // اگر فایل نبود، از پیش‌فرض استفاده کن
         admins = [
             { username: "AliAsgharPZ", password: "09199621557Aa" }
         ];
@@ -64,7 +71,7 @@ function showAdminMessage(text, type = 'success') {
     adminMessage.textContent = text;
     setTimeout(() => {
         adminMessage.style.display = 'none';
-    }, 3000);
+    }, 4000);
 }
 
 function showLoginMessage(text, type = 'error') {
@@ -73,7 +80,7 @@ function showLoginMessage(text, type = 'error') {
     loginMessage.textContent = text;
     setTimeout(() => {
         loginMessage.style.display = 'none';
-    }, 3000);
+    }, 4000);
 }
 
 function showLogoMessage(text, type = 'success') {
@@ -82,7 +89,7 @@ function showLogoMessage(text, type = 'success') {
     logoMessage.textContent = text;
     setTimeout(() => {
         logoMessage.style.display = 'none';
-    }, 3000);
+    }, 4000);
 }
 
 // ===== مدیریت ادمین‌ها =====
@@ -104,6 +111,7 @@ function renderAdminList() {
                 admins.splice(index, 1);
                 renderAdminList();
                 showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
+                showAdminMessage('⚠️ برای ذخیره دائمی، فایل رو دانلود و در گیت‌هاب آپلود کن.', 'success');
             }
         });
     });
@@ -193,7 +201,12 @@ function addNewWord() {
 }
 
 function addNewAdmin() {
-    if (!currentAdmin || currentAdmin.username !== 'AliAsgharPZ') {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    if (currentAdmin.username !== 'AliAsgharPZ') {
         showAdminMessage('تنها مدیر اصلی می‌تواند ادمین جدید اضافه کند.', 'error');
         return;
     }
@@ -225,22 +238,29 @@ function login() {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
 
-    console.log('🔍 لیست ادمین‌ها:', admins);
-    console.log('🔍 تلاش برای ورود:', username);
+    console.log('🔍 لیست ادمین‌های موجود:', admins);
+    console.log('🔍 تلاش برای ورود با:', username);
 
-    const admin = admins.find(a => a.username === username && a.password === password);
-    
-    if (admin) {
-        currentAdmin = admin;
+    // بررسی تک تک ادمین‌ها
+    let found = false;
+    for (let i = 0; i < admins.length; i++) {
+        if (admins[i].username === username && admins[i].password === password) {
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        currentAdmin = admins.find(a => a.username === username);
         loginSection.style.display = 'none';
         adminContent.style.display = 'block';
-        showAdminMessage(`✅ خوش آمدید ${admin.username}`, 'success');
+        showAdminMessage(`✅ خوش آمدید ${username}`, 'success');
         renderAdminList();
         renderTable(dictionary);
         loadLogo();
     } else {
         showLoginMessage('❌ نام کاربری یا رمز عبور اشتباه است.', 'error');
-        console.log('❌ ادمین پیدا نشد');
+        console.log('❌ ادمین با این مشخصات پیدا نشد');
     }
 }
 
@@ -368,7 +388,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadAdmins();
     await loadDictionary();
     
-    console.log('📋 لیست ادمین‌های بارگذاری شده:', admins);
+    console.log('📋 لیست نهایی ادمین‌ها:', admins);
+    console.log('📊 تعداد:', admins.length);
     
     loadLogo();
     setupCollapsibleSections();
