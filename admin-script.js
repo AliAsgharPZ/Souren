@@ -1,57 +1,140 @@
+// ===== تنظیمات گیت‌هاب =====
+const GITHUB_TOKEN = 'ghp_xxxxxxxxxxxx'; // توکن خودتو بذار
+const GITHUB_USER = 'username'; // اسم کاربری گیت‌هاب
+const GITHUB_REPO = 'repo-name'; // اسم ریپازیتوری
+const GITHUB_BRANCH = 'main'; // یا master
+
 // ===== سیستم احراز هویت =====
 let admins = [];
 let currentAdmin = null;
 
-// ===== بارگذاری اجباری از admins.json =====
-async function loadAdmins() {
+// ===== آپلود فایل در گیت‌هاب =====
+async function uploadToGitHub(filename, data) {
     try {
-        const response = await fetch('admins.json?' + Date.now(), {
-            cache: 'no-store',
+        // اول ببین فایل وجود داره یا نه
+        const checkRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
             headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
-        if (!response.ok) {
-            throw new Error('فایل پیدا نشد');
+        let sha = null;
+        if (checkRes.ok) {
+            const fileData = await checkRes.json();
+            sha = fileData.sha;
         }
         
-        const data = await response.json();
+        // آماده‌سازی برای آپلود
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+        const body = {
+            message: `آپدیت ${filename} - ${new Date().toLocaleString('fa-IR')}`,
+            content: content,
+            branch: GITHUB_BRANCH
+        };
         
-        if (data && Array.isArray(data.admins) && data.admins.length > 0) {
-            admins = data.admins;
+        if (sha) {
+            body.sha = sha;
+        }
+        
+        // آپلود
+        const uploadRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (uploadRes.ok) {
+            console.log(`✅ ${filename} با موفقیت آپلود شد`);
+            return true;
         } else {
-            admins = [
-                { username: "AliAsgharPZ", password: "09199621557Aa" }
-            ];
+            const error = await uploadRes.json();
+            console.log('❌ خطا:', error);
+            return false;
         }
-        
-        console.log('✅ ادمین‌ها بارگذاری شدند:', admins);
-        
-        try {
-            localStorage.setItem('admins_backup', JSON.stringify(admins));
-        } catch(e) {}
-        
     } catch (e) {
-        console.log('❌ خطا در بارگذاری admins.json:', e);
+        console.log('❌ خطا:', e);
+        return false;
+    }
+}
+
+// ===== بارگذاری از گیت‌هاب =====
+async function loadFromGitHub(filename) {
+    try {
+        const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filename}?t=${Date.now()}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+    } catch (e) {
+        console.log('خطا:', e);
+    }
+    return null;
+}
+
+// ===== بارگذاری همه دیتا =====
+async function loadAllData() {
+    // بارگذاری دیکشنری
+    const dictData = await loadFromGitHub('dictionary.json');
+    if (dictData && dictData.dictionary) {
+        dictionary = dictData.dictionary;
+    } else {
         try {
-            const backup = localStorage.getItem('admins_backup');
-            if (backup) {
-                admins = JSON.parse(backup);
-            } else {
-                admins = [
-                    { username: "AliAsgharPZ", password: "09199621557Aa" }
-                ];
-            }
+            const res = await fetch('dictionary.json?' + Date.now());
+            const data = await res.json();
+            dictionary = data.dictionary || [];
         } catch(e) {
-            admins = [
-                { username: "AliAsgharPZ", password: "09199621557Aa" }
+            dictionary = [
+                { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌ها" },
+                { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محل آموزش" },
+                { arabic: "طالب", meanings: ["دانش‌آموز", "محصل"], concept: "شخصی که به دنبال علم است" },
+                { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم را آموزش می‌دهد" }
             ];
         }
     }
-    return admins;
+    
+    // بارگذاری ادمین‌ها
+    const adminData = await loadFromGitHub('admins.json');
+    if (adminData && adminData.admins) {
+        admins = adminData.admins;
+    } else {
+        try {
+            const res = await fetch('admins.json?' + Date.now());
+            const data = await res.json();
+            admins = data.admins || [{ username: "AliAsgharPZ", password: "09199621557Aa" }];
+        } catch(e) {
+            admins = [{ username: "AliAsgharPZ", password: "09199621557Aa" }];
+        }
+    }
+    
+    console.log('✅ دیتا بارگذاری شد:', { dictionary: dictionary.length, admins: admins.length });
+}
+
+// ===== انتشار تغییرات =====
+async function publishChanges() {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+    
+    showAdminMessage('⏳ در حال انتشار به گیت‌هاب...', 'success');
+    
+    // آپلود دیکشنری
+    const dictResult = await uploadToGitHub('dictionary.json', { dictionary: dictionary });
+    
+    // آپلود ادمین‌ها
+    const adminResult = await uploadToGitHub('admins.json', { admins: admins });
+    
+    if (dictResult && adminResult) {
+        showAdminMessage('✅ تغییرات در گیت‌هاب ذخیره شد!', 'success');
+        showAdminMessage('⏳ کلادفلر خودکار دیپلوی میکنه (حداکثر ۲ دقیقه)', 'success');
+    } else {
+        showAdminMessage('❌ خطا در انتشار! دوباره تلاش کن.', 'error');
+    }
 }
 
 // ===== DOM Elements =====
@@ -125,19 +208,18 @@ function renderAdminList() {
         <div class="admin-item">
             <span>👤 ${admin.username}</span>
             ${admin.username !== 'AliAsgharPZ' ? 
-                `<button class="btn-danger" data-index="${index}">❌ حذف</button>` : 
+                `<button class="btn-danger delete-admin" data-index="${index}">❌ حذف</button>` : 
                 '<span style="color:#0984e3;">🌟 مدیر اصلی</span>'}
         </div>
     `).join('');
 
-    document.querySelectorAll('.admin-item .btn-danger').forEach(btn => {
+    document.querySelectorAll('.delete-admin').forEach(btn => {
         btn.addEventListener('click', function() {
             const index = parseInt(this.dataset.index);
             if (confirm(`آیا از حذف ادمین "${admins[index].username}" مطمئن هستید؟`)) {
                 admins.splice(index, 1);
                 renderAdminList();
-                showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
-                showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
+                showAdminMessage('✅ ادمین حذف شد. برای ذخیره روی انتشار کلیک کن.', 'success');
             }
         });
     });
@@ -179,15 +261,14 @@ function renderTable(words) {
             if (confirm(`آیا از حذف کلمه "${word.arabic}" مطمئن هستید؟`)) {
                 dictionary.splice(index, 1);
                 renderTable(dictionary);
-                showAdminMessage(`✅ کلمه "${word.arabic}" با موفقیت حذف شد.`, 'success');
-                showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
+                showAdminMessage(`✅ کلمه "${word.arabic}" حذف شد. برای ذخیره روی انتشار کلیک کن.`, 'success');
             }
         });
     });
 }
 
 // ===== توابع مدیریت =====
-function addNewWord() {
+async function addNewWord() {
     if (!currentAdmin) {
         showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
         return;
@@ -203,7 +284,7 @@ function addNewWord() {
     }
 
     if (dictionary.some(entry => entry.arabic === word)) {
-        showAdminMessage('این کلمه قبلاً در دیتابیس وجود دارد.', 'error');
+        showAdminMessage('این کلمه قبلاً وجود دارد.', 'error');
         return;
     }
 
@@ -224,17 +305,12 @@ function addNewWord() {
     newConcept.value = '';
     
     renderTable(dictionary);
-    showAdminMessage(`✅ کلمه "${word}" با موفقیت افزوده شد.`, 'success');
-    showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
+    showAdminMessage(`✅ کلمه "${word}" اضافه شد.`, 'success');
+    showAdminMessage('⚠️ برای ذخیره روی دکمه "انتشار" کلیک کن.', 'success');
 }
 
-function addNewAdmin() {
-    if (!currentAdmin) {
-        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
-    if (currentAdmin.username !== 'AliAsgharPZ') {
+async function addNewAdmin() {
+    if (!currentAdmin || currentAdmin.username !== 'AliAsgharPZ') {
         showAdminMessage('تنها مدیر اصلی می‌تواند ادمین جدید اضافه کند.', 'error');
         return;
     }
@@ -257,58 +333,14 @@ function addNewAdmin() {
     newAdminPassword.value = '';
     
     renderAdminList();
-    showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
-    showAdminMessage('⚠️ برای ذخیره دائمی، روی "انتشار تغییرات" کلیک کن.', 'success');
-}
-
-// ===== انتشار تغییرات (Deploy) =====
-function publishChanges() {
-    if (!currentAdmin) {
-        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
-    // ساخت فایل dictionary.json
-    const dictData = { dictionary: dictionary };
-    const dictBlob = new Blob([JSON.stringify(dictData, null, 2)], { type: 'application/json' });
-    const dictUrl = URL.createObjectURL(dictBlob);
-    
-    // ساخت فایل admins.json
-    const adminData = { admins: admins };
-    const adminBlob = new Blob([JSON.stringify(adminData, null, 2)], { type: 'application/json' });
-    const adminUrl = URL.createObjectURL(adminBlob);
-
-    // دانلود هر دو فایل
-    const a1 = document.createElement('a');
-    a1.href = dictUrl;
-    a1.download = 'dictionary.json';
-    document.body.appendChild(a1);
-    a1.click();
-    document.body.removeChild(a1);
-
-    setTimeout(() => {
-        const a2 = document.createElement('a');
-        a2.href = adminUrl;
-        a2.download = 'admins.json';
-        document.body.appendChild(a2);
-        a2.click();
-        document.body.removeChild(a2);
-        
-        URL.revokeObjectURL(dictUrl);
-        URL.revokeObjectURL(adminUrl);
-        
-        showAdminMessage('✅ فایل‌ها دانلود شدند!', 'success');
-        showAdminMessage('📤 حالا هر دو فایل رو در گیت‌هاب آپلود کن و دیپلوی کن.', 'success');
-    }, 500);
+    showAdminMessage(`✅ ادمین "${username}" اضافه شد.`, 'success');
+    showAdminMessage('⚠️ برای ذخیره روی دکمه "انتشار" کلیک کن.', 'success');
 }
 
 // ===== سیستم لاگین =====
 function login() {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
-
-    console.log('🔍 لیست ادمین‌ها:', admins);
-    console.log('🔍 تلاش:', username);
 
     const admin = admins.find(a => a.username === username && a.password === password);
     
@@ -409,7 +441,25 @@ function resetLogo() {
     showLogoMessage('✅ لوگو به حالت پیش‌فرض بازگشت.', 'success');
 }
 
-// ===== دانلود فایل‌ها =====
+function saveLogo(svgData) {
+    try {
+        localStorage.setItem('logo_data', svgData);
+    } catch (e) {}
+}
+
+function loadLogo() {
+    try {
+        const savedLogo = localStorage.getItem('logo_data');
+        if (savedLogo) {
+            const logoImg = document.getElementById('logoImage');
+            if (logoImg) {
+                logoImg.src = savedLogo;
+            }
+        }
+    } catch (e) {}
+}
+
+// ===== دانلود فایل‌ها (برای پشتیبان) =====
 function downloadAdminsFile() {
     if (!currentAdmin) {
         showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
@@ -426,7 +476,6 @@ function downloadAdminsFile() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
     showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
 }
 
@@ -441,16 +490,16 @@ function downloadDictionaryFile() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    showAdminMessage('✅ فایل dictionary.json دانلود شد.', 'success');
 }
 
 // ===== رویدادها =====
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 شروع بارگذاری...');
     
-    await loadAdmins();
-    await loadDictionary();
+    await loadAllData();
     
-    console.log('📋 لیست نهایی ادمین‌ها:', admins);
+    console.log('📋 لیست نهایی:', { admins: admins.length, dictionary: dictionary.length });
     
     loadLogo();
     setupCollapsibleSections();
@@ -477,7 +526,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         downloadAdminsBtn.addEventListener('click', downloadAdminsFile);
     }
     
-    // دکمه انتشار تغییرات
     const publishBtn = document.getElementById('publishBtn');
     if (publishBtn) {
         publishBtn.addEventListener('click', publishChanges);
