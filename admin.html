@@ -26,14 +26,14 @@
                 <button id="logoutBtn" class="logout-btn">🚪 خروج</button>
             </div>
 
-            <!-- دکمه انتشار تغییرات (جدید) -->
-            <div style="background:linear-gradient(135deg, #00b894, #00a381);padding:15px 20px;border-radius:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:white;">
+            <!-- دکمه انتشار به گیت‌هاب -->
+            <div style="background:linear-gradient(135deg, #6c5ce7, #0984e3);padding:15px 20px;border-radius:16px;margin:15px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;color:white;">
                 <div>
-                    <span style="font-size:1.2rem;font-weight:bold;">🚀 انتشار تغییرات</span>
-                    <span style="font-size:0.9rem;opacity:0.9;display:block;">پس از هر تغییر، برای ذخیره دائمی روی دکمه کلیک کن</span>
+                    <span style="font-size:1.1rem;font-weight:bold;">📤 انتشار به گیت‌هاب</span>
+                    <span style="font-size:0.85rem;opacity:0.9;display:block;">با یک کلیک، تغییرات به گیت‌هاب میرود و کلادفلر دیپلوی میکند</span>
                 </div>
-                <button id="publishBtn" style="background:white;color:#00b894;border:none;padding:12px 30px;border-radius:12px;font-size:1.1rem;font-weight:bold;cursor:pointer;transition:0.3s;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-                    📤 انتشار تغییرات
+                <button id="publishBtn" style="background:white;color:#6c5ce7;border:none;padding:10px 25px;border-radius:10px;font-size:1rem;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                    🚀 انتشار
                 </button>
             </div>
 
@@ -51,7 +51,7 @@
                         <textarea id="svgInput" placeholder="کد SVG لوگو را اینجا قرار دهید..." rows="6"></textarea>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
                             <button id="uploadSvgBtn" class="btn-success">📤 آپلود لوگو</button>
-                            <button id="resetLogoBtn" class="btn-secondary">↩️ بازگشت به لوگوی پیش‌فرض</button>
+                            <button id="resetLogoBtn" class="btn-secondary">↩️ بازگشت</button>
                         </div>
                         <div id="logoMessage" class="message" style="display:none;"></div>
                     </div>
@@ -66,12 +66,12 @@
                 </div>
                 <div class="section-body">
                     <div class="add-admin-form">
-                        <input type="text" id="newAdminUsername" placeholder="نام کاربری ادمین جدید">
+                        <input type="text" id="newAdminUsername" placeholder="نام کاربری جدید">
                         <input type="password" id="newAdminPassword" placeholder="رمز عبور">
-                        <button id="addAdminBtn" class="btn-primary">➕ افزودن ادمین</button>
+                        <button id="addAdminBtn" class="btn-primary">➕ افزودن</button>
                     </div>
                     <div id="adminList" class="admin-list"></div>
-                    <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <div style="margin-top:15px;">
                         <button id="downloadAdminsBtn" class="btn-success">📥 دانلود admins.json</button>
                     </div>
                 </div>
@@ -85,12 +85,12 @@
                 </div>
                 <div class="section-body">
                     <div class="add-word-form">
-                        <input type="text" id="newWord" placeholder="کلمه عربی (مثلاً: کتاب)">
-                        <input type="text" id="newMeaning" placeholder="معنی فارسی (با , جدا کنید)">
+                        <input type="text" id="newWord" placeholder="کلمه عربی">
+                        <input type="text" id="newMeaning" placeholder="معنی (با , جدا کنید)">
                         <textarea id="newConcept" placeholder="توضیح مفهوم (اختیاری)"></textarea>
-                        <button id="addBtn" class="btn-success">✅ افزودن کلمه</button>
+                        <button id="addBtn" class="btn-success">✅ افزودن</button>
                     </div>
-                    <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <div style="margin-top:15px;">
                         <button id="downloadDictBtn" class="btn-success">📥 دانلود dictionary.json</button>
                     </div>
                 </div>
@@ -104,7 +104,7 @@
                 </div>
                 <div class="section-body">
                     <div class="table-controls">
-                        <input type="text" id="tableSearch" placeholder="جستجو در جدول...">
+                        <input type="text" id="tableSearch" placeholder="جستجو...">
                         <button id="refreshTableBtn" class="btn-secondary">🔄 بروزرسانی</button>
                     </div>
                     <div class="table-wrapper">
