@@ -1,36 +1,39 @@
 // ===== دیتابیس =====
 let dictionary = [];
 
-// ===== بارگذاری لغات از dictionary.json =====
+// ===== بارگذاری دیکشنری از گیت‌هاب =====
 async function loadDictionary() {
     try {
-        const response = await fetch('dictionary.json');
-        const data = await response.json();
-        
-        if (data.dictionary && data.dictionary.length > 0) {
-            dictionary = data.dictionary;
-        } else {
-            dictionary = [
-                { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
-                { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
-                { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
-                { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
-                { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
-            ];
+        const response = await fetch(`https://raw.githubusercontent.com/AliAsgharPZ/dictionary-app/main/dictionary.json?t=${Date.now()}`);
+        if (response.ok) {
+            const data = await response.json();
+            dictionary = data.dictionary || [];
+            console.log('✅ دیکشنری از گیت‌هاب:', dictionary.length);
+            return;
         }
     } catch (e) {
-        console.log('خطا در بارگذاری dictionary.json:', e);
-        dictionary = [
-            { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
-            { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
-            { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
-            { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
-            { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
-        ];
+        console.log('❌ خطا:', e);
     }
-    return dictionary;
+    
+    // اگر نتونست از گیت‌هاب بخونه، از فایل محلی بخون
+    try {
+        const res = await fetch('dictionary.json?' + Date.now());
+        const data = await res.json();
+        dictionary = data.dictionary || [];
+        console.log('📁 دیکشنری از فایل محلی:', dictionary.length);
+    } catch(e) {
+        dictionary = [
+            { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌ها" },
+            { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محل آموزش" },
+            { arabic: "طالب", meanings: ["دانش‌آموز", "محصل"], concept: "شخصی که به دنبال علم است" },
+            { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم را آموزش می‌دهد" },
+            { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت" }
+        ];
+        console.log('📋 دیکشنری پیش‌فرض');
+    }
 }
 
+// ===== توابع نرمال‌سازی =====
 function normalizeArabic(text) {
     const map = {
         'ك': 'ک', 'ي': 'ی', 'ة': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا',
@@ -39,6 +42,7 @@ function normalizeArabic(text) {
     return text.split('').map(ch => map[ch] || ch).join('');
 }
 
+// ===== جستجوی هوشمند =====
 function searchDictionary(query) {
     if (!query.trim()) return [];
     const q = query.trim();
@@ -79,6 +83,7 @@ function searchDictionary(query) {
     return results;
 }
 
+// ===== رندر کارت‌ها =====
 function renderCards(words) {
     const resultsDiv = document.getElementById('results');
     if (!resultsDiv) return;
@@ -115,6 +120,7 @@ function renderCards(words) {
     });
 }
 
+// ===== مودال =====
 function openModal(word) {
     const modal = document.getElementById('wordModal');
     const modalBody = document.getElementById('modalBody');
@@ -138,6 +144,7 @@ function closeModal() {
     document.getElementById('wordModal').style.display = 'none';
 }
 
+// ===== عملکرد جستجو =====
 function performSearch() {
     const searchBox = document.getElementById('searchBox');
     const searchWrapper = document.getElementById('searchWrapper');
@@ -155,12 +162,11 @@ function performSearch() {
     }
 }
 
+// ===== ذخیره و بارگذاری لوگو =====
 function saveLogo(svgData) {
     try {
         localStorage.setItem('logo_data', svgData);
-    } catch (e) {
-        console.log('ذخیره لوگو ممکن نیست.');
-    }
+    } catch (e) {}
 }
 
 function loadLogo() {
@@ -172,11 +178,10 @@ function loadLogo() {
                 logoImg.src = savedLogo;
             }
         }
-    } catch (e) {
-        console.log('بارگذاری لوگو ممکن نیست.');
-    }
+    } catch (e) {}
 }
 
+// ===== رویدادها =====
 document.addEventListener('DOMContentLoaded', async function() {
     await loadDictionary();
     loadLogo();
