@@ -1,33 +1,53 @@
-// ===== دیتابیس اولیه =====
-let dictionary = [
-    {
-        arabic: "كتاب",
-        meanings: ["کتاب", "دفتر"],
-        concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند."
-    },
-    {
-        arabic: "مدرسة",
-        meanings: ["مدرسه", "آموزشگاه"],
-        concept: "محلی برای آموزش و یادگیری دانش‌آموزان."
-    },
-    {
-        arabic: "طالب",
-        meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"],
-        concept: "شخصی که به دنبال علم یا چیزی می‌گردد."
-    },
-    {
-        arabic: "معلم",
-        meanings: ["معلم", "آموزگار"],
-        concept: "کسی که علم و دانش را به دیگران می‌آموزد."
-    },
-    {
-        arabic: "سلام",
-        meanings: ["سلام", "درود", "صلح"],
-        concept: "درود و تحیت، همچنین به معنای صلح و امنیت."
-    }
-];
+// ===== دیتابیس پیش‌فرض =====
+let dictionary = [];
 
-// ===== توابع نرمال‌سازی =====
+// ===== بارگذاری لغات از dictionary.json =====
+async function loadDictionary() {
+    try {
+        const response = await fetch('dictionary.json');
+        const data = await response.json();
+        
+        if (data.dictionary && data.dictionary.length > 0) {
+            dictionary = data.dictionary;
+            localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
+        } else {
+            dictionary = getDefaultDictionary();
+        }
+    } catch (e) {
+        console.log('خطا در بارگذاری dictionary.json:', e);
+        const saved = localStorage.getItem('dictionary_data');
+        if (saved) {
+            dictionary = JSON.parse(saved);
+        } else {
+            dictionary = getDefaultDictionary();
+        }
+    }
+    return dictionary;
+}
+
+function getDefaultDictionary() {
+    return [
+        { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند." },
+        { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محلی برای آموزش و یادگیری دانش‌آموزان." },
+        { arabic: "طالب", meanings: ["دانش‌آموز", "محصل", "طلب‌کننده"], concept: "شخصی که به دنبال علم یا چیزی می‌گردد." },
+        { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم و دانش را به دیگران می‌آموزد." },
+        { arabic: "سلام", meanings: ["سلام", "درود", "صلح"], concept: "درود و تحیت، همچنین به معنای صلح و امنیت." }
+    ];
+}
+
+function downloadDictionaryFile() {
+    const data = { dictionary: dictionary };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dictionary.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function normalizeArabic(text) {
     const map = {
         'ك': 'ک', 'ي': 'ی', 'ة': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا',
@@ -36,7 +56,6 @@ function normalizeArabic(text) {
     return text.split('').map(ch => map[ch] || ch).join('');
 }
 
-// ===== جستجوی هوشمند =====
 function searchDictionary(query) {
     if (!query.trim()) return [];
     const q = query.trim();
@@ -77,7 +96,6 @@ function searchDictionary(query) {
     return results;
 }
 
-// ===== رندر کارت‌ها =====
 function renderCards(words) {
     const resultsDiv = document.getElementById('results');
     if (!resultsDiv) return;
@@ -114,7 +132,6 @@ function renderCards(words) {
     });
 }
 
-// ===== مودال =====
 function openModal(word) {
     const modal = document.getElementById('wordModal');
     const modalBody = document.getElementById('modalBody');
@@ -138,7 +155,6 @@ function closeModal() {
     document.getElementById('wordModal').style.display = 'none';
 }
 
-// ===== عملکرد جستجو =====
 function performSearch() {
     const searchBox = document.getElementById('searchBox');
     const searchWrapper = document.getElementById('searchWrapper');
@@ -156,27 +172,6 @@ function performSearch() {
     }
 }
 
-// ===== ذخیره‌سازی =====
-function saveData() {
-    try {
-        localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
-    } catch (e) {
-        console.log('ذخیره‌سازی در localStorage ممکن نیست.');
-    }
-}
-
-function loadData() {
-    try {
-        const savedDict = localStorage.getItem('dictionary_data');
-        if (savedDict) {
-            dictionary = JSON.parse(savedDict);
-        }
-    } catch (e) {
-        console.log('بارگذاری داده‌ها از localStorage ممکن نیست.');
-    }
-}
-
-// ===== ذخیره و بارگذاری لوگو =====
 function saveLogo(svgData) {
     try {
         localStorage.setItem('logo_data', svgData);
@@ -199,9 +194,8 @@ function loadLogo() {
     }
 }
 
-// ===== رویدادها =====
-document.addEventListener('DOMContentLoaded', function() {
-    loadData();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadDictionary();
     loadLogo();
     
     const searchBox = document.getElementById('searchBox');
@@ -242,10 +236,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ذخیره خودکار
-setInterval(saveData, 5000);
-
-// صادر کردن برای استفاده در admin-script.js
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { dictionary, saveData, loadData, normalizeArabic, searchDictionary, saveLogo, loadLogo };
+    module.exports = { 
+        dictionary, 
+        loadDictionary,
+        downloadDictionaryFile,
+        normalizeArabic, 
+        searchDictionary, 
+        saveLogo, 
+        loadLogo 
+    };
 }
