@@ -2,21 +2,24 @@
 let admins = [];
 let currentAdmin = null;
 
-// ===== بارگذاری ادمین‌ها از admins.json =====
+// ===== بارگذاری ادمین‌ها از admins.json (با کش نکردن) =====
 async function loadAdmins() {
     try {
-        const response = await fetch('admins.json');
+        // اضافه کردن timestamp برای جلوگیری از کش
+        const timestamp = new Date().getTime();
+        const response = await fetch(`admins.json?t=${timestamp}`);
         const data = await response.json();
         
         if (data.admins && data.admins.length > 0) {
             admins = data.admins;
+            console.log('✅ ادمین‌ها بارگذاری شدند:', admins);
         } else {
             admins = [
                 { username: "AliAsgharPZ", password: "09199621557Aa" }
             ];
         }
     } catch (e) {
-        console.log('خطا در بارگذاری admins.json:', e);
+        console.log('❌ خطا در بارگذاری admins.json:', e);
         admins = [
             { username: "AliAsgharPZ", password: "09199621557Aa" }
         ];
@@ -214,12 +217,16 @@ function addNewAdmin() {
     
     renderAdminList();
     showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
+    showAdminMessage('⚠️ برای ذخیره دائمی، روی دکمه دانلود کلیک و فایل رو در گیت‌هاب آپلود کن.', 'success');
 }
 
 // ===== سیستم لاگین =====
 function login() {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
+
+    console.log('🔍 لیست ادمین‌ها:', admins);
+    console.log('🔍 تلاش برای ورود:', username);
 
     const admin = admins.find(a => a.username === username && a.password === password);
     
@@ -233,6 +240,7 @@ function login() {
         loadLogo();
     } else {
         showLoginMessage('❌ نام کاربری یا رمز عبور اشتباه است.', 'error');
+        console.log('❌ ادمین پیدا نشد');
     }
 }
 
@@ -338,7 +346,7 @@ function downloadAdminsFile() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
+    showAdminMessage('✅ فایل admins.json دانلود شد. حالا توی گیت‌هاب آپلودش کن.', 'success');
 }
 
 function downloadDictionaryFile() {
@@ -356,8 +364,11 @@ function downloadDictionaryFile() {
 
 // ===== رویدادها =====
 document.addEventListener('DOMContentLoaded', async function() {
+    // بارگذاری ادمین‌ها از سرور
     await loadAdmins();
     await loadDictionary();
+    
+    console.log('📋 لیست ادمین‌های بارگذاری شده:', admins);
     
     loadLogo();
     setupCollapsibleSections();
