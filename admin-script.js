@@ -1,7 +1,7 @@
 // ===== تنظیمات گیت‌هاب =====
-const GITHUB_TOKEN = 'ghp_xxxxxxxxxxxx'; // توکن خودتو بذار
-const GITHUB_USER = 'username'; // اسم کاربری گیت‌هاب
-const GITHUB_REPO = 'repo-name'; // اسم ریپازیتوری
+const GITHUB_TOKEN = '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'; // توکن خودتو بذار
+const GITHUB_USER = 'AliAsgharPZ'; // اسم کاربری گیت‌هاب
+const GITHUB_REPO = 'Souren'; // اسم ریپازیتوری
 const GITHUB_BRANCH = 'main'; // یا master
 
 // ===== سیستم احراز هویت =====
