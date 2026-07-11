@@ -5,12 +5,13 @@ let currentAdmin = null;
 // ===== بارگذاری اجباری از admins.json =====
 async function loadAdmins() {
     try {
-        // با cache: no-cache مجبورش میکنیم از سرور بخونه
-        const response = await fetch('admins.json', {
-            cache: 'no-cache',
+        // کش رو کاملاً غیرفعال میکنیم
+        const response = await fetch('admins.json?' + Date.now(), {
+            cache: 'no-store',
             headers: {
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             }
         });
         
@@ -19,19 +20,56 @@ async function loadAdmins() {
         }
         
         const data = await response.json();
-        admins = data.admins || [];
         
-        console.log('✅ تعداد ادمین‌های بارگذاری شده:', admins.length);
-        console.log('📋 لیست ادمین‌ها:', admins);
+        // چک میکنیم که data.admins وجود داره و آرایه هست
+        if (data && Array.isArray(data.admins) && data.admins.length > 0) {
+            admins = data.admins;
+        } else {
+            // اگر فایل خالی یا بی‌فایده بود، از پیش‌فرض استفاده کن
+            admins = [
+                { username: "AliAsgharPZ", password: "09199621557Aa" }
+            ];
+        }
+        
+        console.log('✅ ادمین‌ها با موفقیت بارگذاری شدند:');
+        console.log('📋 تعداد:', admins.length);
+        console.log('📋 لیست:', admins);
+        
+        // ذخیره در localStorage برای مواقعی که اینترنت قطع هست
+        try {
+            localStorage.setItem('admins_backup', JSON.stringify(admins));
+        } catch(e) {}
         
     } catch (e) {
-        console.log('❌ خطا:', e);
-        // اگر فایل نبود، از پیش‌فرض استفاده کن
-        admins = [
-            { username: "AliAsgharPZ", password: "09199621557Aa" }
-        ];
+        console.log('❌ خطا در بارگذاری admins.json:', e);
+        
+        // اگر نتونست از فایل بخونه، از localStorage یا پیش‌فرض استفاده کن
+        try {
+            const backup = localStorage.getItem('admins_backup');
+            if (backup) {
+                admins = JSON.parse(backup);
+                console.log('📋 از localStorage بارگذاری شد:', admins);
+            } else {
+                admins = [
+                    { username: "AliAsgharPZ", password: "09199621557Aa" }
+                ];
+            }
+        } catch(e) {
+            admins = [
+                { username: "AliAsgharPZ", password: "09199621557Aa" }
+            ];
+        }
     }
+    
+    // حتماً یه چیزی برگردون
     return admins;
+}
+
+// ===== بارگذاری دوباره ادمین‌ها (برای رفرش) =====
+async function refreshAdmins() {
+    await loadAdmins();
+    renderAdminList();
+    showAdminMessage('✅ لیست ادمین‌ها بروزرسانی شد.', 'success');
 }
 
 // ===== DOM Elements =====
@@ -95,6 +133,12 @@ function showLogoMessage(text, type = 'success') {
 // ===== مدیریت ادمین‌ها =====
 function renderAdminList() {
     if (!adminListDiv) return;
+    
+    if (!admins || admins.length === 0) {
+        adminListDiv.innerHTML = '<div style="padding:20px;text-align:center;color:#636e72;">هیچ ادمینی ثبت نشده</div>';
+        return;
+    }
+    
     adminListDiv.innerHTML = admins.map((admin, index) => `
         <div class="admin-item">
             <span>👤 ${admin.username}</span>
@@ -241,23 +285,18 @@ function login() {
     console.log('🔍 لیست ادمین‌های موجود:', admins);
     console.log('🔍 تلاش برای ورود با:', username);
 
-    // بررسی تک تک ادمین‌ها
-    let found = false;
-    for (let i = 0; i < admins.length; i++) {
-        if (admins[i].username === username && admins[i].password === password) {
-            found = true;
-            break;
-        }
-    }
-
-    if (found) {
-        currentAdmin = admins.find(a => a.username === username);
+    // پیدا کردن ادمین
+    const admin = admins.find(a => a.username === username && a.password === password);
+    
+    if (admin) {
+        currentAdmin = admin;
         loginSection.style.display = 'none';
         adminContent.style.display = 'block';
-        showAdminMessage(`✅ خوش آمدید ${username}`, 'success');
+        showAdminMessage(`✅ خوش آمدید ${admin.username}`, 'success');
         renderAdminList();
         renderTable(dictionary);
         loadLogo();
+        console.log('✅ ورود موفق');
     } else {
         showLoginMessage('❌ نام کاربری یا رمز عبور اشتباه است.', 'error');
         console.log('❌ ادمین با این مشخصات پیدا نشد');
@@ -384,6 +423,8 @@ function downloadDictionaryFile() {
 
 // ===== رویدادها =====
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 شروع بارگذاری...');
+    
     // بارگذاری ادمین‌ها از سرور
     await loadAdmins();
     await loadDictionary();
@@ -426,4 +467,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (tableSearch) {
         tableSearch.addEventListener('input', filterTable);
     }
+    
+    console.log('✅ بارگذاری کامل شد!');
 });
