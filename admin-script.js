@@ -1,0 +1,390 @@
+// ===== سیستم احراز هویت =====
+let admins = [
+    { username: "AliAsgharPZ", password: "09199621557Aa" }
+];
+
+let currentAdmin = null;
+
+// ===== DOM Elements =====
+const loginSection = document.getElementById('loginSection');
+const adminContent = document.getElementById('adminContent');
+const loginUsername = document.getElementById('loginUsername');
+const loginPassword = document.getElementById('loginPassword');
+const loginBtn = document.getElementById('loginBtn');
+const loginMessage = document.getElementById('loginMessage');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const newWord = document.getElementById('newWord');
+const newMeaning = document.getElementById('newMeaning');
+const newConcept = document.getElementById('newConcept');
+const addBtn = document.getElementById('addBtn');
+const adminMessage = document.getElementById('adminMessage');
+
+const newAdminUsername = document.getElementById('newAdminUsername');
+const newAdminPassword = document.getElementById('newAdminPassword');
+const addAdminBtn = document.getElementById('addAdminBtn');
+const adminListDiv = document.getElementById('adminList');
+
+const tableBody = document.getElementById('tableBody');
+const tableSearch = document.getElementById('tableSearch');
+const refreshTableBtn = document.getElementById('refreshTableBtn');
+
+// ===== المان‌های آپلود لوگو =====
+const svgInput = document.getElementById('svgInput');
+const uploadSvgBtn = document.getElementById('uploadSvgBtn');
+const resetLogoBtn = document.getElementById('resetLogoBtn');
+const logoPreview = document.getElementById('logoPreview');
+const logoMessage = document.getElementById('logoMessage');
+
+// ===== توابع کمکی =====
+function showAdminMessage(text, type = 'success') {
+    adminMessage.style.display = 'block';
+    adminMessage.className = `message ${type}`;
+    adminMessage.textContent = text;
+    setTimeout(() => {
+        adminMessage.style.display = 'none';
+    }, 3000);
+}
+
+function showLoginMessage(text, type = 'error') {
+    loginMessage.style.display = 'block';
+    loginMessage.className = `message ${type}`;
+    loginMessage.textContent = text;
+    setTimeout(() => {
+        loginMessage.style.display = 'none';
+    }, 3000);
+}
+
+function showLogoMessage(text, type = 'success') {
+    logoMessage.style.display = 'block';
+    logoMessage.className = `message ${type}`;
+    logoMessage.textContent = text;
+    setTimeout(() => {
+        logoMessage.style.display = 'none';
+    }, 3000);
+}
+
+// ===== مدیریت لوگو =====
+function saveLogo(svgData) {
+    try {
+        localStorage.setItem('logo_data', svgData);
+    } catch (e) {
+        console.log('ذخیره لوگو ممکن نیست.');
+    }
+}
+
+function loadLogo() {
+    try {
+        const savedLogo = localStorage.getItem('logo_data');
+        if (savedLogo) {
+            // آپدیت در صفحه اصلی
+            const logoImg = document.getElementById('logoImage');
+            if (logoImg) {
+                logoImg.src = savedLogo;
+            }
+            // آپدیت در پیش‌نمایش
+            if (logoPreview) {
+                logoPreview.src = savedLogo;
+            }
+        }
+    } catch (e) {
+        console.log('بارگذاری لوگو ممکن نیست.');
+    }
+}
+
+function uploadLogo() {
+    if (!currentAdmin) {
+        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    const svgCode = svgInput.value.trim();
+    if (!svgCode) {
+        showLogoMessage('لطفاً کد SVG را وارد کنید.', 'error');
+        return;
+    }
+
+    // بررسی اینکه کد SVG معتبر باشد
+    if (!svgCode.startsWith('<svg') && !svgCode.startsWith('<?xml')) {
+        showLogoMessage('کد SVG نامعتبر است. لطفاً یک کد SVG معتبر وارد کنید.', 'error');
+        return;
+    }
+
+    // تبدیل به data URL
+    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgCode);
+    
+    // ذخیره در localStorage
+    saveLogo(dataUrl);
+    
+    // آپدیت نمایش
+    loadLogo();
+    
+    showLogoMessage('✅ لوگو با موفقیت آپلود شد.', 'success');
+}
+
+function resetLogo() {
+    if (!currentAdmin) {
+        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    // حذف لوگو از localStorage
+    localStorage.removeItem('logo_data');
+    
+    // بازگشت به لوگوی پیش‌فرض
+    const defaultLogo = 'logo.png';
+    const logoImg = document.getElementById('logoImage');
+    if (logoImg) {
+        logoImg.src = defaultLogo;
+    }
+    if (logoPreview) {
+        logoPreview.src = defaultLogo;
+    }
+    
+    showLogoMessage('✅ لوگو به حالت پیش‌فرض بازگشت.', 'success');
+}
+
+// ===== مدیریت ادمین‌ها =====
+function renderAdminList() {
+    if (!adminListDiv) return;
+    adminListDiv.innerHTML = admins.map((admin, index) => `
+        <div class="admin-item">
+            <span>👤 ${admin.username}</span>
+            ${admin.username !== 'AliAsgharPZ' ? 
+                `<button class="btn-danger" data-index="${index}">❌ حذف</button>` : 
+                '<span style="color:#0984e3;">🌟 مدیر اصلی</span>'}
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.admin-item .btn-danger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            if (confirm(`آیا از حذف ادمین "${admins[index].username}" مطمئن هستید؟`)) {
+                admins.splice(index, 1);
+                saveAdmins();
+                renderAdminList();
+                showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
+            }
+        });
+    });
+}
+
+// ===== رندر جدول =====
+function renderTable(words) {
+    if (!tableBody) return;
+
+    if (!words || words.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;">📚 هیچ کلمه‌ای در دیکشنری وجود ندارد</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    words.forEach((item, index) => {
+        const meaningsHtml = item.meanings.map(m => `<span>${m}</span>`).join(' ');
+        html += `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${item.arabic}</strong></td>
+                <td><div class="meanings-list">${meaningsHtml}</div></td>
+                <td>${item.concept ? `<span class="concept-text" title="${item.concept}">${item.concept}</span>` : '-'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-danger delete-word" data-index="${index}">🗑️ حذف</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+
+    document.querySelectorAll('.delete-word').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            const word = dictionary[index];
+            if (confirm(`آیا از حذف کلمه "${word.arabic}" مطمئن هستید؟`)) {
+                dictionary.splice(index, 1);
+                saveData();
+                renderTable(dictionary);
+                showAdminMessage(`✅ کلمه "${word.arabic}" با موفقیت حذف شد.`, 'success');
+            }
+        });
+    });
+}
+
+// ===== توابع مدیریت =====
+function addNewWord() {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    const word = newWord.value.trim();
+    const meaningsRaw = newMeaning.value.trim();
+    const concept = newConcept.value.trim();
+
+    if (!word || !meaningsRaw) {
+        showAdminMessage('لطفاً کلمه عربی و معنی فارسی را وارد کنید.', 'error');
+        return;
+    }
+
+    if (dictionary.some(entry => entry.arabic === word)) {
+        showAdminMessage('این کلمه قبلاً در دیتابیس وجود دارد.', 'error');
+        return;
+    }
+
+    const meanings = meaningsRaw.split(',').map(m => m.trim()).filter(m => m);
+    if (meanings.length === 0) {
+        showAdminMessage('حداقل یک معنی وارد کنید.', 'error');
+        return;
+    }
+
+    dictionary.push({
+        arabic: word,
+        meanings: meanings,
+        concept: concept || ''
+    });
+
+    newWord.value = '';
+    newMeaning.value = '';
+    newConcept.value = '';
+    saveData();
+    renderTable(dictionary);
+    showAdminMessage(`✅ کلمه "${word}" با موفقیت افزوده شد.`, 'success');
+}
+
+function addNewAdmin() {
+    if (!currentAdmin || currentAdmin.username !== 'AliAsgharPZ') {
+        showAdminMessage('تنها مدیر اصلی می‌تواند ادمین جدید اضافه کند.', 'error');
+        return;
+    }
+
+    const username = newAdminUsername.value.trim();
+    const password = newAdminPassword.value.trim();
+
+    if (!username || !password) {
+        showAdminMessage('لطفاً نام کاربری و رمز عبور را وارد کنید.', 'error');
+        return;
+    }
+
+    if (admins.some(a => a.username === username)) {
+        showAdminMessage('این نام کاربری قبلاً وجود دارد.', 'error');
+        return;
+    }
+
+    admins.push({ username, password });
+    newAdminUsername.value = '';
+    newAdminPassword.value = '';
+    saveAdmins();
+    renderAdminList();
+    showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
+}
+
+// ===== ذخیره‌سازی ادمین‌ها =====
+function saveAdmins() {
+    try {
+        localStorage.setItem('admins_data', JSON.stringify(admins));
+    } catch (e) {
+        console.log('ذخیره‌سازی ادمین‌ها ممکن نیست.');
+    }
+}
+
+function loadAdmins() {
+    try {
+        const savedAdmins = localStorage.getItem('admins_data');
+        if (savedAdmins) {
+            admins = JSON.parse(savedAdmins);
+        }
+    } catch (e) {
+        console.log('بارگذاری ادمین‌ها ممکن نیست.');
+    }
+}
+
+// ===== سیستم لاگین =====
+function login() {
+    const username = loginUsername.value.trim();
+    const password = loginPassword.value.trim();
+
+    const admin = admins.find(a => a.username === username && a.password === password);
+    
+    if (admin) {
+        currentAdmin = admin;
+        loginSection.style.display = 'none';
+        adminContent.style.display = 'block';
+        showAdminMessage(`✅ خوش آمدید ${admin.username}`, 'success');
+        renderAdminList();
+        renderTable(dictionary);
+        loadLogo();
+    } else {
+        showLoginMessage('❌ نام کاربری یا رمز عبور اشتباه است.', 'error');
+    }
+}
+
+function logout() {
+    currentAdmin = null;
+    loginSection.style.display = 'flex';
+    adminContent.style.display = 'none';
+    loginUsername.value = '';
+    loginPassword.value = '';
+    showAdminMessage('🚪 شما خارج شدید.', 'success');
+}
+
+// ===== توابع جستجوی جدول =====
+function filterTable() {
+    const query = tableSearch.value.trim().toLowerCase();
+    if (!query) {
+        renderTable(dictionary);
+        return;
+    }
+
+    const filtered = dictionary.filter(item => 
+        item.arabic.includes(query) ||
+        item.meanings.some(m => m.includes(query)) ||
+        (item.concept && item.concept.includes(query))
+    );
+    renderTable(filtered);
+}
+
+// ===== بخش‌های قابل جمع شدن =====
+function setupCollapsibleSections() {
+    document.querySelectorAll('.toggle-section').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const section = this.closest('.admin-section');
+            const body = section.querySelector('.section-body');
+            body.classList.toggle('collapsed');
+            this.textContent = body.classList.contains('collapsed') ? '▶' : '▼';
+        });
+    });
+}
+
+// ===== رویدادها =====
+document.addEventListener('DOMContentLoaded', function() {
+    loadData();
+    loadAdmins();
+    loadLogo();
+    setupCollapsibleSections();
+
+    loginBtn.addEventListener('click', login);
+    loginPassword.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') login();
+    });
+
+    logoutBtn.addEventListener('click', logout);
+    addBtn.addEventListener('click', addNewWord);
+    addAdminBtn.addEventListener('click', addNewAdmin);
+    
+    // رویدادهای آپلود لوگو
+    uploadSvgBtn.addEventListener('click', uploadLogo);
+    resetLogoBtn.addEventListener('click', resetLogo);
+    
+    if (refreshTableBtn) {
+        refreshTableBtn.addEventListener('click', function() {
+            renderTable(dictionary);
+            showAdminMessage('✅ جدول بروزرسانی شد.', 'success');
+        });
+    }
+
+    if (tableSearch) {
+        tableSearch.addEventListener('input', filterTable);
+    }
+});

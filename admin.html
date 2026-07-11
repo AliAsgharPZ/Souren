@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت دیکشنری</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin-style.css">
+</head>
+<body>
+    <!-- فرم لاگین -->
+    <div id="loginSection" class="login-section">
+        <div class="login-box">
+            <h2>🔐 ورود به پنل مدیریت</h2>
+            <input type="text" id="loginUsername" placeholder="نام کاربری">
+            <input type="password" id="loginPassword" placeholder="رمز عبور">
+            <button id="loginBtn">ورود</button>
+            <div id="loginMessage" class="message"></div>
+        </div>
+    </div>
+
+    <!-- محتوای مدیریت -->
+    <div id="adminContent" style="display:none;">
+        <div class="admin-container">
+            <div class="admin-nav">
+                <a href="index.html" class="back-link">🏠 بازگشت به صفحه اصلی</a>
+                <button id="logoutBtn" class="logout-btn">🚪 خروج</button>
+            </div>
+
+            <!-- بخش آپلود لوگو -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h3>🖼️ آپلود لوگو (SVG)</h3>
+                    <button class="toggle-section">▼</button>
+                </div>
+                <div class="section-body">
+                    <div class="upload-logo-form">
+                        <div class="logo-preview">
+                            <img id="logoPreview" src="logo.png" alt="پیش‌نمایش لوگو" style="max-width:150px;height:auto;">
+                        </div>
+                        <textarea id="svgInput" placeholder="کد SVG لوگو را اینجا قرار دهید..." rows="6"></textarea>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                            <button id="uploadSvgBtn" class="btn-success">📤 آپلود لوگو</button>
+                            <button id="resetLogoBtn" class="btn-secondary">↩️ بازگشت به لوگوی پیش‌فرض</button>
+                        </div>
+                        <div id="logoMessage" class="message" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بخش مدیریت کاربران -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h3>👥 مدیریت ادمین‌ها</h3>
+                    <button class="toggle-section">▼</button>
+                </div>
+                <div class="section-body">
+                    <div class="add-admin-form">
+                        <input type="text" id="newAdminUsername" placeholder="نام کاربری ادمین جدید">
+                        <input type="password" id="newAdminPassword" placeholder="رمز عبور">
+                        <button id="addAdminBtn" class="btn-primary">➕ افزودن ادمین</button>
+                    </div>
+                    <div id="adminList" class="admin-list"></div>
+                </div>
+            </div>
+
+            <!-- بخش افزودن کلمه -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h3>➕ افزودن کلمه جدید</h3>
+                    <button class="toggle-section">▼</button>
+                </div>
+                <div class="section-body">
+                    <div class="add-word-form">
+                        <input type="text" id="newWord" placeholder="کلمه عربی (مثلاً: کتاب)">
+                        <input type="text" id="newMeaning" placeholder="معنی فارسی (با , جدا کنید)">
+                        <textarea id="newConcept" placeholder="توضیح مفهوم (اختیاری)"></textarea>
+                        <button id="addBtn" class="btn-success">✅ افزودن کلمه</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بخش جدول کلمات -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h3>📊 لیست تمام کلمات</h3>
+                    <button class="toggle-section">▼</button>
+                </div>
+                <div class="section-body">
+                    <div class="table-controls">
+                        <input type="text" id="tableSearch" placeholder="جستجو در جدول...">
+                        <button id="refreshTableBtn" class="btn-secondary">🔄 بروزرسانی</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="wordsTable">
+                            <thead>
+                                <tr>
+                                    <th>ردیف</th>
+                                    <th>کلمه عربی</th>
+                                    <th>معانی</th>
+                                    <th>مفهوم</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminMessage" class="message" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>

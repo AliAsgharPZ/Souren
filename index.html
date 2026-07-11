@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دیکشنری عربی به فارسی</title>
+    <!-- فونت آراد از گیت‌هاب -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- هدر با لوگو وسط -->
+    <header>
+        <div class="logo-container">
+            <img src="logo.png" alt="لوگو" class="logo" id="logoImage">
+        </div>
+    </header>
+
+    <!-- بخش جستجو -->
+    <main class="search-container">
+        <div class="search-wrapper" id="searchWrapper">
+            <div class="search-box-container">
+                <input type="text" id="searchBox" placeholder="جستجوی کلمه عربی، فارسی یا مفهوم ..." autofocus>
+                <button id="searchBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="results" class="cards-grid"></div>
+    </main>
+
+    <!-- مودال پاپ‌آپ -->
+    <div id="wordModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- فوتر -->
+    <footer>
+        <span>ساخته شده با <i class="heart">❤️</i> عشق</span>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
