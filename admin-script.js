@@ -1,8 +1,8 @@
 // ===== تنظیمات گیت‌هاب =====
-const GITHUB_TOKEN = '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'; // توکن خودتو بذار
-const GITHUB_USER = 'AliAsgharPZ'; // اسم کاربری گیت‌هاب
-const GITHUB_REPO = 'Souren'; // اسم ریپازیتوری
-const GITHUB_BRANCH = 'main'; // یا master
+const GITHUB_TOKEN = 'ghp_توکن_خودت_اینجا';
+const GITHUB_USER = 'AliAsgharPZ';
+const GITHUB_REPO = 'dictionary-app';
+const GITHUB_BRANCH = 'main'; // اگر ارور داد به master تغییر بده
 
 // ===== سیستم احراز هویت =====
 let admins = [];
@@ -11,7 +11,8 @@ let currentAdmin = null;
 // ===== آپلود فایل در گیت‌هاب =====
 async function uploadToGitHub(filename, data) {
     try {
-        // اول ببین فایل وجود داره یا نه
+        console.log(`📤 در حال آپلود ${filename}...`);
+        
         const checkRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
@@ -25,7 +26,6 @@ async function uploadToGitHub(filename, data) {
             sha = fileData.sha;
         }
         
-        // آماده‌سازی برای آپلود
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
         const body = {
             message: `آپدیت ${filename} - ${new Date().toLocaleString('fa-IR')}`,
@@ -33,11 +33,8 @@ async function uploadToGitHub(filename, data) {
             branch: GITHUB_BRANCH
         };
         
-        if (sha) {
-            body.sha = sha;
-        }
+        if (sha) body.sha = sha;
         
-        // آپلود
         const uploadRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
             method: 'PUT',
             headers: {
@@ -49,16 +46,16 @@ async function uploadToGitHub(filename, data) {
         });
         
         if (uploadRes.ok) {
-            console.log(`✅ ${filename} با موفقیت آپلود شد`);
-            return true;
+            console.log(`✅ ${filename} آپلود شد!`);
+            return { success: true };
         } else {
             const error = await uploadRes.json();
-            console.log('❌ خطا:', error);
-            return false;
+            console.log(`❌ خطا:`, error);
+            return { success: false, error: error };
         }
     } catch (e) {
-        console.log('❌ خطا:', e);
-        return false;
+        console.log(`❌ خطا:`, e);
+        return { success: false, error: e.message };
     }
 }
 
@@ -67,8 +64,7 @@ async function loadFromGitHub(filename) {
     try {
         const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${filename}?t=${Date.now()}`);
         if (response.ok) {
-            const data = await response.json();
-            return data;
+            return await response.json();
         }
     } catch (e) {
         console.log('خطا:', e);
@@ -82,6 +78,7 @@ async function loadAllData() {
     const dictData = await loadFromGitHub('dictionary.json');
     if (dictData && dictData.dictionary) {
         dictionary = dictData.dictionary;
+        console.log('✅ دیکشنری از گیت‌هاب:', dictionary.length);
     } else {
         try {
             const res = await fetch('dictionary.json?' + Date.now());
@@ -90,9 +87,7 @@ async function loadAllData() {
         } catch(e) {
             dictionary = [
                 { arabic: "كتاب", meanings: ["کتاب", "دفتر"], concept: "مجموعه‌ای از برگه‌ها" },
-                { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محل آموزش" },
-                { arabic: "طالب", meanings: ["دانش‌آموز", "محصل"], concept: "شخصی که به دنبال علم است" },
-                { arabic: "معلم", meanings: ["معلم", "آموزگار"], concept: "کسی که علم را آموزش می‌دهد" }
+                { arabic: "مدرسة", meanings: ["مدرسه", "آموزشگاه"], concept: "محل آموزش" }
             ];
         }
     }
@@ -101,6 +96,7 @@ async function loadAllData() {
     const adminData = await loadFromGitHub('admins.json');
     if (adminData && adminData.admins) {
         admins = adminData.admins;
+        console.log('✅ ادمین‌ها از گیت‌هاب:', admins.length);
     } else {
         try {
             const res = await fetch('admins.json?' + Date.now());
@@ -110,8 +106,6 @@ async function loadAllData() {
             admins = [{ username: "AliAsgharPZ", password: "09199621557Aa" }];
         }
     }
-    
-    console.log('✅ دیتا بارگذاری شد:', { dictionary: dictionary.length, admins: admins.length });
 }
 
 // ===== انتشار تغییرات =====
@@ -123,17 +117,17 @@ async function publishChanges() {
     
     showAdminMessage('⏳ در حال انتشار به گیت‌هاب...', 'success');
     
-    // آپلود دیکشنری
     const dictResult = await uploadToGitHub('dictionary.json', { dictionary: dictionary });
-    
-    // آپلود ادمین‌ها
     const adminResult = await uploadToGitHub('admins.json', { admins: admins });
     
-    if (dictResult && adminResult) {
-        showAdminMessage('✅ تغییرات در گیت‌هاب ذخیره شد!', 'success');
+    if (dictResult.success && adminResult.success) {
+        showAdminMessage('✅ دیکشنری و ادمین‌ها در گیت‌هاب ذخیره شد!', 'success');
         showAdminMessage('⏳ کلادفلر خودکار دیپلوی میکنه (حداکثر ۲ دقیقه)', 'success');
     } else {
-        showAdminMessage('❌ خطا در انتشار! دوباره تلاش کن.', 'error');
+        let errorMsg = '❌ خطا در انتشار!\n';
+        if (!dictResult.success) errorMsg += `دیکشنری: ${dictResult.error?.message || 'نامشخص'}\n`;
+        if (!adminResult.success) errorMsg += `ادمین‌ها: ${adminResult.error?.message || 'نامشخص'}`;
+        showAdminMessage(errorMsg, 'error');
     }
 }
 
@@ -174,7 +168,7 @@ function showAdminMessage(text, type = 'success') {
     adminMessage.textContent = text;
     setTimeout(() => {
         adminMessage.style.display = 'none';
-    }, 5000);
+    }, 6000);
 }
 
 function showLoginMessage(text, type = 'error') {
@@ -305,8 +299,7 @@ async function addNewWord() {
     newConcept.value = '';
     
     renderTable(dictionary);
-    showAdminMessage(`✅ کلمه "${word}" اضافه شد.`, 'success');
-    showAdminMessage('⚠️ برای ذخیره روی دکمه "انتشار" کلیک کن.', 'success');
+    showAdminMessage(`✅ کلمه "${word}" اضافه شد. برای ذخیره روی انتشار کلیک کن.`, 'success');
 }
 
 async function addNewAdmin() {
@@ -333,8 +326,7 @@ async function addNewAdmin() {
     newAdminPassword.value = '';
     
     renderAdminList();
-    showAdminMessage(`✅ ادمین "${username}" اضافه شد.`, 'success');
-    showAdminMessage('⚠️ برای ذخیره روی دکمه "انتشار" کلیک کن.', 'success');
+    showAdminMessage(`✅ ادمین "${username}" اضافه شد. برای ذخیره روی انتشار کلیک کن.`, 'success');
 }
 
 // ===== سیستم لاگین =====
@@ -461,11 +453,6 @@ function loadLogo() {
 
 // ===== دانلود فایل‌ها (برای پشتیبان) =====
 function downloadAdminsFile() {
-    if (!currentAdmin) {
-        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
     const data = { admins: admins };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
