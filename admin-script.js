@@ -1,7 +1,7 @@
 // ===== تنظیمات گیت‌هاب =====
-const GITHUB_TOKEN = 'ghp_توکن_خودت_اینجا';
+const GITHUB_TOKEN = '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';
 const GITHUB_USER = 'AliAsgharPZ';
-const GITHUB_REPO = 'dictionary-app';
+const GITHUB_REPO = 'Souren';
 const GITHUB_BRANCH = 'main'; // اگر ارور داد به master تغییر بده
 
 // ===== سیستم احراز هویت =====
