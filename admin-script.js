@@ -1,9 +1,56 @@
 // ===== سیستم احراز هویت =====
-let admins = [
-    { username: "AliAsgharPZ", password: "09199621557Aa" }
-];
-
+let admins = [];
 let currentAdmin = null;
+
+// ===== بارگذاری ادمین‌ها از admins.json =====
+async function loadAdmins() {
+    try {
+        const response = await fetch('admins.json');
+        const data = await response.json();
+        
+        if (data.admins && data.admins.length > 0) {
+            admins = data.admins;
+            localStorage.setItem('admins_data', JSON.stringify(admins));
+        } else {
+            admins = getDefaultAdmins();
+        }
+    } catch (e) {
+        console.log('خطا در بارگذاری admins.json:', e);
+        const saved = localStorage.getItem('admins_data');
+        if (saved) {
+            admins = JSON.parse(saved);
+        } else {
+            admins = getDefaultAdmins();
+        }
+    }
+    return admins;
+}
+
+function getDefaultAdmins() {
+    return [
+        { username: "AliAsgharPZ", password: "09199621557Aa" }
+    ];
+}
+
+function downloadAdminsFile() {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    const data = { admins: admins };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'admins.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
+}
 
 // ===== DOM Elements =====
 const loginSection = document.getElementById('loginSection');
@@ -29,7 +76,6 @@ const tableBody = document.getElementById('tableBody');
 const tableSearch = document.getElementById('tableSearch');
 const refreshTableBtn = document.getElementById('refreshTableBtn');
 
-// ===== المان‌های آپلود لوگو =====
 const svgInput = document.getElementById('svgInput');
 const uploadSvgBtn = document.getElementById('uploadSvgBtn');
 const resetLogoBtn = document.getElementById('resetLogoBtn');
@@ -64,86 +110,6 @@ function showLogoMessage(text, type = 'success') {
     }, 3000);
 }
 
-// ===== مدیریت لوگو =====
-function saveLogo(svgData) {
-    try {
-        localStorage.setItem('logo_data', svgData);
-    } catch (e) {
-        console.log('ذخیره لوگو ممکن نیست.');
-    }
-}
-
-function loadLogo() {
-    try {
-        const savedLogo = localStorage.getItem('logo_data');
-        if (savedLogo) {
-            // آپدیت در صفحه اصلی
-            const logoImg = document.getElementById('logoImage');
-            if (logoImg) {
-                logoImg.src = savedLogo;
-            }
-            // آپدیت در پیش‌نمایش
-            if (logoPreview) {
-                logoPreview.src = savedLogo;
-            }
-        }
-    } catch (e) {
-        console.log('بارگذاری لوگو ممکن نیست.');
-    }
-}
-
-function uploadLogo() {
-    if (!currentAdmin) {
-        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
-    const svgCode = svgInput.value.trim();
-    if (!svgCode) {
-        showLogoMessage('لطفاً کد SVG را وارد کنید.', 'error');
-        return;
-    }
-
-    // بررسی اینکه کد SVG معتبر باشد
-    if (!svgCode.startsWith('<svg') && !svgCode.startsWith('<?xml')) {
-        showLogoMessage('کد SVG نامعتبر است. لطفاً یک کد SVG معتبر وارد کنید.', 'error');
-        return;
-    }
-
-    // تبدیل به data URL
-    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgCode);
-    
-    // ذخیره در localStorage
-    saveLogo(dataUrl);
-    
-    // آپدیت نمایش
-    loadLogo();
-    
-    showLogoMessage('✅ لوگو با موفقیت آپلود شد.', 'success');
-}
-
-function resetLogo() {
-    if (!currentAdmin) {
-        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
-    // حذف لوگو از localStorage
-    localStorage.removeItem('logo_data');
-    
-    // بازگشت به لوگوی پیش‌فرض
-    const defaultLogo = 'logo.png';
-    const logoImg = document.getElementById('logoImage');
-    if (logoImg) {
-        logoImg.src = defaultLogo;
-    }
-    if (logoPreview) {
-        logoPreview.src = defaultLogo;
-    }
-    
-    showLogoMessage('✅ لوگو به حالت پیش‌فرض بازگشت.', 'success');
-}
-
 // ===== مدیریت ادمین‌ها =====
 function renderAdminList() {
     if (!adminListDiv) return;
@@ -161,7 +127,7 @@ function renderAdminList() {
             const index = parseInt(this.dataset.index);
             if (confirm(`آیا از حذف ادمین "${admins[index].username}" مطمئن هستید؟`)) {
                 admins.splice(index, 1);
-                saveAdmins();
+                localStorage.setItem('admins_data', JSON.stringify(admins));
                 renderAdminList();
                 showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
             }
@@ -204,7 +170,7 @@ function renderTable(words) {
             const word = dictionary[index];
             if (confirm(`آیا از حذف کلمه "${word.arabic}" مطمئن هستید؟`)) {
                 dictionary.splice(index, 1);
-                saveData();
+                localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
                 renderTable(dictionary);
                 showAdminMessage(`✅ کلمه "${word.arabic}" با موفقیت حذف شد.`, 'success');
             }
@@ -248,7 +214,8 @@ function addNewWord() {
     newWord.value = '';
     newMeaning.value = '';
     newConcept.value = '';
-    saveData();
+    
+    localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
     renderTable(dictionary);
     showAdminMessage(`✅ کلمه "${word}" با موفقیت افزوده شد.`, 'success');
 }
@@ -275,29 +242,10 @@ function addNewAdmin() {
     admins.push({ username, password });
     newAdminUsername.value = '';
     newAdminPassword.value = '';
-    saveAdmins();
+    
+    localStorage.setItem('admins_data', JSON.stringify(admins));
     renderAdminList();
     showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
-}
-
-// ===== ذخیره‌سازی ادمین‌ها =====
-function saveAdmins() {
-    try {
-        localStorage.setItem('admins_data', JSON.stringify(admins));
-    } catch (e) {
-        console.log('ذخیره‌سازی ادمین‌ها ممکن نیست.');
-    }
-}
-
-function loadAdmins() {
-    try {
-        const savedAdmins = localStorage.getItem('admins_data');
-        if (savedAdmins) {
-            admins = JSON.parse(savedAdmins);
-        }
-    } catch (e) {
-        console.log('بارگذاری ادمین‌ها ممکن نیست.');
-    }
 }
 
 // ===== سیستم لاگین =====
@@ -357,10 +305,58 @@ function setupCollapsibleSections() {
     });
 }
 
+// ===== مدیریت لوگو =====
+function uploadLogo() {
+    if (!currentAdmin) {
+        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    const svgCode = svgInput.value.trim();
+    if (!svgCode) {
+        showLogoMessage('لطفاً کد SVG را وارد کنید.', 'error');
+        return;
+    }
+
+    if (!svgCode.startsWith('<svg') && !svgCode.startsWith('<?xml')) {
+        showLogoMessage('کد SVG نامعتبر است.', 'error');
+        return;
+    }
+
+    const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgCode);
+    saveLogo(dataUrl);
+    loadLogo();
+    
+    if (logoPreview) {
+        logoPreview.src = dataUrl;
+    }
+    
+    showLogoMessage('✅ لوگو با موفقیت آپلود شد.', 'success');
+}
+
+function resetLogo() {
+    if (!currentAdmin) {
+        showLogoMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    localStorage.removeItem('logo_data');
+    const defaultLogo = 'logo.png';
+    const logoImg = document.getElementById('logoImage');
+    if (logoImg) {
+        logoImg.src = defaultLogo;
+    }
+    if (logoPreview) {
+        logoPreview.src = defaultLogo;
+    }
+    showLogoMessage('✅ لوگو به حالت پیش‌فرض بازگشت.', 'success');
+}
+
 // ===== رویدادها =====
-document.addEventListener('DOMContentLoaded', function() {
-    loadData();
-    loadAdmins();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadAdmins();
+    await loadDictionary();
+    
     loadLogo();
     setupCollapsibleSections();
 
@@ -373,9 +369,18 @@ document.addEventListener('DOMContentLoaded', function() {
     addBtn.addEventListener('click', addNewWord);
     addAdminBtn.addEventListener('click', addNewAdmin);
     
-    // رویدادهای آپلود لوگو
     uploadSvgBtn.addEventListener('click', uploadLogo);
     resetLogoBtn.addEventListener('click', resetLogo);
+    
+    const downloadDictBtn = document.getElementById('downloadDictBtn');
+    if (downloadDictBtn) {
+        downloadDictBtn.addEventListener('click', downloadDictionaryFile);
+    }
+    
+    const downloadAdminsBtn = document.getElementById('downloadAdminsBtn');
+    if (downloadAdminsBtn) {
+        downloadAdminsBtn.addEventListener('click', downloadAdminsFile);
+    }
     
     if (refreshTableBtn) {
         refreshTableBtn.addEventListener('click', function() {
