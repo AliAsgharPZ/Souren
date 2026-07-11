@@ -10,46 +10,18 @@ async function loadAdmins() {
         
         if (data.admins && data.admins.length > 0) {
             admins = data.admins;
-            localStorage.setItem('admins_data', JSON.stringify(admins));
         } else {
-            admins = getDefaultAdmins();
+            admins = [
+                { username: "AliAsgharPZ", password: "09199621557Aa" }
+            ];
         }
     } catch (e) {
         console.log('خطا در بارگذاری admins.json:', e);
-        const saved = localStorage.getItem('admins_data');
-        if (saved) {
-            admins = JSON.parse(saved);
-        } else {
-            admins = getDefaultAdmins();
-        }
+        admins = [
+            { username: "AliAsgharPZ", password: "09199621557Aa" }
+        ];
     }
     return admins;
-}
-
-function getDefaultAdmins() {
-    return [
-        { username: "AliAsgharPZ", password: "09199621557Aa" }
-    ];
-}
-
-function downloadAdminsFile() {
-    if (!currentAdmin) {
-        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
-        return;
-    }
-
-    const data = { admins: admins };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'admins.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
 }
 
 // ===== DOM Elements =====
@@ -127,7 +99,6 @@ function renderAdminList() {
             const index = parseInt(this.dataset.index);
             if (confirm(`آیا از حذف ادمین "${admins[index].username}" مطمئن هستید؟`)) {
                 admins.splice(index, 1);
-                localStorage.setItem('admins_data', JSON.stringify(admins));
                 renderAdminList();
                 showAdminMessage('✅ ادمین با موفقیت حذف شد.', 'success');
             }
@@ -170,7 +141,6 @@ function renderTable(words) {
             const word = dictionary[index];
             if (confirm(`آیا از حذف کلمه "${word.arabic}" مطمئن هستید؟`)) {
                 dictionary.splice(index, 1);
-                localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
                 renderTable(dictionary);
                 showAdminMessage(`✅ کلمه "${word.arabic}" با موفقیت حذف شد.`, 'success');
             }
@@ -215,7 +185,6 @@ function addNewWord() {
     newMeaning.value = '';
     newConcept.value = '';
     
-    localStorage.setItem('dictionary_data', JSON.stringify(dictionary));
     renderTable(dictionary);
     showAdminMessage(`✅ کلمه "${word}" با موفقیت افزوده شد.`, 'success');
 }
@@ -243,7 +212,6 @@ function addNewAdmin() {
     newAdminUsername.value = '';
     newAdminPassword.value = '';
     
-    localStorage.setItem('admins_data', JSON.stringify(admins));
     renderAdminList();
     showAdminMessage(`✅ ادمین "${username}" با موفقیت اضافه شد.`, 'success');
 }
@@ -350,6 +318,40 @@ function resetLogo() {
         logoPreview.src = defaultLogo;
     }
     showLogoMessage('✅ لوگو به حالت پیش‌فرض بازگشت.', 'success');
+}
+
+// ===== دانلود فایل‌ها =====
+function downloadAdminsFile() {
+    if (!currentAdmin) {
+        showAdminMessage('لطفاً ابتدا وارد شوید.', 'error');
+        return;
+    }
+
+    const data = { admins: admins };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'admins.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showAdminMessage('✅ فایل admins.json دانلود شد.', 'success');
+}
+
+function downloadDictionaryFile() {
+    const data = { dictionary: dictionary };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dictionary.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ===== رویدادها =====
