@@ -11,7 +11,8 @@ const card = Color(0xFFEFE7D4);
 const pill = Color(0xFFEEE6D2);
 const ink = Color(0xFF2B2620);
 const muted = Color(0xFF8A8172);
-const darkPill = Color(0xFF2E2A24);
+const selectedPill = Color(0xFF6E6455); // soft, not too dark
+const dividerC = Color(0xFFE2D8C2);
 
 String faNum(Object n) {
   const d = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -34,6 +35,9 @@ class SourenApp extends StatelessWidget {
         fontFamily: 'Arad',
         scaffoldBackgroundColor: cream,
         colorScheme: ColorScheme.fromSeed(seedColor: ink, surface: cream),
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        }),
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: ink, fontSize: 15),
           bodySmall: TextStyle(color: muted, fontSize: 13),
@@ -41,6 +45,26 @@ class SourenApp extends StatelessWidget {
       ),
       home: const Directionality(
           textDirection: TextDirection.rtl, child: Shell()),
+    );
+  }
+}
+
+/// Soft fade+rise entrance, staggered by [index].
+class Stagger extends StatelessWidget {
+  final int index;
+  final Widget child;
+  const Stagger({super.key, required this.index, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 260 + (index % 12) * 35),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, c) => Opacity(
+        opacity: v,
+        child: Transform.translate(offset: Offset(0, 10 * (1 - v)), child: c),
+      ),
+      child: child,
     );
   }
 }
@@ -101,28 +125,36 @@ class _ShellState extends State<Shell> {
       _settingsPage(d),
     ];
     return Scaffold(
-      body: SafeArea(child: pages[tab]),
+      body: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
+        ),
+      ),
       bottomNavigationBar: _navBar(),
     );
   }
 
   Widget _navBar() {
-    final items = <(IconData, String)>[
-      (Icons.home_rounded, 'پیشگاه'),
-      (Icons.bookmark_rounded, 'نشان‌شده‌ها'),
-      (Icons.grid_view_rounded, 'بخش‌ها'),
-      (Icons.star_rounded, 'واژهٔ روز'),
-      (Icons.person_rounded, 'یادگیری من'),
-      (Icons.settings_rounded, 'تنظیمات'),
+    // (outlined, filled, label) — linear & soft; selected becomes filled.
+    final items = <(IconData, IconData, String)>[
+      (Icons.home_outlined, Icons.home_rounded, 'پیشگاه'),
+      (Icons.bookmark_border_rounded, Icons.bookmark_rounded, 'نشان‌شده‌ها'),
+      (Icons.widgets_outlined, Icons.widgets_rounded, 'بخش‌ها'),
+      (Icons.star_border_rounded, Icons.star_rounded, 'واژهٔ روز'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'یادگیری من'),
+      (Icons.settings_outlined, Icons.settings_rounded, 'تنظیمات'),
     ];
     return Container(
-      margin: const EdgeInsets.fromLTRB(18, 4, 18, 14),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      margin: const EdgeInsets.fromLTRB(22, 10, 22, 26),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(44),
         boxShadow: const [
-          BoxShadow(color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 3))
+          BoxShadow(color: Color(0x1F000000), blurRadius: 16, offset: Offset(0, 4))
         ],
       ),
       child: Row(
@@ -132,22 +164,25 @@ class _ShellState extends State<Shell> {
             GestureDetector(
               onTap: () => _go(i),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 170),
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
                 padding: EdgeInsets.symmetric(
-                    horizontal: tab == i ? 16 : 11, vertical: 9),
+                    horizontal: tab == i ? 17 : 12, vertical: 11),
                 decoration: BoxDecoration(
-                  color: tab == i ? darkPill : Colors.transparent,
-                  borderRadius: BorderRadius.circular(30),
+                  color: tab == i ? selectedPill : Colors.transparent,
+                  borderRadius: BorderRadius.circular(32),
                 ),
                 child: Row(children: [
-                  Icon(items[i].$1,
-                      size: 21,
-                      color: tab == i ? cream : ink.withValues(alpha: .75)),
+                  Icon(tab == i ? items[i].$2 : items[i].$1,
+                      size: 23,
+                      color: tab == i ? cream : ink.withValues(alpha: .72)),
                   if (tab == i) ...[
                     const SizedBox(width: 7),
-                    Text(items[i].$2,
+                    Text(items[i].$3,
                         style: const TextStyle(
-                            color: cream, fontWeight: FontWeight.w700, fontSize: 14)),
+                            color: cream,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14.5)),
                   ],
                 ]),
               ),
@@ -157,7 +192,7 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  // ---------- پیشگاه (home, exactly the reference layout) ----------
+  // ---------- پیشگاه ----------
   Widget _home(Dictionary d) {
     final frequent = d.entries.where((e) => e.hasFa).take(60).toList();
     final results = query.isEmpty
@@ -167,23 +202,28 @@ class _ShellState extends State<Shell> {
                 e.ar.contains(query) || e.fa.any((f) => f.contains(query)))
             .toList();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 4),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
       child: Column(children: [
-        TextField(
-          onChanged: (v) => setState(() => query = v.trim()),
-          decoration: InputDecoration(
-            hintText: 'واژه‌ای را جستجو کنید',
-            hintStyle: const TextStyle(color: muted, fontSize: 14),
-            prefixIcon: const Icon(Icons.search, color: muted, size: 21),
-            filled: true,
-            fillColor: card,
-            contentPadding: const EdgeInsets.symmetric(vertical: 13),
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(28),
-                borderSide: BorderSide.none),
+        // جای لوگو (در نسخه‌های بعد می‌آید) — اشیاء پایین‌تر شروع می‌شوند
+        const SizedBox(height: 58),
+        SizedBox(
+          height: 58,
+          child: TextField(
+            onChanged: (v) => setState(() => query = v.trim()),
+            decoration: InputDecoration(
+              hintText: 'واژه‌ای را جستجو کنید',
+              hintStyle: const TextStyle(color: muted, fontSize: 14.5),
+              prefixIcon: const Icon(Icons.search_rounded, color: muted, size: 23),
+              filled: true,
+              fillColor: card,
+              contentPadding: const EdgeInsets.symmetric(vertical: 18),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 26),
         Expanded(
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
@@ -195,39 +235,41 @@ class _ShellState extends State<Shell> {
                             ? 'پرکاربردترین واژگان فارسی'
                             : 'نتیجه‌های جستجو',
                         style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 16.5)),
-                    const SizedBox(height: 6),
-                    Expanded(child: _pairList(results, d)),
+                            fontWeight: FontWeight.w700, fontSize: 17.5)),
+                    const SizedBox(height: 10),
+                    Expanded(child: _fadedPairList(results)),
                   ]),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             SizedBox(
-              width: 118,
-              child: Column(children: [
-                _sidePill('گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d))),
-                _sidePill('درست‌نویسی', () => _open(CorrectorPage(dict: d))),
-                _sidePill('پندواژهٔ نیم‌فاصله',
-                    () => _open(const PandPage()), small: true),
-                _sidePill('واژه‌های تازه', () => _open(const FreshPage())),
-                _sidePill('ریشه‌شناسی', () => _open(EtymologyPage(dict: d))),
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(top: 10),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                      color: pill, borderRadius: BorderRadius.circular(18)),
-                  child: Column(children: [
-                    const Text('شمار همهٔ واژه‌ها',
-                        style: TextStyle(fontSize: 12.5, color: ink)),
-                    const SizedBox(height: 3),
-                    Text(faNum(d.entries.length),
-                        style: const TextStyle(
-                            fontSize: 21, fontWeight: FontWeight.w700)),
-                    Text('(${faNum(d.pairCount)} با برابر فارسی)',
-                        style: const TextStyle(fontSize: 10.5, color: muted)),
-                  ]),
-                ),
-              ]),
+              width: 124,
+              child: SingleChildScrollView(
+                child: Column(children: [
+                  _sidePill('گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d))),
+                  _sidePill('درست‌نویسی', () => _open(CorrectorPage(dict: d))),
+                  _sidePill('نیم‌فاصله', () => _open(const NimeFaselePage())),
+                  _sidePill('پندواژه', () => _open(const PandvazhePage())),
+                  _sidePill('واژه‌های تازه', () => _open(const FreshPage())),
+                  _sidePill('ریشه‌شناسی', () => _open(EtymologyPage(dict: d))),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                        color: pill, borderRadius: BorderRadius.circular(20)),
+                    child: Column(children: [
+                      const Text('شمار همهٔ واژه‌ها',
+                          style: TextStyle(fontSize: 13, color: ink)),
+                      const SizedBox(height: 4),
+                      Text(faNum(d.entries.length),
+                          style: const TextStyle(
+                              fontSize: 23, fontWeight: FontWeight.w700)),
+                      Text('(${faNum(d.pairCount)} با برابر فارسی)',
+                          style: const TextStyle(fontSize: 11, color: muted)),
+                    ]),
+                  ),
+                ]),
+              ),
             ),
           ]),
         ),
@@ -235,56 +277,76 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  Widget _sidePill(String label, VoidCallback onTap, {bool small = false}) {
+  Widget _sidePill(String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 9),
-        padding: EdgeInsets.symmetric(vertical: small ? 9 : 12),
+        margin: const EdgeInsets.only(bottom: 11),
+        padding: const EdgeInsets.symmetric(vertical: 17),
         decoration: BoxDecoration(
-            color: pill, borderRadius: BorderRadius.circular(18)),
+            color: pill, borderRadius: BorderRadius.circular(20)),
         child: Text(label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: small ? 12 : 13.5, color: ink)),
+            style: const TextStyle(fontSize: 14, color: ink)),
       ),
     );
   }
 
-  Widget _pairList(List<Entry> items, Dictionary d) {
+  /// Pair list with soft scroll fade at top and bottom edges.
+  Widget _fadedPairList(List<Entry> items) {
+    if (items.isEmpty) {
+      return const Center(
+          child: Text('واژه‌ای پیدا نشد', style: TextStyle(color: muted)));
+    }
+    return ShaderMask(
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
+        stops: [0, 0.045, 0.955, 1],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, color: dividerC),
+        itemBuilder: (_, i) => Stagger(index: i, child: _pairRow(items[i])),
+      ),
+    );
+  }
+
+  Widget _pairList(List<Entry> items) {
     if (items.isEmpty) {
       return const Center(
           child: Text('واژه‌ای پیدا نشد', style: TextStyle(color: muted)));
     }
     return ListView.separated(
       itemCount: items.length,
-      separatorBuilder: (_, __) =>
-          const Divider(height: 1, color: Color(0xFFE2D8C2)),
+      separatorBuilder: (_, __) => const Divider(height: 1, color: dividerC),
       itemBuilder: (_, i) => _pairRow(items[i]),
     );
   }
 
+  /// فارسی پررنگ و درشت (مهم‌تر)، عربی کوچک و کم‌رنگ.
   Widget _pairRow(Entry e) {
     return InkWell(
       onTap: () => _showEntry(e),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(children: [
-          SizedBox(
-            width: 92,
-            child: Text(e.ar,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 15)),
-          ),
           Expanded(
             child: Text(
               e.hasFa ? e.fa.join('، ') : 'برابر فارسی ثبت نشده',
-              textAlign: TextAlign.left,
               style: TextStyle(
-                  color: e.hasFa ? muted : const Color(0xFFB4A888),
-                  fontSize: 13.5),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16.5,
+                  color: e.hasFa ? ink : const Color(0xFFB4A888)),
             ),
           ),
+          const SizedBox(width: 10),
+          Text(e.ar,
+              style: const TextStyle(color: muted, fontSize: 13.5)),
         ]),
       ),
     );
@@ -304,17 +366,19 @@ class _ShellState extends State<Shell> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
       builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+        padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(e.ar,
-                style:
-                    const TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+            Expanded(
+              child: Text(e.hasFa ? e.fa.join('، ') : e.ar,
+                  style: const TextStyle(
+                      fontSize: 25, fontWeight: FontWeight.w700)),
+            ),
             IconButton(
               icon: Icon(
                   favorites.contains(e.ar)
-                      ? Icons.star_rounded
-                      : Icons.star_border_rounded,
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_border_rounded,
                   color: ink),
               onPressed: () {
                 _toggleFav(e.ar);
@@ -323,29 +387,25 @@ class _ShellState extends State<Shell> {
               },
             ),
           ]),
-          const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
             child: Text(
                 e.hasFa
-                    ? 'برابر فارسی: ${e.fa.join('، ')}'
+                    ? 'واژهٔ عربی: ${e.ar} — ریشه: عربی'
                     : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
-                style: const TextStyle(fontSize: 16, height: 1.7)),
+                style:
+                    const TextStyle(color: muted, fontSize: 14, height: 1.8)),
           ),
-          const SizedBox(height: 8),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Text('ریشه: عربی — از پایگاه واژه‌های سورن',
-                style: TextStyle(color: muted, fontSize: 12.5)),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: darkPill),
+              style: FilledButton.styleFrom(
+                  backgroundColor: selectedPill,
+                  padding: const EdgeInsets.symmetric(vertical: 14)),
               onPressed: () {
-                Clipboard.setData(ClipboardData(
-                    text: e.hasFa ? e.fa.first : e.ar));
+                Clipboard.setData(
+                    ClipboardData(text: e.hasFa ? e.fa.first : e.ar));
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('کپی شد')));
@@ -361,46 +421,62 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده‌ها ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
-    return _pageShell('نشان‌شده‌ها',
-        favs.isEmpty
-            ? const Center(
-                child: Text('هنوز واژه‌ای را نشان نکرده‌اید.\nروی ستارهٔ هر واژه بزنید.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: muted, height: 1.8)))
-            : _pairList(favs, d));
+    return _pageShell(
+        'نشان‌شده‌ها',
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: favs.isEmpty
+              ? const Center(
+                  child: Text(
+                      'هنوز واژه‌ای را نشان نکرده‌اید.\nروی نشانکِ هر واژه بزنید.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: muted, height: 1.9)))
+              : _pairList(favs),
+        ));
   }
 
-  // ---------- بخش‌ها ----------
+  // ---------- بخش‌ها (همهٔ قابلیت‌ها) ----------
   Widget _sectionsPage(Dictionary d) {
     final tiles = <(IconData, String, VoidCallback)>[
       (Icons.menu_book_rounded, 'گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d))),
       (Icons.spellcheck_rounded, 'درست‌نویسی', () => _open(CorrectorPage(dict: d))),
-      (Icons.lightbulb_outline_rounded, 'پندواژهٔ نیم‌فاصله', () => _open(const PandPage())),
-      (Icons.new_releases_rounded, 'واژه‌های تازه', () => _open(const FreshPage())),
+      (Icons.space_bar_rounded, 'نیم‌فاصله', () => _open(const NimeFaselePage())),
+      (Icons.format_quote_rounded, 'پندواژه', () => _open(const PandvazhePage())),
       (Icons.account_tree_rounded, 'ریشه‌شناسی', () => _open(EtymologyPage(dict: d))),
+      (Icons.new_releases_rounded, 'واژه‌های تازه', () => _open(const FreshPage())),
+      (Icons.bookmark_rounded, 'نشان‌شده‌ها', () => _go(1)),
+      (Icons.star_rounded, 'واژهٔ روز', () => _go(3)),
+      (Icons.school_rounded, 'یادگیری من', () => _go(4)),
       (Icons.keyboard_rounded, 'کیبورد سورن', () => _open(const KeyboardGuidePage())),
+      (Icons.system_update_rounded, 'به‌روزرسانی پایگاه', () => _go(5)),
+      (Icons.settings_rounded, 'تنظیمات', () => _go(5)),
     ];
     return _pageShell(
       'بخش‌ها',
       GridView.count(
         crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        padding: const EdgeInsets.all(18),
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 1.25,
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         children: [
-          for (final t in tiles)
-            GestureDetector(
-              onTap: t.$3,
-              child: Container(
-                decoration: BoxDecoration(
-                    color: pill, borderRadius: BorderRadius.circular(22)),
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(t.$1, size: 30, color: ink),
-                      const SizedBox(height: 10),
-                      Text(t.$2, style: const TextStyle(fontSize: 14.5)),
-                    ]),
+          for (var i = 0; i < tiles.length; i++)
+            Stagger(
+              index: i,
+              child: GestureDetector(
+                onTap: tiles[i].$3,
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: pill, borderRadius: BorderRadius.circular(24)),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(tiles[i].$1, size: 32, color: ink),
+                        const SizedBox(height: 11),
+                        Text(tiles[i].$2,
+                            style: const TextStyle(fontSize: 15)),
+                      ]),
+                ),
               ),
             ),
         ],
@@ -418,16 +494,19 @@ class _ShellState extends State<Shell> {
       'واژهٔ روز',
       Center(
         child: Padding(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(30),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(e.ar,
+            Text(e.hasFa ? e.fa.first : e.ar,
                 style: const TextStyle(
-                    fontSize: 38, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            Text('به فارسی: ${e.fa.join('، ')}',
+                    fontSize: 40, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 10),
+            Text('برابرِ واژهٔ عربی «${e.ar}»',
+                style: const TextStyle(color: muted, fontSize: 15)),
+            const SizedBox(height: 14),
+            Text(e.fa.join('، '),
                 style: const TextStyle(fontSize: 19, height: 1.7),
                 textAlign: TextAlign.center),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
             OutlinedButton(
               onPressed: () => _showEntry(e),
               child: const Text('دیدن واژه'),
@@ -449,7 +528,7 @@ class _ShellState extends State<Shell> {
           if (j == null) {
             return const Center(
               child: Padding(
-                padding: EdgeInsets.all(28),
+                padding: EdgeInsets.all(30),
                 child: Text(
                     'کیبورد سورن از انتخاب‌ها و اصلاح‌های شما روی همین دستگاه یاد می‌گیرد.\nهنوز چیزی نیاموخته است؛ با کیبورد سورن بنویسید تا اینجا ببینید چه یاد گرفته.',
                     textAlign: TextAlign.center,
@@ -461,13 +540,13 @@ class _ShellState extends State<Shell> {
           final history = (j['history'] as List?) ?? [];
           final top = counts.entries.toList()
             ..sort((a, b) => (b.value as num).compareTo(a.value as num));
-          return ListView(padding: const EdgeInsets.all(20), children: [
+          return ListView(padding: const EdgeInsets.all(24), children: [
             Text('شمار اصلاح‌های پذیرفته‌شده: ${faNum(history.length)}',
                 style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 6),
             Text('واژه‌های آموخته‌شده: ${faNum(counts.length)}',
                 style: const TextStyle(fontSize: 16)),
-            const Divider(height: 28),
+            const Divider(height: 30),
             const Text('پرکاربردترین‌ها نزد شما',
                 style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
@@ -496,7 +575,7 @@ class _ShellState extends State<Shell> {
   Widget _settingsPage(Dictionary d) {
     return _pageShell(
       'تنظیمات',
-      ListView(padding: const EdgeInsets.all(18), children: [
+      ListView(padding: const EdgeInsets.all(22), children: [
         SwitchListTile(
           title: const Text('جایگزینی خودکار واژه‌های عربی با فارسی'),
           subtitle: const Text(
@@ -516,7 +595,29 @@ class _ShellState extends State<Shell> {
             await settings.save();
           },
         ),
-        const Divider(height: 30),
+        const Divider(height: 32),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text('ارتفاع کیبورد',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'short', label: Text('کوتاه')),
+              ButtonSegment(value: 'normal', label: Text('معمولی')),
+              ButtonSegment(value: 'tall', label: Text('بلند')),
+            ],
+            selected: {settings.kbHeight},
+            onSelectionChanged: (s) async {
+              setState(() => settings.kbHeight = s.first);
+              await settings.save();
+            },
+          ),
+        ),
+        const Divider(height: 32),
         ListTile(
           leading: const Icon(Icons.keyboard_rounded),
           title: const Text('فعال‌کردن کیبورد سورن'),
@@ -528,7 +629,7 @@ class _ShellState extends State<Shell> {
           title: const Text('برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی'),
           onTap: () => SharedFiles.showKeyboardPicker(),
         ),
-        const Divider(height: 30),
+        const Divider(height: 32),
         ListTile(
           leading: const Icon(Icons.system_update_rounded),
           title: const Text('به‌روزرسانی پایگاه واژه‌ها'),
@@ -542,7 +643,7 @@ class _ShellState extends State<Shell> {
           subtitle: const Text('JSON پایگاه در حافظهٔ برنامه ذخیره و مسیرش نشان داده می‌شود'),
           onTap: () => _exportDb(d),
         ),
-        const Divider(height: 30),
+        const Divider(height: 32),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
@@ -604,12 +705,12 @@ class _ShellState extends State<Shell> {
   Widget _pageShell(String title, Widget body) {
     return Column(children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
         child: Align(
           alignment: Alignment.centerRight,
           child: Text(title,
               style:
-                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                  const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
         ),
       ),
       Expanded(child: body),
@@ -626,7 +727,6 @@ class LexiconPage extends StatefulWidget {
 }
 
 class _LexiconPageState extends State<LexiconPage> {
-  final _scroll = ScrollController();
   final Map<String, GlobalKey> _keys = {};
 
   @override
@@ -648,52 +748,57 @@ class _LexiconPageState extends State<LexiconPage> {
       ),
       body: Row(children: [
         Expanded(
-          child: ListView.builder(
-            controller: _scroll,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: entries.length,
-            itemBuilder: (_, i) {
-              final e = entries[i];
-              final first = i == 0 || entries[i - 1].ar[0] != e.ar[0];
-              return Column(
-                key: first ? (_keys[e.ar[0]] ??= GlobalKey()) : null,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (first)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12, bottom: 2),
-                      child: Text(e.ar[0],
-                          style: const TextStyle(
-                              color: muted,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13)),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(children: [
-                      SizedBox(
-                          width: 96,
-                          child: Text(e.ar,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600))),
-                      Expanded(
-                        child: Text(
-                          e.hasFa ? e.fa.join('، ') : '—',
-                          textAlign: TextAlign.left,
-                          style: const TextStyle(color: muted, fontSize: 13.5),
-                        ),
+          child: ShaderMask(
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
+              stops: [0, 0.03, 0.97, 1],
+            ).createShader(rect),
+            blendMode: BlendMode.dstIn,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 4),
+              itemCount: entries.length,
+              itemBuilder: (_, i) {
+                final e = entries[i];
+                final first = i == 0 || entries[i - 1].ar[0] != e.ar[0];
+                return Column(
+                  key: first ? (_keys[e.ar[0]] ??= GlobalKey()) : null,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (first)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14, bottom: 2),
+                        child: Text(e.ar[0],
+                            style: const TextStyle(
+                                color: muted,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13)),
                       ),
-                    ]),
-                  ),
-                  const Divider(height: 1, color: Color(0xFFE2D8C2)),
-                ],
-              );
-            },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(children: [
+                        Expanded(
+                          child: Text(
+                            e.hasFa ? e.fa.join('، ') : '—',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 15.5),
+                          ),
+                        ),
+                        Text(e.ar,
+                            style: const TextStyle(
+                                color: muted, fontSize: 13.5)),
+                      ]),
+                    ),
+                    const Divider(height: 1, color: dividerC),
+                  ],
+                );
+              },
+            ),
           ),
         ),
-        // نمایهٔ الفبا در لبهٔ راست (مانند ویدیو)
         SizedBox(
-          width: 22,
+          width: 24,
           child: ListView(
             children: [
               for (final l in letters)
@@ -706,10 +811,10 @@ class _LexiconPageState extends State<LexiconPage> {
                     }
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.5),
+                    padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Text(l,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 10.5, color: muted)),
+                        style: const TextStyle(fontSize: 11, color: muted)),
                   ),
                 ),
             ],
@@ -746,37 +851,39 @@ class _CorrectorPageState extends State<CorrectorPage> {
           foregroundColor: ink,
           title: const Text('درست‌نویسی',
               style: TextStyle(fontWeight: FontWeight.w700))),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
+      body: ListView(padding: const EdgeInsets.all(24), children: [
         const Text(
             'متن بنویسید تا با همان موتوری که در کیبورد سورن کار می‌کند، درست شود:',
             style: TextStyle(color: muted, height: 1.8)),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         TextField(
           controller: _ctrl,
           onChanged: _run,
           maxLines: 4,
           decoration: InputDecoration(
-            hintText: 'مثلاً: میخام کتاب ها رو به همه افراد بدم، سوال دارم',
+            hintText: 'مثلاً: میخام عالیترین کتابها رو به همه افراد بدم، سوال دارم',
             filled: true,
             fillColor: card,
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide.none),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-              color: pill, borderRadius: BorderRadius.circular(18)),
+              color: pill, borderRadius: BorderRadius.circular(20)),
           child: Text(_out.isEmpty ? '…' : _out,
-              style: const TextStyle(fontSize: 17, height: 1.8)),
+              style: const TextStyle(fontSize: 17.5, height: 1.8)),
         ),
         if (_out.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: darkPill),
+            style: FilledButton.styleFrom(
+                backgroundColor: selectedPill,
+                padding: const EdgeInsets.symmetric(vertical: 14)),
             onPressed: () => Clipboard.setData(ClipboardData(text: _out)),
             child: const Text('کپی متن درست‌شده'),
           ),
@@ -786,20 +893,26 @@ class _CorrectorPageState extends State<CorrectorPage> {
   }
 }
 
-// ================= پندواژهٔ نیم‌فاصله =================
-class PandPage extends StatelessWidget {
-  const PandPage({super.key});
+// ================= نیم‌فاصله =================
+class NimeFaselePage extends StatelessWidget {
+  const NimeFaselePage({super.key});
   @override
   Widget build(BuildContext context) {
     const items = <(String, String)>[
-      ('نیم‌فاصله میان پیشوند و فعل',
-          'می‌خوام، نمی‌دونم، می‌رود — میان «می/نمی» و فعل همیشه نیم‌فاصله است، نه فاصلهٔ کامل و نه چسبیده.'),
+      ('میان پیشوند و فعل',
+          'می‌خوام، نمی‌دونم، می‌رود — میان «می/نمی» و بنِ فعل نیم‌فاصله است.'),
+      ('پسوندهای «تر» و «ترین»',
+          'عالی‌ترین، گرم‌تر، بزرگ‌ترین — به‌جز پنج واژهٔ چسبیده: بهتر، کمتر، بیشتر، مهتر، کهتر.'),
       ('«ها»ی جمع',
-          'کتاب‌ها، واژه‌ها، این‌ها — «ها» با نیم‌فاصله به واژه می‌چسبد.'),
+          'کتاب‌ها، واژه‌ها، کتابها هم اگر چسبیده تایپ شود کیبورد آن را کتاب‌ها می‌کند.'),
+      ('پایان فعل‌های گذشتهٔ نقلی',
+          'رفته‌ام، آمده‌ام، خوابیده‌اید — پسوندهای ام، ای، ایم، اید، اند پس از «ه» با نیم‌فاصله می‌آیند.'),
+      ('ضمیرهای چسبان پس از «ه» و «ی»',
+          'خانه‌اش، کشتی‌شان، صفحه‌ام — این پسوندها هم نیم‌فاصله می‌خواهند.'),
+      ('ترکیب‌های «شده» و پیشوند «بی»',
+          'گم‌شده، ترجمه‌شده، بی‌نهایت، بی‌آبرو.'),
       ('همزهٔ اضافه (ٔ)',
-          'همهٔ افراد، خانهٔ من، صفحهٔ نخست — پس از واژه‌های پایان‌یافته به «ه»، نشانهٔ اضافه «ٔ» است، نه «ی»: همه‌ی ✗'),
-      ('نیم‌فاصله در ترکیب‌ها',
-          'درست‌نویسی، واژه‌نامه، هم‌زمان — جزءهای یک واژهٔ مرکب با نیم‌فاصله به هم می‌پیوندند.'),
+          'همهٔ افراد، خانهٔ من، صفحهٔ نخست — پس از واژه‌های پایان‌یافته به «ه»، نشانهٔ اضافه «ٔ» است، نه «ی».'),
       ('فاصله و نشانه‌ها',
           'پیش از «،» و «.» و «؟» فاصله نمی‌آید: سلام، خوبی؟'),
     ];
@@ -808,28 +921,97 @@ class PandPage extends StatelessWidget {
           backgroundColor: cream,
           elevation: 0,
           foregroundColor: ink,
-          title: const Text('پندواژهٔ نیم‌فاصله',
+          title: const Text('نیم‌فاصله',
               style: TextStyle(fontWeight: FontWeight.w700))),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         children: [
-          for (final it in items)
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                  color: pill, borderRadius: BorderRadius.circular(18)),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(it.$1,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15.5)),
-                    const SizedBox(height: 6),
-                    Text(it.$2,
-                        style: const TextStyle(
-                            color: Color(0xFF5C5546), height: 1.9)),
-                  ]),
+          const Text(
+              'کیبورد سورن همهٔ این قاعده‌ها را هنگام تایپ، خودکار رعایت می‌کند.',
+              style: TextStyle(color: muted, height: 1.8)),
+          const SizedBox(height: 14),
+          for (var i = 0; i < items.length; i++)
+            Stagger(
+              index: i,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 13),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                    color: pill, borderRadius: BorderRadius.circular(20)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(items[i].$1,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 16)),
+                      const SizedBox(height: 7),
+                      Text(items[i].$2,
+                          style: const TextStyle(
+                              color: Color(0xFF5C5546), height: 1.9)),
+                    ]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ================= پندواژه (ضرب‌المثل‌ها) =================
+class PandvazhePage extends StatelessWidget {
+  const PandvazhePage({super.key});
+  static const proverbs = <(String, String)>[
+    ('از کوره دررفتن', 'زود خشمگین شدن و از اندازه بیرون رفتن.'),
+    ('آب در هاون کوبیدن', 'کار بیهوده و بی‌سرانجام کردن.'),
+    ('دست بالای دست بسیار است', 'همیشه کسی تواناتر از تو هست.'),
+    ('جوجه را آخر پاییز می‌شمارند', 'نتیجهٔ کار را باید در پایان دید، نه آغاز.'),
+    ('از دل برود هر آنکه از دیده برفت', 'دوری، مهر را کم می‌کند.'),
+    ('کار نیکو کردن از پر کردن است', 'خوبی با انباشته‌شدن از کارهای کوچک ساخته می‌شود.'),
+    ('هر که بامش بیش، برفش بیشتر', 'هر که دارایی و جایگاهش بزرگ‌تر، گرفتاری‌اش هم بیشتر.'),
+    ('آش کشک خاله‌ته، بخوری پاته نخوری پاته', 'کاری که گریزی از آن نیست؛ چه بخواهی چه نه، در آنی.'),
+    ('یک دست صدا ندارد', 'کار گروهی به‌تنهایی شدنی نیست.'),
+    ('از این ستون به آن ستون فرج است', 'با گذر زمان و جابه‌جایی، گشایشی پیش می‌آید.'),
+    ('عجله کار شیطان است', 'شتاب‌زدگی کار را خراب می‌کند.'),
+    ('حرف راست را باید از بچه شنید', 'راستِ بی‌پرده را کسی می‌گوید که نفعی در پنهان‌کردنش ندارد.'),
+    ('تا نباشد چیزکی، مردم نگویند چیزها', 'هر شایعه‌ای ریشه‌ای از راستی دارد.'),
+    ('دل به دل راه دارد', 'مهر و احساس میان دو کس دوسویه است.'),
+    ('صبر تلخ است ولیکن بر شیرین دارد', 'شکیبایی سخت است اما میوه‌اش شیرین است.'),
+    ('آنچه شیران را کند روبه‌مزاج، احتیاج است', 'نیاز، آدمِ دلیر را هم وادار به فروتنی می‌کند.'),
+    ('خواستن، توانستن است', 'ارادهٔ استوار راه رسیدن را باز می‌کند.'),
+    ('کبوتر با کبوتر، باز با باز', 'هر کس با هم‌گونهٔ خود می‌آمیزد.'),
+  ];
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+          backgroundColor: cream,
+          elevation: 0,
+          foregroundColor: ink,
+          title: const Text('پندواژه — ضرب‌المثل‌های فارسی',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17))),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          for (var i = 0; i < proverbs.length; i++)
+            Stagger(
+              index: i,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 13),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                    color: pill, borderRadius: BorderRadius.circular(20)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(proverbs[i].$1,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 16.5)),
+                      const SizedBox(height: 6),
+                      Text(proverbs[i].$2,
+                          style: const TextStyle(
+                              color: Color(0xFF5C5546), height: 1.9)),
+                    ]),
+              ),
             ),
         ],
       ),
@@ -866,17 +1048,17 @@ class FreshPage extends StatelessWidget {
           }
           final items = history.reversed.take(60).toList();
           return ListView.separated(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             itemCount: items.length,
             separatorBuilder: (_, __) =>
-                const Divider(height: 1, color: Color(0xFFE2D8C2)),
+                const Divider(height: 1, color: dividerC),
             itemBuilder: (_, i) {
               final m = items[i] as Map;
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 9),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(children: [
                   SizedBox(width: 96, child: Text('${m['from']}')),
-                  const Icon(Icons.arrow_back, size: 15, color: muted),
+                  const Icon(Icons.arrow_back_rounded, size: 15, color: muted),
                   const SizedBox(width: 10),
                   Text('${m['to']}',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -915,8 +1097,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
           : '«$w» واژه‌ای عربی است؛ هنوز برابر فارسی برایش ثبت نشده.');
       return;
     }
-    final asFa = widget.dict.entries
-        .where((e) => e.fa.any((f) => f.split('،').map((x) => x.trim()).contains(w) || f == w));
+    final asFa = widget.dict.entries.where((e) => e.fa.contains(w));
     if (asFa.isNotEmpty) {
       setState(() => _result =
           '«$w» واژه‌ای فارسی است (برابرِ «${asFa.first.ar}»).');
@@ -935,7 +1116,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
           title: const Text('ریشه‌شناسی',
               style: TextStyle(fontWeight: FontWeight.w700))),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(children: [
           TextField(
             onChanged: _check,
@@ -944,12 +1125,12 @@ class _EtymologyPageState extends State<EtymologyPage> {
               filled: true,
               fillColor: card,
               border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(26),
                   borderSide: BorderSide.none),
             ),
           ),
-          const SizedBox(height: 18),
-          Text(_result, style: const TextStyle(fontSize: 16.5, height: 1.9)),
+          const SizedBox(height: 20),
+          Text(_result, style: const TextStyle(fontSize: 17, height: 1.9)),
         ]),
       ),
     );
@@ -968,22 +1149,27 @@ class KeyboardGuidePage extends StatelessWidget {
           foregroundColor: ink,
           title: const Text('کیبورد سورن',
               style: TextStyle(fontWeight: FontWeight.w700))),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
+      body: ListView(padding: const EdgeInsets.all(24), children: [
         const Text(
-            'کیبورد سورن همان چیدمان آشنای کیبورد سامسونگ را دارد، با این تفاوت‌ها:\n\n'
-            '• هنگام زدن فاصله، املای واژه درست می‌شود: میخام ← می‌خوام.\n'
-            '• اگر «جایگزینی خودکار» روشن باشد، واژه‌های عربیِ دارای برابر فارسیِ تک‌واژه‌ای، خودکار فارسی می‌شوند؛ برابرهای چندواژه‌ای در نوار پیشنهاد بالای کیبورد می‌آیند.\n'
-            '• روی هر کلید نگه دارید تا نویسهٔ دومش را ببینید (مثل ص ← ض).\n'
-            '• کیبورد از انتخاب‌های شما روی همین دستگاه یاد می‌گیرد؛ پیشنهادها کم‌کم به سلیقهٔ شما نزدیک‌تر می‌شوند.\n\n'
+            'کیبورد سورن چیدمان و رفتار کیبورد سامسونگ را دارد:\n\n'
+            '• نوار بالا هنگام تایپ جای خود را به پیشنهادها می‌دهد و با پیکان برمی‌گردد.\n'
+            '• هنگام زدن فاصله یا اینتر، اصلاح و جایگزینی خودکار انجام می‌شود: میخام ← می‌خوام، سوال ← پرسش.\n'
+            '• کلید نیم‌فاصله در ردیف پایین است (نشانهٔ دو پیکان با خط‌چین)؛ برای چسباندن درستِ جزءهای واژه.\n'
+            '• روی هر کلید نگه دارید تا نویسهٔ دومش بیاید (ص ← ض)؛ پیش‌نمایش نویسه هم بالای کلید دیده می‌شود.\n'
+            '• پنل کلیپ‌بورد از نوار ابزار باز می‌شود و بریده‌هایتان را نگه می‌دارد.\n'
+            '• ارتفاع کیبورد از تنظیمات برنامه کم‌وزیاد می‌شود.\n'
+            '• کیبورد از انتخاب‌های شما روی همین دستگاه یاد می‌گیرد.\n\n'
             'برای فعال‌کردن: نخست از دکمهٔ زیر تنظیمات کیبورد را باز کنید و «کیبورد سورن» را روشن کنید، سپس آن را به‌عنوان کیبورد کنونی برگزینید.',
             style: TextStyle(height: 2, fontSize: 15)),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: darkPill),
+          style: FilledButton.styleFrom(
+              backgroundColor: selectedPill,
+              padding: const EdgeInsets.symmetric(vertical: 14)),
           onPressed: () => SharedFiles.openInputSettings(),
           child: const Text('بازکردن تنظیمات کیبورد اندروید'),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         OutlinedButton(
           onPressed: () => SharedFiles.showKeyboardPicker(),
           child: const Text('برگزیدن کیبورد کنونی'),

@@ -94,7 +94,14 @@ class Dictionary {
 class Settings {
   bool replaceArabic;
   bool autoCorrect;
-  Settings({this.replaceArabic = true, this.autoCorrect = true});
+
+  /// Keyboard height: 'short' | 'normal' | 'tall'
+  String kbHeight;
+  Settings({
+    this.replaceArabic = true,
+    this.autoCorrect = true,
+    this.kbHeight = 'tall',
+  });
 
   static Future<Settings> load() async {
     final j = await SharedFiles.readJson('souren_settings.json');
@@ -102,12 +109,14 @@ class Settings {
     return Settings(
       replaceArabic: j['replaceArabic'] != false,
       autoCorrect: j['autoCorrect'] != false,
+      kbHeight: (j['kbHeight'] as String?) ?? 'tall',
     );
   }
 
   Future<void> save() => SharedFiles.writeJson('souren_settings.json', {
         'replaceArabic': replaceArabic,
         'autoCorrect': autoCorrect,
+        'kbHeight': kbHeight,
       });
 }
 

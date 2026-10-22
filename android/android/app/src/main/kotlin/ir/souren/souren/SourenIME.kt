@@ -15,26 +15,40 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
-/** Souren keyboard — Samsung-style layout (same rows, toolbar and
- *  bottom bar as the reference screenshot), Persian-first, with the
- *  Souren correction engine and on-device learning wired in. */
+/** Souren keyboard v2 — modelled on the Samsung Keyboard (One UI):
+ *  a toolbar strip that swaps with the suggestion strip while typing
+ *  (back-arrow returns to the toolbar), Persian number row, long-press
+ *  alternates, a dedicated ZWNJ key (Samsung's dashed-arrow key),
+ *  key-press preview bubble, clipboard panel, symbols + English pages.
+ *  Icons are linear stroke vectors — no emoji anywhere. */
 class SourenIME : InputMethodService() {
 
-    private enum class Page { FA, EN, SYMBOLS, EMOJI }
+    private enum class Page { FA, EN, SYMBOLS, CLIPBOARD }
 
     private var page = Page.FA
     private var shifted = false
     private var capsLock = false
-    private lateinit var strip: LinearLayout
+    private lateinit var rootFrame: FrameLayout
+    private lateinit var stripArea: FrameLayout
+    private lateinit var toolbarView: LinearLayout
+    private lateinit var suggestView: LinearLayout
     private lateinit var keysBox: LinearLayout
+    private lateinit var preview: TextView
     private val handler = Handler(Looper.getMainLooper())
     private var deleteRepeat: Runnable? = null
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+    private fun rowHeight(): Int = when (KbData.kbHeight) {
+        "short" -> dp(47)
+        "normal" -> dp(53)
+        else -> dp(58)
+    }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
         super.onStartInput(info, restarting)
@@ -44,53 +58,71 @@ class SourenIME : InputMethodService() {
     }
 
     override fun onCreateInputView(): View {
-        val root = LinearLayout(this).apply {
+        rootFrame = FrameLayout(this)
+        val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#E8E8E8"))
             setPadding(dp(4), dp(6), dp(4), dp(4))
         }
-        // Suggestion strip
-        strip = LinearLayout(this).apply {
+        rootFrame.addView(content, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        // Strip area: toolbar XOR suggestions (Samsung behaviour)
+        stripArea = FrameLayout(this)
+        toolbarView = buildToolbar()
+        suggestView = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL or Gravity.END
-            setPadding(dp(6), 0, dp(6), 0)
+            setPadding(dp(4), 0, dp(4), 0)
+            visibility = View.GONE
         }
-        root.addView(strip, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(42)))
-        showHintStrip()
-        // Toolbar (Samsung order: emoji, clipboard, keyboard/언어, settings, more)
-        root.addView(buildToolbar())
-        // Keys
+        stripArea.addView(toolbarView)
+        stripArea.addView(suggestView)
+        content.addView(stripArea, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(46)))
+
         keysBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(keysBox)
+        content.addView(keysBox)
         rebuildKeys()
-        // Bottom bar: voice (left), collapse (right)
+
+        // Bottom bar: voice (icon), spacer, collapse (icon)
         val bottom = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        val mic = toolKey("🎙") { voiceInput() }
-        val spacer = View(this)
-        val hide = toolKey("⌄") { requestHideSelf(0) }
-        bottom.addView(mic, LinearLayout.LayoutParams(dp(52), dp(38)))
-        bottom.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
-        bottom.addView(hide, LinearLayout.LayoutParams(dp(52), dp(38)))
-        root.addView(bottom)
-        return root
+        bottom.addView(iconButton(R.drawable.ic_mic) { voiceInput() },
+            LinearLayout.LayoutParams(dp(52), dp(38)))
+        bottom.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        bottom.addView(iconButton(R.drawable.ic_chevron_down) { requestHideSelf(0) },
+            LinearLayout.LayoutParams(dp(52), dp(38)))
+        content.addView(bottom)
+
+        // Key-press preview bubble (hidden)
+        preview = TextView(this).apply {
+            textSize = 26f
+            gravity = Gravity.CENTER
+            setTextColor(Color.parseColor("#16181D"))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(10).toFloat()
+                setColor(Color.WHITE)
+                setStroke(dp(1), Color.parseColor("#D8D8D8"))
+            }
+            visibility = View.GONE
+        }
+        rootFrame.addView(preview, FrameLayout.LayoutParams(dp(52), dp(58)))
+        return rootFrame
     }
 
-    // ---------------- toolbar ----------------
-    private fun toolKey(label: String, onClick: () -> Unit): TextView {
-        return TextView(this).apply {
-            text = label
-            textSize = 17f
-            gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#3A3A3A"))
-            val bg = GradientDrawable().apply {
+    // ---------------- toolbar / strip ----------------
+    private fun iconButton(resId: Int, onClick: () -> Unit): ImageView {
+        return ImageView(this).apply {
+            setImageResource(resId)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setPadding(dp(11), dp(8), dp(11), dp(8))
+            background = GradientDrawable().apply {
                 cornerRadius = dp(20).toFloat()
                 setColor(Color.parseColor("#F2F2F2"))
             }
-            background = bg
             setOnClickListener { onClick() }
         }
     }
@@ -99,37 +131,78 @@ class SourenIME : InputMethodService() {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(dp(2), dp(2), dp(2), dp(6))
+            setPadding(dp(2), dp(3), dp(2), dp(3))
         }
         val items = listOf(
-            "😊" to { page = Page.EMOJI; rebuildKeys() },
-            "📋" to { pasteClipboard() },
-            "⌨" to {
+            R.drawable.ic_clipboard to { openClipboard() },
+            R.drawable.ic_keyboard to {
                 page = if (page == Page.EN) Page.FA else Page.EN
                 rebuildKeys()
             },
-            "⚙" to { openApp() },
-            "•••" to { page = Page.SYMBOLS; rebuildKeys() }
+            R.drawable.ic_sliders to { openApp() },
+            R.drawable.ic_more to { page = Page.SYMBOLS; rebuildKeys() }
         )
-        for ((label, action) in items) {
-            val k = toolKey(label, action)
-            val lp = LinearLayout.LayoutParams(dp(52), dp(38))
-            lp.marginStart = dp(10); lp.marginEnd = dp(10)
-            bar.addView(k, lp)
+        for ((res, action) in items) {
+            val b = iconButton(res, action)
+            val lp = LinearLayout.LayoutParams(dp(54), dp(38))
+            lp.marginStart = dp(12); lp.marginEnd = dp(12)
+            bar.addView(b, lp)
         }
         return bar
+    }
+
+    private fun showToolbar() {
+        toolbarView.visibility = View.VISIBLE
+        suggestView.visibility = View.GONE
+    }
+
+    private fun showSuggestions(chips: List<String>, word: String) {
+        suggestView.removeAllViews()
+        // back-arrow returns to the toolbar (Samsung behaviour)
+        suggestView.addView(iconButton(R.drawable.ic_arrow_back) { showToolbar() })
+        suggestView.addView(chip(word, bold = true) { showToolbar() })
+        for (s in chips) {
+            suggestView.addView(chip(s, bold = false) {
+                val ic = currentInputConnection ?: return@chip
+                val w = currentWord()
+                ic.deleteSurroundingText(w.length, 0)
+                ic.commitText(s, 1)
+                KbData.recordLearned(this, w, s)
+                refreshStrip()
+            })
+        }
+        toolbarView.visibility = View.GONE
+        suggestView.visibility = View.VISIBLE
+    }
+
+    private fun chip(text: String, bold: Boolean, onClick: () -> Unit): TextView {
+        return TextView(this).apply {
+            this.text = text
+            textSize = 15f
+            if (bold) paint.isFakeBoldText = true
+            setTextColor(Color.parseColor("#16181D"))
+            setPadding(dp(12), dp(6), dp(12), dp(6))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(16).toFloat()
+                setColor(Color.parseColor("#F7F7F7"))
+            }
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.marginStart = dp(4); lp.marginEnd = dp(4)
+            layoutParams = lp
+            setOnClickListener { onClick() }
+        }
     }
 
     // ---------------- key model ----------------
     private data class K(
         val label: String,
-        val out: String = label,
         val alt: String? = null,
         val weight: Float = 1f,
         val kind: Kind = Kind.CHAR,
-        val shiftedLabel: String? = null
+        val iconRes: Int = 0
     )
-    private enum class Kind { CHAR, SHIFT, DELETE, SPACE, ENTER, MODE, BACK }
+    private enum class Kind { CHAR, SHIFT, DELETE, SPACE, ENTER, MODE, BACK, ZWNJ }
 
     private fun rowsFor(p: Page): List<List<K>> = when (p) {
         Page.FA -> listOf(
@@ -150,10 +223,10 @@ class SourenIME : InputMethodService() {
             ),
             listOf(
                 K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K("🌐", kind = Kind.MODE, weight = 1.1f),
+                K("", kind = Kind.MODE, iconRes = R.drawable.ic_globe, weight = 1.1f),
                 K("،"),
-                K("فارسی", kind = Kind.SPACE, weight = 4f),
-                K("◀", out = "◀"), K("▶", out = "▶"),
+                K("فارسی", kind = Kind.SPACE, weight = 3.9f),
+                K("◀┆▶", kind = Kind.ZWNJ, weight = 1.2f),
                 K("."),
                 K("↵", kind = Kind.ENTER, weight = 1.4f)
             )
@@ -167,10 +240,9 @@ class SourenIME : InputMethodService() {
                 listOf(K("⌫", kind = Kind.DELETE, weight = 1.5f)),
             listOf(
                 K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K("🌐", kind = Kind.MODE, weight = 1.1f),
+                K("", kind = Kind.MODE, iconRes = R.drawable.ic_globe, weight = 1.1f),
                 K(","),
-                K("English", kind = Kind.SPACE, weight = 4f),
-                K("◀", out = "◀"), K("▶", out = "▶"),
+                K("English", kind = Kind.SPACE, weight = 4.6f),
                 K("."),
                 K("↵", kind = Kind.ENTER, weight = 1.4f)
             )
@@ -179,30 +251,16 @@ class SourenIME : InputMethodService() {
             listOf("!", "@", "#", "٪", "^", "&", "*", "(", ")", "/").map { K(it) },
             listOf("-", "+", "=", "_", ":", "؛", "؟", "!", "،", ".").map { K(it) },
             listOf("«", "»", "[", "]", "{", "}", "<", ">", "|", "\\").map { K(it) },
-            listOf("~", "`", "'", "\"", "…", "٫", "﷼", "€", "$", "°").map { K(it) },
+            listOf("~", "`", "'", "\"", "…", "٫", "€", "$", "°", "•").map { K(it) },
             listOf(
-                K("اب", kind = Kind.BACK, weight = 2f),
-                K("فارسی", kind = Kind.SPACE, weight = 5f),
+                K("◀"), K("▶"),
+                K("اب", kind = Kind.BACK, weight = 1.6f),
+                K("فارسی", kind = Kind.SPACE, weight = 4f),
                 K("⌫", kind = Kind.DELETE, weight = 1.5f),
                 K("↵", kind = Kind.ENTER, weight = 1.4f)
             )
         )
-        Page.EMOJI -> {
-            val emojis = listOf(
-                "😊", "😂", "😍", "🤣", "😅", "🙏", "❤️", "👍",
-                "🔥", "🎉", "😎", "🤔", "😴", "😢", "😡", "🥰",
-                "👏", "🙌", "💪", "👌", "✌️", "🤝", "🌹", "🌟",
-                "☀️", "🌙", "⚡", "❄️", "🍎", "🍇", "☕", "🍵"
-            )
-            val rows = emojis.chunked(8).map { r -> r.map { K(it) } }.toMutableList()
-            rows.add(listOf(
-                K("اب", kind = Kind.BACK, weight = 2f),
-                K("فارسی", kind = Kind.SPACE, weight = 5f),
-                K("⌫", kind = Kind.DELETE, weight = 1.5f),
-                K("↵", kind = Kind.ENTER, weight = 1.4f)
-            ))
-            rows
-        }
+        Page.CLIPBOARD -> emptyList()
     }
 
     private val shiftMap = mapOf(
@@ -212,6 +270,10 @@ class SourenIME : InputMethodService() {
 
     private fun rebuildKeys() {
         keysBox.removeAllViews()
+        if (page == Page.CLIPBOARD) {
+            keysBox.addView(buildClipboardPanel())
+            return
+        }
         for (row in rowsFor(page)) {
             val rowLayout = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -233,7 +295,7 @@ class SourenIME : InputMethodService() {
         val special = k.kind != Kind.CHAR
         val frame = FrameLayout(this).apply {
             background = keyBackground(special)
-            val lp = LinearLayout.LayoutParams(0, dp(50), k.weight)
+            val lp = LinearLayout.LayoutParams(0, rowHeight(), k.weight)
             lp.marginStart = dp(3); lp.marginEnd = dp(3)
             layoutParams = lp
         }
@@ -246,14 +308,28 @@ class SourenIME : InputMethodService() {
         ) {
             label = k.label.uppercase()
         }
-        val main = TextView(this).apply {
-            text = label
-            textSize = if (k.kind == Kind.SPACE) 14f else 19f
-            gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#16181D"))
+        if (k.iconRes != 0) {
+            val iv = ImageView(this).apply {
+                setImageResource(k.iconRes)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding(dp(10), dp(10), dp(10), dp(10))
+            }
+            frame.addView(iv, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        } else {
+            val main = TextView(this).apply {
+                text = label
+                textSize = when {
+                    k.kind == Kind.SPACE -> 14f
+                    k.kind == Kind.ZWNJ -> 13f
+                    else -> 19f
+                }
+                gravity = Gravity.CENTER
+                setTextColor(Color.parseColor("#16181D"))
+            }
+            frame.addView(main, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }
-        frame.addView(main, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         val altText = if (shifted) null else k.alt
         if (altText != null && page == Page.FA) {
             val alt = TextView(this).apply {
@@ -270,6 +346,7 @@ class SourenIME : InputMethodService() {
         return frame
     }
 
+    // ---------------- key behaviour ----------------
     private fun attachKeyBehavior(view: View, k: K, label: String) {
         view.setOnClickListener {
             when (k.kind) {
@@ -284,6 +361,7 @@ class SourenIME : InputMethodService() {
                         shifted = false; rebuildKeys()
                     }
                 }
+                Kind.ZWNJ -> commit(Corrector.ZWNJ)
                 Kind.SPACE -> onSpace()
                 Kind.ENTER -> onEnter()
                 Kind.DELETE -> deleteOnce()
@@ -294,9 +372,10 @@ class SourenIME : InputMethodService() {
                     rebuildKeys()
                 }
                 Kind.MODE -> {
-                    page = when (k.label) {
-                        "!#1" -> Page.SYMBOLS
-                        "🌐" -> if (page == Page.EN) Page.FA else Page.EN
+                    page = when {
+                        k.label == "!#1" -> Page.SYMBOLS
+                        k.iconRes == R.drawable.ic_globe ->
+                            if (page == Page.EN) Page.FA else Page.EN
                         else -> page
                     }
                     rebuildKeys()
@@ -311,12 +390,136 @@ class SourenIME : InputMethodService() {
                 else -> false
             }
         }
-        view.setOnTouchListener { _, ev ->
-            if (ev.action == MotionEvent.ACTION_UP || ev.action == MotionEvent.ACTION_CANCEL) {
-                stopDeleteRepeat()
+        view.setOnTouchListener { v, ev ->
+            when (ev.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (k.kind == Kind.CHAR && label.length == 1) showPreview(v, label)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    stopDeleteRepeat()
+                    handler.postDelayed({ preview.visibility = View.GONE }, 50)
+                }
             }
             false
         }
+    }
+
+    private fun showPreview(key: View, text: String) {
+        val rootLoc = IntArray(2); rootFrame.getLocationInWindow(rootLoc)
+        val keyLoc = IntArray(2); key.getLocationInWindow(keyLoc)
+        preview.text = text
+        val lp = preview.layoutParams as FrameLayout.LayoutParams
+        lp.leftMargin = keyLoc[0] - rootLoc[0] + key.width / 2 - dp(26)
+        lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(62)).coerceAtLeast(0)
+        preview.layoutParams = lp
+        preview.visibility = View.VISIBLE
+    }
+
+    // ---------------- clipboard panel ----------------
+    private fun openClipboard() {
+        // Remember the system's current clip as the newest history item.
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val cur = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
+        if (!cur.isNullOrEmpty()) KbData.rememberClipboard(this, cur)
+        page = Page.CLIPBOARD
+        rebuildKeys()
+    }
+
+    private fun buildClipboardPanel(): View {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(6), dp(8), dp(8))
+        }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val title = TextView(this).apply {
+            text = "کلیپ‌بورد"
+            textSize = 16f
+            paint.isFakeBoldText = true
+            setTextColor(Color.parseColor("#16181D"))
+        }
+        header.addView(title, LinearLayout.LayoutParams(0, dp(40), 1f))
+        val clear = TextView(this).apply {
+            text = "پاک‌کردن همه"
+            textSize = 13f
+            setTextColor(Color.parseColor("#8A2F2F"))
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            setOnClickListener {
+                val kept = KbData.clipboardItems(this@SourenIME).filter { it.second }
+                KbData.saveClipboardItems(this@SourenIME, kept)
+                rebuildKeys()
+            }
+        }
+        header.addView(clear)
+        val back = TextView(this).apply {
+            text = "بازگشت"
+            textSize = 13f
+            setTextColor(Color.parseColor("#16181D"))
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            setOnClickListener { page = Page.FA; rebuildKeys() }
+        }
+        header.addView(back)
+        panel.addView(header)
+
+        val items = KbData.clipboardItems(this)
+        val scroll = ScrollView(this)
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        if (items.isEmpty()) {
+            list.addView(TextView(this).apply {
+                text = "هنوز چیزی در کلیپ‌بورد نیست. متنی را کپی کنید و دوباره اینجا را باز کنید."
+                textSize = 14f
+                setTextColor(Color.parseColor("#6E6E6E"))
+                setPadding(dp(8), dp(16), dp(8), dp(16))
+            })
+        }
+        for ((text, pinned) in items) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(10).toFloat()
+                    setColor(Color.WHITE)
+                }
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+            }
+            val body = TextView(this).apply {
+                this.text = text
+                textSize = 15f
+                maxLines = 2
+                setTextColor(Color.parseColor("#16181D"))
+            }
+            row.addView(body, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            val pin = TextView(this).apply {
+                this.text = if (pinned) "سنجاق‌شده" else "سنجاق"
+                textSize = 12f
+                setTextColor(Color.parseColor("#8A8172"))
+                setPadding(dp(8), dp(4), dp(8), dp(4))
+                setOnClickListener {
+                    val all = KbData.clipboardItems(this@SourenIME)
+                    val updated = all.map {
+                        if (it.first == text) it.first to !it.second else it
+                    }
+                    KbData.saveClipboardItems(this@SourenIME, updated)
+                    rebuildKeys()
+                }
+            }
+            row.addView(pin)
+            row.setOnClickListener {
+                currentInputConnection?.commitText(text, 1)
+                page = Page.FA
+                rebuildKeys()
+            }
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.bottomMargin = dp(7)
+            list.addView(row, lp)
+        }
+        scroll.addView(list)
+        panel.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(208)))
+        return panel
     }
 
     // ---------------- editing ----------------
@@ -331,6 +534,16 @@ class SourenIME : InputMethodService() {
         val seps = charArrayOf(' ', '\n', '،', '.', '؟', '!', '؛', ':', '(', ')', '«', '»', '"')
         val idx = before.lastIndexOfAny(seps)
         return if (idx < 0) before else before.substring(idx + 1)
+    }
+
+    private fun refreshStrip() {
+        if (page != Page.FA && page != Page.EN) return
+        val word = currentWord()
+        if (word.length < 2 || page != Page.FA) { showToolbar(); return }
+        val suggestions = Corrector.suggestionsFor(
+            word, KbData.dictionary, KbData.learnedCounts, KbData.vocab)
+        if (suggestions.isEmpty()) showToolbar()
+        else showSuggestions(suggestions, word)
     }
 
     private fun onSpace() {
@@ -349,11 +562,20 @@ class SourenIME : InputMethodService() {
             }
         }
         ic.commitText(" ", 1)
-        showHintStrip()
+        showToolbar()
     }
 
     private fun onEnter() {
         val ic = currentInputConnection ?: return
+        // Auto-correction also applies on Enter (Samsung behaviour).
+        if (KbData.autoCorrect && page == Page.FA) {
+            val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: ""
+            val fix = Corrector.fixBeforeSeparator(before, KbData.dictionary, KbData.replaceArabic)
+            if (fix != null) {
+                ic.deleteSurroundingText(fix.first, 0)
+                ic.commitText(fix.second, 1)
+            }
+        }
         val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION)
             ?: EditorInfo.IME_ACTION_NONE
         if (action != EditorInfo.IME_ACTION_NONE &&
@@ -398,13 +620,6 @@ class SourenIME : InputMethodService() {
         ic.setSelection(pos, pos)
     }
 
-    private fun pasteClipboard() {
-        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val text = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
-        if (!text.isNullOrEmpty()) commit(text)
-        else Toast.makeText(this, "حافظهٔ موقت خالی است", Toast.LENGTH_SHORT).show()
-    }
-
     private fun openApp() {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -424,60 +639,7 @@ class SourenIME : InputMethodService() {
             switchInputMethod(voice.id)
         } else {
             imm.showInputMethodPicker()
-        }
-    }
-
-    // ---------------- suggestion strip ----------------
-    private fun showHintStrip() {
-        strip.removeAllViews()
-        val t = TextView(this).apply {
-            text = "سورن"
-            textSize = 13f
-            setTextColor(Color.parseColor("#8A8F98"))
-        }
-        strip.addView(t)
-    }
-
-    private fun refreshStrip() {
-        if (page != Page.FA && page != Page.EN) return
-        val word = currentWord()
-        if (word.length < 2) { showHintStrip(); return }
-        val suggestions = if (page == Page.FA) {
-            Corrector.suggestionsFor(word, KbData.dictionary, KbData.learnedCounts, KbData.vocab)
-        } else emptyList()
-        if (suggestions.isEmpty()) { showHintStrip(); return }
-        strip.removeAllViews()
-        // original word chip (tap = keep as typed)
-        strip.addView(chip(word, bold = true) { showHintStrip() })
-        for (s in suggestions) {
-            strip.addView(chip(s, bold = false) {
-                val ic = currentInputConnection ?: return@chip
-                val w = currentWord()
-                ic.deleteSurroundingText(w.length, 0)
-                ic.commitText(s, 1)
-                KbData.recordLearned(this, w, s)
-                refreshStrip()
-            })
-        }
-    }
-
-    private fun chip(text: String, bold: Boolean, onClick: () -> Unit): TextView {
-        return TextView(this).apply {
-            this.text = text
-            textSize = 15f
-            if (bold) paint.isFakeBoldText = true
-            setTextColor(Color.parseColor("#16181D"))
-            setPadding(dp(12), dp(6), dp(12), dp(6))
-            val bg = GradientDrawable().apply {
-                cornerRadius = dp(16).toFloat()
-                setColor(Color.parseColor("#F7F7F7"))
-            }
-            background = bg
-            val lp = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.marginStart = dp(4); lp.marginEnd = dp(4)
-            layoutParams = lp
-            setOnClickListener { onClick() }
+            Toast.makeText(this, "ورودی صوتی آماده نیست؛ از فهرست، ورودی صوتی را برگزینید", Toast.LENGTH_LONG).show()
         }
     }
 }

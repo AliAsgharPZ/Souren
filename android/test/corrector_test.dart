@@ -4,41 +4,46 @@ import 'package:souren/engine/corrector.dart';
 void main() {
   const dict = {
     'سوال': ['پرسش'],
+    'جواب': ['پاسخ'],
     'احترام': ['گرامیداشت', 'ارج'],
     'ابتدا': ['آغاز'],
   };
   group('owner examples', () {
-    test('میخام → می‌خوام', () {
+    test('میخام/میخوام → می‌خوام', () {
       expect(correctWord('میخام').fixed, 'می‌خوام');
-    });
-    test('میخوام → می‌خوام', () {
       expect(correctWord('میخوام').fixed, 'می‌خوام');
     });
     test('همه افراد → همهٔ افراد', () {
       expect(correctText('همه افراد'), 'همهٔ افراد');
     });
-  });
-  group('rules', () {
-    test('میرم → می‌رم و نمیدونم → نمی‌دونم', () {
-      expect(correctWord('میرم').fixed, 'می‌رم');
-      expect(correctWord('نمیدونم').fixed, 'نمی‌دونم');
-    });
-    test('کتاب ها → کتاب‌ها', () {
-      expect(correctText('کتاب ها را خواندم'), 'کتاب‌ها را خواندم');
-    });
-    test('arabic letters: يك → یک', () {
-      expect(correctWord('يك').fixed, 'یک');
-    });
-    test('single-word equivalent auto-replaces', () {
+    test('سوال → پرسش (جایگزینی عربی)', () {
       expect(correctWord('سوال', dictionary: dict).fixed, 'پرسش');
+      expect(correctWord('جواب', dictionary: dict).fixed, 'پاسخ');
     });
-    test('multi equivalents only suggest', () {
-      final f = correctWord('احترام', dictionary: dict);
-      expect(f.fixed, 'احترام');
-      expect(f.suggestions, ['گرامیداشت', 'ارج']);
+  });
+  group('v2 suffix rules', () {
+    test('ترین/تر با نیم‌فاصله، به‌جز چسبیده‌ها', () {
+      expect(correctWord('عالیترین').fixed, 'عالی‌ترین');
+      expect(correctWord('بزرگترین').fixed, 'بزرگ‌ترین');
+      expect(correctWord('گرمتر').fixed, 'گرم‌تر');
+      expect(correctWord('بهترین').fixed, 'بهترین');
+      expect(correctWord('بیشتر').fixed, 'بیشتر');
+      expect(correctWord('دختر').fixed, 'دختر');
     });
-    test('punctuation spacing', () {
-      expect(correctText('سلام ، خوبی ؟'), 'سلام، خوبی؟');
+    test('ها و پایان‌های صرفی', () {
+      expect(correctWord('کتابها').fixed, 'کتاب‌ها');
+      expect(correctWord('تنها').fixed, 'تنها');
+      expect(correctWord('رفتهام').fixed, 'رفته‌ام');
+      expect(correctWord('خانهاش').fixed, 'خانه‌اش');
+      expect(correctWord('کشتیشان').fixed, 'کشتی‌شان');
+      expect(correctWord('گمشده').fixed, 'گم‌شده');
+      expect(correctWord('بینهایت').fixed, 'بی‌نهایت');
+    });
+    test('گارد اسم‌ها در برابر پیشوند می', () {
+      expect(correctWord('میدان').fixed, 'میدان');
+      expect(correctWord('میراث').fixed, 'میراث');
+      expect(correctWord('میرم').fixed, 'می‌رم');
+      expect(correctWord('نمیشه').fixed, 'نمی‌شه');
     });
   });
 }

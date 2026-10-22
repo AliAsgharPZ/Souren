@@ -13,6 +13,7 @@ object KbData {
     @Volatile var vocab: List<String> = emptyList()
     @Volatile var replaceArabic: Boolean = true
     @Volatile var autoCorrect: Boolean = true
+    @Volatile var kbHeight: String = "tall"
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
     private var loaded = false
 
@@ -57,6 +58,7 @@ object KbData {
                 val j = JSONObject(f.readText())
                 replaceArabic = j.optBoolean("replaceArabic", true)
                 autoCorrect = j.optBoolean("autoCorrect", true)
+                kbHeight = j.optString("kbHeight", "tall")
             }
         } catch (e: Exception) { }
     }
@@ -101,3 +103,39 @@ object KbData {
         } catch (e: Exception) { }
     }
 }
+
+    // ---------------- clipboard panel store ----------------
+    fun clipboardItems(ctx: Context): MutableList<Pair<String, Boolean>> {
+        val out = mutableListOf<Pair<String, Boolean>>()
+        try {
+            val f = File(ctx.filesDir, "clipboard.json")
+            if (f.exists()) {
+                val arr = JSONObject(f.readText()).optJSONArray("items") ?: JSONArray()
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    out.add(o.getString("text") to o.optBoolean("pinned"))
+                }
+            }
+        } catch (e: Exception) { }
+        return out
+    }
+
+    fun saveClipboardItems(ctx: Context, items: List<Pair<String, Boolean>>) {
+        try {
+            val arr = JSONArray()
+            for ((t, p) in items.take(40)) {
+                arr.put(JSONObject().apply { put("text", t); put("pinned", p) })
+            }
+            File(ctx.filesDir, "clipboard.json")
+                .writeText(JSONObject().put("items", arr).toString())
+        } catch (e: Exception) { }
+    }
+
+    fun rememberClipboard(ctx: Context, text: String) {
+        if (text.isBlank()) return
+        val items = clipboardItems(ctx)
+        if (items.firstOrNull()?.first == text) return
+        items.removeAll { it.first == text }
+        items.add(0, text to false)
+        saveClipboardItems(ctx, items)
+    }

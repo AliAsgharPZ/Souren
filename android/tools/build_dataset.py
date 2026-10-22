@@ -44,12 +44,22 @@ for a0, p0, anchor_a, anchor_p in BLOCKS:
         assert word not in pairs, word
         pairs[word] = eq
 
+# Supplement: equivalents for the 210 words missing from Persian_All,
+# authored for Souren (data/supplement_fa.py) — order-verified there.
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "data"))
+from supplement_fa import PAIRS as SUPPLEMENT  # noqa: E402
+missing = [w for w in a if w not in pairs]
+assert [w for w, _ in SUPPLEMENT] == missing, "supplement order mismatch"
+for w, eq in SUPPLEMENT:
+    pairs[w] = [e.strip() for e in eq.split(",") if e.strip()]
+
 entries = []
 for w in a:
     entries.append({"ar": w, "fa": pairs.get(w, [])})
 out = {
-    "version": 1,
-    "source": "Arabic_All v1.5 + Persian_All v1.6 (owner upload, 2026-10-22)",
+    "version": 2,
+    "source": "Arabic_All v1.5 + Persian_All v1.6 (owner upload) + supplement_fa (210 equivalents authored for Souren v0.2)",
     "arabicCount": len(a),
     "pairCount": len(pairs),
     "entries": entries,
