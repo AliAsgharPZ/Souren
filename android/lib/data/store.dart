@@ -110,3 +110,13 @@ class Settings {
         'autoCorrect': autoCorrect,
       });
 }
+
+extension PickFile on SharedFiles {
+  static Future<String?> pickTextFile() async {
+    try {
+      return await SharedFiles._channel.invokeMethod<String>('pickTextFile');
+    } catch (_) {
+      return null;
+    }
+  }
+}

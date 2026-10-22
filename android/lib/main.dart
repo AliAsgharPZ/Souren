@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -556,14 +554,13 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _importDb() async {
-    final res = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['json', 'csv']);
-    if (res == null || res.files.single.path == null) return;
+    final content = await PickFile.pickTextFile();
+    if (content == null || content.trim().isEmpty) return;
     try {
-      final content =
-          await File(res.files.single.path!).readAsString();
       Map<String, dynamic> data;
-      if (res.files.single.extension == 'csv') {
+      if (content.trimLeft().startsWith('{')) {
+        data = jsonDecode(content) as Map<String, dynamic>;
+      } else {
         final entries = <Map<String, dynamic>>[];
         for (final line in const LineSplitter().convert(content)) {
           final parts = line.split(RegExp(r'[,;\t]'));
@@ -575,8 +572,6 @@ class _ShellState extends State<Shell> {
           }
         }
         data = {'version': (dict?.version ?? 1) + 1, 'entries': entries};
-      } else {
-        data = jsonDecode(content) as Map<String, dynamic>;
       }
       await SharedFiles.writeJson('dataset_updated.json', data);
       await _load();
