@@ -1,0 +1,31 @@
+name: souren
+description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker: ^8.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/db/dataset.json
+  fonts:
+    - family: Arad
+      fonts:
+        - asset: assets/fonts/arad/Arad-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/arad/Arad-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/arad/Arad-Bold.ttf
+          weight: 700
