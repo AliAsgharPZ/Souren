@@ -27,11 +27,11 @@ jobs:
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
         run: flutter test
+      - name: Build release APK (debug-signed for v0.1)
+        run: flutter build apk --release
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
-      - name: Build release APK (debug-signed for v0.1)
-        run: flutter build apk --release
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
