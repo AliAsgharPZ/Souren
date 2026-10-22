@@ -35,9 +35,14 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           if [ -n "$KS_B64" ]; then
-            echo "$KS_B64" | base64 -d > souren-release.keystore
-            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > key.properties
-            echo "release key ready"
+            CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
+            if printf '%s' "$CLEAN" | base64 -d > souren-release.keystore 2>/dev/null && [ -s souren-release.keystore ]; then
+              printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > key.properties
+              echo "release key ready"
+            else
+              echo "keystore decode failed; debug signing fallback"
+              rm -f souren-release.keystore
+            fi
           else
             echo "no keystore secret; debug signing fallback"
           fi
