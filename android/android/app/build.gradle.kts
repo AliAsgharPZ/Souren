@@ -13,7 +13,6 @@ val hasReleaseKey = keystorePropertiesFile.exists()
 if (hasReleaseKey) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
-println("SOUREN-SIGN hasReleaseKey=$hasReleaseKey path=${keystorePropertiesFile.absolutePath} storeFile=${keystoreProperties["storeFile"]}")
 
 android {
     namespace = "ir.souren.souren"
