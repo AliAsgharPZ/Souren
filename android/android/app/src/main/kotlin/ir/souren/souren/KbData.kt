@@ -102,7 +102,6 @@ object KbData {
             file.writeText(root.toString())
         } catch (e: Exception) { }
     }
-}
 
     // ---------------- clipboard panel store ----------------
     fun clipboardItems(ctx: Context): MutableList<Pair<String, Boolean>> {
@@ -139,3 +138,5 @@ object KbData {
         items.add(0, text to false)
         saveClipboardItems(ctx, items)
     }
+
+}
