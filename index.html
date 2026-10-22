@@ -18,6 +18,21 @@
             <a href="#features" class="nav-link">قابلیت‌ها</a>
             <a href="#download" class="nav-link nav-link-cta">دانلود</a>
         </div>
+        <div class="nav-account" id="navAccount">
+            <div id="accountLoggedOut">
+                <button class="btn-account" id="authOpenBtn" type="button">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
+                    ورود / ثبت‌نام
+                </button>
+            </div>
+            <div id="accountLoggedIn" hidden>
+                <button class="btn-account" id="profileOpenBtn" type="button">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
+                    <span id="navUserName"></span>
+                </button>
+                <button class="btn-account btn-account-quiet" id="logoutBtn" type="button">خروج</button>
+            </div>
+        </div>
     </nav>
 
     <!-- پیشگاه -->
@@ -141,6 +156,69 @@
         <div class="modal-content">
             <button class="close-modal" type="button" aria-label="بستن">&times;</button>
             <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- ورود / ثبت‌نام -->
+    <div id="authModal" class="modal" aria-hidden="true">
+        <div class="modal-content auth-content">
+            <button class="close-modal" type="button" data-close-auth aria-label="بستن">&times;</button>
+            <div class="auth-tabs" role="tablist">
+                <button class="auth-tab active" id="tabLogin" type="button">ورود</button>
+                <button class="auth-tab" id="tabRegister" type="button">ثبت‌نام</button>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+                <label class="field">
+                    <span>نام کاربری</span>
+                    <input type="text" id="loginUsername" autocomplete="username" required>
+                </label>
+                <label class="field">
+                    <span>گذرواژه</span>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required>
+                </label>
+                <p class="form-msg" id="loginMsg" hidden></p>
+                <button class="btn-primary btn-block" type="submit">ورود</button>
+            </form>
+
+            <form id="registerForm" class="auth-form" hidden>
+                <label class="field">
+                    <span>نام نمایشی</span>
+                    <input type="text" id="registerDisplayName" autocomplete="name" required>
+                </label>
+                <label class="field">
+                    <span>نام کاربری</span>
+                    <input type="text" id="registerUsername" autocomplete="username" required>
+                </label>
+                <label class="field">
+                    <span>گذرواژه</span>
+                    <input type="password" id="registerPassword" autocomplete="new-password" required>
+                </label>
+                <p class="form-msg" id="registerMsg" hidden></p>
+                <button class="btn-primary btn-block" type="submit">ثبت‌نام</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- پروفایل -->
+    <div id="profileModal" class="modal" aria-hidden="true">
+        <div class="modal-content auth-content">
+            <button class="close-modal" type="button" data-close-profile aria-label="بستن">&times;</button>
+            <h3 class="profile-title">پروفایل من</h3>
+            <form id="profileForm" class="auth-form">
+                <label class="field">
+                    <span>نام کاربری</span>
+                    <input type="text" id="profileUsername" readonly>
+                </label>
+                <label class="field">
+                    <span>نام نمایشی</span>
+                    <input type="text" id="profileDisplayName" autocomplete="name">
+                </label>
+                <p class="profile-favs">واژه‌های نشان‌شده: <strong id="profileFavCount">۰</strong></p>
+                <p class="form-msg" id="profileMsg" hidden></p>
+                <button class="btn-primary btn-block" type="submit">ذخیرهٔ پروفایل</button>
+                <button class="btn-ghost btn-block" id="profileLogoutBtn" type="button">خروج از حساب</button>
+            </form>
         </div>
     </div>
 

@@ -1,393 +1,830 @@
-/* Reset & Base */
+/* ============================================================
+   سورن — زبان طراحی برنامهٔ اندروید:
+   کرم #F7F1E3، کارت #EFE7D4، قرص #EEE6D2، جوهر #2B2620،
+   کم‌رنگ #8A8172، لهجهٔ تیرهٔ نرم #6E6455، جداکننده #E2D8C2
+   فونت آراد، گوشه‌های بزرگ و گرد، سایه‌های نرم، فاصلهٔ سخاوتمندانه
+   ============================================================ */
+
+@font-face {
+    font-family: 'Arad';
+    src: url('fonts/Arad-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Arad';
+    src: url('fonts/Arad-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Arad';
+    src: url('fonts/Arad-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --cream: #F7F1E3;
+    --card: #EFE7D4;
+    --pill: #EEE6D2;
+    --ink: #2B2620;
+    --muted: #8A8172;
+    --accent: #6E6455;
+    --divider: #E2D8C2;
+    --shadow-soft: 0 10px 30px rgba(43, 38, 32, 0.08);
+    --shadow-lift: 0 16px 40px rgba(43, 38, 32, 0.12);
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Vazir', 'Tahoma', 'Segoe UI', sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
 }
 
 body {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Arad', 'Tahoma', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
-    margin: 0;
+    padding: 18px 20px 0;
+    line-height: 1.8;
 }
 
-/* Header - لوگو وسط */
-header {
+a {
+    color: var(--accent);
+}
+
+::selection {
+    background: var(--card);
+}
+
+/* ---------- انیمیشن پیدا شدن ---------- */
+.reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 0.8, 0.32, 1);
+}
+.reveal.visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* ---------- ناوبری کپسولی ---------- */
+.capsule-nav {
+    position: sticky;
+    top: 14px;
+    z-index: 100;
     width: 100%;
+    max-width: 920px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--card);
+    border-radius: 999px;
+    padding: 10px 22px;
+    box-shadow: var(--shadow-soft);
+}
+
+.capsule-nav .brand {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.nav-link {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.98rem;
+    padding: 6px 16px;
+    border-radius: 999px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+.nav-link:hover {
+    background: var(--pill);
+}
+.nav-link.active {
+    background: var(--accent);
+    color: var(--cream);
+    font-weight: 700;
+}
+.nav-link-cta {
+    background: var(--pill);
+    font-weight: 700;
+}
+.nav-link-cta:hover {
+    background: var(--accent);
+    color: var(--cream);
+}
+
+/* ---------- پیشگاه ---------- */
+.hero {
+    width: 100%;
+    max-width: 920px;
+    text-align: center;
+    padding: 84px 10px 30px;
+}
+
+.hero-wordmark {
+    font-size: clamp(4.2rem, 15vw, 8.5rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+}
+
+.hero-tagline {
+    color: var(--muted);
+    font-size: clamp(1.02rem, 2.6vw, 1.25rem);
+    max-width: 640px;
+    margin: 14px auto 0;
+}
+
+.hero-actions {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 15px 0 30px 0;
-    flex-shrink: 0;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 32px;
 }
 
-.logo-container {
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: var(--cream);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 13px 30px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+}
+
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--pill);
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1.05rem;
+    padding: 13px 26px;
+    border-radius: 999px;
+    transition: transform 0.25s ease, background 0.25s ease;
+}
+.btn-ghost:hover {
+    transform: translateY(-2px);
+    background: var(--card);
+}
+
+.hero-chips {
     display: flex;
     justify-content: center;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 36px;
 }
-
-.logo {
-    max-width: 180px;
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    display: block;
-}
-
-/* Search Section */
-.search-container {
-    max-width: 800px;
-    width: 100%;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 10px;
-}
-
-.search-wrapper {
-    width: 55%;
-    max-width: 500px;
-    margin: 0 auto;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-}
-
-/* انیمیشن حرکت به بالا - اصلاح شده */
-.search-wrapper.move-up {
-    transform: translateY(-60px);
-    width: 50%;
-}
-
-/* برای دسکتاپ کمتر حرکت کنه */
-@media (min-width: 769px) {
-    .search-wrapper.move-up {
-        transform: translateY(-40px);
-    }
-}
-
-.search-box-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: white;
-    border-radius: 50px;
-    padding: 4px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-    border: 2px solid #dfe6e9;
-    transition: all 0.3s;
-}
-
-.search-box-container:focus-within {
-    border-color: #0984e3;
-    box-shadow: 0 8px 35px rgba(9, 132, 227, 0.2);
-}
-
-#searchBox {
-    flex: 1;
-    padding: 14px 22px;
-    border: none;
-    background: transparent;
-    font-size: 1rem;
-    color: #2d3436;
-    outline: none;
-    min-width: 0;
-}
-
-#searchBox::placeholder {
-    color: #b2bec3;
+.chip {
+    background: var(--card);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 6px 18px;
     font-size: 0.95rem;
 }
+.chip strong {
+    color: var(--ink);
+}
+.chip-arrow {
+    color: var(--accent);
+    margin: 0 4px;
+}
 
-#searchBtn {
-    background: #0984e3;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s;
+/* ---------- بخش‌ها ---------- */
+main {
+    width: 100%;
+    max-width: 920px;
+    flex: 1;
+}
+
+.section {
+    padding: 56px 0 8px;
+    scroll-margin-top: 96px;
+}
+
+.section-head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    min-width: 48px;
-    min-height: 48px;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 26px;
 }
 
-#searchBtn:hover {
-    background: #0652DD;
-    transform: scale(1.05);
+.section-title {
+    font-size: 1.9rem;
+    font-weight: 700;
 }
 
-#searchBtn svg {
-    width: 20px;
-    height: 20px;
+/* ---------- دیکشنری ---------- */
+.word-count {
+    background: var(--pill);
+    border-radius: 22px;
+    padding: 10px 22px;
+    text-align: center;
+    line-height: 1.5;
+}
+.word-count-label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink);
+}
+.word-count-num {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
-/* Cards Grid */
-.cards-grid {
-    display: none;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-    width: 100%;
-    max-width: 900px;
-    margin-top: 30px;
-    padding-bottom: 30px;
-}
-
-.cards-grid.active {
-    display: grid;
-    animation: fadeInUp 0.5s ease;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Card Item */
-.card-item {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-    transition: all 0.3s;
-    cursor: pointer;
-    border: 2px solid transparent;
-    animation: fadeInUp 0.3s ease;
-}
-
-.card-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    border-color: #0984e3;
-}
-
-.card-word {
-    font-size: 1.8rem;
-    color: #1e272e;
-    font-weight: 600;
-    margin-bottom: 10px;
-}
-
-.card-meanings {
+.search-box {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border-radius: 999px;
+    padding: 6px 20px 6px 8px;
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow 0.3s ease;
+}
+.search-box:focus-within {
+    box-shadow: var(--shadow-lift);
+}
+.search-icon {
+    color: var(--muted);
+    flex-shrink: 0;
+}
+#searchBox {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 1.02rem;
+    color: var(--ink);
+    padding: 12px 0;
+}
+#searchBox::placeholder {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+#searchBtn {
+    font-family: inherit;
+    background: var(--accent);
+    color: var(--cream);
+    border: none;
+    border-radius: 999px;
+    padding: 10px 24px;
+    min-height: 48px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+#searchBtn:hover {
+    transform: scale(1.04);
+}
+
+.list-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 30px 4px 8px;
+}
+
+/* محو شدن نرمِ بالا و پایین فهرست هنگام پیمایش — مانند برنامه */
+.dict-list-wrap {
+    max-height: 430px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+    padding: 6px 2px;
+}
+
+.dict-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.dict-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--divider);
+    cursor: pointer;
+    border-radius: 14px;
+    transition: background 0.2s ease;
+    animation: rowIn 0.35s ease both;
+}
+.dict-row:last-child {
+    border-bottom: none;
+}
+.dict-row:hover {
+    background: var(--card);
+}
+
+/* برابر فارسی: پررنگ و درشت‌تر — مهم‌تر از عربی (سلسله‌مراتب برنامه) */
+.row-fa {
+    font-weight: 700;
+    font-size: 1.12rem;
+    color: var(--ink);
+}
+.row-fa .fa-alt {
+    font-weight: 500;
+}
+/* واژهٔ عربی: کوچک‌تر و کم‌رنگ */
+.row-ar {
+    color: var(--muted);
+    font-size: 0.92rem;
+    white-space: nowrap;
+}
+.row-none {
+    color: #B4A888;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+@keyframes rowIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+.dict-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 44px 0;
+    font-size: 1.05rem;
+}
+
+.dict-hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 14px 4px 0;
+}
+
+/* ---------- قابلیت‌ها ---------- */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.feature-card {
+    background: var(--pill);
+    border-radius: 26px;
+    padding: 26px 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
+}
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--accent);
+    margin-bottom: 14px;
+}
+.feature-card h3 {
+    font-size: 1.12rem;
+    font-weight: 700;
     margin-bottom: 8px;
 }
-
-.card-meanings span {
-    background: #dfe6e9;
-    padding: 3px 14px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    color: #2d3436;
+.feature-card p {
+    color: #5C5546;
+    font-size: 0.96rem;
 }
 
-.card-concept {
-    color: #636e72;
-    font-size: 0.9rem;
-    margin-top: 8px;
-    padding-right: 12px;
-    border-right: 3px solid #0984e3;
-    background: #f8f9fa;
-    padding: 8px 12px;
-    border-radius: 0 12px 12px 0;
+/* ---------- دانلود ---------- */
+.download-section {
+    padding-bottom: 30px;
 }
-
-.no-result {
-    color: #b2bec3;
+.download-card {
+    background: var(--card);
+    border-radius: 30px;
+    padding: 44px 34px;
     text-align: center;
-    padding: 50px 0;
+    box-shadow: var(--shadow-soft);
+}
+.download-text {
+    color: var(--muted);
+    max-width: 560px;
+    margin: 12px auto 28px;
+}
+.btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--accent);
+    color: var(--cream);
+    text-decoration: none;
+    font-weight: 700;
     font-size: 1.2rem;
-    grid-column: 1 / -1;
+    padding: 16px 44px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.btn-download:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-lift);
+}
+.btn-version {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+}
+.download-note {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 20px;
 }
 
-/* Modal */
+/* ---------- مودال ---------- */
 .modal {
     display: none;
     position: fixed;
+    inset: 0;
     z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.3s;
+    background: rgba(43, 38, 32, 0.45);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.25s ease;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
 .modal-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 30px;
-    border-radius: 24px;
-    max-width: 500px;
-    width: 90%;
+    background: var(--cream);
+    margin: 9vh auto;
+    padding: 34px 32px;
+    border-radius: 28px;
+    max-width: 520px;
+    width: 92%;
     position: relative;
-    animation: slideDown 0.3s;
-    box-shadow: 0 10px 50px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-lift);
+    animation: slideDown 0.3s cubic-bezier(0.22, 0.8, 0.32, 1);
 }
-
 @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
+    from { transform: translateY(-36px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-
 .close-modal {
     position: absolute;
-    top: 15px;
-    left: 20px;
-    font-size: 2rem;
+    top: 14px;
+    left: 18px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: var(--pill);
+    color: var(--muted);
+    font-size: 1.5rem;
+    line-height: 1;
     cursor: pointer;
-    color: #636e72;
-    transition: 0.3s;
+    font-family: inherit;
+    transition: color 0.25s ease, transform 0.25s ease;
 }
-
 .close-modal:hover {
-    color: #e17055;
+    color: var(--ink);
     transform: rotate(90deg);
 }
-
-.modal-word {
-    font-size: 2.5rem;
-    color: #1e272e;
-    font-weight: 600;
-    margin-bottom: 15px;
-    text-align: center;
+.modal-fa {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.5;
 }
-
-.modal-meanings {
-    margin: 15px 0;
+.modal-fa .fa-alt {
+    font-size: 1.5rem;
+    font-weight: 500;
 }
-
-.modal-meanings span {
-    background: #dfe6e9;
-    padding: 5px 18px;
-    border-radius: 25px;
-    display: inline-block;
-    margin: 4px 6px 4px 0;
+.modal-ar {
+    color: var(--muted);
     font-size: 1rem;
+    margin-top: 4px;
 }
-
 .modal-concept {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 12px;
-    border-right: 4px solid #0984e3;
-    margin-top: 15px;
-    color: #2d3436;
-    line-height: 1.8;
+    background: var(--pill);
+    border-radius: 20px;
+    padding: 18px 20px;
+    margin-top: 22px;
+    line-height: 1.9;
 }
-
 .modal-concept strong {
-    color: #2c3e50;
+    display: block;
+    color: var(--accent);
+    margin-bottom: 4px;
 }
 
-/* Footer */
+/* ---------- فوتر ---------- */
 footer {
     width: 100%;
-    padding: 20px 0;
+    max-width: 920px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 26px 10px 34px;
+    margin-top: 44px;
+    border-top: 1px solid var(--divider);
+    color: var(--muted);
+    font-size: 0.92rem;
     text-align: center;
-    color: #636e72;
-    margin-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.3);
+}
+footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+footer a:hover {
+    text-decoration: underline;
+}
+.footer-sep {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--divider);
+}
+
+/* ---------- حساب کاربری در ناوبری ---------- */
+.nav-account {
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
 }
-
-.heart {
-    color: #e17055;
-    font-style: normal;
-    display: inline-block;
-    animation: heartbeat 1.5s ease-in-out infinite;
+#accountLoggedIn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#accountLoggedIn[hidden] {
+    display: none;
+}
+.btn-account {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--cream);
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    min-height: 42px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.btn-account:hover {
+    transform: translateY(-1px);
+}
+.btn-account-quiet {
+    background: var(--pill);
+    color: var(--ink);
+    font-weight: 500;
 }
 
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+/* ---------- فرم‌های ورود و پروفایل ---------- */
+.auth-content {
+    max-width: 440px;
+}
+.auth-tabs {
+    display: flex;
+    background: var(--pill);
+    border-radius: 999px;
+    padding: 5px;
+    margin-bottom: 24px;
+}
+.auth-tab {
+    flex: 1;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 9px 0;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+.auth-tab.active {
+    background: var(--accent);
+    color: var(--cream);
+    font-weight: 700;
+}
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.auth-form[hidden] {
+    display: none;
+}
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.field span {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink);
+    padding-right: 6px;
+}
+.field input {
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 11px 20px;
+    outline: none;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+.field input:focus {
+    border-color: var(--accent);
+    background: var(--cream);
+}
+.field input[readonly] {
+    color: var(--muted);
+}
+.btn-block {
+    width: 100%;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 4px;
+}
+.form-msg {
+    border-radius: 16px;
+    padding: 10px 16px;
+    font-size: 0.93rem;
+    line-height: 1.7;
+}
+.form-msg.error {
+    background: #F3E2D8;
+    color: #8A4B2A;
+}
+.form-msg.success {
+    background: #E7EBD6;
+    color: #4C6034;
+}
+.profile-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+.profile-favs {
+    color: var(--muted);
+    font-size: 0.95rem;
+    padding-right: 6px;
+}
+.profile-favs strong {
+    color: var(--ink);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .search-wrapper {
-        width: 80%;
-    }
-    
-    .search-wrapper.move-up {
-        transform: translateY(-80px);
-        width: 70%;
-    }
-    
-    .cards-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 15px;
-    }
-    
-    .modal-content {
-        margin: 20% auto;
-        padding: 20px;
-    }
-    
-    .modal-word {
-        font-size: 2rem;
-    }
-    
-    .logo {
-        max-width: 140px;
-    }
+/* ---------- نشان‌کردن واژه ---------- */
+.fav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--pill);
+    border: none;
+    border-radius: 999px;
+    padding: 9px 20px;
+    min-height: 44px;
+    margin-top: 22px;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+.fav-btn svg {
+    fill: none;
+    stroke: currentColor;
+}
+.fav-btn.active {
+    background: var(--accent);
+    color: var(--cream);
+}
+.fav-btn.active svg {
+    fill: currentColor;
+}
+.row-fav {
+    display: inline-flex;
+    color: var(--accent);
+    margin-right: 8px;
+    vertical-align: -3px;
+}
+.row-fav svg {
+    fill: currentColor;
+    stroke: currentColor;
 }
 
-@media (max-width: 480px) {
-    .search-wrapper {
-        width: 95%;
+/* ---------- واکنش‌گرا ---------- */
+@media (max-width: 640px) {
+    body {
+        padding: 12px 14px 0;
     }
-    
-    .search-wrapper.move-up {
-        transform: translateY(-60px);
-        width: 90%;
-    }
-    
-    .cards-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    
-    #searchBox {
-        padding: 12px 16px;
-        font-size: 0.95rem;
-    }
-    
-    #searchBtn {
+    .capsule-nav {
         padding: 8px 14px;
-        min-width: 42px;
-        min-height: 42px;
+        top: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
-    
-    #searchBtn svg {
-        width: 18px;
-        height: 18px;
+    .btn-account {
+        padding: 7px 14px;
+        font-size: 0.88rem;
     }
-    
-    .logo {
-        max-width: 120px;
+    .capsule-nav .brand {
+        font-size: 1.25rem;
+    }
+    .nav-link {
+        padding: 5px 11px;
+        font-size: 0.9rem;
+    }
+    .hero {
+        padding: 58px 4px 20px;
+    }
+    .section {
+        padding: 44px 0 4px;
+        scroll-margin-top: 84px;
+    }
+    .section-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .search-box {
+        padding-right: 14px;
+    }
+    #searchBtn {
+        padding: 10px 18px;
+    }
+    .dict-list-wrap {
+        max-height: 380px;
+    }
+    .download-card {
+        padding: 34px 22px;
+    }
+    .btn-download {
+        padding: 14px 32px;
+        font-size: 1.08rem;
+    }
+    .modal-content {
+        padding: 28px 22px;
+    }
+    .modal-fa {
+        font-size: 1.65rem;
     }
 }
