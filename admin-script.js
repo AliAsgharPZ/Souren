@@ -1,5 +1,20 @@
 // ===== تنظیمات گیت‌هاب =====
-const GITHUB_TOKEN = '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';
+// توکن هرگز در رپو ذخیره نمی‌شود؛ فقط در مرورگر خود ادمین (localStorage) نگه‌داری می‌شود.
+const GITHUB_TOKEN_KEY = 'souren_github_token';
+
+function getGitHubToken() {
+    let t = (localStorage.getItem(GITHUB_TOKEN_KEY) || '').trim();
+    if (!t) {
+        t = (prompt('توکن گیت‌هاب (با دسترسی Contents: خواندن و نوشتن روی رپوی Souren) را وارد کن. فقط همین یک‌بار؛ در مرورگر خودت ذخیره می‌شود و در رپو ثبت نمی‌شود:') || '').trim();
+        if (t) localStorage.setItem(GITHUB_TOKEN_KEY, t);
+    }
+    return t;
+}
+
+function forgetGitHubToken() {
+    localStorage.removeItem(GITHUB_TOKEN_KEY);
+    alert('توکن ذخیره‌شده پاک شد.');
+}
 const GITHUB_USER = 'AliAsgharPZ';
 const GITHUB_REPO = 'Souren';
 const GITHUB_BRANCH = 'main'; // اگر ارور داد به master تغییر بده
@@ -11,11 +26,17 @@ let currentAdmin = null;
 // ===== آپلود فایل در گیت‌هاب =====
 async function uploadToGitHub(filename, data) {
     try {
+        const token = getGitHubToken();
+        if (!token) {
+            console.log('❌ توکن گیت‌هاب تنظیم نشده؛ آپلود انجام نشد.');
+            alert('توکن گیت‌هاب وارد نشده — آپلود انجام نشد.');
+            return { success: false, error: 'missing_token' };
+        }
         console.log(`📤 در حال آپلود ${filename}...`);
         
         const checkRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
             headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Authorization': `token ${token}`,
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
@@ -38,7 +59,7 @@ async function uploadToGitHub(filename, data) {
         const uploadRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Authorization': `token ${token}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/vnd.github.v3+json'
             },
