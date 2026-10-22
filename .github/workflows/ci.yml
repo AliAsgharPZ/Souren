@@ -36,12 +36,12 @@ jobs:
         run: |
           if [ -n "$KS_B64" ]; then
             CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
-            if printf '%s' "$CLEAN" | base64 -d > souren-release.keystore 2>/dev/null && [ -s souren-release.keystore ]; then
-              printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > key.properties
+            if printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore 2>/dev/null && [ -s android/souren-release.keystore ]; then
+              printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
               echo "release key ready"
             else
               echo "keystore decode failed; debug signing fallback"
-              rm -f souren-release.keystore
+              rm -f android/souren-release.keystore
             fi
           else
             echo "no keystore secret; debug signing fallback"
