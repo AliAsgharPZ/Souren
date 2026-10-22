@@ -47,7 +47,10 @@ jobs:
             echo "no keystore secret; debug signing fallback"
           fi
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
+          BT=$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          $ANDROID_HOME/build-tools/$BT/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -3
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
