@@ -1,20 +1,7 @@
 // ===== تنظیمات گیت‌هاب =====
-// توکن هرگز در رپو ذخیره نمی‌شود؛ فقط در مرورگر خود ادمین (localStorage) نگه‌داری می‌شود.
-const GITHUB_TOKEN_KEY = 'souren_github_token';
+// آپلودها از مسیر /api/upload روی خود سایت انجام می‌شوند؛ توکن گیت‌هاب به‌صورت Secret
+// در Worker کلادفلر نگه‌داری می‌شود و هرگز به مرورگر نمی‌رسد.
 
-function getGitHubToken() {
-    let t = (localStorage.getItem(GITHUB_TOKEN_KEY) || '').trim();
-    if (!t) {
-        t = (prompt('توکن گیت‌هاب (با دسترسی Contents: خواندن و نوشتن روی رپوی Souren) را وارد کن. فقط همین یک‌بار؛ در مرورگر خودت ذخیره می‌شود و در رپو ثبت نمی‌شود:') || '').trim();
-        if (t) localStorage.setItem(GITHUB_TOKEN_KEY, t);
-    }
-    return t;
-}
-
-function forgetGitHubToken() {
-    localStorage.removeItem(GITHUB_TOKEN_KEY);
-    alert('توکن ذخیره‌شده پاک شد.');
-}
 const GITHUB_USER = 'AliAsgharPZ';
 const GITHUB_REPO = 'Souren';
 const GITHUB_BRANCH = 'main'; // اگر ارور داد به master تغییر بده
@@ -23,62 +10,37 @@ const GITHUB_BRANCH = 'main'; // اگر ارور داد به master تغییر �
 let admins = [];
 let currentAdmin = null;
 
-// ===== آپلود فایل در گیت‌هاب =====
+// ===== آپلود فایل در گیت‌هاب (از مسیر امن سایت) =====
 async function uploadToGitHub(filename, data) {
     try {
-        const token = getGitHubToken();
-        if (!token) {
-            console.log('❌ توکن گیت‌هاب تنظیم نشده؛ آپلود انجام نشد.');
-            alert('توکن گیت‌هاب وارد نشده — آپلود انجام نشد.');
-            return { success: false, error: 'missing_token' };
+        if (!currentAdmin) {
+            return { success: false, error: { message: 'ابتدا وارد شوید.' } };
         }
         console.log(`📤 در حال آپلود ${filename}...`);
-        
-        const checkRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
+        const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                filename: filename,
+                data: data,
+                username: currentAdmin.username,
+                password: currentAdmin.password
+            })
         });
-        
-        let sha = null;
-        if (checkRes.ok) {
-            const fileData = await checkRes.json();
-            sha = fileData.sha;
-        }
-        
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-        const body = {
-            message: `آپدیت ${filename} - ${new Date().toLocaleString('fa-IR')}`,
-            content: content,
-            branch: GITHUB_BRANCH
-        };
-        
-        if (sha) body.sha = sha;
-        
-        const uploadRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github.v3+json'
-            },
-            body: JSON.stringify(body)
-        });
-        
-        if (uploadRes.ok) {
+        const out = await res.json().catch(() => ({ success: false, error: 'bad_response' }));
+        if (res.ok && out.success) {
             console.log(`✅ ${filename} آپلود شد!`);
             return { success: true };
-        } else {
-            const error = await uploadRes.json();
-            console.log(`❌ خطا:`, error);
-            return { success: false, error: error };
         }
+        console.log('❌ خطا:', out);
+        const msg = out.error === 'unauthorized' ? 'نام کاربری یا رمز اشتباه است.' : (out.error || 'خطای سرور');
+        return { success: false, error: { message: msg } };
     } catch (e) {
-        console.log(`❌ خطا:`, e);
-        return { success: false, error: e.message };
+        console.log('❌ خطا:', e);
+        return { success: false, error: { message: e.message } };
     }
 }
+
 
 // ===== بارگذاری از گیت‌هاب =====
 async function loadFromGitHub(filename) {
