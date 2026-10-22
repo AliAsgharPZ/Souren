@@ -154,7 +154,7 @@ async function hashPassword(password, saltB64) {
     const key = await crypto.subtle.importKey(
         'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
     const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: unb64(saltB64), iterations: 100000, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: unb64(saltB64), iterations: 60000, hash: 'SHA-256' },
         key, 256);
     return b64(bits);
 }
@@ -188,6 +188,11 @@ function sessionCookie(token, maxAge) {
 }
 
 async function handleRegister(request, env) {
+  try { return await registerInner(request, env); }
+  catch (e) { return json(request, { error: 'server_error', detail: String((e && e.message) || e) }, 500); }
+}
+
+async function registerInner(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
     const username = (body.username || '').trim();
@@ -213,6 +218,11 @@ async function handleRegister(request, env) {
 }
 
 async function handleLogin(request, env) {
+  try { return await loginInner(request, env); }
+  catch (e) { return json(request, { error: 'server_error', detail: String((e && e.message) || e) }, 500); }
+}
+
+async function loginInner(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
     const username = (body.username || '').trim();
