@@ -27,7 +27,21 @@ jobs:
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
         run: flutter test
-      - name: Build release APK (debug-signed for v0.1)
+      - name: Release signing key (from secrets, if present)
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PW: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > souren-release.keystore
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > key.properties
+            echo "release key ready"
+          else
+            echo "no keystore secret; debug signing fallback"
+          fi
+      - name: Build release APK
         run: flutter build apk --release
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
