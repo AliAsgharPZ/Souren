@@ -3,21 +3,17 @@ description: «سورن» — دیکشنری عربی به فارسی و کیب�
 publish_to: 'none'
 version: 0.3.1+5
 
-
 environment:
   sdk: ^3.13.5
-
 
 dependencies:
   flutter:
     sdk: flutter
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-
 
 flutter:
   uses-material-design: true
