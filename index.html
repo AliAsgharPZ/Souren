@@ -74,6 +74,8 @@
                 <button id="searchBtn" type="button">جستجو</button>
             </div>
 
+            <div class="cat-chips" id="categoryChips" aria-label="پالایهٔ دسته‌بندی"></div>
+
             <h3 class="list-title" id="listTitle">پرکاربردترین واژگان فارسی</h3>
             <div class="dict-list-wrap">
                 <div class="dict-list" id="dictList" role="list"></div>
@@ -121,6 +123,26 @@
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></span>
                     <h3>پایگاه واژه‌های به‌روزشونده</h3>
                     <p>پایگاه واژه‌ها ثابت نیست؛ می‌توانید آن را با فایل تازه (JSON یا CSV) به‌روز کنید و از آن خروجی بگیرید.</p>
+                </article>
+                <article class="feature-card reveal">
+                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.7C6.4 17 3 13.6 3 9.9 3 7.2 5 5 7.7 5c1.7 0 3.3.9 4.3 2.4C13 5.9 14.6 5 16.3 5 19 5 21 7.2 21 9.9c0 3.7-3.4 7.1-9 10.8Z"/></svg></span>
+                    <h3>پسندیده‌ها</h3>
+                    <p>تازه در نسخهٔ ۰٫۳٫۰: روی هر واژه یک قلب است؛ بزنید تا پسندیده شود و شمار پسندهای همهٔ کاربران را کنار همان واژه ببینید — هم در فهرست دیکشنری و هم در پنجرهٔ واژه.</p>
+                </article>
+                <article class="feature-card reveal">
+                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v6H4zM14 15h6v6h-6z"/></svg></span>
+                    <h3>دسته‌بندی‌ها</h3>
+                    <p>تازه در نسخهٔ ۰٫۳٫۰: واژه‌ها در ۱۲ دسته بر پایهٔ زمینه و پیشه چیده شده‌اند؛ از پزشکی و تندرستی تا سفر و جابه‌جایی — و در سایت هم بالای فهرست دیکشنری با همان دسته‌ها پالایه می‌شوند.</p>
+                </article>
+                <article class="feature-card reveal">
+                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/><path d="m18.5 2.8.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6Z"/></svg></span>
+                    <h3>نمایهٔ کاربری</h3>
+                    <p>تازه در نسخهٔ ۰٫۳٫۰: با یک حساب هم در برنامه و هم در سایت وارد شوید؛ نمایه‌تان امتیاز و سطح شما و ۶ بج را نشان می‌دهد و نشان‌شده‌ها و پسندیده‌هایتان همگام می‌ماند.</p>
+                </article>
+                <article class="feature-card reveal">
+                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></span>
+                    <h3>پیکربندی</h3>
+                    <p>تازه در نسخهٔ ۰٫۳٫۰: نمایش را به سلیقهٔ خودتان بچینید — تم روشنِ کرم یا تیره، فونت آراد یا فونت سیستم، اندازهٔ نوشته و جهت راست‌چین یا چپ‌چین.</p>
                 </article>
             </div>
         </section>
@@ -215,6 +237,7 @@
                     <input type="text" id="profileDisplayName" autocomplete="name">
                 </label>
                 <p class="profile-favs">واژه‌های نشان‌شده: <strong id="profileFavCount">۰</strong></p>
+                <p class="profile-favs">واژه‌های پسندیده: <strong id="profileLikeCount">۰</strong></p>
                 <p class="form-msg" id="profileMsg" hidden></p>
                 <button class="btn-primary btn-block" type="submit">ذخیرهٔ پروفایل</button>
                 <button class="btn-ghost btn-block" id="profileLogoutBtn" type="button">خروج از حساب</button>

@@ -22,7 +22,8 @@ function esc(s) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ===== فراخوانی API ورکر =====
@@ -70,13 +71,14 @@ async function loadDictionary() {
 
     const countEl = document.getElementById('wordCount');
     if (countEl) countEl.textContent = faNum(dictionary.length);
-    renderList(dictionary, 'پرکاربردترین واژگان فارسی');
+    renderCurrent();
 }
 
 // ===== نرمال‌سازی عربی (همان رفتار نسخهٔ پیشین) =====
 function normalizeArabic(text) {
     const map = {
-        'ك': 'ک', 'ي': 'ی', 'ة': 'ه', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا',
+        'ك': 'ک', 'ي': 'ی', 'ة': 'ه', 'ۀ': 'هٔ', 'أ': 'ا', 'إ': 'ا', 'آ': 'ا',
+        'ٱ': 'ا', 'ؤ': 'و', 'ـ': '',
         'َ': '', 'ُ': '', 'ِ': '', 'ّ': '', 'ْ': '', 'ً': '', 'ٍ': '', 'ٌ': ''
     };
     return String(text || '').split('').map((ch) => map[ch] || ch).join('');
@@ -100,7 +102,7 @@ function searchDictionary(query) {
         }
 
         if (score < 70) {
-            for (let m of entry.meanings) {
+            for (let m of (entry.meanings || [])) {
                 if (m.includes(q) || q.includes(m)) {
                     score = 60;
                     break;
@@ -109,7 +111,7 @@ function searchDictionary(query) {
         }
 
         if (score < 50 && entry.concept) {
-            if (entry.concept.includes(q) || q.includes(entry.concept)) {
+            if (entry.concept.includes(q)) {
                 score = 30;
             }
         }
@@ -148,7 +150,7 @@ async function syncFavorites() {
     try {
         await api('/api/auth/profile', {
             method: 'PUT',
-            body: JSON.stringify({ displayName: currentUser.displayName, favorites })
+            body: JSON.stringify({ displayName: currentUser.displayName, favorites, likes })
         });
     } catch (e) { /* نسخهٔ محلی نگه داشته شد؛ همگام‌سازی بعدی دوباره تلاش می‌شود */ }
 }
@@ -172,11 +174,7 @@ function refreshFavoriteUi(word) {
     if (btn && btn.dataset.word === word.arabic) {
         paintFavBtn(btn, word);
     }
-    // بازرندر فهرست با حفظ جای پیمایش
-    const wrap = document.querySelector('.dict-list-wrap');
-    const top = wrap ? wrap.scrollTop : 0;
-    renderList(currentWords, currentTitle);
-    if (wrap) wrap.scrollTop = top;
+    refreshListUi();
 }
 
 const BOOKMARK_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12V21l-6-4.2L6 21Z"/></svg>';
@@ -186,6 +184,217 @@ function paintFavBtn(btn, word) {
     btn.classList.toggle('active', active);
     btn.innerHTML = BOOKMARK_SVG + '<span>' + (active ? 'نشان‌شده' : 'نشان‌کردن') + '</span>';
 }
+
+
+// ===== پسندها (لایک‌ها) =====
+// مانند نشان‌شده‌ها: برای مهمان در localStorage می‌ماند و با ورود یکی می‌شود.
+// شمار همگانی از GET /api/likes خوانده می‌شود؛ پسند کاربر واردشده با
+// POST /api/likes ثبت می‌شود (همان‌جا شمار همگانی و فهرست کاربر به‌روز می‌شود)
+// و با PUT /api/auth/profile (فیلد likes) نیز همگام می‌شود.
+let likes = loadLocalLikes();
+let likeCounts = {};
+
+function loadLocalLikes() {
+    try {
+        const raw = localStorage.getItem('souren_likes');
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.filter((x) => typeof x === 'string') : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveLocalLikes() {
+    try { localStorage.setItem('souren_likes', JSON.stringify(likes)); } catch (e) {}
+}
+
+function isLiked(word) {
+    return likes.includes(word.arabic);
+}
+
+function likeCount(word) {
+    const n = likeCounts[word.arabic];
+    return (typeof n === 'number' && n > 0) ? n : 0;
+}
+
+async function loadLikeCounts() {
+    try {
+        const { res, data } = await api('/api/likes');
+        if (res.ok && data && data.counts && typeof data.counts === 'object') {
+            likeCounts = data.counts;
+            refreshListUi();
+        }
+    } catch (e) { /* بدون شمار همگانی ادامه می‌دهیم؛ شمارها صفر می‌مانند */ }
+}
+
+async function syncLikes() {
+    saveLocalLikes();
+    if (!currentUser) return;
+    try {
+        await api('/api/auth/profile', {
+            method: 'PUT',
+            body: JSON.stringify({ displayName: currentUser.displayName, favorites, likes })
+        });
+    } catch (e) { /* نسخهٔ محلی نگه داشته شد */ }
+}
+
+const HEART_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.7C6.4 17 3 13.6 3 9.9 3 7.2 5 5 7.7 5c1.7 0 3.3.9 4.3 2.4C13 5.9 14.6 5 16.3 5 19 5 21 7.2 21 9.9c0 3.7-3.4 7.1-9 10.8Z"/></svg>';
+
+function askToLoginForLike() {
+    switchAuthTab(false);
+    showModal('authModal');
+    showMsg('loginMsg', 'برای ثبت پسندِ همگانی، نخست وارد شوید. پسند شما روی همین دستگاه نگه داشته شد.', false);
+}
+
+async function toggleLike(word) {
+    const likedNow = !isLiked(word);
+    if (likedNow) {
+        likes.push(word.arabic);
+        likeCounts[word.arabic] = likeCount(word) + 1;
+    } else {
+        likes = likes.filter((w) => w !== word.arabic);
+        likeCounts[word.arabic] = Math.max(0, likeCount(word) - 1);
+    }
+    saveLocalLikes();
+    refreshLikeUi(word);
+    if (!currentUser) return;
+    try {
+        const { res, data } = await api('/api/likes', {
+            method: 'POST',
+            body: JSON.stringify({ ar: word.arabic, liked: likedNow })
+        });
+        if (res.status === 401) {
+            askToLoginForLike();
+            return;
+        }
+        if (res.ok && data) {
+            if (typeof data.count === 'number') likeCounts[word.arabic] = data.count;
+            if (Array.isArray(data.likes)) {
+                likes = data.likes;
+                saveLocalLikes();
+            }
+            refreshLikeUi(word);
+        }
+    } catch (e) { /* پسند محلی نگه داشته شد و با ورود بعدی همگام می‌شود */ }
+}
+
+function refreshLikeUi(word) {
+    const btn = document.getElementById('likeBtn');
+    if (btn && word && btn.dataset.word === word.arabic) {
+        paintLikeBtn(btn, word);
+    }
+    refreshListUi();
+}
+
+function paintLikeBtn(btn, word) {
+    const active = isLiked(word);
+    const count = likeCount(word);
+    btn.classList.toggle('active', active);
+    btn.innerHTML = HEART_SVG + '<span>' + (active ? 'پسندیده' : 'پسند') + '</span>' +
+        (count ? '<span class="like-count">' + faNum(count) + '</span>' : '');
+}
+
+// ===== دسته‌بندی‌ها =====
+// داده از categories.json در ریشه (کپیِ android/assets/db/categories.json):
+// { "cats": { "health": ["واژهٔ عربی", ...], ... } } — کلید، واژهٔ عربی است.
+const CATEGORY_TITLES = {
+    health: 'پزشکی و تندرستی',
+    work: 'پیشه و کار',
+    money: 'پول و بازار',
+    edu: 'آموزش و دانش',
+    lang: 'سخن و نوشتار',
+    home: 'خانه و خانواده',
+    nature: 'طبیعت و گیتی',
+    faith: 'باور و آیین',
+    state: 'کشور و داد',
+    mind: 'دل و اندیشه',
+    time: 'زمان و سنجش',
+    travel: 'سفر و جابه‌جایی',
+    general: 'همگانی'
+};
+const CATEGORY_ORDER = ['health', 'work', 'money', 'edu', 'lang', 'home', 'nature', 'faith', 'state', 'mind', 'time', 'travel'];
+
+let categoryMap = null; // Map: واژهٔ عربی (و شکل نرمال‌شده‌اش) ← Set از کلید دسته‌ها
+let activeCategory = 'all';
+let currentQuery = '';
+
+async function loadCategories() {
+    try {
+        const res = await fetch('categories.json');
+        if (!res.ok) throw new Error('categories.json: ' + res.status);
+        const data = await res.json();
+        const cats = (data && data.cats) || {};
+        const map = new Map();
+        Object.keys(cats).forEach((key) => {
+            (cats[key] || []).forEach((ar) => {
+                [ar, normalizeArabic(ar)].forEach((k) => {
+                    if (!map.has(k)) map.set(k, new Set());
+                    map.get(k).add(key);
+                });
+            });
+        });
+        categoryMap = map;
+    } catch (e) {
+        categoryMap = null; /* اگر نیامد، فقط چیپ «همه» می‌ماند */
+    }
+    renderCategoryChips();
+    renderCurrent();
+}
+
+function wordCategories(word) {
+    if (!categoryMap) return null;
+    return categoryMap.get(word.arabic) || categoryMap.get(normalizeArabic(word.arabic)) || null;
+}
+
+function filterByCategory(words) {
+    if (activeCategory === 'all' || !categoryMap) return words;
+    if (activeCategory === 'general') {
+        return words.filter((w) => !wordCategories(w));
+    }
+    return words.filter((w) => {
+        const set = wordCategories(w);
+        return set && set.has(activeCategory);
+    });
+}
+
+function renderCategoryChips() {
+    const wrap = document.getElementById('categoryChips');
+    if (!wrap) return;
+    const keys = categoryMap ? [...CATEGORY_ORDER, 'general'] : [];
+    const all = [{ key: 'all', title: 'همه' },
+        ...keys.map((k) => ({ key: k, title: CATEGORY_TITLES[k] || k }))];
+    wrap.innerHTML = all.map((c) =>
+        `<button type="button" class="cat-chip${activeCategory === c.key ? ' active' : ''}" data-cat="${esc(c.key)}">${esc(c.title)}</button>`
+    ).join('');
+    wrap.querySelectorAll('.cat-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+            activeCategory = chip.dataset.cat || 'all';
+            renderCategoryChips();
+            renderCurrent();
+            const listWrap = document.querySelector('.dict-list-wrap');
+            if (listWrap) listWrap.scrollTop = 0;
+        });
+    });
+}
+
+// رندر فهرست جاری با حفظ وضعیت جستجو و فیلتر دسته‌بندی
+function renderCurrent() {
+    const base = currentQuery.trim() ? searchDictionary(currentQuery) : dictionary;
+    const title = currentQuery.trim() ? 'نتیجه‌های جستجو' : 'پرکاربردترین واژگان فارسی';
+    renderList(filterByCategory(base), title);
+}
+
+// بازرندر فهرست فعلی (پس از تغییر نشان/پسند/نشست) با حفظ جای پیمایش
+function refreshListUi() {
+    const listEl = document.getElementById('dictList');
+    if (!listEl || !currentWords) return;
+    const wrap = document.querySelector('.dict-list-wrap');
+    const top = wrap ? wrap.scrollTop : 0;
+    renderList(currentWords, currentTitle);
+    const wrap2 = document.querySelector('.dict-list-wrap');
+    if (wrap2) wrap2.scrollTop = top;
+}
+
 
 // ===== رندر فهرست واژه‌ها =====
 // سلسله‌مراتب برنامه: برابر فارسی پررنگ و درشت، واژهٔ عربی کوچک و کم‌رنگ.
@@ -215,7 +424,10 @@ function renderList(words, title) {
     listEl.innerHTML = currentWords.map((item, i) => `
         <div class="dict-row" role="listitem" data-index="${i}" style="animation-delay:${Math.min(i, 12) * 30}ms">
             <span>${meaningsHtml(item.meanings, 'row-fa') || '<span class="row-none">برابر فارسی ثبت نشده</span>'}${isFavorite(item) ? `<span class="row-fav">${BOOKMARK_SVG}</span>` : ''}</span>
-            <span class="row-ar">${esc(item.arabic)}</span>
+            <span class="row-side">
+                <button type="button" class="row-like${isLiked(item) ? ' active' : ''}" data-like-index="${i}" aria-label="پسندِ ${esc(item.arabic)}" title="پسند">${HEART_SVG}${likeCount(item) ? `<span class="like-count">${faNum(likeCount(item))}</span>` : ''}</button>
+                <span class="row-ar">${esc(item.arabic)}</span>
+            </span>
         </div>
     `).join('');
 
@@ -223,6 +435,13 @@ function renderList(words, title) {
         row.addEventListener('click', function () {
             const word = currentWords[parseInt(this.dataset.index, 10)];
             if (word) openModal(word);
+        });
+    });
+    listEl.querySelectorAll('.row-like').forEach((btn) => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const word = currentWords[parseInt(this.dataset.likeIndex, 10)];
+            if (word) toggleLike(word);
         });
     });
 }
@@ -257,12 +476,18 @@ function openModal(word) {
                 ${esc(word.concept)}
             </div>
         ` : ''}
-        <button class="fav-btn" id="favBtn" type="button" data-word="${esc(word.arabic)}"></button>
+        <div class="modal-actions">
+            <button class="fav-btn" id="favBtn" type="button" data-word="${esc(word.arabic)}"></button>
+            <button class="fav-btn like-btn" id="likeBtn" type="button" data-word="${esc(word.arabic)}"></button>
+        </div>
     `;
 
     const btn = document.getElementById('favBtn');
     paintFavBtn(btn, word);
     btn.addEventListener('click', () => toggleFavorite(word));
+    const likeBtn = document.getElementById('likeBtn');
+    paintLikeBtn(likeBtn, word);
+    likeBtn.addEventListener('click', () => toggleLike(word));
 
     showModal('wordModal');
 }
@@ -274,12 +499,8 @@ function closeModal() {
 // ===== عملکرد جستجو =====
 function performSearch() {
     const searchBox = document.getElementById('searchBox');
-    const query = searchBox ? searchBox.value : '';
-    if (query.trim()) {
-        renderList(searchDictionary(query), 'نتیجه‌های جستجو');
-    } else {
-        renderList(dictionary, 'پرکاربردترین واژگان فارسی');
-    }
+    currentQuery = searchBox ? searchBox.value : '';
+    renderCurrent();
     const wrap = document.querySelector('.dict-list-wrap');
     if (wrap) wrap.scrollTop = 0;
 }
@@ -323,6 +544,28 @@ async function loadSession() {
             // یکی‌کردن نشان‌شده‌های سرور با نسخهٔ محلی تا چیزی از دست نرود
             favorites = [...new Set([...serverFavs, ...favorites])];
             saveLocalFavorites();
+            const serverLikes = Array.isArray(data.user.likes) ? data.user.likes : [];
+            const guestLikes = likes.filter((w) => !serverLikes.includes(w));
+            likes = [...new Set([...serverLikes, ...likes])];
+            saveLocalLikes();
+            // پسندهای مهمان که سرور ندارد با POST ثبت می‌شوند تا شمار همگانی هم درست شود؛
+            // سپس فهرست نهایی با PUT همگام می‌شود.
+            for (const ar of guestLikes) {
+                try {
+                    await api('/api/likes', {
+                        method: 'POST',
+                        body: JSON.stringify({ ar, liked: true })
+                    });
+                } catch (e) { /* همگام‌سازی بعدی دوباره تلاش می‌شود */ }
+            }
+            if (guestLikes.length) {
+                await syncLikes();
+                loadLikeCounts();
+            }
+            // باگ ب: پس از یکی‌کردن نشست، فهرست جاری باید تازه رندر شود تا
+            // نشان‌ها و پسندها بدون رندر بعدی دیده شوند (با حفظ وضعیت جستجو).
+            if (dictionary.length) renderCurrent();
+            else refreshListUi();
         }
     } catch (e) { /* بدون نشست ادامه می‌دهیم */ }
     updateAccountUi();
@@ -366,8 +609,20 @@ async function doRegister(e) {
             body: JSON.stringify({ username, password, displayName })
         });
         if ((res.status === 201 || res.ok) && data && data.user) {
+            // باگ الف: register کوکیِ نشست نمی‌دهد؛ بلافاصله با همان مشخصات
+            // وارد می‌شویم تا نشست ساخته شود (دقیقاً مانند برنامهٔ اندروید).
+            let sessionUser = data.user;
+            try {
+                const login = await api('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                if (login.res.ok && login.data && login.data.user) {
+                    sessionUser = login.data.user;
+                }
+            } catch (e) { /* اگر ورودِ بی‌درنگ نشد، کاربر می‌تواند دستی وارد شود */ }
             hideModal('authModal');
-            afterAuth(data.user);
+            afterAuth(sessionUser);
         } else {
             showMsg('registerMsg', errText(data, 'ثبت‌نام ناموفق بود. دوباره تلاش کنید.'), false);
         }
@@ -390,6 +645,8 @@ function openProfile() {
     document.getElementById('profileUsername').value = currentUser.username;
     document.getElementById('profileDisplayName').value = currentUser.displayName || '';
     document.getElementById('profileFavCount').textContent = faNum(favorites.length);
+    const likeCountEl = document.getElementById('profileLikeCount');
+    if (likeCountEl) likeCountEl.textContent = faNum(likes.length);
     const msg = document.getElementById('profileMsg');
     if (msg) msg.hidden = true;
     showModal('profileModal');
@@ -402,7 +659,7 @@ async function saveProfile(e) {
     try {
         const { res, data } = await api('/api/auth/profile', {
             method: 'PUT',
-            body: JSON.stringify({ displayName, favorites })
+            body: JSON.stringify({ displayName, favorites, likes })
         });
         if (res.ok && data && data.user) {
             currentUser = { username: data.user.username, displayName: data.user.displayName };
@@ -534,8 +791,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     initNavSpy();
     initAuth();
     resolveLatestApk();
+    renderCategoryChips();
     loadSession();
+    loadLikeCounts();
     await loadDictionary();
+    loadCategories();
 
     const searchBox = document.getElementById('searchBox');
     const searchBtn = document.getElementById('searchBtn');
