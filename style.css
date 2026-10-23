@@ -828,3 +828,94 @@ footer a:hover {
         font-size: 1.65rem;
     }
 }
+
+/* ---------- پالایهٔ دسته‌بندی ---------- */
+.cat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+}
+.cat-chip {
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--pill);
+    border: none;
+    border-radius: 999px;
+    padding: 7px 16px;
+    min-height: 40px;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+.cat-chip:hover {
+    background: var(--card);
+}
+.cat-chip.active {
+    background: var(--accent);
+    color: var(--cream);
+    font-weight: 700;
+}
+
+/* ---------- پسند در فهرست و مودال ---------- */
+.row-side {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.row-like {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+.row-like svg {
+    fill: none;
+    stroke: currentColor;
+}
+.row-like:hover {
+    background: var(--pill);
+    color: var(--ink);
+}
+.row-like.active {
+    color: var(--accent);
+    font-weight: 700;
+}
+.row-like.active svg {
+    fill: currentColor;
+}
+.like-count {
+    font-size: 0.85rem;
+}
+.modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.modal-actions .fav-btn {
+    margin-top: 22px;
+}
+.like-btn svg {
+    fill: none;
+    stroke: currentColor;
+}
+.like-btn.active {
+    background: var(--accent);
+    color: var(--cream);
+}
+.like-btn.active svg {
+    fill: currentColor;
+}
+.like-btn .like-count {
+    font-weight: 700;
+}
