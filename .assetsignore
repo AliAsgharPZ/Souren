@@ -1,1 +1,7 @@
 admins.json
+android/
+.github/
+.gitignore
+README.md
+worker.js
+wrangler.jsonc
