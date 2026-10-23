@@ -6,87 +6,71 @@
     <title>سورن — دیکشنری عربی به فارسی و کیبورد فارسی اندروید</title>
     <meta name="description" content="سورن: دیکشنری عربی به فارسی («ضد عربی») همراه با کیبورد فارسی اندروید به سبک سامسونگ؛ درست‌نویسی و نیم‌فاصلهٔ خودکار، جایگزینی واژهٔ عربی با فارسی و یادگیری روی خود دستگاه.">
     <link rel="stylesheet" href="style.css">
+    <noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
 
-    <!-- ناوبری کپسولی بالا — به سبک نوار کپسولی برنامه -->
-    <nav class="capsule-nav" aria-label="ناوبری اصلی">
-        <a class="brand" href="#home">سورن</a>
-        <div class="nav-links">
-            <a href="#home" class="nav-link active">پیشگاه</a>
-            <a href="#dictionary" class="nav-link">دیکشنری</a>
-            <a href="#features" class="nav-link">قابلیت‌ها</a>
-            <a href="#download" class="nav-link nav-link-cta">دانلود</a>
-        </div>
-        <div class="nav-account" id="navAccount">
-            <div id="accountLoggedOut">
-                <button class="btn-account" id="authOpenBtn" type="button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
-                    ورود / ثبت‌نام
-                </button>
+    <!-- ناوبری -->
+    <nav class="site-nav" aria-label="ناوبری اصلی">
+        <div class="wrap nav-inner">
+            <a class="brand" href="#home">سورن</a>
+            <div class="nav-links">
+                <a href="#home" class="nav-link">پیشگاه</a>
+                <a href="#features" class="nav-link">قابلیت‌ها</a>
+                <a href="#download" class="nav-link">دانلود</a>
             </div>
-            <div id="accountLoggedIn" hidden>
-                <button class="btn-account" id="profileOpenBtn" type="button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/></svg>
-                    <span id="navUserName"></span>
-                </button>
-                <button class="btn-account btn-account-quiet" id="logoutBtn" type="button">خروج</button>
-            </div>
+            <a class="btn-github" href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                گیت‌هاب
+            </a>
         </div>
     </nav>
 
     <!-- پیشگاه -->
     <header class="hero" id="home">
-        <h1 class="hero-wordmark reveal">سورن</h1>
-        <p class="hero-tagline reveal">دیکشنری عربی به فارسی — «ضد عربی» — همراه با کیبورد فارسی اندروید؛<br>واژهٔ عربی را بنویسید، برابر فارسی‌اش را بگیرید و فارسی را درست بنویسید.</p>
-        <div class="hero-actions reveal">
-            <a class="btn-primary apk-btn" href="https://github.com/AliAsgharPZ/Souren/releases">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
-                دانلود نسخهٔ اندروید
-            </a>
-            <a class="btn-ghost" href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.75 2.69 1.25 1.87-.75.4-1.25.7-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 1.28.37.78 1.13 0 .75-.01 1.52-.01 1.03 0 .27.18.6.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
-                سورن در گیت‌هاب
-            </a>
-        </div>
-        <div class="hero-chips reveal" aria-hidden="true">
-            <span class="chip">میخام <span class="chip-arrow">←</span> <strong>می‌خوام</strong></span>
-            <span class="chip">سوال <span class="chip-arrow">←</span> <strong>پرسش</strong></span>
-            <span class="chip">همه افراد <span class="chip-arrow">←</span> <strong>همهٔ افراد</strong></span>
-            <span class="chip">عالیترین <span class="chip-arrow">←</span> <strong>عالی‌ترین</strong></span>
+        <div class="wrap">
+            <h1 class="hero-wordmark reveal">سورن</h1>
+            <p class="hero-tagline reveal">دیکشنری عربی به فارسی — «ضد عربی» — همراه با کیبورد فارسی اندروید؛<br>واژهٔ عربی را بنویسید، برابر فارسی‌اش را بگیرید و فارسی را درست بنویسید.</p>
+            <div class="hero-actions reveal">
+                <a class="btn-primary apk-btn" href="https://github.com/AliAsgharPZ/Souren/releases">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+                    دانلود نسخهٔ اندروید
+                </a>
+                <a class="btn-ghost" href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                    سورن در گیت‌هاب
+                </a>
+            </div>
+            <div class="hero-chips reveal" aria-hidden="true">
+                <span class="chip">میخام <span class="chip-arrow">←</span> <strong>می‌خوام</strong></span>
+                <span class="chip">سوال <span class="chip-arrow">←</span> <strong>پرسش</strong></span>
+                <span class="chip">همه افراد <span class="chip-arrow">←</span> <strong>همهٔ افراد</strong></span>
+                <span class="chip">عالیترین <span class="chip-arrow">←</span> <strong>عالی‌ترین</strong></span>
+            </div>
+            <dl class="stats reveal">
+                <div class="stat">
+                    <dt>واژهٔ عربی با برابر فارسی</dt>
+                    <dd>۵۴۶</dd>
+                </div>
+                <div class="stat">
+                    <dt>دستهٔ موضوعی</dt>
+                    <dd>۱۲</dd>
+                </div>
+                <div class="stat">
+                    <dt>متن‌باز و رایگان</dt>
+                    <dd>گیت‌هاب</dd>
+                </div>
+            </dl>
         </div>
     </header>
 
-    <main>
-        <!-- دیکشنری -->
-        <section class="section" id="dictionary">
-            <div class="section-head reveal">
-                <h2 class="section-title">دیکشنری</h2>
-                <div class="word-count" title="شمار همهٔ واژه‌ها">
-                    <span class="word-count-label">شمار همهٔ واژه‌ها</span>
-                    <span class="word-count-num" id="wordCount">…</span>
-                </div>
-            </div>
-
-            <div class="search-box reveal">
-                <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
-                <input type="text" id="searchBox" placeholder="واژه‌ای را جستجو کنید — عربی، فارسی یا مفهوم" autocomplete="off">
-                <button id="searchBtn" type="button">جستجو</button>
-            </div>
-
-            <div class="cat-chips" id="categoryChips" aria-label="پالایهٔ دسته‌بندی"></div>
-
-            <h3 class="list-title" id="listTitle">پرکاربردترین واژگان فارسی</h3>
-            <div class="dict-list-wrap">
-                <div class="dict-list" id="dictList" role="list"></div>
-            </div>
-            <p class="dict-hint">روی هر واژه بزنید تا مفهومش را ببینید. جستجو در واژهٔ عربی، برابر فارسی و مفهوم انجام می‌شود.</p>
-        </section>
+    <main class="wrap">
 
         <!-- قابلیت‌ها -->
         <section class="section" id="features">
             <div class="section-head reveal">
                 <h2 class="section-title">قابلیت‌ها</h2>
+                <p class="section-sub">هرچه سورن می‌کند، در خودِ برنامهٔ اندروید است؛ این صفحه فقط معرفی پروژه است.</p>
             </div>
             <div class="features-grid">
                 <article class="feature-card reveal">
@@ -105,11 +89,6 @@
                     <p>واژهٔ عربیِ دارای برابر تک‌واژه‌ای، هنگام نوشتن خودکار فارسی می‌شود: سوال ← پرسش، جواب ← پاسخ، احترام با پیشنهادهای فارسی همراه است.</p>
                 </article>
                 <article class="feature-card reveal">
-                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>
-                    <h3>پندواژه</h3>
-                    <p>گنجینه‌ای از ضرب‌المثل‌های فارسی با معنای هرکدام؛ بخشی جدا از نیم‌فاصله، برای این‌که پندِ هر مثل دمِ دست باشد.</p>
-                </article>
-                <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9 19 19M19 5l-2.1 2.1M7.1 16.9 5 19"/></svg></span>
                     <h3>ریشه‌شناسی</h3>
                     <p>واژه‌ای را بنویسید تا بدانید ریشه‌اش عربی است یا فارسی، و اگر عربی است برابر فارسی‌اش چیست.</p>
@@ -125,126 +104,59 @@
                     <p>پایگاه واژه‌ها ثابت نیست؛ می‌توانید آن را با فایل تازه (JSON یا CSV) به‌روز کنید و از آن خروجی بگیرید.</p>
                 </article>
                 <article class="feature-card reveal">
-                    <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.7C6.4 17 3 13.6 3 9.9 3 7.2 5 5 7.7 5c1.7 0 3.3.9 4.3 2.4C13 5.9 14.6 5 16.3 5 19 5 21 7.2 21 9.9c0 3.7-3.4 7.1-9 10.8Z"/></svg></span>
-                    <h3>پسندیده‌ها</h3>
-                    <p>تازه در نسخهٔ ۰٫۳٫۰: روی هر واژه یک قلب است؛ بزنید تا پسندیده شود و شمار پسندهای همهٔ کاربران را کنار همان واژه ببینید — هم در فهرست دیکشنری و هم در پنجرهٔ واژه.</p>
-                </article>
-                <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v6H4zM14 15h6v6h-6z"/></svg></span>
                     <h3>دسته‌بندی‌ها</h3>
-                    <p>تازه در نسخهٔ ۰٫۳٫۰: واژه‌ها در ۱۲ دسته بر پایهٔ زمینه و پیشه چیده شده‌اند؛ از پزشکی و تندرستی تا سفر و جابه‌جایی — و در سایت هم بالای فهرست دیکشنری با همان دسته‌ها پالایه می‌شوند.</p>
+                    <p>واژه‌ها در ۱۲ دسته بر پایهٔ زمینه و پیشه چیده شده‌اند؛ از پزشکی و تندرستی تا سفر و جابه‌جایی.</p>
                 </article>
                 <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/><path d="m18.5 2.8.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6Z"/></svg></span>
                     <h3>نمایهٔ کاربری</h3>
-                    <p>تازه در نسخهٔ ۰٫۳٫۰: با یک حساب هم در برنامه و هم در سایت وارد شوید؛ نمایه‌تان امتیاز و سطح شما و ۶ بج را نشان می‌دهد و نشان‌شده‌ها و پسندیده‌هایتان همگام می‌ماند.</p>
+                    <p>با یک حساب در برنامه وارد شوید؛ نشان‌شده‌ها و پسندیده‌هایتان نگه داشته می‌شود و امتیاز و سطح و ۶ بج در نمایهٔ درونِ برنامه نمایش داده می‌شوند.</p>
                 </article>
                 <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></span>
                     <h3>پیکربندی</h3>
-                    <p>تازه در نسخهٔ ۰٫۳٫۰: نمایش را به سلیقهٔ خودتان بچینید — تم روشنِ کرم یا تیره، فونت آراد یا فونت سیستم، اندازهٔ نوشته و جهت راست‌چین یا چپ‌چین.</p>
+                    <p>نمایش را به سلیقهٔ خودتان بچینید — تم روشنِ کرم یا تیره، فونت آراد یا فونت سیستم، اندازهٔ نوشته و جهت راست‌چین یا چپ‌چین.</p>
                 </article>
             </div>
         </section>
 
         <!-- دانلود -->
-        <section class="section download-section" id="download">
+        <section class="section" id="download">
             <div class="download-card reveal">
                 <h2 class="section-title">دانلود سورن</h2>
-                <p class="download-text">نسخهٔ اندروید سورن را بگیرید؛ پس از نصب، کیبورد سورن را از تنظیمات ورودی اندروید روشن و به‌عنوان کیبورد کنونی برگزینید.</p>
+                <p class="download-text">نسخهٔ اندروید سورن را از گیت‌هاب بگیرید؛ پس از نصب، کیبورد سورن را از تنظیمات ورودی اندروید روشن و به‌عنوان کیبورد کنونی برگزینید.</p>
                 <a class="btn-download apk-btn" href="https://github.com/AliAsgharPZ/Souren/releases">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
                     دانلود APK
                     <span class="btn-version" id="apkVersion"></span>
                 </a>
-                <p class="download-note">تازه‌ترین نسخه به‌صورت خودکار از صفحهٔ انتشارهای گیت‌هاب خوانده می‌شود. <a href="https://github.com/AliAsgharPZ/Souren/releases" target="_blank" rel="noopener">همهٔ نسخه‌ها</a></p>
+                <p class="download-note">کد منبع، همهٔ نسخه‌ها و گزارش تغییرات در <a href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">مخزن گیت‌هاب پروژه</a> است.</p>
             </div>
         </section>
     </main>
 
     <!-- فوتر -->
     <footer>
-        <span>سورن — دیکشنری عربی به فارسی و کیبورد فارسی</span>
-        <span class="footer-sep"></span>
-        <a href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">گیت‌هاب پروژه</a>
-        <span class="footer-sep"></span>
-        <span>ساخته‌شده با فونت آراد</span>
-        <span class="footer-sep"></span>
-        <span id="footerVersion">نسخهٔ اندروید در صفحهٔ انتشارها</span>
+        <div class="wrap footer-inner">
+            <span>سورن — دیکشنری عربی به فارسی و کیبورد فارسی</span>
+            <a class="footer-github" href="https://github.com/AliAsgharPZ/Souren" target="_blank" rel="noopener">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                گیت‌هاب پروژه
+            </a>
+            <span id="footerVersion">نسخهٔ اندروید در صفحهٔ انتشارها</span>
+        </div>
     </footer>
 
-    <!-- جزئیات واژه -->
-    <div id="wordModal" class="modal" aria-hidden="true">
-        <div class="modal-content">
-            <button class="close-modal" type="button" aria-label="بستن">&times;</button>
-            <div id="modalBody"></div>
-        </div>
-    </div>
-
-    <!-- ورود / ثبت‌نام -->
-    <div id="authModal" class="modal" aria-hidden="true">
-        <div class="modal-content auth-content">
-            <button class="close-modal" type="button" data-close-auth aria-label="بستن">&times;</button>
-            <div class="auth-tabs" role="tablist">
-                <button class="auth-tab active" id="tabLogin" type="button">ورود</button>
-                <button class="auth-tab" id="tabRegister" type="button">ثبت‌نام</button>
-            </div>
-
-            <form id="loginForm" class="auth-form">
-                <label class="field">
-                    <span>نام کاربری</span>
-                    <input type="text" id="loginUsername" autocomplete="username" required>
-                </label>
-                <label class="field">
-                    <span>گذرواژه</span>
-                    <input type="password" id="loginPassword" autocomplete="current-password" required>
-                </label>
-                <p class="form-msg" id="loginMsg" hidden></p>
-                <button class="btn-primary btn-block" type="submit">ورود</button>
-            </form>
-
-            <form id="registerForm" class="auth-form" hidden>
-                <label class="field">
-                    <span>نام نمایشی</span>
-                    <input type="text" id="registerDisplayName" autocomplete="name" required>
-                </label>
-                <label class="field">
-                    <span>نام کاربری</span>
-                    <input type="text" id="registerUsername" autocomplete="username" required>
-                </label>
-                <label class="field">
-                    <span>گذرواژه</span>
-                    <input type="password" id="registerPassword" autocomplete="new-password" required>
-                </label>
-                <p class="form-msg" id="registerMsg" hidden></p>
-                <button class="btn-primary btn-block" type="submit">ثبت‌نام</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- پروفایل -->
-    <div id="profileModal" class="modal" aria-hidden="true">
-        <div class="modal-content auth-content">
-            <button class="close-modal" type="button" data-close-profile aria-label="بستن">&times;</button>
-            <h3 class="profile-title">پروفایل من</h3>
-            <form id="profileForm" class="auth-form">
-                <label class="field">
-                    <span>نام کاربری</span>
-                    <input type="text" id="profileUsername" readonly>
-                </label>
-                <label class="field">
-                    <span>نام نمایشی</span>
-                    <input type="text" id="profileDisplayName" autocomplete="name">
-                </label>
-                <p class="profile-favs">واژه‌های نشان‌شده: <strong id="profileFavCount">۰</strong></p>
-                <p class="profile-favs">واژه‌های پسندیده: <strong id="profileLikeCount">۰</strong></p>
-                <p class="form-msg" id="profileMsg" hidden></p>
-                <button class="btn-primary btn-block" type="submit">ذخیرهٔ پروفایل</button>
-                <button class="btn-ghost btn-block" id="profileLogoutBtn" type="button">خروج از حساب</button>
-            </form>
-        </div>
-    </div>
-
     <script src="script.js"></script>
+    <script>
+    // اگر script.js به هر دلیل لود یا اجرا نشد، بخش‌های .reveal برای
+    // همیشه پنهان نمانند و صفحه خالی دیده نشود.
+    setTimeout(function () {
+        if (!window.__sourenBooted) {
+            document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('visible'); });
+        }
+    }, 1600);
+    </script>
 </body>
 </html>
