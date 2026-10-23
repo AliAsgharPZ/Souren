@@ -806,7 +806,7 @@ class _ShellState extends State<Shell> {
           if (j == null) {
             return Center(
               child: Padding(
-                padding: EdgeInsets.all(30),
+                padding: const EdgeInsets.all(30),
                 child: Text(
                     'کیبورد سورن از انتخاب‌ها و اصلاح‌های شما روی همین دستگاه یاد می‌گیرد.\nهنوز چیزی نیاموخته است؛ با کیبورد سورن بنویسید تا اینجا ببینید چه یاد گرفته.',
                     textAlign: TextAlign.center,
@@ -1359,7 +1359,7 @@ class _ShellState extends State<Shell> {
         ),
         const Divider(height: 32),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
               'درباره: سورن دیکشنری عربی به فارسی است با کیبوردی که درست‌نویسی فارسی را رعایت می‌کند. فونت برنامه: آراد. یادگیری کیبورد فقط روی همین دستگاه انجام می‌شود و داده‌ای بیرون نمی‌رود.',
               style: TextStyle(color: pal.muted, height: 1.9, fontSize: 13)),
@@ -1752,7 +1752,7 @@ class FreshPage extends StatelessWidget {
           if (history.isEmpty) {
             return Center(
               child: Padding(
-                padding: EdgeInsets.all(30),
+                padding: const EdgeInsets.all(30),
                 child: Text(
                     'واژهٔ تازه‌ای هنوز نیست.\nهر واژه‌ای که کیبورد سورن برایتان اصلاح کند و بپذیرید، اینجا می‌آید.',
                     textAlign: TextAlign.center,
