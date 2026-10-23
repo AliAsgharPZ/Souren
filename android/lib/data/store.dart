@@ -296,7 +296,7 @@ class AuthService {
       if (res.statusCode >= 400) return (null, j['error']?.toString() ?? 'خطا رخ داد');
       user = _userFrom(j);
       // register does not start a session on the server; log in right away.
-      return login(username, password);
+      return await login(username, password);
     } catch (_) {
       return (null, 'ارتباط با سرور برقرار نشد');
     }
