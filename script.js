@@ -26,9 +26,22 @@ function esc(s) {
         .replace(/'/g, '&#39;');
 }
 
+// ===== واکشی با سقف زمانی تا هنگِ شبکه آغاز صفحه را قفل نکند =====
+async function fetchWithTimeout(url, options, timeoutMs) {
+    const ms = typeof timeoutMs === 'number' ? timeoutMs : 12000;
+    if (!('AbortController' in window)) return fetch(url, options);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try {
+        return await fetch(url, { ...(options || {}), signal: ctrl.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 // ===== فراخوانی API ورکر =====
 async function api(path, options) {
-    const res = await fetch(API_BASE + path, {
+    const res = await fetchWithTimeout(API_BASE + path, {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         ...(options || {})
@@ -51,7 +64,7 @@ async function loadDictionary() {
     // ۲) فایل محلی dictionary.json
     if (!dictionary.length) {
         try {
-            const res = await fetch('dictionary.json?' + Date.now());
+            const res = await fetchWithTimeout('dictionary.json?' + Date.now());
             if (!res.ok) throw new Error('dictionary.json: ' + res.status);
             const data = await res.json();
             dictionary = data.dictionary || [];
@@ -103,7 +116,9 @@ function searchDictionary(query) {
 
         if (score < 70) {
             for (let m of (entry.meanings || [])) {
-                if (m.includes(q) || q.includes(m)) {
+                // نرمال‌سازی یکدست: «كتاب» با ک عربی هم برابر فارسی را پیدا کند
+                const mNorm = normalizeArabic(m);
+                if (qNorm && (mNorm.includes(qNorm) || qNorm.includes(mNorm))) {
                     score = 60;
                     break;
                 }
@@ -111,7 +126,7 @@ function searchDictionary(query) {
         }
 
         if (score < 50 && entry.concept) {
-            if (entry.concept.includes(q)) {
+            if (qNorm && normalizeArabic(entry.concept).includes(qNorm)) {
                 score = 30;
             }
         }
@@ -174,7 +189,44 @@ function refreshFavoriteUi(word) {
     if (btn && btn.dataset.word === word.arabic) {
         paintFavBtn(btn, word);
     }
-    refreshListUi();
+    updateRowUi(word);
+}
+
+// به‌روزرسانی موضعیِ ردیف یک واژه در فهرست (بدون بازسازی کل فهرست ۵۵۲ ردیفی):
+// نشانِ «نشان‌شده» و دکمهٔ پسندِ همان ردیف.
+function paintRowLikeBtn(btn, word) {
+    btn.classList.toggle('active', isLiked(word));
+    btn.innerHTML = HEART_SVG + (likeCount(word) ? '<span class="like-count">' + faNum(likeCount(word)) + '</span>' : '');
+}
+
+function updateRowUi(word) {
+    if (!word || !currentWords) return;
+    const idx = currentWords.findIndex((w) => w.arabic === word.arabic);
+    if (idx < 0) return;
+    const row = document.querySelector('.dict-row[data-index="' + idx + '"]');
+    if (!row) return;
+    const firstCell = row.firstElementChild;
+    if (firstCell) {
+        const badge = firstCell.querySelector('.row-fav');
+        if (isFavorite(word) && !badge) {
+            firstCell.insertAdjacentHTML('beforeend', '<span class="row-fav">' + BOOKMARK_SVG + '</span>');
+        } else if (!isFavorite(word) && badge) {
+            badge.remove();
+        }
+    }
+    const likeBtn = row.querySelector('.row-like');
+    if (likeBtn) paintRowLikeBtn(likeBtn, word);
+}
+
+// رنگ‌کردن موضعیِ دکمه‌های پسندِ همهٔ ردیف‌های نمایان (مثلاً وقتی شمارهای
+// همگانی دیرتر از رندر فهرست می‌رسند) — بدون بازسازی ردیف‌ها.
+function updateAllRowLikeUis() {
+    document.querySelectorAll('.dict-row').forEach((row) => {
+        const word = currentWords && currentWords[parseInt(row.dataset.index, 10)];
+        if (!word) return;
+        const likeBtn = row.querySelector('.row-like');
+        if (likeBtn) paintRowLikeBtn(likeBtn, word);
+    });
 }
 
 const BOOKMARK_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12V21l-6-4.2L6 21Z"/></svg>';
@@ -222,7 +274,7 @@ async function loadLikeCounts() {
         const { res, data } = await api('/api/likes');
         if (res.ok && data && data.counts && typeof data.counts === 'object') {
             likeCounts = data.counts;
-            refreshListUi();
+            updateAllRowLikeUis();
         }
     } catch (e) { /* بدون شمار همگانی ادامه می‌دهیم؛ شمارها صفر می‌مانند */ }
 }
@@ -239,6 +291,9 @@ async function syncLikes() {
 }
 
 const HEART_SVG = '<svg width="17" height="17" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.7C6.4 17 3 13.6 3 9.9 3 7.2 5 5 7.7 5c1.7 0 3.3.9 4.3 2.4C13 5.9 14.6 5 16.3 5 19 5 21 7.2 21 9.9c0 3.7-3.4 7.1-9 10.8Z"/></svg>';
+
+// پیام «نشست تمام شده» برای پسند فقط یک بار نشان داده می‌شود
+let sessionExpiredNotified = false;
 
 function askToLoginForLike() {
     switchAuthTab(false);
@@ -264,7 +319,14 @@ async function toggleLike(word) {
             body: JSON.stringify({ ar: word.arabic, liked: likedNow })
         });
         if (res.status === 401) {
-            askToLoginForLike();
+            // نشست منقضی شده است: خروج نرم تا کاربر «واردشده» نماند و
+            // مودال ورود با هر کلیک روی قلب از نو باز نشود؛ پیام فقط یک بار.
+            currentUser = null;
+            updateAccountUi();
+            if (!sessionExpiredNotified) {
+                sessionExpiredNotified = true;
+                askToLoginForLike();
+            }
             return;
         }
         if (res.ok && data) {
@@ -283,7 +345,7 @@ function refreshLikeUi(word) {
     if (btn && word && btn.dataset.word === word.arabic) {
         paintLikeBtn(btn, word);
     }
-    refreshListUi();
+    updateRowUi(word);
 }
 
 function paintLikeBtn(btn, word) {
@@ -320,7 +382,7 @@ let currentQuery = '';
 
 async function loadCategories() {
     try {
-        const res = await fetch('categories.json');
+        const res = await fetchWithTimeout('categories.json');
         if (!res.ok) throw new Error('categories.json: ' + res.status);
         const data = await res.json();
         const cats = (data && data.cats) || {};
@@ -418,11 +480,17 @@ function renderList(words, title) {
 
     if (!currentWords.length) {
         listEl.innerHTML = '<div class="dict-empty">واژه‌ای پیدا نشد</div>';
+        updateListMask();
         return;
     }
 
+    // انیمیشن ورود ردیف‌ها فقط برای نخستین رندر؛ رندرهای بعدی (جستجو،
+    // پالایه) نباید با هر کلید از نو چشمک بزنند.
+    const intro = !renderList._introPlayed;
+    renderList._introPlayed = true;
+
     listEl.innerHTML = currentWords.map((item, i) => `
-        <div class="dict-row" role="listitem" data-index="${i}" style="animation-delay:${Math.min(i, 12) * 30}ms">
+        <div class="dict-row${intro ? ' row-in' : ''}" role="listitem" data-index="${i}"${intro ? ` style="animation-delay:${Math.min(i, 12) * 30}ms"` : ''}>
             <span>${meaningsHtml(item.meanings, 'row-fa') || '<span class="row-none">برابر فارسی ثبت نشده</span>'}${isFavorite(item) ? `<span class="row-fav">${BOOKMARK_SVG}</span>` : ''}</span>
             <span class="row-side">
                 <button type="button" class="row-like${isLiked(item) ? ' active' : ''}" data-like-index="${i}" aria-label="پسندِ ${esc(item.arabic)}" title="پسند">${HEART_SVG}${likeCount(item) ? `<span class="like-count">${faNum(likeCount(item))}</span>` : ''}</button>
@@ -444,6 +512,22 @@ function renderList(words, title) {
             if (word) toggleLike(word);
         });
     });
+    updateListMask();
+}
+
+// محو لبه‌های فهرست فقط وقتی معنا دارد: محوِ بالا پس از اسکرول و
+// محوِ پایین وقتی هنوز ادامه‌ای هست؛ در سکونِ بالای فهرست، ردیف اول
+// نباید نیمه‌محو دیده شود.
+function updateListMask() {
+    const wrap = document.querySelector('.dict-list-wrap');
+    if (!wrap) return;
+    wrap.classList.toggle('fade-top', wrap.scrollTop > 4);
+    wrap.classList.toggle('fade-bottom', wrap.scrollTop + wrap.clientHeight < wrap.scrollHeight - 4);
+}
+
+function initListMask() {
+    const wrap = document.querySelector('.dict-list-wrap');
+    if (wrap) wrap.addEventListener('scroll', updateListMask, { passive: true });
 }
 
 // ===== مودال‌ها =====
@@ -558,8 +642,18 @@ async function loadSession() {
                     });
                 } catch (e) { /* همگام‌سازی بعدی دوباره تلاش می‌شود */ }
             }
+            // اگر مجموعهٔ یکی‌شده با سرور فرق دارد، پروفایل PUT شود؛
+            // پیش‌تر فقط وقتی مهمان پسند داشت این اتفاق می‌افتاد و
+            // نشان‌شده‌های تنها هرگز به سرور نمی‌رسیدند.
+            const mergedDiffers =
+                favorites.length !== serverFavs.length ||
+                favorites.some((w) => !serverFavs.includes(w)) ||
+                likes.length !== serverLikes.length ||
+                likes.some((w) => !serverLikes.includes(w));
+            if (mergedDiffers) {
+                await syncFavorites();
+            }
             if (guestLikes.length) {
-                await syncLikes();
                 loadLikeCounts();
             }
             // باگ ب: پس از یکی‌کردن نشست، فهرست جاری باید تازه رندر شود تا
@@ -573,6 +667,7 @@ async function loadSession() {
 
 function afterAuth(user) {
     currentUser = { username: user.username, displayName: user.displayName };
+    sessionExpiredNotified = false;
     updateAccountUi();
     // نشان‌شده‌های حساب را تازه می‌خوانیم و با محلی یکی می‌کنیم
     loadSession();
@@ -636,8 +731,19 @@ async function doLogout() {
         await api('/api/auth/logout', { method: 'POST' });
     } catch (e) { /* حتی با خطای شبکه، از دید کاربر خارج می‌شویم */ }
     currentUser = null;
+    // دادهٔ حساب روی این دستگاه نباید بماند: نه در حافظه و نه در
+    // localStorage؛ وگرنه قلب‌ها و نشان‌های حساب دیده می‌شوند و با
+    // ورود حساب بعدی به آن حساب یکی می‌شوند.
+    favorites = [];
+    likes = [];
+    try {
+        localStorage.removeItem('souren_favorites');
+        localStorage.removeItem('souren_likes');
+    } catch (e) {}
+    sessionExpiredNotified = false;
     updateAccountUi();
     hideModal('profileModal');
+    refreshListUi();
 }
 
 function openProfile() {
@@ -764,7 +870,7 @@ function initNavSpy() {
 // در صورت خطا، دکمه‌ها همان پیوند صفحهٔ انتشارها را نگه می‌دارند.
 async function resolveLatestApk() {
     try {
-        const res = await fetch('https://api.github.com/repos/AliAsgharPZ/Souren/releases/latest');
+        const res = await fetchWithTimeout('https://api.github.com/repos/AliAsgharPZ/Souren/releases/latest', null, 10000);
         if (!res.ok) return;
         const rel = await res.json();
         const asset = (rel.assets || []).find((a) => a.name && a.name.toLowerCase().endsWith('.apk'));
@@ -786,17 +892,15 @@ async function resolveLatestApk() {
 }
 
 // ===== رویدادها =====
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', function () {
+    window.__sourenBooted = true;
     initReveal();
     initNavSpy();
     initAuth();
-    resolveLatestApk();
-    renderCategoryChips();
-    loadSession();
-    loadLikeCounts();
-    await loadDictionary();
-    loadCategories();
+    initListMask();
 
+    // شنونده‌ها مستقل از بارگذاری داده وصل می‌شوند تا تایپ در باکس
+    // جستجو از همان لحظهٔ نخست کار کند، نه پس از آمدن دیکشنری.
     const searchBox = document.getElementById('searchBox');
     const searchBtn = document.getElementById('searchBtn');
 
@@ -828,4 +932,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             hideModal('profileModal');
         }
     });
+
+    // بارگذاری داده‌ها؛ هرکدام هر وقت رسیدند، نمای خود را تازه می‌کنند.
+    renderCategoryChips();
+    resolveLatestApk();
+    loadSession();
+    loadLikeCounts();
+    loadDictionary();
+    loadCategories();
 });

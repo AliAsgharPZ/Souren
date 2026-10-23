@@ -6,6 +6,7 @@
     <title>سورن — دیکشنری عربی به فارسی و کیبورد فارسی اندروید</title>
     <meta name="description" content="سورن: دیکشنری عربی به فارسی («ضد عربی») همراه با کیبورد فارسی اندروید به سبک سامسونگ؛ درست‌نویسی و نیم‌فاصلهٔ خودکار، جایگزینی واژهٔ عربی با فارسی و یادگیری روی خود دستگاه.">
     <link rel="stylesheet" href="style.css">
+    <noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
 
@@ -137,7 +138,7 @@
                 <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.6 4.5-5.5 8-5.5s6.5 1.9 8 5.5"/><path d="m18.5 2.8.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6Z"/></svg></span>
                     <h3>نمایهٔ کاربری</h3>
-                    <p>تازه در نسخهٔ ۰٫۳٫۰: با یک حساب هم در برنامه و هم در سایت وارد شوید؛ نمایه‌تان امتیاز و سطح شما و ۶ بج را نشان می‌دهد و نشان‌شده‌ها و پسندیده‌هایتان همگام می‌ماند.</p>
+                    <p>تازه در نسخهٔ ۰٫۳٫۰: با یک حساب هم در برنامه و هم در سایت وارد شوید؛ نشان‌شده‌ها و پسندیده‌هایتان میان سایت و برنامه همگام می‌ماند. امتیاز و سطح و ۶ بج در نمایهٔ درونِ برنامه نمایش داده می‌شوند.</p>
                 </article>
                 <article class="feature-card reveal">
                     <span class="feature-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg></span>
@@ -246,5 +247,14 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+    // اگر script.js به هر دلیل لود یا اجرا نشد، بخش‌های .reveal برای
+    // همیشه پنهان نمانند و صفحه خالی دیده نشود.
+    setTimeout(function () {
+        if (!window.__sourenBooted) {
+            document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('visible'); });
+        }
+    }, 1600);
+    </script>
 </body>
 </html>

@@ -150,7 +150,6 @@ a {
     font-weight: 700;
     line-height: 1.15;
     color: var(--ink);
-    letter-spacing: -0.01em;
 }
 
 .hero-tagline {
@@ -327,14 +326,27 @@ main {
     margin: 30px 4px 8px;
 }
 
-/* محو شدن نرمِ بالا و پایین فهرست هنگام پیمایش — مانند برنامه */
+/* محو شدن نرمِ لبه‌های فهرست هنگام پیمایش — مانند برنامه؛
+   محو فقط وقتی معنا دارد: بالا پس از اسکرول (کلاس fade-top) و
+   پایین وقتی هنوز ادامه‌ای هست (کلاس fade-bottom)؛ هر دو کلاس را
+   script.js بر پایهٔ جای اسکرول می‌گذارد و برمی‌دارد. */
 .dict-list-wrap {
     max-height: 430px;
     overflow-y: auto;
     overscroll-behavior: contain;
+    padding: 6px 2px;
+}
+.dict-list-wrap.fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, black 0, black calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0, black calc(100% - 26px), transparent 100%);
+}
+.dict-list-wrap.fade-top {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, black 26px, black 100%);
+}
+.dict-list-wrap.fade-top.fade-bottom {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
-    padding: 6px 2px;
 }
 
 .dict-list {
@@ -352,6 +364,10 @@ main {
     cursor: pointer;
     border-radius: 14px;
     transition: background 0.2s ease;
+}
+/* انیمیشن ورود فقط برای نخستین رندر فهرست (کلاس row-in را script.js
+   فقط همان یک بار می‌گذارد) تا رندرهای جستجو چشمک نزنند */
+.dict-row.row-in {
     animation: rowIn 0.35s ease both;
 }
 .dict-row:last-child {
@@ -507,6 +523,10 @@ main {
     position: relative;
     box-shadow: var(--shadow-lift);
     animation: slideDown 0.3s cubic-bezier(0.22, 0.8, 0.32, 1);
+    /* روی صفحه‌های کوتاه، محتوا زیر لبه نرود: سقف ارتفاع + اسکرول داخلی */
+    max-height: 86vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 @keyframes slideDown {
     from { transform: translateY(-36px); opacity: 0; }
@@ -778,10 +798,11 @@ footer a:hover {
         padding: 12px 14px 0;
     }
     .capsule-nav {
-        padding: 8px 14px;
+        padding: 8px 12px;
         top: 10px;
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: space-between;
+        gap: 8px 10px;
     }
     .btn-account {
         padding: 7px 14px;
@@ -790,16 +811,31 @@ footer a:hover {
     .capsule-nav .brand {
         font-size: 1.25rem;
     }
+    /* پیوندها ردیف دومِ باریک با اسکرول افقی؛ ناو فشرده می‌ماند و
+       ارتفاعش ثابت و پیش‌بینی‌پذیر است */
+    .nav-links {
+        order: 3;
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar {
+        display: none;
+    }
     .nav-link {
         padding: 5px 11px;
         font-size: 0.9rem;
+        white-space: nowrap;
     }
     .hero {
         padding: 58px 4px 20px;
     }
     .section {
         padding: 44px 0 4px;
-        scroll-margin-top: 84px;
+        /* هماهنگ با ارتفاع واقعی ناوِ دو ردیفه + فاصلهٔ چسبان بالا */
+        scroll-margin-top: 128px;
     }
     .section-head {
         flex-direction: column;
@@ -918,4 +954,15 @@ footer a:hover {
 }
 .like-btn .like-count {
     font-weight: 700;
+}
+
+/* ---------- فوکوس کیبورد ---------- */
+/* حلقهٔ فوکوس ظریف و هم‌زبان طراحی برای عناصر تعاملی */
+a:focus-visible,
+button:focus-visible,
+.nav-link:focus-visible,
+.cat-chip:focus-visible,
+.row-like:focus-visible {
+    outline: 2px solid rgba(110, 100, 85, 0.65);
+    outline-offset: 2px;
 }
