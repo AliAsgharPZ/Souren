@@ -170,7 +170,7 @@ function validUsername(u) {
 }
 
 function publicUser(rec) {
-    return { username: rec.username, displayName: rec.displayName || rec.username, favorites: rec.favorites || [] };
+    return { username: rec.username, displayName: rec.displayName || rec.username, favorites: rec.favorites || [], likes: rec.likes || [] };
 }
 
 async function getSessionUser(request, env) {
@@ -211,6 +211,7 @@ async function registerInner(request, env) {
         salt,
         pw: await hashPassword(password, salt),
         favorites: [],
+        likes: [],
         createdAt: Date.now(),
     };
     await env.USERS.put(key, JSON.stringify(rec));
@@ -259,8 +260,41 @@ async function handleProfile(request, env) {
     if (Array.isArray(body.favorites)) {
         s.rec.favorites = body.favorites.filter((f) => typeof f === 'string').slice(0, 500);
     }
+    if (Array.isArray(body.likes)) {
+        s.rec.likes = body.likes.filter((f) => typeof f === 'string').slice(0, 500);
+    }
     await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
     return json(request, { user: publicUser(s.rec) });
+}
+
+// ---------- Likes (شمارندهٔ همگانی پسندها) ----------
+async function handleLikeCounts(request, env) {
+    const counts = (await env.USERS.get('likes:counts', 'json')) || {};
+    return new Response(JSON.stringify({ counts }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', ...corsHeaders(request) },
+    });
+}
+
+async function handleLike(request, env) {
+    const s = await getSessionUser(request, env);
+    if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401);
+    let body;
+    try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    const ar = typeof body.ar === 'string' ? body.ar.trim() : '';
+    if (!ar || ar.length > 60) return json(request, { error: 'واژه نامعتبر است' }, 400);
+    const want = body.liked === true;
+    const likes = new Set(s.rec.likes || []);
+    const has = likes.has(ar);
+    const counts = (await env.USERS.get('likes:counts', 'json')) || {};
+    let count = counts[ar] || 0;
+    if (want && !has) { likes.add(ar); count += 1; }
+    if (!want && has) { likes.delete(ar); count = Math.max(0, count - 1); }
+    counts[ar] = count;
+    s.rec.likes = [...likes];
+    await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
+    await env.USERS.put('likes:counts', JSON.stringify(counts));
+    return json(request, { ar, count, likes: s.rec.likes });
 }
 
 // ---------- Router ----------
@@ -278,6 +312,7 @@ export default {
             case '/api/auth/logout': return handleLogout(request, env);
             case '/api/auth/me': return handleMe(request, env);
             case '/api/auth/profile': return handleProfile(request, env);
+            case '/api/likes': return request.method === 'POST' ? handleLike(request, env) : handleLikeCounts(request, env);
             default: break;
         }
         if (env.ASSETS) return env.ASSETS.fetch(request);
