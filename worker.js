@@ -315,7 +315,7 @@ export default {
             case '/api/likes': return request.method === 'POST' ? handleLike(request, env) : handleLikeCounts(request, env);
             default: break;
         }
-        if (env.ASSETS) return env.ASSETS.fetch(request);
-        return json(request, { error: 'not_found' }, 404);
+        // سایت روی Pages میزبانی می‌شود؛ هر مسیر غیر API به همان مسیر در pages.dev ریدایرکت می‌شود.
+        return Response.redirect('https://souren.pages.dev' + url.pathname + url.search, 301);
     },
 };
