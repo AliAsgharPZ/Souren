@@ -10,7 +10,7 @@ The universal APK (arm64-v8a, armeabi-v7a, x86_64) is signed with the project's 
 
 ## Website
 
-Live site: https://souren.aliasgharpanahizare.workers.dev — the same 552-entry dictionary in the browser, with search, categories, likes, and accounts that stay in sync with the app.
+Live site: https://souren.pages.dev — intro page with download and GitHub links; the dictionary itself lives in the Android app. The old workers.dev address redirects to the Pages site.
 
 ## Repository layout
 
