@@ -46,4 +46,31 @@ void main() {
       expect(correctWord('نمیشه').fixed, 'نمی‌شه');
     });
   });
+  group('v3 expansions (owner 2026-10-25)', () {
+    test('جایگزینی با چند برابر: نخستین تک‌واژه‌ای', () {
+      // احترام has two equivalents; old rule never replaced it.
+      expect(correctWord('احترام', dictionary: dict).fixed, 'گرامیداشت');
+      expect(correctWord('احترام', dictionary: dict).suggestions,
+          ['گرامیداشت', 'ارج']);
+    });
+    test('نشانهٔ پایانی جلوی جایگزینی را نمی‌گیرد', () {
+      const d2 = {
+        'اتفاق': ['رویداد', 'پیشامد']
+      };
+      expect(correctText('اتفاق، آمد', dictionary: d2), 'رویداد، آمد');
+    });
+    test('فهرست‌های گسترش‌یافته', () {
+      expect(correctWord('میترسم').fixed, 'می‌ترسم');
+      expect(correctWord('مینشینم').fixed, 'می‌نشینم');
+      expect(correctWord('بیقرار').fixed, 'بی‌قرار');
+      expect(correctWord('بیگناه').fixed, 'بی‌گناه');
+      expect(correctWord('کبوتر').fixed, 'کبوتر');
+      expect(correctWord('آنها').fixed, 'آنها');
+      expect(correctWord('خانهم').fixed, 'خانه‌م');
+      expect(correctWord('همهی').fixed, 'همهٔ');
+      expect(correctWord('رفتهاست').fixed, 'رفته‌است');
+      expect(correctWord('بیمار').fixed, 'بیمار');
+      expect(correctWord('بیان').fixed, 'بیان');
+    });
+  });
 }
