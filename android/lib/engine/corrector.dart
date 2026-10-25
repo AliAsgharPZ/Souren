@@ -38,45 +38,76 @@ const Map<String, String> _stemFix = {
 };
 
 /// Words that start with می/نمی but are NOT verbs.
-const Set<String> miExceptions = {'میدان', 'میدون'};
+const Set<String> miExceptions = {
+  'میدان', 'میدون', 'میخک', 'میهن', 'میان', 'میوه', 'میراث',
+};
 
 /// Present-tense verb stem beginnings used to recognize می/نمی verbs.
 const List<String> verbStemStarts = [
-  'خواه', 'خوا', 'دون', 'دان', 'تون', 'توان', 'بین', 'گیر', 'ذار', 'زار',
-  'خور', 'نویس', 'خند', 'گری', 'فهم', 'سوز', 'خون', 'ساز', 'پرس', 'گرد',
-  'زن', 'گو', 'شو', 'کن', 'ده', 'دو', 'رم', 'رو', 'رس', 'ره', 'شه',
-  'گه', 'پر',
+  'خواه', 'خوا', 'آی', 'آور', 'آفرین', 'افکن', 'فکن', 'انداز', 'انگیز',
+  'دون', 'دان', 'تون', 'توان', 'بین', 'گیر', 'ذار', 'زار', 'گذار', 'گزار',
+  'خور', 'خر', 'نویس', 'نوش', 'نشین', 'خند', 'گری', 'گریز', 'فهم', 'سوز',
+  'سوزان', 'خون', 'ساز', 'پرس', 'پرست', 'گرد', 'گشا', 'زن', 'گو', 'گوی',
+  'شو', 'کن', 'ده', 'نه', 'دو', 'رم', 'رو', 'روی', 'رس', 'ره', 'شه',
+  'گه', 'پر', 'جه', 'بار', 'باف', 'بند', 'بر', 'بوس', 'پاش', 'پذیر',
+  'پوش', 'پیچ', 'تاب', 'تراش', 'ترس', 'جوش', 'چرخ', 'چسب', 'چین',
+  'دار', 'دم', 'دوش', 'ران', 'رقص', 'ریز', 'ستان', 'سرا', 'شتاب',
+  'شکاف', 'شمار', 'شناس', 'طلب', 'غلت', 'فرست', 'فروش', 'فشار',
+  'کار', 'کش', 'کوش', 'کوب', 'لرز', 'مان', 'مال', 'مک', 'نال',
 ];
 
 /// Fused comparatives that must NOT be split (academy rule).
 const Set<String> fusedComparatives = {
   'بهتر', 'کمتر', 'بیشتر', 'مهتر', 'کهتر',
   'بهترین', 'کمترین', 'بیشترین', 'مهترین', 'کهترین',
-  'دختر', 'لیتر', 'باختر',
+  'دختر', 'لیتر', 'باختر', 'کبوتر', 'انگشتر',
 };
 
-const Set<String> haExceptions = {'تنها'};
+const Set<String> haExceptions = {'تنها', 'آنها', 'اینها'};
 
 /// ه/ی-final stems whose possessive clitics split with ZWNJ.
 const Set<String> cliticStems = {
   'خانه', 'سایه', 'صفحه', 'نامه', 'واژه', 'جمله', 'قصه', 'لحظه', 'هفته',
   'پنجره', 'خاطره', 'مسئله', 'بهانه', 'نشانه', 'کشتی', 'همه', 'مدرسه',
   'جعبه', 'سرمایه', 'پرده', 'زمینه', 'ستاره', 'شیشه', 'سکه', 'تکه',
+  'حادثه', 'فاجعه', 'واقعه', 'صحنه', 'نغمه', 'شعله', 'قطره', 'نمره',
+  'نقشه', 'چهره', 'جلوه', 'زاویه', 'قهوه', 'میوه', 'پایه', 'مایه',
+  'رویه', 'لایه', 'کوچه', 'بوته', 'غنچه', 'جوانه', 'کرانه', 'ترانه',
+  'افسانه', 'پیمانه', 'شکوفه', 'خاله', 'عمه', 'صندلی', 'بازی', 'ماهی',
+  'گاری', 'دایی', 'نیمه', 'دهه', 'گونه',
 };
 
-const List<String> clitics = ['شان', 'تان', 'مان', 'اش', 'ام', 'ات'];
+const List<String> clitics = [
+  'شان', 'تان', 'مان', 'شون', 'تون', 'مون', 'اش', 'ام', 'ات', 'م', 'ت', 'ش',
+];
 
 /// Stems after «بی» that take a ZWNJ.
 const Set<String> biStems = {
   'آبرو', 'ابرو', 'نهایت', 'پایان', 'فرهنگ', 'ادب', 'انصاف', 'سواد',
   'شمار', 'اندازه', 'رحم', 'مزه', 'خبر', 'نام', 'نشان', 'رنگ', 'بو',
-  'حیا', 'شرم', 'عقلی',
+  'حیا', 'شرم', 'عقل', 'احتیاط', 'اختیار', 'اراده', 'اعتماد', 'امان',
+  'باک', 'باور', 'بهره', 'پروا', 'پرده', 'پول', 'تاب', 'تجربه',
+  'تردید', 'تکلف', 'توجه', 'ثبات', 'جا', 'چاره', 'حاصل', 'حال',
+  'حساب', 'حس', 'خانمان', 'خواب', 'خود', 'درد', 'دریغ', 'دلیل',
+  'دین', 'رقیب', 'روح', 'ریا', 'زبان', 'سابقه', 'سرپرست', 'سلیقه',
+  'سود', 'شعور', 'شک', 'صاحب', 'صبر', 'صدا', 'ضرر', 'طرف', 'طاقت',
+  'عاطفه', 'عرضه', 'علاقه', 'عیب', 'غرض', 'فایده', 'قاعده', 'قرار',
+  'قید', 'کار', 'کس', 'گناه', 'لطف', 'محابا', 'مسئولیت', 'معرفت',
+  'معنی', 'مغز', 'ملاحظه', 'منطق', 'موقع', 'نظم', 'نصیب', 'نقاب',
+  'نظیر', 'نوا', 'نیاز', 'هدف', 'همتا', 'هنر', 'هوا', 'هوش',
+  'واسطه', 'وفا', 'وقفه', 'سر',
 };
 
 /// Words ending in ه that take an ezafe (ٔ) before a following noun.
 const Set<String> ezafeHeads = {
   'همه', 'خانه', 'صفحه', 'نامه', 'سایه', 'پنجره', 'هفته', 'لحظه',
   'نکته', 'واژه', 'جمله', 'قصه', 'خاطره', 'مسئله', 'بهانه', 'نشانه',
+  'مدرسه', 'چهره', 'جلوه', 'زاویه', 'قهوه', 'میوه', 'پایه', 'مایه',
+  'لایه', 'رویه', 'کوچه', 'بوته', 'غنچه', 'جوانه', 'کرانه', 'ترانه',
+  'افسانه', 'پیمانه', 'شکوفه', 'حادثه', 'فاجعه', 'واقعه', 'صحنه',
+  'نغمه', 'شعله', 'قطره', 'نمره', 'نقشه', 'سکه', 'تکه', 'شیشه',
+  'ستاره', 'زمینه', 'پرده', 'سرمایه', 'جعبه', 'نیمه', 'کلیه', 'عده',
+  'دهه', 'سده', 'گونه', 'رده', 'مرحله', 'ناحیه', 'قاره', 'جزیره',
 };
 
 class WordFix {
@@ -96,6 +127,11 @@ WordFix correctWord(String word,
   // ه‌ی → هٔ
   if (w.endsWith('ه‌ی')) {
     w = '${w.substring(0, w.length - 2)}ه$hamzaAbove';
+  }
+  // Attached ezafe ی after a known ه-final head: همهی → همهٔ
+  if (w.length > 2 && w.endsWith('ی') && !w.contains(hamzaAbove)) {
+    final stem = w.substring(0, w.length - 1);
+    if (ezafeHeads.contains(stem)) w = '$stem$hamzaAbove';
   }
 
   // می/نمی + verb stem (guarded).
@@ -139,7 +175,7 @@ WordFix correctWord(String word,
 
   // Past-perfect endings after ه: رفته‌ام pattern.
   if (!w.contains(zwnj)) {
-    for (final ending in ['ایم', 'اید', 'اند', 'ام', 'ای']) {
+    for (final ending in ['است', 'ایم', 'اید', 'اند', 'ام', 'ای']) {
       if (w.endsWith(ending)) {
         final stem = w.substring(0, w.length - ending.length);
         if (stem.endsWith('ه') && stem.length >= 3) {
@@ -174,12 +210,20 @@ WordFix correctWord(String word,
     if (biStems.contains(rest)) w = 'بی$zwnj$rest';
   }
 
-  // Dictionary: Arabic word → Persian equivalents.
+  // Dictionary: Arabic word → Persian equivalents. Replacement used to
+  // require exactly ONE equivalent, so any word with two or more
+  // equivalents (اتفاق ← رویداد/پیشامد) never got replaced. Now the
+  // first single-word equivalent wins; phrasal ones stay suggestions.
   final eq = dictionary[w] ?? dictionary[word] ?? dictionary[normalizeLetters(word)];
   if (eq != null && eq.isNotEmpty) {
     suggestions.addAll(eq);
-    if (replaceArabic && eq.length == 1 && !eq.first.contains(' ') && !eq.first.contains('،')) {
-      w = eq.first;
+    if (replaceArabic) {
+      for (final cand in eq) {
+        if (!cand.contains(' ') && !cand.contains('،') && cand != w) {
+          w = cand;
+          break;
+        }
+      }
     }
   }
   return WordFix(w, suggestions);
@@ -200,8 +244,15 @@ String correctText(String text,
       out[out.length - 1] = '${out.last}$zwnj$tok';
       continue;
     }
+    // Trailing punctuation must not block the dictionary/rules lookup:
+    // «اتفاق،» previously matched nothing and was left unreplaced.
+    var punct = '';
+    while (tok.length > 1 && '،.؟!؛:'.contains(tok[tok.length - 1])) {
+      punct = tok[tok.length - 1] + punct;
+      tok = tok.substring(0, tok.length - 1);
+    }
     final fix = correctWord(tok, dictionary: dictionary, replaceArabic: replaceArabic);
-    tok = fix.fixed;
+    tok = fix.fixed + punct;
     if (out.isNotEmpty) {
       final prev = out.last;
       final prevBare = prev.replaceAll(hamzaAbove, '');
