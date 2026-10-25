@@ -51,9 +51,34 @@ class CorrectorTest {
 
     @Test fun arabicLettersAndMulti() {
         assertEquals("یک", Corrector.correctWord("يك").fixed)
+        // Owner order 2026-10-25: with several equivalents, the FIRST
+        // single-word one replaces; the rest stay as suggestions.
         val f = Corrector.correctWord("احترام", dict)
-        assertEquals("احترام", f.fixed)
+        assertEquals("گرامیداشت", f.fixed)
         assertEquals(listOf("گرامیداشت", "ارج"), f.suggestions)
+    }
+
+    @Test fun expandedLists() {
+        assertEquals("می‌ترسم", Corrector.correctWord("میترسم").fixed)
+        assertEquals("می‌نشینم", Corrector.correctWord("مینشینم").fixed)
+        assertEquals("بی‌قرار", Corrector.correctWord("بیقرار").fixed)
+        assertEquals("بی‌گناه", Corrector.correctWord("بیگناه").fixed)
+        assertEquals("کبوتر", Corrector.correctWord("کبوتر").fixed)
+        assertEquals("آنها", Corrector.correctWord("آنها").fixed)
+        assertEquals("خانه‌م", Corrector.correctWord("خانهم").fixed)
+        assertEquals("همهٔ", Corrector.correctWord("همهی").fixed)
+        assertEquals("رفته‌است", Corrector.correctWord("رفتهاست").fixed)
+        assertEquals("میدان", Corrector.correctWord("میدان").fixed)
+        assertEquals("بیمار", Corrector.correctWord("بیمار").fixed)
+        assertEquals("بیان", Corrector.correctWord("بیان").fixed)
+    }
+
+    @Test fun punctuationDoesNotBlockReplacement() {
+        val d2 = mapOf("اتفاق" to listOf("رویداد", "پیشامد"))
+        assertEquals(6 to "رویداد،",
+            Corrector.fixBeforeSeparator("اتفاق،", d2, true))
+        assertEquals("رویداد",
+            Corrector.correctWord("اتفاق", d2).fixed)
     }
 
     @Test fun noChangeNoFix() {
