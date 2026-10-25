@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -166,6 +167,7 @@ class _ShellState extends State<Shell> {
   bool showAuthForm = false;
   bool authRegister = false;
   bool authBusy = false;
+  bool dbSyncing = false;
   String? authError;
   final _userCtl = TextEditingController();
   final _passCtl = TextEditingController();
@@ -212,6 +214,22 @@ class _ShellState extends State<Shell> {
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
       }
     });
+    _syncDictionary(d);
+  }
+
+  bool _dictSyncDone = false;
+
+  /// Online dictionary update: when the network is up, pull the Worker
+  /// dataset; a newer one replaces the on-device archive and the UI
+  /// reloads. Offline, the archive already on the phone is used.
+  Future<void> _syncDictionary(Dictionary current) async {
+    if (_dictSyncDone) return;
+    _dictSyncDone = true;
+    final updated = await DictionarySync.syncFromServer(current);
+    if (updated && mounted) {
+      final d2 = await Dictionary.load();
+      setState(() => dict = d2);
+    }
   }
 
   Future<void> _toggleFav(String word) async {
@@ -239,10 +257,15 @@ class _ShellState extends State<Shell> {
   Widget _likeButton(String ar) {
     final isLiked = liked.contains(ar);
     final count = likeCounts[ar] ?? 0;
+    // The count lives in a fixed-width slot that is always present, so
+    // liking a word never shifts the row layout.
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      if (count > 0)
-        Text(faNum(count),
+      SizedBox(
+        width: 26,
+        child: Text(count > 0 ? faNum(count) : '',
+            textAlign: TextAlign.center,
             style: TextStyle(color: pal.muted, fontSize: 12.5)),
+      ),
       IconButton(
         visualDensity: VisualDensity.compact,
         icon: Icon(
@@ -271,16 +294,46 @@ class _ShellState extends State<Shell> {
       _settingsPage(d),
     ];
     return Scaffold(
+      extendBody: true,
       body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 92),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
+          ),
         ),
       ),
-      bottomNavigationBar: _navBar(),
+      bottomNavigationBar:
+          Container(color: Colors.transparent, child: _navBar()),
     );
+  }
+
+  // One single capsule slides between the tabs (no per-tab rectangles).
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+  final GlobalKey _navStackKey = GlobalKey();
+  double _indLeft = 0;
+  double _indWidth = 0;
+
+  void _measureIndicator() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final stackBox =
+          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
+      final tabBox =
+          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
+      if (stackBox == null || tabBox == null) return;
+      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
+      if ((pos.dx - _indLeft).abs() > .5 ||
+          (tabBox.size.width - _indWidth).abs() > .5) {
+        setState(() {
+          _indLeft = pos.dx;
+          _indWidth = tabBox.size.width;
+        });
+      }
+    });
   }
 
   Widget _navBar() {
@@ -293,46 +346,64 @@ class _ShellState extends State<Shell> {
       (Icons.person_outline_rounded, Icons.person_rounded, 'نمایه'),
       (Icons.settings_outlined, Icons.settings_rounded, 'پیکربندی'),
     ];
+    _measureIndicator();
+    final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
       margin: const EdgeInsets.fromLTRB(22, 10, 22, 26),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(44),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: const [
           BoxShadow(color: Color(0x1F000000), blurRadius: 16, offset: Offset(0, 4))
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        key: _navStackKey,
         children: [
-          for (var i = 0; i < items.length; i++)
-            GestureDetector(
-              onTap: () => _go(i),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.symmetric(
-                    horizontal: tab == i ? 17 : 12, vertical: 11),
-                decoration: BoxDecoration(
-                  color: tab == i ? pal.sel : Colors.transparent,
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Row(children: [
-                  Icon(tab == i ? items[i].$2 : items[i].$1,
-                      size: 23,
-                      color: tab == i ? pal.bg : pal.ink.withValues(alpha: .72)),
-                  if (tab == i) ...[
-                    const SizedBox(width: 7),
-                    Text(items[i].$3,
-                        style: TextStyle(
-                            color: pal.bg,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14.5)),
-                  ],
-                ]),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            left: _indLeft,
+            top: 0,
+            bottom: 0,
+            width: _indWidth,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: selSoft,
+                borderRadius: BorderRadius.circular(19),
               ),
             ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (var i = 0; i < items.length; i++)
+                GestureDetector(
+                  key: _tabKeys[i],
+                  onTap: () => _go(i),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: tab == i ? 13 : 11, vertical: 9),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(tab == i ? items[i].$2 : items[i].$1,
+                          size: 22,
+                          color: tab == i
+                              ? pal.bg
+                              : pal.ink.withValues(alpha: .72)),
+                      if (tab == i) ...[
+                        const SizedBox(width: 6),
+                        Text(items[i].$3,
+                            style: TextStyle(
+                                color: pal.bg,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5)),
+                      ],
+                    ]),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -348,10 +419,10 @@ class _ShellState extends State<Shell> {
                 e.ar.contains(query) || e.fa.any((f) => f.contains(query)))
             .toList();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
       child: Column(children: [
         // جای لوگو (در نسخه‌های بعد می‌آید) — اشیاء پایین‌تر شروع می‌شوند
-        const SizedBox(height: 58),
+        const SizedBox(height: 86),
         SizedBox(
           height: 58,
           child: TextField(
@@ -391,7 +462,7 @@ class _ShellState extends State<Shell> {
               width: 124,
               child: SingleChildScrollView(
                 child: Column(children: [
-                  _sidePill('گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d))),
+                  _sidePill('گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d, onTapEntry: _showEntry))),
                   _sidePill('درست‌نویسی', () => _open(CorrectorPage(dict: d))),
                   _sidePill('نیم‌فاصله', () => _open(const NimeFaselePage())),
                   _sidePill('پندواژه', () => _open(const PandvazhePage())),
@@ -619,7 +690,7 @@ class _ShellState extends State<Shell> {
   // ---------- بخش‌ها (همهٔ قابلیت‌ها) ----------
   Widget _sectionsPage(Dictionary d) {
     final tiles = <(IconData, String, VoidCallback)>[
-      (Icons.menu_book_rounded, 'گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d))),
+      (Icons.menu_book_rounded, 'گنجینهٔ واژه‌ها', () => _open(LexiconPage(dict: d, onTapEntry: _showEntry))),
       (Icons.spellcheck_rounded, 'درست‌نویسی', () => _open(CorrectorPage(dict: d))),
       (Icons.space_bar_rounded, 'نیم‌فاصله', () => _open(const NimeFaselePage())),
       (Icons.format_quote_rounded, 'پندواژه', () => _open(const PandvazhePage())),
@@ -637,14 +708,18 @@ class _ShellState extends State<Shell> {
     return _pageShell(
       'بخش‌ها',
       Column(children: [
-        Padding(
+        LayoutBuilder(builder: (context, c) {
+          // Same height as the grid tiles below (2 columns, 14 spacing,
+          // aspect 1.25, 24 page padding on each side).
+          final tileH = ((c.maxWidth - 48 - 14) / 2) / 1.25;
+          return Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
           child: Stagger(
             index: 0,
             child: GestureDetector(
               onTap: () => _pushPage(_categoriesPage(d)),
               child: Container(
-                height: 98,
+                height: tileH,
                 decoration: BoxDecoration(
                     color: pal.pillC, borderRadius: BorderRadius.circular(24)),
                 padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -673,7 +748,8 @@ class _ShellState extends State<Shell> {
               ),
             ),
           ),
-        ),
+          );
+        }),
         Expanded(
           child: GridView.count(
             crossAxisCount: 2,
@@ -744,7 +820,7 @@ class _ShellState extends State<Shell> {
             ),
         ],
       ),
-    );
+    , back: true);
   }
 
   Widget _categoryWordsPage(Dictionary d, String catId) {
@@ -759,7 +835,7 @@ class _ShellState extends State<Shell> {
                     style: TextStyle(color: pal.muted)))
             : _pairList(items),
       ),
-    );
+    , back: true);
   }
 
   // ---------- واژهٔ روز ----------
@@ -792,7 +868,7 @@ class _ShellState extends State<Shell> {
           ]),
         ),
       ),
-    );
+    , back: true);
   }
 
   // ---------- یادگیری من ----------
@@ -846,7 +922,7 @@ class _ShellState extends State<Shell> {
           ]);
         },
       ),
-    );
+    , back: true);
   }
 
   // ---------- نمایهٔ کاربری ----------
@@ -944,6 +1020,7 @@ class _ShellState extends State<Shell> {
           ),
         ]),
         const SizedBox(height: 22),
+        if (user != null) ...[
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -1046,6 +1123,25 @@ class _ShellState extends State<Shell> {
           ]),
         ),
         const SizedBox(height: 24),
+        ],
+        if (user == null) ...[
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+                color: pal.pillC, borderRadius: BorderRadius.circular(22)),
+            child: Row(children: [
+              Icon(Icons.lock_outline_rounded, color: pal.muted, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                    'امتیاز، بج‌ها و همگام‌سازی از امکانات اصلی نمایه‌اند و با ورود فعال می‌شوند. به‌عنوان مهمان، واژه‌نامه، کیبورد و نشان‌شده‌های روی گوشی در دسترس‌تان است.',
+                    style:
+                        TextStyle(color: pal.muted, fontSize: 13, height: 1.8)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 24),
+        ],
         if (user == null && !showAuthForm) ...[
           SizedBox(
             width: double.infinity,
@@ -1201,14 +1297,24 @@ class _ShellState extends State<Shell> {
   }
 
   // ---------- تنظیمات ----------
+  Widget _groupHeader(String title, {bool first = false}) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, first ? 2 : 26, 16, 6),
+      child: Text(title,
+          style: TextStyle(
+              fontWeight: FontWeight.w800, fontSize: 16, color: pal.accent)),
+    );
+  }
+
   Widget _settingsPage(Dictionary d) {
     return _pageShell(
       'پیکربندی',
       ListView(padding: const EdgeInsets.all(22), children: [
+        _groupHeader('درست‌نویسی و کیبورد', first: true),
         SwitchListTile(
           title: const Text('جایگزینی خودکار واژه‌های عربی با فارسی'),
           subtitle: const Text(
-              'در کیبورد، واژهٔ عربیِ دارای برابرِ تک‌واژه‌ای، خودکار فارسی می‌شود'),
+              'در کیبورد، واژهٔ عربی با نخستین برابرِ تک‌واژه‌ای‌اش جایگزین می‌شود'),
           value: settings.replaceArabic,
           onChanged: (v) async {
             setState(() => settings.replaceArabic = v);
@@ -1224,7 +1330,7 @@ class _ShellState extends State<Shell> {
             await SettingsStore.update(settings);
           },
         ),
-        const Divider(height: 32),
+        const SizedBox(height: 8),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text('ارتفاع کیبورد',
@@ -1246,7 +1352,19 @@ class _ShellState extends State<Shell> {
             },
           ),
         ),
-        const Divider(height: 32),
+        const SizedBox(height: 8),
+        ListTile(
+          leading: const Icon(Icons.keyboard_rounded),
+          title: const Text('فعال‌کردن کیبورد سورن'),
+          subtitle: const Text('تنظیمات کیبورد اندروید باز می‌شود'),
+          onTap: () => SharedFiles.openInputSettings(),
+        ),
+        ListTile(
+          leading: const Icon(Icons.swap_horiz_rounded),
+          title: const Text('برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی'),
+          onTap: () => SharedFiles.showKeyboardPicker(),
+        ),
+        _groupHeader('نمایش'),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text('تم و رنگ',
@@ -1331,24 +1449,24 @@ class _ShellState extends State<Shell> {
             },
           ),
         ),
-        const Divider(height: 32),
+        _groupHeader('پایگاه واژه‌ها'),
         ListTile(
-          leading: const Icon(Icons.keyboard_rounded),
-          title: const Text('فعال‌کردن کیبورد سورن'),
-          subtitle: const Text('تنظیمات کیبورد اندروید باز می‌شود'),
-          onTap: () => SharedFiles.openInputSettings(),
-        ),
-        ListTile(
-          leading: const Icon(Icons.swap_horiz_rounded),
-          title: const Text('برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی'),
-          onTap: () => SharedFiles.showKeyboardPicker(),
-        ),
-        const Divider(height: 32),
-        ListTile(
-          leading: const Icon(Icons.system_update_rounded),
-          title: const Text('به‌روزرسانی پایگاه واژه‌ها'),
+          leading: const Icon(Icons.cloud_sync_rounded),
+          title: const Text('به‌روزرسانی آنلاین از سرور'),
           subtitle: Text(
-              'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — فایل JSON یا CSV برگزینید'),
+              'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — با اینترنت، تازه‌ترین پایگاه از سرور گرفته می‌شود؛ آفلاین، آرشیو روی گوشی به کار می‌رود'),
+          trailing: dbSyncing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : null,
+          onTap: dbSyncing ? null : () => _syncDbNow(d),
+        ),
+        ListTile(
+          leading: const Icon(Icons.file_open_rounded),
+          title: const Text('بارگذاری پایگاه از فایل'),
+          subtitle: const Text('فایل JSON یا CSV برگزینید'),
           onTap: () => _importDb(),
         ),
         ListTile(
@@ -1357,7 +1475,7 @@ class _ShellState extends State<Shell> {
           subtitle: const Text('JSON پایگاه در حافظهٔ برنامه ذخیره و مسیرش نشان داده می‌شود'),
           onTap: () => _exportDb(d),
         ),
-        const Divider(height: 32),
+        _groupHeader('درباره'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
@@ -1366,6 +1484,22 @@ class _ShellState extends State<Shell> {
         ),
       ]),
     );
+  }
+
+  Future<void> _syncDbNow(Dictionary d) async {
+    setState(() => dbSyncing = true);
+    final updated = await DictionarySync.syncFromServer(d);
+    if (updated) {
+      final d2 = await Dictionary.load();
+      if (mounted) setState(() => dict = d2);
+    }
+    if (mounted) {
+      setState(() => dbSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(updated
+              ? 'پایگاه واژه‌ها به‌روز شد'
+              : 'پایگاه به‌روز است یا ارتباط با سرور برقرار نشد')));
+    }
   }
 
   Future<void> _importDb() async {
@@ -1416,122 +1550,251 @@ class _ShellState extends State<Shell> {
     }
   }
 
-  Widget _pageShell(String title, Widget body) {
+  Widget _pageShell(String title, Widget body, {bool back = false}) {
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Text(title,
+        child: Row(children: [
+          if (back) ...[
+            BackButton(color: pal.ink),
+            const SizedBox(width: 4),
+          ],
+          Text(title,
               style:
                   const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
-        ),
+        ]),
       ),
       Expanded(child: body),
     ]);
   }
 }
 
+/// Scaffold for sub-pages: the content scrolls under a header strip
+/// whose background fades and blurs into the page colour — no hard
+/// rectangle edge appears under the page title while scrolling.
+Widget subScaffold(String title, Widget body) {
+  return Scaffold(
+    backgroundColor: pal.bg,
+    body: SafeArea(
+      child: Stack(children: [
+        Positioned.fill(top: 58, child: body),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 66,
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      pal.bg.withValues(alpha: .94),
+                      pal.bg.withValues(alpha: .55),
+                    ],
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Row(children: [
+                  BackButton(color: pal.ink),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: Text(title,
+                        style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                            color: pal.ink)),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
 // ================= گنجینهٔ واژه‌ها =================
+
 class LexiconPage extends StatefulWidget {
   final Dictionary dict;
-  const LexiconPage({super.key, required this.dict});
+  final void Function(Entry) onTapEntry;
+  const LexiconPage({super.key, required this.dict, required this.onTapEntry});
   @override
   State<LexiconPage> createState() => _LexiconPageState();
 }
 
 class _LexiconPageState extends State<LexiconPage> {
-  final Map<String, GlobalKey> _keys = {};
+  // Fixed row heights make letter offsets computable, so the alphabet
+  // rail jumps exactly (like a phone contacts app) instead of hunting
+  // for section widgets that may not be built yet.
+  static const double _headerH = 40;
+  static const double _rowH = 51;
+
+  late final List<String> _letters;
+  late final Map<String, double> _offsets;
+  late final List<Object> _items; // String = letter header, Entry = row
+  final ScrollController _scroll = ScrollController();
+  String? _railLetter;
+
+  @override
+  void initState() {
+    super.initState();
+    final entries = [...widget.dict.entries]
+      ..sort((a, b) => a.ar.compareTo(b.ar));
+    _letters = [];
+    _offsets = {};
+    _items = [];
+    var offset = 0.0;
+    String? cur;
+    for (final e in entries) {
+      final c = e.ar.isEmpty ? '' : e.ar[0];
+      if (c.isNotEmpty && c != cur) {
+        cur = c;
+        if (!_letters.contains(c)) _letters.add(c);
+        _offsets[c] = offset;
+        _items.add(c);
+        offset += _headerH;
+      }
+      _items.add(e);
+      offset += _rowH;
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _jumpTo(String letter, {bool animate = true}) {
+    final off = _offsets[letter];
+    if (off == null || !_scroll.hasClients) return;
+    final target = off.clamp(0.0, _scroll.position.maxScrollExtent);
+    if (animate) {
+      _scroll.animateTo(target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic);
+    } else {
+      _scroll.jumpTo(target);
+    }
+  }
+
+  void _railAt(double dy, double height) {
+    if (_letters.isEmpty || height <= 0) return;
+    final slot = height / _letters.length;
+    var idx = (dy / slot).floor().clamp(0, _letters.length - 1);
+    final letter = _letters[idx];
+    if (letter != _railLetter) {
+      _railLetter = letter;
+      _jumpTo(letter, animate: false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final entries = [...widget.dict.entries]
-      ..sort((a, b) => a.ar.compareTo(b.ar));
-    final letters = <String>[];
-    for (final e in entries) {
-      final c = e.ar.isEmpty ? '' : e.ar[0];
-      if (c.isNotEmpty && !letters.contains(c)) letters.add(c);
-    }
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: pal.bg,
-        elevation: 0,
-        foregroundColor: pal.ink,
-        title: const Text('گنجینهٔ واژه‌ها',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
-      body: Row(children: [
+    return subScaffold(
+      'گنجینهٔ واژه‌ها',
+      Row(children: [
+        // Alphabet rail — first in the RTL row, so it sits on the RIGHT.
+        SizedBox(
+          width: 30,
+          child: LayoutBuilder(builder: (context, c) {
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (d) => _railAt(d.localPosition.dy, c.maxHeight),
+              onVerticalDragStart: (d) =>
+                  _railAt(d.localPosition.dy, c.maxHeight),
+              onVerticalDragUpdate: (d) =>
+                  _railAt(d.localPosition.dy, c.maxHeight),
+              onVerticalDragEnd: (_) => _railLetter = null,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (final l in _letters)
+                    Text(l,
+                        style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: pal.muted)),
+                ],
+              ),
+            );
+          }),
+        ),
         Expanded(
           child: ShaderMask(
             shaderCallback: (rect) => const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
-              stops: [0, 0.03, 0.97, 1],
+              colors: [
+                Colors.transparent,
+                Colors.black,
+                Colors.black,
+                Colors.transparent
+              ],
+              stops: [0, 0.035, 0.965, 1],
             ).createShader(rect),
             blendMode: BlendMode.dstIn,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 4),
-              itemCount: entries.length,
+              controller: _scroll,
+              padding: const EdgeInsets.fromLTRB(6, 4, 18, 24),
+              itemCount: _items.length,
               itemBuilder: (_, i) {
-                final e = entries[i];
-                final first = i == 0 || entries[i - 1].ar[0] != e.ar[0];
-                return Column(
-                  key: first ? (_keys[e.ar[0]] ??= GlobalKey()) : null,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (first)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 14, bottom: 2),
-                        child: Text(e.ar[0],
+                final it = _items[i];
+                if (it is String) {
+                  return SizedBox(
+                    height: _headerH,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(it,
                             style: TextStyle(
-                                color: pal.muted,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13)),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                                color: pal.accent)),
                       ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(children: [
-                        Expanded(
-                          child: Text(
-                            e.hasFa ? e.fa.join('، ') : '—',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 15.5),
-                          ),
-                        ),
-                        Text(e.ar,
-                            style: TextStyle(
-                                color: pal.muted, fontSize: 13.5)),
-                      ]),
                     ),
-                    Divider(height: 1, color: pal.div),
-                  ],
+                  );
+                }
+                final e = it as Entry;
+                return SizedBox(
+                  height: _rowH,
+                  child: Column(children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => widget.onTapEntry(e),
+                        child: Row(children: [
+                          Text(e.ar,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15.5,
+                                  color: pal.ink)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(e.fa.join('، '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: pal.muted, fontSize: 13.5)),
+                          ),
+                          Icon(Icons.arrow_back_ios_new_rounded,
+                              size: 13, color: pal.muted),
+                        ]),
+                      ),
+                    ),
+                    Divider(
+                        height: 1,
+                        color: pal.ink.withValues(alpha: .07)),
+                  ]),
                 );
               },
             ),
-          ),
-        ),
-        SizedBox(
-          width: 24,
-          child: ListView(
-            children: [
-              for (final l in letters)
-                GestureDetector(
-                  onTap: () {
-                    final k = _keys[l];
-                    if (k?.currentContext != null) {
-                      Scrollable.ensureVisible(k!.currentContext!,
-                          duration: const Duration(milliseconds: 300));
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3),
-                    child: Text(l,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 11, color: pal.muted)),
-                  ),
-                ),
-            ],
           ),
         ),
       ]),
@@ -1558,14 +1821,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('درست‌نویسی',
-              style: TextStyle(fontWeight: FontWeight.w700))),
-      body: ListView(padding: const EdgeInsets.all(24), children: [
+    return subScaffold('درست‌نویسی', ListView(padding: const EdgeInsets.all(24), children: [
         Text(
             'متن بنویسید تا با همان موتوری که در کیبورد سورن کار می‌کند، درست شود:',
             style: TextStyle(color: pal.muted, height: 1.8)),
@@ -1630,14 +1886,7 @@ class NimeFaselePage extends StatelessWidget {
       ('فاصله و نشانه‌ها',
           'پیش از «،» و «.» و «؟» فاصله نمی‌آید: سلام، خوبی؟'),
     ];
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('نیم‌فاصله',
-              style: TextStyle(fontWeight: FontWeight.w700))),
-      body: ListView(
+    return subScaffold('نیم‌فاصله', ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Text(
@@ -1674,6 +1923,57 @@ class NimeFaselePage extends StatelessWidget {
 // ================= پندواژه (ضرب‌المثل‌ها) =================
 class PandvazhePage extends StatelessWidget {
   const PandvazhePage({super.key});
+
+  void _proverbSheet(BuildContext context, String title, String meaning) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: pal.cardC,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(26, 20, 26, 30),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                  color: pal.muted.withValues(alpha: .35),
+                  borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 20),
+          Icon(Icons.format_quote_rounded, size: 30, color: pal.accent),
+          const SizedBox(height: 12),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 18.5,
+                  fontWeight: FontWeight.w800,
+                  color: pal.ink,
+                  height: 1.8)),
+          const SizedBox(height: 10),
+          Text(meaning,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: pal.muted, height: 1.8, fontSize: 14.5)),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+                foregroundColor: pal.ink,
+                side: BorderSide(color: pal.ink.withValues(alpha: .25)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16))),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: title));
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('در حافظه کپی شد')));
+              }
+            },
+            icon: const Icon(Icons.copy_rounded, size: 17),
+            label: const Text('کپی'),
+          ),
+        ]),
+      ),
+    );
+  }
   static const proverbs = <(String, String)>[
     ('از کوره دررفتن', 'زود خشمگین شدن و از اندازه بیرون رفتن.'),
     ('آب در هاون کوبیدن', 'کار بیهوده و بی‌سرانجام کردن.'),
@@ -1696,35 +1996,32 @@ class PandvazhePage extends StatelessWidget {
   ];
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('پندواژه — ضرب‌المثل‌های فارسی',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17))),
-      body: ListView(
+    return subScaffold('پندواژه — ضرب‌المثل‌های فارسی', ListView(
         padding: const EdgeInsets.all(24),
         children: [
           for (var i = 0; i < proverbs.length; i++)
             Stagger(
               index: i,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 13),
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                    color: pal.pillC, borderRadius: BorderRadius.circular(20)),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(proverbs[i].$1,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 16.5)),
-                      const SizedBox(height: 6),
-                      Text(proverbs[i].$2,
-                          style: const TextStyle(
-                              color: Color(0xFF5C5546), height: 1.9)),
-                    ]),
+              child: GestureDetector(
+                onTap: () =>
+                    _proverbSheet(context, proverbs[i].$1, proverbs[i].$2),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 13),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                      color: pal.pillC, borderRadius: BorderRadius.circular(20)),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(proverbs[i].$1,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 16.5)),
+                        const SizedBox(height: 6),
+                        Text(proverbs[i].$2,
+                            style: const TextStyle(
+                                color: Color(0xFF5C5546), height: 1.9)),
+                      ]),
+                ),
               ),
             ),
         ],
@@ -1738,14 +2035,7 @@ class FreshPage extends StatelessWidget {
   const FreshPage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('واژه‌های تازه',
-              style: TextStyle(fontWeight: FontWeight.w700))),
-      body: FutureBuilder<Map<String, dynamic>?>(
+    return subScaffold('واژه‌های تازه', FutureBuilder<Map<String, dynamic>?>(
         future: SharedFiles.readJson('learned.json'),
         builder: (_, snap) {
           final history = (snap.data?['history'] as List?) ?? [];
@@ -1822,14 +2112,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('ریشه‌شناسی',
-              style: TextStyle(fontWeight: FontWeight.w700))),
-      body: Padding(
+    return subScaffold('ریشه‌شناسی', Padding(
         padding: const EdgeInsets.all(24),
         child: Column(children: [
           TextField(
@@ -1856,20 +2139,19 @@ class KeyboardGuidePage extends StatelessWidget {
   const KeyboardGuidePage({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          backgroundColor: pal.bg,
-          elevation: 0,
-          foregroundColor: pal.ink,
-          title: const Text('کیبورد سورن',
-              style: TextStyle(fontWeight: FontWeight.w700))),
-      body: ListView(padding: const EdgeInsets.all(24), children: [
+    return subScaffold('کیبورد سورن', ListView(padding: const EdgeInsets.all(24), children: [
         const Text(
-            'کیبورد سورن چیدمان و رفتار کیبورد سامسونگ را دارد:\n\n'
+            'کیبورد سورن کپیِ رفتار و چیدمان کیبورد سامسونگ است:\n\n'
             '• نوار بالا هنگام تایپ جای خود را به پیشنهادها می‌دهد و با پیکان برمی‌گردد.\n'
             '• هنگام زدن فاصله یا اینتر، اصلاح و جایگزینی خودکار انجام می‌شود: میخام ← می‌خوام، سوال ← پرسش.\n'
-            '• کلید نیم‌فاصله در ردیف پایین است (نشانهٔ دو پیکان با خط‌چین)؛ برای چسباندن درستِ جزءهای واژه.\n'
-            '• روی هر کلید نگه دارید تا نویسهٔ دومش بیاید (ص ← ض)؛ پیش‌نمایش نویسه هم بالای کلید دیده می‌شود.\n'
+            '• روی هر کلید نگه دارید: پنجره‌ای بالای کلید باز می‌شود با همهٔ نویسه‌های لایهٔ شیفت و خویشاوندهای آن کلید؛ انگشت را بکشید و رها کنید تا همان نویسه بنشیند.\n'
+            '• کلید شیفت لایهٔ اعراب و شکل‌های عربی/همزه‌دار را روی کلیدها نشان می‌دهد؛ نگه‌داشتنش لایه را قفل می‌کند.\n'
+            '• برای انگلیسی، روی کلید فاصله به چپ یا راست بکشید؛ زبان عوض می‌شود. نگه‌داشتن فاصله آن را به صفحهٔ حرکتِ نشانگر تبدیل می‌کند.\n'
+            '• کلید نیم‌فاصله در ردیف پایین است؛ نگه‌داشتنش «چسبان» (ZWJ) می‌دهد.\n'
+            '• کلید کنار فاصله «سفارشی» است: نگهش دارید و نمادی برگزینید؛ همان نماد روی کلید می‌ماند.\n'
+            '• نگه‌داشتن نقطه، ده نماد و نشانهٔ پرکاربرد (اعراب و ؟) را باز می‌کند.\n'
+            '• پنل ایموجی از نوار ابزار باز می‌شود: دسته‌بندی، جست‌وجو با واژه (مثل گربه یا خنده)، ایموجی‌های اخیر، و با نگه‌داشتن روی ایموجی‌های آدم، رنگ پوست.\n'
+            '• صفحهٔ دوم نمادها (کلید =<) لیگچرها و گلیف‌های عربی را دارد: ﷽ ﷲ ﷺ ﷻ ﷼ و اعراب کامل و کشیده.\n'
             '• پنل کلیپ‌بورد از نوار ابزار باز می‌شود و بریده‌هایتان را نگه می‌دارد.\n'
             '• ارتفاع کیبورد از تنظیمات برنامه کم‌وزیاد می‌شود.\n'
             '• کیبورد از انتخاب‌های شما روی همین دستگاه یاد می‌گیرد.\n\n'
