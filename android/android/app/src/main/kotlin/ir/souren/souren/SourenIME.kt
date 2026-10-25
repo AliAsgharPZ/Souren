@@ -259,7 +259,7 @@ class SourenIME : InputMethodService() {
         "i" to listOf("ì", "í", "î", "ï", "ī", "ı"),
         "n" to listOf("ñ", "ń"),
         "o" to listOf("ò", "ó", "ô", "ö", "ø", "õ", "ō"),
-        "s" to listOf("ß", "ś", "š", "$"),
+        "s" to listOf("ß", "ś", "š", "${'$'}"),
         "u" to listOf("ù", "ú", "û", "ü", "ū"),
         "y" to listOf("ý", "ÿ"),
         "z" to listOf("ž", "ź", "ż"),
@@ -272,7 +272,7 @@ class SourenIME : InputMethodService() {
         "،", "؛", "؟", "!", "«", "»", "(", ")", ":", "…", "@", "#", "&", "/", "٫", "٪"
     )
     private val customPopupSymbolsEn = listOf(
-        ",", ";", "?", "!", "(", ")", ":", "...", "@", "#", "&", "/", ".", "%", "'", """
+        ",", ";", "?", "!", "(", ")", ":", "...", "@", "#", "&", "/", ".", "%", "'", "\""
     )
 
     private fun rowsFor(p: Page): List<List<K>> = when (p) {
@@ -330,7 +330,7 @@ class SourenIME : InputMethodService() {
             listOf(
                 K("1/2", kind = Kind.MODE, weight = 1.5f),
                 K(if (lastLang == Page.FA) "اب" else "ABC", kind = Kind.BACK, weight = 1.5f),
-                K("€", weight = 1f), K("$", weight = 1f),
+                K("€", weight = 1f), K("${'$'}", weight = 1f),
                 K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.4f),
                 K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
             )
