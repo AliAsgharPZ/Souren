@@ -820,7 +820,7 @@ class _ShellState extends State<Shell> {
             ),
         ],
       ),
-    , back: true);
+    back: true);
   }
 
   Widget _categoryWordsPage(Dictionary d, String catId) {
@@ -835,7 +835,7 @@ class _ShellState extends State<Shell> {
                     style: TextStyle(color: pal.muted)))
             : _pairList(items),
       ),
-    , back: true);
+    back: true);
   }
 
   // ---------- واژهٔ روز ----------
@@ -868,7 +868,7 @@ class _ShellState extends State<Shell> {
           ]),
         ),
       ),
-    , back: true);
+    back: true);
   }
 
   // ---------- یادگیری من ----------
@@ -922,7 +922,7 @@ class _ShellState extends State<Shell> {
           ]);
         },
       ),
-    , back: true);
+    back: true);
   }
 
   // ---------- نمایهٔ کاربری ----------
@@ -1076,7 +1076,7 @@ class _ShellState extends State<Shell> {
           for (final id in badgeIds)
             Builder(builder: (_) {
               final earned = badgeEarned(id,
-                  loggedIn: user != null,
+                  loggedIn: true, // badges render only in the logged-in block
                   favorites: favorites.length,
                   likes: liked.length,
                   corrections: learnedCorrections,
