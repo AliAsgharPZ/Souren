@@ -249,8 +249,11 @@ class AuthService {
 
   static Future<HttpClientResponse> _send(
       String method, String path, Map<String, dynamic>? body) async {
-    final client = HttpClient();
-    final req = await client.openUrl(method, Uri.parse('$base$path'));
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
+    final req = await client
+        .openUrl(method, Uri.parse('$base$path'))
+        .timeout(const Duration(seconds: 15));
     req.headers.contentType = ContentType.json;
     if (_cookie != null) req.headers.add('Cookie', _cookie!);
     if (body != null) req.write(jsonEncode(body));
@@ -356,9 +359,12 @@ class AuthService {
   /// Public like counts for all words: {arabicWord: count}.
   static Future<Map<String, int>> fetchLikeCounts() async {
     try {
-      final client = HttpClient();
-      final req = await client.getUrl(Uri.parse('$base/api/likes'));
-      final res = await req.close();
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 10);
+      final req = await client
+          .getUrl(Uri.parse('$base/api/likes'))
+          .timeout(const Duration(seconds: 15));
+      final res = await req.close().timeout(const Duration(seconds: 15));
       final j = await _json(res);
       final counts = (j['counts'] as Map<String, dynamic>?) ?? {};
       return counts.map((k, v) => MapEntry(k, (v as num).toInt()));
@@ -378,6 +384,73 @@ class AuthService {
     } catch (_) {
       return null;
     }
+  }
+}
+
+// ---------------- Dictionary auto-update (Worker) ----------------
+
+/// Keeps the on-device dictionary in sync with the Worker dataset.
+/// Online: fetch /api/dictionary, transform the server shape
+/// ({dictionary: [{arabic, meanings}]}) into the app shape
+/// ({version, entries: [{ar, fa}]}) and, when the content differs,
+/// store it as dataset_updated.json (the archive Dictionary.load and
+/// the keyboard both prefer). Offline: nothing changes — the last
+/// downloaded archive (or the bundled dataset) keeps working.
+class DictionarySync {
+  static bool _running = false;
+
+  /// Returns true when a newer dataset was downloaded and stored.
+  static Future<bool> syncFromServer(Dictionary current) async {
+    if (_running) return false;
+    _running = true;
+    try {
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 10);
+      final req = await client
+          .getUrl(Uri.parse('${AuthService.base}/api/dictionary'))
+          .timeout(const Duration(seconds: 15));
+      final res = await req.close().timeout(const Duration(seconds: 20));
+      if (res.statusCode != 200) return false;
+      final text = await res.transform(utf8.decoder).join();
+      final j = jsonDecode(text) as Map<String, dynamic>;
+      final list = (j['dictionary'] as List?) ?? const [];
+      final entries = <Map<String, dynamic>>[
+        for (final e in list)
+          if (e is Map && e['arabic'] != null)
+            {
+              'ar': e['arabic'].toString(),
+              'fa': ((e['meanings'] as List?) ?? const [])
+                  .map((x) => x.toString())
+                  .toList(),
+            },
+      ];
+      if (entries.isEmpty) return false;
+      if (_sameAs(entries, current)) return false;
+      await SharedFiles.writeJson('dataset_updated.json', {
+        'version': current.version + 1,
+        'entries': entries,
+      });
+      return true;
+    } catch (_) {
+      return false; // offline: keep the archive on the device
+    } finally {
+      _running = false;
+    }
+  }
+
+  static bool _sameAs(List<Map<String, dynamic>> entries, Dictionary d) {
+    if (entries.length != d.entries.length) return false;
+    for (var i = 0; i < entries.length; i++) {
+      final a = entries[i];
+      final b = d.entries[i];
+      if (a['ar'] != b.ar) return false;
+      final fa = (a['fa'] as List).map((x) => x.toString()).toList();
+      if (fa.length != b.fa.length) return false;
+      for (var k = 0; k < fa.length; k++) {
+        if (fa[k] != b.fa[k]) return false;
+      }
+    }
+    return true;
   }
 }
 
