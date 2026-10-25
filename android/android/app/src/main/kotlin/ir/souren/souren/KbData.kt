@@ -139,4 +139,36 @@ object KbData {
         saveClipboardItems(ctx, items)
     }
 
+    // ---------------- keyboard-local state (SharedPreferences) ----------------
+    private fun prefs(ctx: Context) =
+        ctx.getSharedPreferences("souren_kb", Context.MODE_PRIVATE)
+
+    /** The symbol the comma-side custom key currently shows/inserts
+     *  (Samsung's custom key remembers the last picked symbol);
+     *  kept separately for the Persian and English layouts. */
+    fun customSymbol(ctx: Context, fa: Boolean): String =
+        prefs(ctx).getString(if (fa) "custom_symbol_fa" else "custom_symbol_en",
+            if (fa) "،" else ",") ?: if (fa) "،" else ","
+
+    fun setCustomSymbol(ctx: Context, fa: Boolean, symbol: String) {
+        prefs(ctx).edit()
+            .putString(if (fa) "custom_symbol_fa" else "custom_symbol_en", symbol)
+            .apply()
+    }
+
+    /** Recently used emojis, most recent first (max 32). */
+    fun emojiRecents(ctx: Context): List<String> {
+        val raw = prefs(ctx).getString("emoji_recents", "") ?: ""
+        return if (raw.isEmpty()) emptyList() else raw.split('\u0001').filter { it.isNotEmpty() }
+    }
+
+    fun recordEmoji(ctx: Context, emoji: String) {
+        val list = emojiRecents(ctx).toMutableList()
+        list.remove(emoji)
+        list.add(0, emoji)
+        prefs(ctx).edit()
+            .putString("emoji_recents", list.take(32).joinToString("\u0001"))
+            .apply()
+    }
+
 }

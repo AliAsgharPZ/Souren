@@ -13,40 +13,71 @@ object Corrector {
 
     private val stemFix = mapOf("خام" to "خوام", "خاد" to "خواهد", "خان" to "خوان")
 
-    private val miExceptions = setOf("میدان", "میدون")
+    private val miExceptions = setOf(
+        "میدان", "میدون", "میخک", "میهن", "میان", "میوه", "میراث"
+    )
 
     private val verbStemStarts = listOf(
-        "خواه", "خوا", "دون", "دان", "تون", "توان", "بین", "گیر", "ذار", "زار",
-        "خور", "نویس", "خند", "گری", "فهم", "سوز", "خون", "ساز", "پرس", "گرد",
-        "زن", "گو", "شو", "کن", "ده", "دو", "رم", "رو", "رس", "ره", "شه",
-        "گه", "پر"
+        "خواه", "خوا", "آی", "آور", "آفرین", "افکن", "فکن", "انداز", "انگیز",
+        "دون", "دان", "تون", "توان", "بین", "گیر", "ذار", "زار", "گذار", "گزار",
+        "خور", "خر", "نویس", "نوش", "نشین", "خند", "گری", "گریز", "فهم", "سوز",
+        "سوزان", "خون", "ساز", "پرس", "پرست", "گرد", "گشا", "زن", "گو", "گوی",
+        "شو", "کن", "ده", "نه", "دو", "رم", "رو", "روی", "رس", "ره", "شه",
+        "گه", "پر", "جه", "بار", "باف", "بند", "بر", "بوس", "پاش", "پذیر",
+        "پوش", "پیچ", "تاب", "تراش", "ترس", "جوش", "چرخ", "چسب", "چین",
+        "دار", "دم", "دوش", "ران", "رقص", "ریز", "ستان", "سرا", "شتاب",
+        "شکاف", "شمار", "شناس", "طلب", "غلت", "فرست", "فروش", "فشار",
+        "کار", "کش", "کوش", "کوب", "لرز", "مان", "مال", "مک", "نال"
     )
 
     private val fusedComparatives = setOf(
         "بهتر", "کمتر", "بیشتر", "مهتر", "کهتر",
         "بهترین", "کمترین", "بیشترین", "مهترین", "کهترین",
-        "دختر", "لیتر", "باختر"
+        "دختر", "لیتر", "باختر", "کبوتر", "انگشتر"
     )
 
-    private val haExceptions = setOf("تنها")
+    private val haExceptions = setOf("تنها", "آنها", "اینها")
 
     private val cliticStems = setOf(
         "خانه", "سایه", "صفحه", "نامه", "واژه", "جمله", "قصه", "لحظه", "هفته",
         "پنجره", "خاطره", "مسئله", "بهانه", "نشانه", "کشتی", "همه", "مدرسه",
-        "جعبه", "سرمایه", "پرده", "زمینه", "ستاره", "شیشه", "سکه", "تکه"
+        "جعبه", "سرمایه", "پرده", "زمینه", "ستاره", "شیشه", "سکه", "تکه",
+        "حادثه", "فاجعه", "واقعه", "صحنه", "نغمه", "شعله", "قطره", "نمره",
+        "نقشه", "چهره", "جلوه", "زاویه", "قهوه", "میوه", "پایه", "مایه",
+        "رویه", "لایه", "کوچه", "بوته", "غنچه", "جوانه", "کرانه", "ترانه",
+        "افسانه", "پیمانه", "شکوفه", "خاله", "عمه", "صندلی", "بازی", "ماهی",
+        "گاری", "دایی", "نیمه", "دهه", "گونه"
     )
 
-    private val clitics = listOf("شان", "تان", "مان", "اش", "ام", "ات")
+    private val clitics = listOf(
+        "شان", "تان", "مان", "شون", "تون", "مون", "اش", "ام", "ات", "م", "ت", "ش"
+    )
 
     private val biStems = setOf(
         "آبرو", "ابرو", "نهایت", "پایان", "فرهنگ", "ادب", "انصاف", "سواد",
         "شمار", "اندازه", "رحم", "مزه", "خبر", "نام", "نشان", "رنگ", "بو",
-        "حیا", "شرم", "عقلی"
+        "حیا", "شرم", "عقل", "احتیاط", "اختیار", "اراده", "اعتماد", "امان",
+        "باک", "باور", "بهره", "پروا", "پرده", "پول", "تاب", "تجربه",
+        "تردید", "تکلف", "توجه", "ثبات", "جا", "چاره", "حاصل", "حال",
+        "حساب", "حس", "خانمان", "خواب", "خود", "درد", "دریغ", "دلیل",
+        "دین", "رقیب", "روح", "ریا", "زبان", "سابقه", "سرپرست", "سلیقه",
+        "سود", "شعور", "شک", "صاحب", "صبر", "صدا", "ضرر", "طرف", "طاقت",
+        "عاطفه", "عرضه", "علاقه", "عیب", "غرض", "فایده", "قاعده", "قرار",
+        "قید", "کار", "کس", "گناه", "لطف", "محابا", "مسئولیت", "معرفت",
+        "معنی", "مغز", "ملاحظه", "منطق", "موقع", "نظم", "نصیب", "نقاب",
+        "نظیر", "نوا", "نیاز", "هدف", "همتا", "هنر", "هوا", "هوش",
+        "واسطه", "وفا", "وقفه", "سر"
     )
 
     val ezafeHeads = setOf(
         "همه", "خانه", "صفحه", "نامه", "سایه", "پنجره", "هفته", "لحظه",
-        "نکته", "واژه", "جمله", "قصه", "خاطره", "مسئله", "بهانه", "نشانه"
+        "نکته", "واژه", "جمله", "قصه", "خاطره", "مسئله", "بهانه", "نشانه",
+        "مدرسه", "چهره", "جلوه", "زاویه", "قهوه", "میوه", "پایه", "مایه",
+        "لایه", "رویه", "کوچه", "بوته", "غنچه", "جوانه", "کرانه", "ترانه",
+        "افسانه", "پیمانه", "شکوفه", "حادثه", "فاجعه", "واقعه", "صحنه",
+        "نغمه", "شعله", "قطره", "نمره", "نقشه", "سکه", "تکه", "شیشه",
+        "ستاره", "زمینه", "پرده", "سرمایه", "جعبه", "نیمه", "کلیه", "عده",
+        "دهه", "سده", "گونه", "رده", "مرحله", "ناحیه", "قاره", "جزیره"
     )
 
     fun normalizeLetters(s: String): String {
@@ -69,6 +100,11 @@ object Corrector {
 
         if (w.endsWith("ه‌ی")) {
             w = w.dropLast(2) + "ه" + HAMZA
+        }
+        // Attached ezafe ی after a known ه-final head: همهی → همهٔ
+        if (w.length > 2 && w.endsWith("ی") && !w.contains(HAMZA)) {
+            val stem = w.dropLast(1)
+            if (stem in ezafeHeads) w = stem + HAMZA
         }
 
         // می/نمی + verb stem (guarded)
@@ -104,7 +140,7 @@ object Corrector {
 
         // past-perfect endings after ه
         if (!w.contains(ZWNJ)) {
-            for (ending in listOf("ایم", "اید", "اند", "ام", "ای")) {
+            for (ending in listOf("است", "ایم", "اید", "اند", "ام", "ای")) {
                 if (w.endsWith(ending)) {
                     val stem = w.dropLast(ending.length)
                     if (stem.endsWith("ه") && stem.length >= 3) {
@@ -143,8 +179,16 @@ object Corrector {
         val eq = dictionary[w] ?: dictionary[word] ?: dictionary[normalizeLetters(word)]
         if (!eq.isNullOrEmpty()) {
             suggestions.addAll(eq)
-            if (replaceArabic && eq.size == 1 && !eq[0].contains(' ') && !eq[0].contains('،')) {
-                w = eq[0]
+            if (replaceArabic) {
+                // First single-word equivalent wins (the old rule needed
+                // exactly one equivalent, so multi-equivalent words like
+                // اتفاق never got replaced at all).
+                for (cand in eq) {
+                    if (!cand.contains(' ') && !cand.contains('،') && cand != w) {
+                        w = cand
+                        break
+                    }
+                }
             }
         }
         return WordFix(w, suggestions)
@@ -159,8 +203,16 @@ object Corrector {
     ): Pair<Int, String>? {
         if (before.isEmpty()) return null
         val words = before.split(' ')
-        val last = words.last()
-        if (last.isEmpty()) return null
+        val rawLast = words.last()
+        if (rawLast.isEmpty()) return null
+        // Strip trailing punctuation for the lookup; it is re-attached
+        // to the replacement («اتفاق،» used to match nothing).
+        var punct = ""
+        var last = rawLast
+        while (last.length > 1 && last.last() in "،.؟!؛:") {
+            punct = last.last() + punct
+            last = last.dropLast(1)
+        }
 
         if ((last == "ها" || last == "های" || last == "هایی") && words.size >= 2) {
             val prev = words[words.size - 2]
@@ -170,16 +222,16 @@ object Corrector {
         }
 
         val fix = correctWord(last, dictionary, replaceArabic)
-        val newLast = fix.fixed
+        val newLast = fix.fixed + punct
 
         if (words.size >= 2) {
             val prev = words[words.size - 2]
             val prevBare = prev.replace(HAMZA, "")
             if (prev.endsWith('ه') && prevBare in ezafeHeads && last.length >= 2) {
-                return (prev.length + 1 + last.length) to (prev + HAMZA + " " + newLast)
+                return (prev.length + 1 + rawLast.length) to (prev + HAMZA + " " + newLast)
             }
         }
-        if (newLast != last) return last.length to newLast
+        if (newLast != rawLast) return rawLast.length to newLast
         return null
     }
 
