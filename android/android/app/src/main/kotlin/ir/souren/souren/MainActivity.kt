@@ -3,9 +3,7 @@ package ir.souren.souren
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.provider.Settings
-import android.view.RoundedCorner
 import android.view.inputmethod.InputMethodManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -41,26 +39,6 @@ class MainActivity : FlutterActivity() {
                         startActivityForResult(intent, 4711)
                     }
                     else -> result.notImplemented()
-                }
-            }
-        // Screen corner radius (API 31+): the nav bar's corners must
-        // match the phone's own rounded screen corners. Returns the
-        // largest bottom-corner radius in dp, or 0 when unavailable
-        // (the Dart side falls back to a sensible default).
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/screen")
-            .setMethodCallHandler { call, result ->
-                if (call.method == "cornerRadius") {
-                    var px = 0
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        val insets = window.decorView.rootWindowInsets
-                        val bl = insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)?.radius ?: 0
-                        val br = insets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius ?: 0
-                        px = maxOf(bl, br)
-                    }
-                    val dp = px / resources.displayMetrics.density
-                    result.success(dp.toDouble())
-                } else {
-                    result.notImplemented()
                 }
             }
     }

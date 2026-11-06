@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'lucide.dart';
+import 'phosphor.dart';
 
 import 'data/store.dart';
 import 'engine/corrector.dart';
@@ -103,6 +102,24 @@ class FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
+/// Scale pop for toggle icons (like / bookmark): replays on [active] change.
+class PopIcon extends StatelessWidget {
+  final bool active;
+  final Widget child;
+  const PopIcon({super.key, required this.active, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(active),
+      tween: Tween(begin: 0.6, end: 1),
+      duration: Motion.fast,
+      curve: Motion.pop,
+      builder: (_, v, c) => Transform.scale(scale: v, child: c),
+      child: child,
+    );
+  }
+}
+
 /// A double that animates smoothly from its previous value (profile
 /// progress bar, score count-up) instead of jumping on every rebuild.
 class AnimatedValue extends StatefulWidget {
@@ -158,144 +175,43 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Capsule roundness (round 2): 90% of the maximum — radius = 0.45 × the
-/// capsule's own height (fully round would be 0.5 × height). Every
-/// capsule computes its radius from its own fixed height through this
-/// helper, so no two capsules share one hardcoded value.
-double capR(double height) => height * 0.45;
-BorderRadius capRadius(double height) => BorderRadius.circular(capR(height));
-
-/// Scroll-aware top+bottom scroll fade (shared by every scrollable list).
-/// Taller and smoother than round 1 (9% zones, eased multi-stop
-/// gradient). The top fade is ZERO at scroll offset 0 — it only appears,
-/// fading in smoothly (scroll-driven, smoothstepped), after the user
-/// scrolls a little. The bottom fade reaches the viewport floor so
-/// content dissolves as it slides behind the nav bar.
-class ScrollFade extends StatefulWidget {
-  final Widget child;
-  const ScrollFade({super.key, required this.child});
-  @override
-  State<ScrollFade> createState() => _ScrollFadeState();
-}
-
-class _ScrollFadeState extends State<ScrollFade>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late Animation<double> _anim;
-  double _target = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    );
-    _anim = Tween(
-      begin: 0.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-  }
-
-  void _onScroll(ScrollNotification n) {
-    // Smoothstep ramp over the first 48px of scroll.
-    final t = (n.metrics.pixels / 48).clamp(0.0, 1.0);
-    final eased = t * t * (3 - 2 * t);
-    if ((eased - _target).abs() > 0.01) {
-      _target = eased;
-      _anim = Tween(
-        begin: _anim.value,
-        end: _target,
-      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-      _ctrl.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (n) {
-        _onScroll(n);
-        return false;
-      },
-      child: AnimatedBuilder(
-        animation: _anim,
-        builder: (_, child) {
-          final top = 0.09 * _anim.value; // top fade zone, 0..9%
-          const bottom = 0.09; // bottom fade zone
-          final gradient = top < 0.001
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black,
-                    Colors.black,
-                    Color(0xBF000000),
-                    Color(0x59000000),
-                    Colors.transparent,
-                  ],
-                  stops: [0, 0.91, 0.94, 0.97, 1],
-                )
-              : LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: const [
-                    Colors.transparent,
-                    Color(0x59000000),
-                    Color(0xBF000000),
-                    Colors.black,
-                    Colors.black,
-                    Color(0xBF000000),
-                    Color(0x59000000),
-                    Colors.transparent,
-                  ],
-                  stops: [
-                    0,
-                    top * 0.4,
-                    top * 0.75,
-                    top,
-                    1 - bottom,
-                    1 - bottom * 0.75,
-                    1 - bottom * 0.4,
-                    1,
-                  ],
-                );
-          return ShaderMask(
-            shaderCallback: (rect) => gradient.createShader(rect),
-            blendMode: BlendMode.dstIn,
-            child: child,
-          );
-        },
-        child: widget.child,
-      ),
-    );
-  }
-}
-
 /// Soft top+bottom scroll fade (shared by every scrollable list in the app).
-Widget edgeFade({required Widget child}) => ScrollFade(child: child);
+/// The gradient spans the scrollable's full rect, so with extendBody the
+/// bottom fade reaches the viewport floor and content dissolves as it
+/// slides behind the floating nav bar.
+Widget edgeFade({required Widget child}) {
+  return ShaderMask(
+    shaderCallback: (rect) => const LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Colors.transparent,
+        Colors.black,
+        Colors.black,
+        Colors.transparent,
+      ],
+      stops: [0, 0.045, 0.955, 1],
+    ).createShader(rect),
+    blendMode: BlendMode.dstIn,
+    child: child,
+  );
+}
 
 /// Category display metadata: id -> (icon, Persian title).
 const catMeta = <String, (IconData, String)>{
-  'health': (LucideIcons.activity, 'پزشکی و تندرستی'),
-  'work': (LucideIcons.briefcase, 'پیشه و کار'),
-  'money': (LucideIcons.wallet, 'پول و بازار'),
-  'edu': (LucideIcons.notebookPen, 'آموزش و دانش'),
-  'lang': (LucideIcons.messageSquare, 'سخن و نوشتار'),
-  'home': (LucideIcons.house, 'خانه و خانواده'),
-  'nature': (LucideIcons.sun, 'طبیعت و گیتی'),
-  'faith': (LucideIcons.moon, 'باور و آیین'),
-  'state': (LucideIcons.building2, 'کشور و داد'),
-  'mind': (LucideIcons.compass, 'دل و اندیشه'),
-  'time': (LucideIcons.clock, 'زمان و سنجش'),
-  'travel': (LucideIcons.mapPin, 'سفر و جابه‌جایی'),
-  'general': (LucideIcons.globe, 'همگانی'),
+  'health': (PhosphorIconsRegular.firstAidKit, 'پزشکی و تندرستی'),
+  'work': (PhosphorIconsRegular.briefcase, 'پیشه و کار'),
+  'money': (PhosphorIconsRegular.storefront, 'پول و بازار'),
+  'edu': (PhosphorIconsRegular.graduationCap, 'آموزش و دانش'),
+  'lang': (PhosphorIconsRegular.chatsCircle, 'سخن و نوشتار'),
+  'home': (PhosphorIconsRegular.house, 'خانه و خانواده'),
+  'nature': (PhosphorIconsRegular.tree, 'طبیعت و گیتی'),
+  'faith': (PhosphorIconsRegular.flowerLotus, 'باور و آیین'),
+  'state': (PhosphorIconsRegular.bank, 'کشور و داد'),
+  'mind': (PhosphorIconsRegular.brain, 'دل و اندیشه'),
+  'time': (PhosphorIconsRegular.clock, 'زمان و سنجش'),
+  'travel': (PhosphorIconsRegular.airplaneTilt, 'سفر و جابه‌جایی'),
+  'general': (PhosphorIconsRegular.globe, 'همگانی'),
 };
 
 const catOrder = <String>[
@@ -372,6 +288,7 @@ class _SourenAppState extends State<SourenApp> {
           selectionHandleColor: pal.sel,
         ),
         progressIndicatorTheme: ProgressIndicatorThemeData(color: pal.sel),
+        snackBarTheme: SnackBarThemeData(backgroundColor: pal.sel),
         textTheme: TextTheme(
           bodyMedium: TextStyle(color: pal.ink, fontSize: 15),
           bodySmall: TextStyle(color: pal.muted, fontSize: 13),
@@ -430,1432 +347,6 @@ class Enter extends StatelessWidget {
   }
 }
 
-// ============ CUI components, recreated in Flutter ============
-// CUI (yappologistic/CUI, MIT) is a C99 immediate-mode UI library — it
-// cannot be imported into Flutter. These widgets recreate its
-// components' look and motion (spring/overshoot, press dip, stretch) in
-// Dart, in Souren's palette (Pal) and Arad typography. Behaviours follow
-// docs/components.md in the CUI repo (~/workspace/cui-reference).
-
-/// CUI button: presses scale to 0.97 on a snappy spring; one primary per
-/// view; loading keeps the label so nothing jumps.
-enum CuiButtonVariant { primary, secondary, outline, ghost, danger }
-
-class CuiButton extends StatefulWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final CuiButtonVariant variant;
-  final double height; // CUI sizes: sm 30, md 36, lg 44
-  final IconData? icon;
-  final bool loading;
-  final bool fullWidth;
-  const CuiButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
-    this.variant = CuiButtonVariant.secondary,
-    this.height = 44,
-    this.icon,
-    this.loading = false,
-    this.fullWidth = false,
-  });
-  @override
-  State<CuiButton> createState() => _CuiButtonState();
-}
-
-class _CuiButtonState extends State<CuiButton> {
-  double _scale = 1;
-  @override
-  Widget build(BuildContext context) {
-    final enabled = widget.onPressed != null && !widget.loading;
-    final Color bg, fg;
-    final BorderSide side;
-    switch (widget.variant) {
-      case CuiButtonVariant.primary:
-        bg = pal.sel;
-        fg = pal.bg;
-        side = BorderSide.none;
-      case CuiButtonVariant.secondary:
-        bg = pal.cardC;
-        fg = pal.ink;
-        side = BorderSide.none;
-      case CuiButtonVariant.outline:
-        bg = Colors.transparent;
-        fg = pal.ink;
-        side = BorderSide(color: pal.div);
-      case CuiButtonVariant.ghost:
-        bg = Colors.transparent;
-        fg = pal.ink;
-        side = BorderSide.none;
-      case CuiButtonVariant.danger:
-        bg = pal.accent;
-        fg = pal.bg;
-        side = BorderSide.none;
-    }
-    final content = Row(
-      mainAxisSize: widget.fullWidth ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (widget.loading)
-          SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-          )
-        else if (widget.icon != null) ...[
-          Icon(widget.icon, size: 18, color: fg),
-          const SizedBox(width: 8),
-        ],
-        Text(
-          widget.label,
-          style: TextStyle(
-            color: fg,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-    final btn = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: enabled ? (_) => setState(() => _scale = 0.97) : null,
-      onTapUp: enabled ? (_) => setState(() => _scale = 1) : null,
-      onTapCancel: () => setState(() => _scale = 1),
-      onTap: enabled ? widget.onPressed : null,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        child: Container(
-          height: widget.height,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: capRadius(widget.height),
-            border: Border.fromBorderSide(side),
-          ),
-          alignment: Alignment.center,
-          child: Opacity(opacity: enabled ? 1 : 0.45, child: content),
-        ),
-      ),
-    );
-    return widget.fullWidth ? SizedBox(width: double.infinity, child: btn) : btn;
-  }
-}
-
-/// CUI icon button: round, ghost by default. When the icon changes, the
-/// old one shrinks away while the new one scales in. [switchKey] lets a
-/// toggle (like/bookmark) animate the icon swap even when the glyph
-/// itself stays the same and only the state changes.
-class CuiIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final double size;
-  final Color? color;
-  final String? tooltip;
-  final Object? switchKey;
-  const CuiIconButton({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-    this.size = 22,
-    this.color,
-    this.tooltip,
-    this.switchKey,
-  });
-  @override
-  Widget build(BuildContext context) {
-    final btn = IconButton(
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-      icon: AnimatedSwitcher(
-        duration: Motion.fast,
-        switchInCurve: Motion.curve,
-        switchOutCurve: Motion.curve,
-        transitionBuilder: (child, anim) => ScaleTransition(
-          scale: Tween<double>(begin: 0.6, end: 1).animate(anim),
-          child: FadeTransition(opacity: anim, child: child),
-        ),
-        child: Icon(
-          icon,
-          key: ValueKey(switchKey ?? icon),
-          size: size,
-          color: color ?? pal.ink,
-        ),
-      ),
-      onPressed: onPressed,
-    );
-    return tooltip == null ? btn : Tooltip(message: tooltip, child: btn);
-  }
-}
-
-/// CUI segmented control: the highlight's two edges have their own
-/// springs — the leading edge runs ahead and the trailing one follows, so
-/// the highlight stretches toward the new option and draws in as it
-/// lands. (One controller: the leading edge interpolates while the
-/// highlight's width swells mid-flight, so the trailing edge lags.)
-/// Replaces the old hand-rolled _capsuleGroup.
-class CuiSegmented<T> extends StatefulWidget {
-  final List<(T, String)> options;
-  final T value;
-  final ValueChanged<T> onChanged;
-  final List<IconData>? icons;
-  const CuiSegmented({
-    super.key,
-    required this.options,
-    required this.value,
-    required this.onChanged,
-    this.icons,
-  });
-  @override
-  State<CuiSegmented<T>> createState() => _CuiSegmentedState<T>();
-}
-
-class _CuiSegmentedState<T> extends State<CuiSegmented<T>>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  int _index = 0;
-  double _from = 0;
-  double _to = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _index = widget.options.indexWhere((o) => o.$1 == widget.value);
-    if (_index < 0) _index = 0;
-    _from = _to = _index.toDouble();
-  }
-
-  @override
-  void didUpdateWidget(covariant CuiSegmented<T> old) {
-    super.didUpdateWidget(old);
-    final i = widget.options.indexWhere((o) => o.$1 == widget.value);
-    if (i >= 0 && i != _index) {
-      _from = _pos();
-      _to = i.toDouble();
-      _index = i;
-      _ctrl.forward(from: 0);
-    }
-  }
-
-  double _pos() {
-    final t = Curves.easeOutCubic.transform(_ctrl.value);
-    return _from + (_to - _from) * t;
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const h = 56.0;
-    return LayoutBuilder(
-      builder: (context, c) {
-        final innerW = c.maxWidth - 8;
-        final ow = innerW / widget.options.length;
-        return Container(
-          height: h,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: pal.cardC,
-            borderRadius: capRadius(h),
-          ),
-          child: ClipRRect(
-            borderRadius: capRadius(h - 8),
-            child: Stack(
-              children: [
-                AnimatedBuilder(
-                  animation: _ctrl,
-                  builder: (_, __) {
-                    final pos = _pos();
-                    final stretch = 1 + 0.22 * math.sin(math.pi * _ctrl.value);
-                    return Positioned(
-                      left: pos * ow,
-                      top: 0,
-                      bottom: 0,
-                      width: ow * stretch,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: pal.sel,
-                          borderRadius: capRadius(h - 8),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                Row(
-                  children: [
-                    for (var i = 0; i < widget.options.length; i++)
-                      Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => widget.onChanged(widget.options[i].$1),
-                          child: Container(
-                            height: double.infinity,
-                            alignment: Alignment.center,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.icons != null) ...[
-                                  Icon(
-                                    widget.icons![i],
-                                    size: 17,
-                                    color: i == _index ? pal.bg : pal.ink,
-                                  ),
-                                  const SizedBox(width: 6),
-                                ],
-                                Text(
-                                  widget.options[i].$2,
-                                  style: TextStyle(
-                                    color: i == _index ? pal.bg : pal.ink,
-                                    fontWeight: i == _index
-                                        ? FontWeight.w700
-                                        : FontWeight.w400,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// CUI switch: the thumb stretches with its speed in flight, keeping its
-/// volume, and rounds out as it lands; a press dips the control;
-/// checking overshoots a touch and settles. Applies immediately.
-class CuiSwitch extends StatefulWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  const CuiSwitch({super.key, required this.value, required this.onChanged});
-  @override
-  State<CuiSwitch> createState() => _CuiSwitchState();
-}
-
-class _CuiSwitchState extends State<CuiSwitch>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  double _scale = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-      value: widget.value ? 1 : 0,
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant CuiSwitch old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) {
-      if (widget.value) {
-        _ctrl.animateTo(
-          1,
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutBack,
-        );
-      } else {
-        _ctrl.animateTo(
-          0,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const w = 54.0, h = 32.0, pad = 3.0, thumb = 26.0;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _scale = 0.94),
-      onTapUp: (_) {
-        setState(() => _scale = 1);
-        widget.onChanged(!widget.value);
-      },
-      onTapCancel: () => setState(() => _scale = 1),
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, __) {
-            final t = _ctrl.value;
-            // Stretch mid-flight, volume preserved (x grows, y shrinks).
-            final stretch = 1 + 0.28 * math.sin(math.pi * t);
-            final squash = 1 - 0.14 * math.sin(math.pi * t);
-            final trackColor = Color.lerp(pal.div, pal.sel, t)!;
-            final x = pad + (w - 2 * pad - thumb) * t;
-            return ClipRRect(
-              borderRadius: capRadius(h),
-              child: Container(
-                width: w,
-                height: h,
-                decoration: BoxDecoration(
-                  color: trackColor,
-                  borderRadius: capRadius(h),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: x,
-                      top: pad,
-                      child: Transform.scale(
-                        scaleX: stretch,
-                        scaleY: squash,
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: thumb,
-                          height: thumb,
-                          decoration: BoxDecoration(
-                            color: pal.bg,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI checkbox: the whole row is clickable; a press dips the box;
-/// checking overshoots a touch and settles.
-class CuiCheckbox extends StatefulWidget {
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final String label;
-  final String? description;
-  const CuiCheckbox({
-    super.key,
-    required this.value,
-    required this.onChanged,
-    required this.label,
-    this.description,
-  });
-  @override
-  State<CuiCheckbox> createState() => _CuiCheckboxState();
-}
-
-class _CuiCheckboxState extends State<CuiCheckbox> {
-  double _scale = 1;
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _scale = 0.96),
-      onTapUp: (_) {
-        setState(() => _scale = 1);
-        widget.onChanged(!widget.value);
-      },
-      onTapCancel: () => setState(() => _scale = 1),
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: Motion.base,
-              curve: Motion.curve,
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: widget.value ? pal.sel : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: widget.value ? pal.sel : pal.div,
-                  width: 1.5,
-                ),
-              ),
-              child: AnimatedSwitcher(
-                duration: Motion.fast,
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: Tween<double>(
-                    begin: 0.4,
-                    end: 1,
-                  ).animate(CurvedAnimation(parent: anim, curve: Motion.pop)),
-                  child: child,
-                ),
-                child: widget.value
-                    ? Icon(
-                        LucideIcons.check,
-                        key: const ValueKey('on'),
-                        size: 16,
-                        color: pal.bg,
-                      )
-                    : const SizedBox.shrink(key: ValueKey('off')),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (widget.description != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      widget.description!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: pal.muted,
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI radio: a press dips the circle; selecting overshoots a touch and
-/// settles, the dot scaling in.
-class CuiRadio extends StatefulWidget {
-  final bool selected;
-  final VoidCallback onTap;
-  final String label;
-  final String? description;
-  const CuiRadio({
-    super.key,
-    required this.selected,
-    required this.onTap,
-    required this.label,
-    this.description,
-  });
-  @override
-  State<CuiRadio> createState() => _CuiRadioState();
-}
-
-class _CuiRadioState extends State<CuiRadio> {
-  double _scale = 1;
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _scale = 0.96),
-      onTapUp: (_) {
-        setState(() => _scale = 1);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _scale = 1),
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: widget.selected ? pal.sel : pal.div,
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: Motion.fast,
-                  transitionBuilder: (child, anim) => ScaleTransition(
-                    scale: Tween<double>(
-                      begin: 0.2,
-                      end: 1,
-                    ).animate(
-                      CurvedAnimation(parent: anim, curve: Motion.pop),
-                    ),
-                    child: child,
-                  ),
-                  child: widget.selected
-                      ? Container(
-                          key: const ValueKey('on'),
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: pal.sel,
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                      : const SizedBox.shrink(key: ValueKey('off')),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (widget.description != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      widget.description!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: pal.muted,
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI chip: toggle chip; press scales to 0.97 on a spring.
-class CuiChip extends StatefulWidget {
-  final String label;
-  final IconData? icon;
-  final bool selected;
-  final VoidCallback? onTap;
-  const CuiChip({
-    super.key,
-    required this.label,
-    this.icon,
-    required this.selected,
-    this.onTap,
-  });
-  @override
-  State<CuiChip> createState() => _CuiChipState();
-}
-
-class _CuiChipState extends State<CuiChip> {
-  double _scale = 1;
-  @override
-  Widget build(BuildContext context) {
-    const h = 36.0;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: widget.onTap == null
-          ? null
-          : (_) => setState(() => _scale = 0.97),
-      onTapUp: widget.onTap == null
-          ? null
-          : (_) => setState(() => _scale = 1),
-      onTapCancel: () => setState(() => _scale = 1),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        child: Container(
-          height: h,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: widget.selected ? pal.sel : pal.pillC,
-            borderRadius: capRadius(h),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.icon != null) ...[
-                Icon(
-                  widget.icon,
-                  size: 18,
-                  color: widget.selected ? pal.bg : pal.muted,
-                ),
-                const SizedBox(width: 7),
-              ],
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: widget.selected ? pal.bg : pal.muted,
-                  fontWeight: widget.selected
-                      ? FontWeight.w700
-                      : FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI text field: label, placeholder, hint, error, leading icon, and a
-/// clear button when not empty (always on for the search variant).
-class CuiTextField extends StatefulWidget {
-  final TextEditingController? controller;
-  final FocusNode? focusNode;
-  final String? hint;
-  final String? label;
-  final String? error;
-  final IconData? icon;
-  final bool search;
-  final ValueChanged<String>? onChanged;
-  final VoidCallback? onSubmitted;
-  final TextInputType? keyboardType;
-  final int maxLines;
-  final double height;
-  final bool autofocus;
-  final bool obscureText;
-  const CuiTextField({
-    super.key,
-    this.controller,
-    this.focusNode,
-    this.hint,
-    this.label,
-    this.error,
-    this.icon,
-    this.search = false,
-    this.onChanged,
-    this.onSubmitted,
-    this.keyboardType,
-    this.maxLines = 1,
-    this.height = 56,
-    this.autofocus = false,
-    this.obscureText = false,
-  });
-  @override
-  State<CuiTextField> createState() => _CuiTextFieldState();
-}
-
-class _CuiTextFieldState extends State<CuiTextField> {
-  late final TextEditingController _ctl;
-  bool _hasText = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctl = widget.controller ?? TextEditingController();
-    _hasText = _ctl.text.isNotEmpty;
-    _ctl.addListener(() {
-      final has = _ctl.text.isNotEmpty;
-      if (has != _hasText && mounted) setState(() => _hasText = has);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final field = TextField(
-      controller: _ctl,
-      focusNode: widget.focusNode,
-      onChanged: widget.onChanged,
-      onSubmitted: (_) => widget.onSubmitted?.call(),
-      keyboardType: widget.keyboardType,
-      maxLines: widget.maxLines,
-      autofocus: widget.autofocus,
-      obscureText: widget.obscureText,
-      style: const TextStyle(fontSize: 15),
-      decoration: InputDecoration(
-        hintText: widget.hint,
-        hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: widget.icon == null ? 18 : 0,
-          vertical: 16,
-        ),
-      ),
-    );
-    final box = Container(
-      height: widget.maxLines > 1 ? null : widget.height,
-      padding: widget.maxLines > 1
-          ? const EdgeInsets.symmetric(horizontal: 18, vertical: 4)
-          : null,
-      decoration: BoxDecoration(
-        color: pal.cardC,
-        borderRadius: capRadius(
-          widget.maxLines > 1 ? widget.height : widget.height,
-        ),
-        border: widget.error != null
-            ? Border.all(color: pal.accent, width: 1.5)
-            : null,
-      ),
-      child: Row(
-        children: [
-          if (widget.icon != null) ...[
-            const SizedBox(width: 16),
-            Icon(widget.icon, color: pal.muted, size: 22),
-            const SizedBox(width: 10),
-          ],
-          Expanded(child: field),
-          AnimatedSwitcher(
-            duration: Motion.fast,
-            transitionBuilder: (child, anim) =>
-                ScaleTransition(scale: anim, child: child),
-            child: _hasText
-                ? CuiIconButton(
-                    key: const ValueKey('clear'),
-                    icon: LucideIcons.x,
-                    size: 18,
-                    color: pal.muted,
-                    onPressed: () {
-                      _ctl.clear();
-                      widget.onChanged?.call('');
-                    },
-                  )
-                : const SizedBox.shrink(key: ValueKey('no-clear')),
-          ),
-          if (_hasText) const SizedBox(width: 6),
-        ],
-      ),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (widget.label != null) ...[
-          Padding(
-            padding: const EdgeInsets.only(right: 4, bottom: 7),
-            child: Text(
-              widget.label!,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: pal.ink,
-              ),
-            ),
-          ),
-        ],
-        box,
-        if (widget.error != null) ...[
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Text(
-              widget.error!,
-              style: TextStyle(color: pal.accent, fontSize: 13),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// CUI card: hairline border, no shadow. Pressable cards dip with a
-/// spring scale on press.
-class CuiCard extends StatefulWidget {
-  final Widget child;
-  final Color? color;
-  final double radius;
-  final EdgeInsetsGeometry? padding;
-  final VoidCallback? onTap;
-  final double? height;
-  const CuiCard({
-    super.key,
-    required this.child,
-    this.color,
-    this.radius = 20,
-    this.padding,
-    this.onTap,
-    this.height,
-  });
-  @override
-  State<CuiCard> createState() => _CuiCardState();
-}
-
-class _CuiCardState extends State<CuiCard> {
-  double _scale = 1;
-  @override
-  Widget build(BuildContext context) {
-    final card = Container(
-      height: widget.height,
-      padding: widget.padding,
-      decoration: BoxDecoration(
-        color: widget.color ?? pal.cardC,
-        borderRadius: BorderRadius.circular(widget.radius),
-        border: Border.all(color: pal.div),
-      ),
-      child: widget.child,
-    );
-    if (widget.onTap == null) return card;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => setState(() => _scale = 0.98),
-      onTapUp: (_) {
-        setState(() => _scale = 1);
-        widget.onTap!();
-      },
-      onTapCancel: () => setState(() => _scale = 1),
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        child: card,
-      ),
-    );
-  }
-}
-
-/// CUI badge: small status pill, tones mapped to Souren's palette.
-enum CuiTone { neutral, success, warning, danger, info }
-
-class CuiBadge extends StatelessWidget {
-  final String label;
-  final CuiTone tone;
-  final bool dot;
-  final bool solid;
-  const CuiBadge({
-    super.key,
-    required this.label,
-    this.tone = CuiTone.neutral,
-    this.dot = false,
-    this.solid = false,
-  });
-  @override
-  Widget build(BuildContext context) {
-    final Color bg, fg;
-    switch (tone) {
-      case CuiTone.neutral:
-        bg = pal.pillC;
-        fg = pal.muted;
-      case CuiTone.success:
-        bg = solid ? pal.sel : pal.pillC;
-        fg = solid ? pal.bg : pal.sel;
-      case CuiTone.warning:
-      case CuiTone.danger:
-        bg = solid ? pal.accent : pal.pillC;
-        fg = solid ? pal.bg : pal.accent;
-      case CuiTone.info:
-        bg = solid ? pal.sel : pal.pillC;
-        fg = solid ? pal.bg : pal.sel;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (dot) ...[
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: fg,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The ONE back button in the app: Lucide arrow (flips in RTL), pops the
-/// route. Used everywhere a back button appears — page headers, sheets,
-/// search — so it never shows a stray icon again.
-class CuiBackButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  const CuiBackButton({super.key, this.onPressed});
-  @override
-  Widget build(BuildContext context) {
-    return CuiIconButton(
-      icon: LucideIcons.arrowLeft,
-      size: 24,
-      onPressed: onPressed ?? () => Navigator.of(context).maybePop(),
-    );
-  }
-}
-
-/// CUI list item: leading icon, title, subtitle, trailing. Replaces
-/// Material ListTile.
-class CuiListItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  const CuiListItem({
-    super.key,
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: pal.ink),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 15)),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: pal.muted,
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (trailing != null) ...[
-              const SizedBox(width: 10),
-              trailing!,
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI toast: slides up with a spring, auto-dismisses, drag sideways to
-/// dismiss (a fling or a long drag carries it off; a short one springs
-/// back). Shown with CuiToast.show — replaces SnackBar everywhere.
-class CuiToast {
-  static void show(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    late final OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (_) => _ToastWidget(
-        message: message,
-        onDismiss: () {
-          if (entry.mounted) entry.remove();
-        },
-      ),
-    );
-    overlay.insert(entry);
-  }
-}
-
-class _ToastWidget extends StatefulWidget {
-  final String message;
-  final VoidCallback onDismiss;
-  const _ToastWidget({required this.message, required this.onDismiss});
-  @override
-  State<_ToastWidget> createState() => _ToastWidgetState();
-}
-
-class _ToastWidgetState extends State<_ToastWidget>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  bool _gone = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
-    _ctrl.forward();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && !_gone) _dismiss();
-    });
-  }
-
-  Future<void> _dismiss() async {
-    if (_gone) return;
-    _gone = true;
-    await _ctrl.reverse();
-    if (mounted) widget.onDismiss();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 132,
-      left: 24,
-      right: 24,
-      child: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, child) {
-            final t = Curves.easeOutBack.transform(_ctrl.value);
-            return Opacity(
-              opacity: _ctrl.value,
-              child: Transform.translate(
-                offset: Offset(0, 24 * (1 - t)),
-                child: Transform.scale(scale: 0.9 + 0.1 * t, child: child),
-              ),
-            );
-          },
-          child: Dismissible(
-            key: const ValueKey('toast'),
-            direction: DismissDirection.horizontal,
-            onDismissed: (_) {
-              _gone = true;
-              widget.onDismiss();
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-              decoration: BoxDecoration(
-                color: pal.sel,
-                borderRadius: capRadius(48),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(LucideIcons.check, size: 18, color: pal.bg),
-                  const SizedBox(width: 9),
-                  Flexible(
-                    child: Text(
-                      widget.message,
-                      style: TextStyle(color: pal.bg, fontSize: 14.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// CUI slider: drag past either end and the track stretches like rubber,
-/// then springs back on release; tapping the track glides the thumb.
-/// (Library component — no current screen has a slider control yet.)
-class CuiSlider extends StatefulWidget {
-  final double value; // 0..1
-  final ValueChanged<double> onChanged;
-  final String Function(double)? format;
-  const CuiSlider({
-    super.key,
-    required this.value,
-    required this.onChanged,
-    this.format,
-  });
-  @override
-  State<CuiSlider> createState() => _CuiSliderState();
-}
-
-class _CuiSliderState extends State<CuiSlider>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  double _value = 0;
-  double _over = 0; // rubber-band overshoot beyond 0..1 (-0.25..0.25)
-
-  @override
-  void initState() {
-    super.initState();
-    _value = widget.value.clamp(0.0, 1.0);
-    _ctrl = AnimationController(vsync: this, duration: Motion.base);
-  }
-
-  @override
-  void didUpdateWidget(covariant CuiSlider old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) _value = widget.value.clamp(0.0, 1.0);
-  }
-
-  void _springBack() {
-    final from = _over;
-    _ctrl.reset();
-    final anim = Tween(begin: from, end: 0.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
-    );
-    anim.addListener(() {
-      if (mounted) setState(() => _over = anim.value);
-    });
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = (_value + _over * 0.5).clamp(-0.1, 1.1);
-    return LayoutBuilder(
-      builder: (context, c) {
-        final w = c.maxWidth;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (d) {
-                final target = (d.localPosition.dx / w).clamp(0.0, 1.0);
-                final from = _value;
-                _ctrl.reset();
-                final anim = Tween(begin: from, end: target).animate(
-                  CurvedAnimation(parent: _ctrl, curve: Motion.curve),
-                );
-                anim.addListener(() {
-                  if (mounted) {
-                    setState(() => _value = anim.value);
-                  }
-                });
-                anim.addStatusListener((s) {
-                  if (s == AnimationStatus.completed) {
-                    widget.onChanged(_value);
-                  }
-                });
-                _ctrl.forward();
-              },
-              onHorizontalDragUpdate: (d) {
-                final dv = d.delta.dx / w;
-                var next = _value + dv;
-                var over = 0.0;
-                if (next < 0) {
-                  over = (next * 0.4).clamp(-0.25, 0.0);
-                  next = 0;
-                } else if (next > 1) {
-                  over = ((next - 1) * 0.4).clamp(0.0, 0.25);
-                  next = 1;
-                }
-                setState(() {
-                  _value = next;
-                  _over = over;
-                });
-                widget.onChanged(_value);
-              },
-              onHorizontalDragEnd: (_) => _springBack(),
-              child: SizedBox(
-                height: 32,
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Container(
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: pal.div,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: shown.clamp(0.0, 1.0),
-                      child: Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: pal.sel,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: shown * w - 12,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: pal.bg,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: pal.sel, width: 2),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (widget.format != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                widget.format!(_value),
-                style: TextStyle(color: pal.muted, fontSize: 13),
-              ),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// CUI sheet (bottom): slides up from the bottom edge. The word-entry
-/// and proverb detail sheets share this one look (item 10).
-Future<void> cuiShowSheet(BuildContext context, Widget child) {
-  return showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: pal.bg,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-    ),
-    builder: (_) => child,
-  );
-}
-
-/// The ONE detail sheet in the app (item 10): the word-entry popup
-/// and the proverb popup are EXACTLY the same card — same size, same
-/// shape, same options (like, bookmark, copy). The toggles update in
-/// place (no pop-and-reopen).
-class DetailSheet extends StatefulWidget {
-  final String title;
-  final String body;
-  final bool liked;
-  final bool faved;
-  final VoidCallback onToggleLike;
-  final VoidCallback onToggleFav;
-  final String copyLabel;
-  final String copyText;
-  const DetailSheet({
-    super.key,
-    required this.title,
-    required this.body,
-    required this.liked,
-    required this.faved,
-    required this.onToggleLike,
-    required this.onToggleFav,
-    required this.copyLabel,
-    required this.copyText,
-  });
-  @override
-  State<DetailSheet> createState() => _DetailSheetState();
-}
-
-class _DetailSheetState extends State<DetailSheet> {
-  late bool _liked = widget.liked;
-  late bool _faved = widget.faved;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CuiIconButton(
-                    icon: LucideIcons.heart,
-                    size: 22,
-                    color: _liked ? pal.accent : pal.ink,
-                    tooltip: 'پسندیدن',
-                    onPressed: () {
-                      setState(() => _liked = !_liked);
-                      widget.onToggleLike();
-                    },
-                  ),
-                  CuiIconButton(
-                    icon: LucideIcons.bookmark,
-                    size: 22,
-                    color: pal.ink,
-                    tooltip: 'نشان کردن',
-                    onPressed: () {
-                      setState(() => _faved = !_faved);
-                      widget.onToggleFav();
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              widget.body,
-              style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
-            ),
-          ),
-          const SizedBox(height: 16),
-          CuiButton(
-            label: widget.copyLabel,
-            icon: LucideIcons.copy,
-            variant: CuiButtonVariant.primary,
-            fullWidth: true,
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: widget.copyText));
-              Navigator.pop(context);
-              CuiToast.show(context, 'کپی شد');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
 class Shell extends StatefulWidget {
   const Shell({super.key});
   @override
@@ -1879,51 +370,6 @@ class _ShellState extends State<Shell> {
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
 
-  // Device screen corner radius (item 14): read from Android (API 31+
-  // RoundedCorner via the souren/screen channel); 28dp fallback until
-  // it arrives. The nav bar's corners match the phone's own corners.
-  double _cornerRadius = 28;
-
-  // Home bottom-anchored layout (item 13): the word list is exactly as
-  // tall as the left buttons column, measured after layout.
-  final _homeButtonsKey = GlobalKey();
-  final _homeRowKey = GlobalKey();
-  double _homeListH = 556;
-  double _homeRowH = 590;
-
-  void _measureHome() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final bBox =
-          _homeButtonsKey.currentContext?.findRenderObject() as RenderBox?;
-      final rBox =
-          _homeRowKey.currentContext?.findRenderObject() as RenderBox?;
-      var changed = false;
-      if (bBox != null && (bBox.size.height - _homeListH).abs() > 0.5) {
-        _homeListH = bBox.size.height;
-        changed = true;
-      }
-      if (rBox != null && (rBox.size.height - _homeRowH).abs() > 0.5) {
-        _homeRowH = rBox.size.height;
-        changed = true;
-      }
-      if (changed) setState(() {});
-    });
-  }
-
-  Future<void> _fetchCornerRadius() async {
-    try {
-      final v = await const MethodChannel(
-        'souren/screen',
-      ).invokeMethod<double>('cornerRadius');
-      if (v != null && v > 0 && mounted) {
-        setState(() => _cornerRadius = v);
-      }
-    } catch (_) {
-      // No rounded corners reported (or old Android): keep the fallback.
-    }
-  }
-
   // auth form state (نمایهٔ کاربری)
   bool showAuthForm = false;
   bool authRegister = false;
@@ -1938,13 +384,8 @@ class _ShellState extends State<Shell> {
   void initState() {
     super.initState();
     _searchFocus.addListener(() {
-      // Post-frame: rebuilding synchronously inside the focus change
-      // eats the tap that opened the keyboard (it took two taps).
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _searchFocused = _searchFocus.hasFocus);
-      });
+      if (mounted) setState(() => _searchFocused = _searchFocus.hasFocus);
     });
-    _fetchCornerRadius();
     _load();
   }
 
@@ -2057,12 +498,16 @@ class _ShellState extends State<Shell> {
               : const SizedBox.shrink(key: ValueKey('none')),
         ),
       ),
-      CuiIconButton(
-        icon: LucideIcons.heart,
-        switchKey: isLiked,
-        size: 21,
-        color: isLiked ? pal.accent : pal.muted,
-        tooltip: 'پسندیدن',
+      IconButton(
+        visualDensity: VisualDensity.compact,
+        icon: PopIcon(
+          active: isLiked,
+          child: Icon(
+            isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
+            size: 21,
+            color: isLiked ? pal.accent : pal.muted,
+          ),
+        ),
         onPressed: () => _toggleLike(ar),
       ),
     ]);
@@ -2089,410 +534,366 @@ class _ShellState extends State<Shell> {
       body: SafeArea(
         top: true,
         bottom: false,
-        // Tabs switch INSTANTLY (round 2): no cross-fade, no slide —
-        // the user dislikes tab-switch animation. The key only rebuilds
-        // the page when font/direction/text size change.
-        child: KeyedSubtree(
-          key: ValueKey(
-            '${settings.font}_${settings.direction}_${settings.textSize}',
+        child: AnimatedSwitcher(
+          duration: Motion.base,
+          transitionBuilder: enterTransition,
+          child: KeyedSubtree(
+            key: ValueKey(
+              '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
+            ),
+            child: pages[tab],
           ),
-          child: pages[tab],
         ),
       ),
-      bottomNavigationBar: _navBar(),
+      bottomNavigationBar:
+          Container(color: Colors.transparent, child: _navBar()),
     );
   }
 
-  // Nav bar (round 2): NO glassmorphism — the background is the
-  // PREVIOUS opaque color (pal.cardC) again, no BackdropFilter, no
-  // transparency. NO animation either: tabs switch instantly — no
-  // sliding indicator, no label appear/disappear, no pill morph (the
-  // user's standing preference). The selected pill is a static capsule
-  // (radius = 90% of max, 0.45 × its height); the bar's outer corners
-  // use the phone's own screen corner radius (item 14), and the bar
-  // sits flush at the bottom edge (SafeArea clears the gesture bar).
+  // One single capsule slides between the tabs (no per-tab rectangles).
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+  final GlobalKey _navStackKey = GlobalKey();
+  double _indLeft = 0;
+  double _indWidth = 0;
+
+  void _measureIndicator() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final stackBox =
+          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
+      final tabBox =
+          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
+      if (stackBox == null || tabBox == null) return;
+      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
+      if ((pos.dx - _indLeft).abs() > .5 ||
+          (tabBox.size.width - _indWidth).abs() > .5) {
+        setState(() {
+          _indLeft = pos.dx;
+          _indWidth = tabBox.size.width;
+        });
+      }
+    });
+  }
+
   Widget _navBar() {
-    final items = <(IconData, String)>[
-      (LucideIcons.house, 'پیشگاه'),
-      (LucideIcons.heart, 'پسندیده‌ها'),
-      (LucideIcons.grid3x3, 'بخش‌ها'),
-      (LucideIcons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, 'نمایه'),
-      (LucideIcons.settings, 'پیکربندی'),
+    // (outlined, filled, label) — Phosphor soft icons; selected becomes filled.
+    final items = <(IconData, IconData, String)>[
+      (PhosphorIconsRegular.house, PhosphorIconsFill.house, 'پیشگاه'),
+      (PhosphorIconsRegular.heart, PhosphorIconsFill.heart, 'پسندیده‌ها'),
+      (
+        PhosphorIconsRegular.squaresFour,
+        PhosphorIconsFill.squaresFour,
+        'بخش‌ها',
+      ),
+      (PhosphorIconsRegular.bookmark, PhosphorIconsFill.bookmark, 'نشان‌شده'),
+      (PhosphorIconsRegular.user, PhosphorIconsFill.user, 'نمایه'),
+      (PhosphorIconsRegular.gear, PhosphorIconsFill.gear, 'پیکربندی'),
     ];
+    _measureIndicator();
     final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
-    // Selected pill: icon 23 + vertical padding 28 = 51 tall.
-    const pillH = 51.0;
-    const barPadV = 6.0;
-    const barH = pillH + barPadV * 2;
-    return SafeArea(
-      top: false,
-      bottom: true,
-      left: false,
-      right: false,
-      child: Container(
-        height: barH,
-        margin: const EdgeInsets.fromLTRB(22, 6, 22, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: barPadV),
-        decoration: BoxDecoration(
-          color: pal.cardC,
-          borderRadius: BorderRadius.circular(_cornerRadius),
-          border: Border.all(color: pal.div.withValues(alpha: 0.6)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (var i = 0; i < items.length; i++)
-              GestureDetector(
-                onTap: () => _go(i),
-                child: Container(
-                  height: pillH,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tab == i ? selSoft : Colors.transparent,
-                    borderRadius: capRadius(pillH),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        items[i].$1,
-                        size: 23,
-                        color: tab == i
-                            ? pal.bg
-                            : pal.ink.withValues(alpha: .72),
-                      ),
-                      if (tab == i) ...[
-                        const SizedBox(width: 7),
-                        Text(
-                          items[i].$2,
-                          style: TextStyle(
-                            color: pal.bg,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14.5,
-                          ),
-                        ),
-                      ],
-                    ],
+    return Container(
+      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+            ),
+            child: Stack(
+              key: _navStackKey,
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  left: _indLeft,
+                  top: 0,
+                  bottom: 0,
+                  width: _indWidth,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: selSoft,
+                      borderRadius: BorderRadius.circular(19),
+                    ),
                   ),
                 ),
-              ),
-          ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      GestureDetector(
+                        key: _tabKeys[i],
+                        onTap: () => _go(i),
+                        child: AnimatedContainer(
+                          duration: Motion.base,
+                          curve: Motion.curve,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: tab == i ? 17 : 12,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: AnimatedSize(
+                            duration: Motion.base,
+                            curve: Motion.curve,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AnimatedSwitcher(
+                                  duration: Motion.fast,
+                                  switchInCurve: Motion.curve,
+                                  switchOutCurve: Motion.curve,
+                                  transitionBuilder: (child, anim) =>
+                                      FadeTransition(
+                                        opacity: anim,
+                                        child: ScaleTransition(
+                                          scale: Tween<double>(
+                                            begin: 0.8,
+                                            end: 1,
+                                          ).animate(anim),
+                                          child: child,
+                                        ),
+                                      ),
+                                  child: Icon(
+                                    key: ValueKey<bool>(tab == i),
+                                    tab == i ? items[i].$2 : items[i].$1,
+                                    size: 23,
+                                    color: tab == i
+                                        ? pal.bg
+                                        : pal.ink.withValues(alpha: .72),
+                                  ),
+                                ),
+                                if (tab == i)
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: 0, end: 1),
+                                    duration: Motion.base,
+                                    curve: Motion.curve,
+                                    builder: (_, v, c) =>
+                                        Opacity(opacity: v, child: c),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const SizedBox(width: 7),
+                                        Text(
+                                          items[i].$3,
+                                          style: TextStyle(
+                                            color: pal.bg,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 14.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
   // ---------- پیشگاه ----------
-  // Home is bottom-anchored (item 13): from the bottom — nav bar, then a
-  // row (section buttons LEFT, word list RIGHT, the list exactly as tall
-  // as the buttons), then the search capsule. The capsule is a positioned
-  // overlay so it can slide toward the centre and unfold its results
-  // like a roller blind (item 7d), above the strong blur.
   Widget _home(Dictionary d) {
     final frequent = d.entries.where((e) => e.hasFa).take(60).toList();
     final results = query.isEmpty
-        ? const <Entry>[]
+        ? frequent
         : d.entries
               .where(
                 (e) =>
                     e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
               )
               .toList();
-    _measureHome();
-    return LayoutBuilder(
-      builder: (context, c) {
-        final bodyH = c.maxHeight;
-        const capsuleH = 58.0;
-        const gap = 14.0;
-        // Resting capsule top: just above the row (the row's bottom
-        // clears the nav bar by kNavClearance). Far from the top edge
-        // (item 6) because the whole stack is bottom-anchored.
-        final restingTop = bodyH - kNavClearance - _homeRowH - gap - capsuleH;
-        // While searching the capsule slides toward the centre of the
-        // screen so the roller-blind results have room below it.
-        final focusedTop = bodyH * 0.18;
-        final capTop = _searchFocused ? focusedTop : restingTop;
-        final dropH = _searchFocused
-            ? (query.isEmpty
-                  ? 96.0
-                  : (results.length * 51.0 + 28).clamp(96.0, 360.0))
-            : 0.0;
-        return Stack(
-          children: [
-            // Main content: the row, bottom-anchored above the nav bar.
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: kNavClearance,
-              child: Row(
-                key: _homeRowKey,
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              // جای لوگو (در نسخه‌های بعد می‌آید) — اشیاء پایین‌تر شروع می‌شوند
+              const SizedBox(height: 58),
+              const SizedBox(height: 58), // جای کپسول سرچ (روی بلر شناور است)
+              const SizedBox(height: 26),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Word list on the RIGHT (first child in RTL).
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            'پرکاربردترین واژگان فارسی',
-                            style: TextStyle(
+                          Text(
+                            query.isEmpty
+                                ? 'پرکاربردترین واژگان فارسی'
+                                : 'نتیجه‌های جستجو',
+                            style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 17.5,
                             ),
                           ),
                           const SizedBox(height: 10),
-                          SizedBox(
-                            height: _homeListH,
-                            child: _pairList(frequent, bottomPad: 0),
+                          Expanded(
+                            child: _pairList(results, bottomPad: kNavClearance),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Section buttons on the LEFT.
                     SizedBox(
                       width: 124,
-                      child: Column(
-                        key: _homeButtonsKey,
-                        children: [
-                          _sidePill(
-                            'گنجینهٔ واژه‌ها',
-                            () => _open(
-                              LexiconPage(dict: d, onTapEntry: _showEntry),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: kNavClearance),
+                        child: Column(
+                          children: [
+                            _sidePill(
+                              'گنجینهٔ واژه‌ها',
+                              () => _open(LexiconPage(dict: d, onTapEntry: _showEntry)),
                             ),
-                          ),
-                          _sidePill(
-                            'درست‌نویسی',
-                            () => _open(CorrectorPage(dict: d)),
-                          ),
-                          _sidePill(
-                            'نیم‌فاصله',
-                            () => _open(const NimeFaselePage()),
-                          ),
-                          _sidePill(
-                            'پندواژه',
-                            () => _open(_pandvazhePage()),
-                          ),
-                          _sidePill(
-                            'واژه‌های تازه',
-                            () => _open(_freshPage(d)),
-                          ),
-                          // Word of the Day on Home too (item 12).
-                          _sidePill(
-                            'واژهٔ روز',
-                            () => _pushPage(_dailyPage(d)),
-                          ),
-                          _sidePill(
-                            'ریشه‌شناسی',
-                            () => _open(EtymologyPage(dict: d)),
-                          ),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(top: 12),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            decoration: BoxDecoration(
-                              color: pal.pillC,
-                              borderRadius: BorderRadius.circular(20),
+                            _sidePill(
+                              'درست‌نویسی',
+                              () => _open(CorrectorPage(dict: d)),
                             ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'شمار همهٔ واژه‌ها',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: pal.ink,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  faNum(d.entries.length),
-                                  style: const TextStyle(
-                                    fontSize: 23,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  '(${faNum(d.pairCount)} با برابر فارسی)',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: pal.muted,
-                                  ),
-                                ),
-                              ],
+                            _sidePill(
+                              'نیم‌فاصله',
+                              () => _open(const NimeFaselePage()),
                             ),
-                          ),
-                        ],
+                            _sidePill('پندواژه', () => _open(_pandvazhePage())),
+                            _sidePill(
+                              'واژه‌های تازه',
+                              () => _open(_freshPage(d)),
+                            ),
+                            _sidePill(
+                              'ریشه‌شناسی',
+                              () => _open(EtymologyPage(dict: d)),
+                            ),
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              decoration: BoxDecoration(
+                                color: pal.pillC,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'شمار همهٔ واژه‌ها',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: pal.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    faNum(d.entries.length),
+                                    style: const TextStyle(
+                                      fontSize: 23,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    '(${faNum(d.pairCount)} با برابر فارسی)',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: pal.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            // Strong blur + dim over the whole page while searching
-            // (item 7a: several times stronger than round 1's sigma 10).
-            if (_searchFocused)
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => _searchFocus.unfocus(),
-                  child: BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-                    child: ColoredBox(
-                      color: pal.bg.withValues(alpha: 0.55),
-                    ),
-                  ),
+            ],
+          ),
+          // بلر کل صفحه هنگام فوکوس سرچ — کپسول و دکمهٔ برگشت واضح می‌مانند.
+          if (_searchFocused)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => _searchFocus.unfocus(),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: pal.bg.withValues(alpha: 0.35)),
                 ),
               ),
-            // Search capsule: slides toward the centre while searching.
-            // One tap focuses AND shows the keyboard (item 7b): the
-            // opaque tap handler requests focus and forces the input
-            // open, and the focus listener rebuilds post-frame so the
-            // rebuild never eats the tap.
-            AnimatedPositioned(
-              duration: Motion.base,
-              curve: Motion.curve,
-              top: capTop,
-              left: 24,
-              right: 24,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  _searchFocus.requestFocus();
-                  SystemChannels.textInput.invokeMethod('TextInput.show');
-                },
-                child: SizedBox(
-                  height: capsuleH,
-                  child: CuiTextField(
-                    controller: _searchCtl,
-                    focusNode: _searchFocus,
-                    hint: 'واژه‌ای را جستجو کنید',
-                    icon: LucideIcons.search,
-                    search: true,
-                    height: capsuleH,
-                    onChanged: (v) => setState(() => query = v.trim()),
+            ),
+          // کپسول سرچ (روی بلر، واضح)
+          Positioned(
+            top: 58,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: 58,
+              child: TextField(
+                controller: _searchCtl,
+                focusNode: _searchFocus,
+                onChanged: (v) => setState(() => query = v.trim()),
+                decoration: InputDecoration(
+                  hintText: 'واژه‌ای را جستجو کنید',
+                  hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
+                  prefixIcon: Icon(
+                    PhosphorIconsRegular.magnifyingGlass,
+                    color: pal.muted,
+                    size: 23,
+                  ),
+                  filled: true,
+                  fillColor: pal.cardC,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
             ),
-            // Roller-blind results: unfold downward from under the
-            // capsule, in the capsule's own layer — ABOVE the blur
-            // (item 7d). The panel grows from 0 height, its content
-            // clipped at the bottom edge as it opens.
-            if (_searchFocused)
-              AnimatedPositioned(
-                duration: Motion.base,
-                curve: Motion.curve,
-                top: capTop + capsuleH,
-                left: 24,
-                right: 24,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Motion.curve,
-                  height: dropH,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(26),
-                    ),
-                    child: ColoredBox(
-                      color: pal.cardC,
-                      child: query.isEmpty
-                          ? Center(
-                              child: Text(
-                                'واژه‌ای بنویسید تا نتیجه‌ها اینجا بیایند',
-                                style: TextStyle(
-                                  color: pal.muted,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            )
-                          : results.isEmpty
-                          ? Center(
-                              child: Text(
-                                '«${_searchCtl.text.trim()}» پیدا نشد',
-                                style: TextStyle(
-                                  color: pal.muted,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            )
-                          : edgeFade(
-                              child: ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(
-                                  18,
-                                  8,
-                                  18,
-                                  14,
-                                ),
-                                itemCount: results.length,
-                                separatorBuilder: (_, __) =>
-                                    Divider(height: 1, color: pal.div),
-                                itemBuilder: (_, i) =>
-                                    _pairRow(results[i]),
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-            // Back button: fades + slides in when searching (item 7c).
-            // Same Lucide arrow as every other back button (item 11).
+          ),
+          // آیکون برگشت بالای صفحه هنگام فوکوس سرچ
+          if (_searchFocused)
             Positioned(
               top: 6,
-              right: 18,
-              child: AnimatedSwitcher(
-                duration: Motion.base,
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, -0.4),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(parent: anim, curve: Motion.curve),
-                    ),
-                    child: ScaleTransition(
-                      scale: Tween<double>(
-                        begin: 0.8,
-                        end: 1,
-                      ).animate(
-                        CurvedAnimation(parent: anim, curve: Motion.curve),
-                      ),
-                      child: child,
-                    ),
-                  ),
+              right: 0,
+              child: IconButton(
+                icon: Icon(
+                  PhosphorIconsRegular.arrowLeft,
+                  color: pal.ink,
+                  size: 24,
                 ),
-                child: _searchFocused
-                    ? CuiBackButton(
-                        key: const ValueKey('back'),
-                        onPressed: () => _searchFocus.unfocus(),
-                      )
-                    : const SizedBox.shrink(key: ValueKey('no-back')),
+                onPressed: () => _searchFocus.unfocus(),
               ),
             ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
-  // Section pill on Home: fixed height 54 so its radius is computed
-  // from its own height (90% of max, 0.45 × 54).
   Widget _sidePill(String label, VoidCallback onTap) {
-    const h = 54.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        height: h,
         margin: const EdgeInsets.only(bottom: 11),
+        padding: const EdgeInsets.symmetric(vertical: 17),
         decoration: BoxDecoration(
           color: pal.pillC,
-          borderRadius: capRadius(h),
+          borderRadius: BorderRadius.circular(20),
         ),
-        alignment: Alignment.center,
         child: Text(
           label,
           textAlign: TextAlign.center,
@@ -2580,21 +981,98 @@ class _ShellState extends State<Shell> {
   }
 
   void _showEntry(Entry e) {
-    // Opening a detail sheet dismisses the search (keyboard + blur).
-    _searchFocus.unfocus();
-    cuiShowSheet(
-      context,
-      DetailSheet(
-        title: e.ar,
-        body: e.hasFa
-            ? 'برابر فارسی: ${e.fa.join('، ')}'
-            : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
-        liked: liked.contains(e.ar),
-        faved: favorites.contains(e.ar),
-        onToggleLike: () => _toggleLike(e.ar),
-        onToggleFav: () => _toggleFav(e.ar),
-        copyLabel: 'کپی برابر فارسی',
-        copyText: e.hasFa ? e.fa.first : e.ar,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    e.ar,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: PopIcon(
+                        active: liked.contains(e.ar),
+                        child: Icon(
+                          liked.contains(e.ar)
+                              ? PhosphorIconsFill.heart
+                              : PhosphorIconsRegular.heart,
+                          color: liked.contains(e.ar) ? pal.accent : pal.ink,
+                        ),
+                      ),
+                      onPressed: () {
+                        _toggleLike(e.ar);
+                        Navigator.pop(context);
+                        _showEntry(e);
+                      },
+                    ),
+                    IconButton(
+                      icon: PopIcon(
+                        active: favorites.contains(e.ar),
+                        child: Icon(
+                          favorites.contains(e.ar)
+                              ? PhosphorIconsFill.bookmark
+                              : PhosphorIconsRegular.bookmark,
+                          color: pal.ink,
+                        ),
+                      ),
+                      onPressed: () {
+                        _toggleFav(e.ar);
+                        Navigator.pop(context);
+                        _showEntry(e);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                e.hasFa
+                    ? 'برابر فارسی: ${e.fa.join('، ')}'
+                    : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
+                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: pal.sel,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () {
+                  Clipboard.setData(
+                    ClipboardData(text: e.hasFa ? e.fa.first : e.ar),
+                  );
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(const SnackBar(content: Text('کپی شد')));
+                },
+                child: const Text('کپی برابر فارسی'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2643,47 +1121,47 @@ class _ShellState extends State<Shell> {
   Widget _sectionsPage(Dictionary d) {
     final tiles = <(IconData, String, VoidCallback)>[
       (
-        LucideIcons.fileText,
+        PhosphorIconsRegular.bookOpen,
         'گنجینهٔ واژه‌ها',
         () => _open(LexiconPage(dict: d, onTapEntry: _showEntry)),
       ),
       (
-        LucideIcons.squarePen,
+        PhosphorIconsRegular.textAa,
         'درست‌نویسی',
         () => _open(CorrectorPage(dict: d)),
       ),
       (
-        LucideIcons.type,
+        PhosphorIconsRegular.textH,
         'نیم‌فاصله',
         () => _open(const NimeFaselePage()),
       ),
-      (LucideIcons.messageSquare, 'پندواژه', () => _open(_pandvazhePage())),
+      (PhosphorIconsRegular.quotes, 'پندواژه', () => _open(_pandvazhePage())),
       (
-        LucideIcons.gitBranch,
+        PhosphorIconsRegular.treeStructure,
         'ریشه‌شناسی',
         () => _open(EtymologyPage(dict: d)),
       ),
       (
-        LucideIcons.sparkles,
+        PhosphorIconsRegular.sparkle,
         'واژه‌های تازه',
         () => _open(_freshPage(d)),
       ),
-      (LucideIcons.heart, 'پسندیده‌ها', () => _go(1)),
-      (LucideIcons.bookmark, 'نشان‌شده', () => _go(3)),
-      (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
+      (PhosphorIconsRegular.heart, 'پسندیده‌ها', () => _go(1)),
+      (PhosphorIconsRegular.bookmark, 'نشان‌شده', () => _go(3)),
+      (PhosphorIconsRegular.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
       (
-        LucideIcons.notebookPen,
+        PhosphorIconsRegular.graduationCap,
         'یادگیری من',
         () => _pushPage(_learningPage()),
       ),
-      (LucideIcons.user, 'نمایهٔ کاربری', () => _go(4)),
+      (PhosphorIconsRegular.user, 'نمایهٔ کاربری', () => _go(4)),
       (
-        LucideIcons.keyboard,
+        PhosphorIconsRegular.keyboard,
         'کیبورد سورن',
         () => _open(const KeyboardGuidePage()),
       ),
-      (LucideIcons.refreshCw, 'به‌روزرسانی پایگاه', () => _go(5)),
-      (LucideIcons.settings, 'پیکربندی', () => _go(5)),
+      (PhosphorIconsRegular.arrowClockwise, 'به‌روزرسانی پایگاه', () => _go(5)),
+      (PhosphorIconsRegular.gear, 'پیکربندی', () => _go(5)),
     ];
     return _pageShell(
       'بخش‌ها',
@@ -2695,15 +1173,19 @@ class _ShellState extends State<Shell> {
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
                 child: Enter(
                   index: 0,
-                  child: CuiCard(
+                  child: GestureDetector(
                     onTap: () => _pushPage(_categoriesPage(d)),
-                    color: pal.pillC,
-                    height: 98,
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    child: Row(
+                    child: Container(
+                      height: 98,
+                      decoration: BoxDecoration(
+                        color: pal.pillC,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: Row(
                         children: [
                           Icon(
-                            LucideIcons.layoutDashboard,
+                            PhosphorIconsRegular.gridFour,
                             size: 36,
                             color: pal.ink,
                           ),
@@ -2733,7 +1215,7 @@ class _ShellState extends State<Shell> {
                             ),
                           ),
                           Icon(
-                            LucideIcons.chevronLeft,
+                            PhosphorIconsRegular.caretLeft,
                             size: 17,
                             color: pal.muted,
                           ),
@@ -2743,6 +1225,7 @@ class _ShellState extends State<Shell> {
                   ),
                 ),
               ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24 + kNavClearance),
               sliver: SliverGrid.count(
@@ -2754,10 +1237,14 @@ class _ShellState extends State<Shell> {
                   for (var i = 0; i < tiles.length; i++)
                     Enter(
                       index: i + 1,
-                      child: CuiCard(
+                      child: GestureDetector(
                         onTap: tiles[i].$3,
-                        color: pal.pillC,
-                        child: Column(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: pal.pillC,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(tiles[i].$1, size: 32, color: pal.ink),
@@ -2770,6 +1257,7 @@ class _ShellState extends State<Shell> {
                           ),
                         ),
                       ),
+                    ),
                 ],
               ),
             ),
@@ -2790,15 +1278,17 @@ class _ShellState extends State<Shell> {
             for (var i = 0; i < catOrder.length; i++)
               Enter(
                 index: i,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: CuiCard(
-                    onTap: () =>
-                        _pushPage(_categoryWordsPage(d, catOrder[i])),
-                    color: pal.pillC,
+                child: GestureDetector(
+                  onTap: () => _pushPage(_categoryWordsPage(d, catOrder[i])),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 18,
+                    ),
+                    decoration: BoxDecoration(
+                      color: pal.pillC,
+                      borderRadius: BorderRadius.circular(22),
                     ),
                     child: Row(
                       children: [
@@ -2880,10 +1370,12 @@ class _ShellState extends State<Shell> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 22),
-              CuiButton(
-                label: 'دیدن واژه',
-                variant: CuiButtonVariant.outline,
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: pal.div),
+                ),
                 onPressed: () => _showEntry(e),
+                child: const Text('دیدن واژه'),
               ),
             ],
           ),
@@ -2944,15 +1436,16 @@ class _ShellState extends State<Shell> {
                     ),
                   ),
                 const SizedBox(height: 18),
-                CuiButton(
-                  label: 'پاک‌کردن آموخته‌ها',
-                  variant: CuiButtonVariant.outline,
-                  fullWidth: true,
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: pal.div),
+                  ),
                   onPressed: () async {
                     final f = await SharedFiles.file('learned.json');
                     if (await f.exists()) await f.delete();
                     setState(() {});
                   },
+                  child: const Text('پاک‌کردن آموخته‌ها'),
                 ),
               ],
             ),
@@ -2965,32 +1458,32 @@ class _ShellState extends State<Shell> {
   // ---------- نمایهٔ کاربری ----------
   static const _badgeMeta = <String, (IconData, String, String)>{
     'member': (
-      LucideIcons.badgeCheck,
+      PhosphorIconsRegular.sealCheck,
       'عضو سورن',
       'با نمایه وارد شده‌اید',
     ),
     'firstBookmark': (
-      LucideIcons.bookmark,
+      PhosphorIconsRegular.bookmark,
       'نخستین نشان',
       'یک واژه نشان کنید',
     ),
     'liker': (
-      LucideIcons.heart,
+      PhosphorIconsRegular.heart,
       'دل‌باختهٔ واژه',
       '۱۰ واژه را بپسندید',
     ),
     'keyboardStudent': (
-      LucideIcons.keyboard,
+      PhosphorIconsRegular.keyboard,
       'شاگرد کیبورد',
       '۲۰ اصلاح کیبورد را بپذیرید',
     ),
     'hundred': (
-      LucideIcons.star,
+      PhosphorIconsRegular.star,
       'باشگاه صدتایی‌ها',
       'به ۱۰۰ امتیاز برسید',
     ),
     'collector': (
-      LucideIcons.archive,
+      PhosphorIconsRegular.books,
       'گنجینه‌دار',
       '۲۵ واژه نشان کنید',
     ),
@@ -3072,7 +1565,7 @@ class _ShellState extends State<Shell> {
                           ),
                         )
                       : Icon(
-                          LucideIcons.user,
+                          PhosphorIconsRegular.user,
                           color: pal.bg,
                           size: 32,
                         ),
@@ -3105,9 +1598,12 @@ class _ShellState extends State<Shell> {
               ],
             ),
             const SizedBox(height: 22),
-            CuiCard(
-              color: pal.cardC,
+            Container(
               padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: pal.cardC,
+                borderRadius: BorderRadius.circular(24),
+              ),
               child: Column(
                 children: [
                   Row(
@@ -3194,11 +1690,36 @@ class _ShellState extends State<Shell> {
                         score: score,
                       );
                       final meta = _badgeMeta[id]!;
-                      return CuiChip(
-                        label: meta.$2,
-                        icon: meta.$1,
-                        selected: earned,
-                        onTap: null,
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: earned ? pal.sel : pal.pillC,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              meta.$1,
+                              size: 18,
+                              color: earned ? pal.bg : pal.muted,
+                            ),
+                            const SizedBox(width: 7),
+                            Text(
+                              meta.$2,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                color: earned ? pal.bg : pal.muted,
+                                fontWeight: earned
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -3214,9 +1735,12 @@ class _ShellState extends State<Shell> {
                 ),
               ),
             const SizedBox(height: 24),
-            CuiCard(
-              color: pal.cardC,
+            Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: pal.cardC,
+                borderRadius: BorderRadius.circular(24),
+              ),
               child: Column(
                 children: [
                   _statRow('واژه‌های نشان‌شده', favorites.length),
@@ -3238,7 +1762,7 @@ class _ShellState extends State<Shell> {
                     color: pal.pillC,
                     borderRadius: BorderRadius.circular(22)),
                 child: Row(children: [
-                  Icon(LucideIcons.lock, color: pal.muted, size: 22),
+                  Icon(PhosphorIconsRegular.lock, color: pal.muted, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -3265,37 +1789,47 @@ class _ShellState extends State<Shell> {
                       ),
               ),
             if (user != null) ...[
-              CuiButton(
-                label: 'همگام‌سازی اکنون',
-                variant: CuiButtonVariant.outline,
-                fullWidth: true,
-                onPressed: () async {
-                  await AuthService.pushProfile(favorites, liked);
-                  await _syncAfterLogin();
-                  if (mounted) CuiToast.show(context, 'همگام‌سازی انجام شد');
-                },
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: pal.div),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () async {
+                    await AuthService.pushProfile(favorites, liked);
+                    await _syncAfterLogin();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('همگام‌سازی انجام شد')),
+                      );
+                    }
+                  },
+                  child: const Text('همگام‌سازی اکنون'),
+                ),
               ),
               const SizedBox(height: 11),
-              CuiButton(
-                label: 'خروج از نمایه',
-                variant: CuiButtonVariant.danger,
-                fullWidth: true,
-                onPressed: () async {
-                  await AuthService.logout();
-                  if (mounted) setState(() {});
-                },
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: pal.accent,
+                    side: BorderSide(color: pal.div),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () async {
+                    await AuthService.logout();
+                    if (mounted) setState(() {});
+                  },
+                  child: const Text('خروج از نمایه'),
+                ),
               ),
             ],
             const SizedBox(height: 10),
-            CuiListItem(
-              icon: LucideIcons.notebookPen,
-              title: 'آموخته‌های کیبورد',
-              subtitle: 'آنچه کیبورد سورن از شما آموخته است',
-              trailing: Icon(
-                LucideIcons.chevronLeft,
-                size: 18,
-                color: pal.muted,
-              ),
+            ListTile(
+              leading: Icon(PhosphorIconsRegular.graduationCap, color: pal.ink),
+              title: const Text('آموخته‌های کیبورد'),
+              subtitle: const Text('آنچه کیبورد سورن از شما آموخته است'),
               onTap: () => _pushPage(_learningPage()),
             ),
           ],
@@ -3327,32 +1861,53 @@ class _ShellState extends State<Shell> {
   Widget _authButtons() {
     return Column(
       children: [
-        CuiButton(
-          label: 'ورود به نمایه',
-          variant: CuiButtonVariant.primary,
-          fullWidth: true,
-          onPressed: () => setState(() {
-            showAuthForm = true;
-            authRegister = false;
-            authError = null;
-          }),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: pal.sel,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+            onPressed: () => setState(() {
+              showAuthForm = true;
+              authRegister = false;
+              authError = null;
+            }),
+            child: const Text('ورود به نمایه'),
+          ),
         ),
         const SizedBox(height: 11),
-        CuiButton(
-          label: 'ساخت نمایهٔ تازه',
-          variant: CuiButtonVariant.outline,
-          fullWidth: true,
-          onPressed: () => setState(() {
-            showAuthForm = true;
-            authRegister = true;
-            authError = null;
-          }),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: pal.div),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+            onPressed: () => setState(() {
+              showAuthForm = true;
+              authRegister = true;
+              authError = null;
+            }),
+            child: const Text('ساخت نمایهٔ تازه'),
+          ),
         ),
       ],
     );
   }
 
   Widget _authForm() {
+    InputDecoration deco(String hint) => InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: pal.muted, fontSize: 14),
+      filled: true,
+      fillColor: pal.cardC,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+    );
     return AnimatedSize(
       duration: Motion.base,
       curve: Motion.curve,
@@ -3367,71 +1922,125 @@ class _ShellState extends State<Shell> {
             ),
           ),
           const SizedBox(height: 14),
-          if (authRegister) ...[
-            CuiTextField(
-              controller: _nameCtl,
-              hint: 'نام نمایشی (مانند: سورن)',
-              icon: LucideIcons.user,
+          if (authRegister)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: Motion.fast,
+              builder: (_, v, c) => Opacity(opacity: v, child: c),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _nameCtl,
+                    decoration: deco('نام نمایشی (مانند: سورن)'),
+                  ),
+                  const SizedBox(height: 11),
+                ],
+              ),
             ),
-            const SizedBox(height: 11),
-          ],
-          CuiTextField(
-            controller: _userCtl,
-            hint: 'نام کاربری',
-            icon: LucideIcons.user,
-          ),
+          TextField(controller: _userCtl, decoration: deco('نام کاربری')),
           const SizedBox(height: 11),
-          CuiTextField(
+          TextField(
             controller: _passCtl,
-            hint: 'گذرواژه (دست‌کم ۶ نویسه)',
-            icon: LucideIcons.lock,
             obscureText: true,
-            error: authError,
+            decoration: deco('گذرواژه (دست‌کم ۶ نویسه)'),
           ),
+          if (authError != null) ...[
+            const SizedBox(height: 11),
+            Text(
+              authError!,
+              style: TextStyle(color: pal.accent, fontSize: 13.5),
+            ),
+          ],
           const SizedBox(height: 15),
-          CuiButton(
-            label: authRegister ? 'ساختن نمایه' : 'ورود',
-            variant: CuiButtonVariant.primary,
-            fullWidth: true,
-            loading: authBusy,
-            onPressed: authBusy ? null : _authSubmit,
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: pal.sel,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              onPressed: authBusy ? null : _authSubmit,
+              child: authBusy
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(authRegister ? 'ساختن نمایه' : 'ورود'),
+            ),
           ),
-          CuiButton(
-            label: authRegister ? 'نمایه دارید؟ وارد شوید' : 'نمایه ندارید؟ یکی بسازید',
-            variant: CuiButtonVariant.ghost,
-            fullWidth: true,
+          TextButton(
             onPressed: () => setState(() {
               authRegister = !authRegister;
               authError = null;
             }),
+            child: Text(
+              authRegister
+                  ? 'نمایه دارید؟ وارد شوید'
+                  : 'نمایه ندارید؟ یکی بسازید',
+              style: TextStyle(color: pal.muted),
+            ),
           ),
-          CuiButton(
-            label: 'پس‌نمایش',
-            variant: CuiButtonVariant.ghost,
-            fullWidth: true,
+          TextButton(
             onPressed: () => setState(() => showAuthForm = false),
+            child: Text('پس‌نمایش', style: TextStyle(color: pal.muted)),
           ),
         ],
       ),
     );
   }
 
-  /// CUI segmented control (replaces the old hand-rolled capsule
-  /// group and Material SegmentedButton): two-spring highlight.
+  /// Custom capsule segmented control (replaces Material SegmentedButton):
+  /// one pill container, the selected option is a taller, less-round
+  /// capsule of its own.
   Widget _capsuleGroup<T>({
     required List<(T, String)> options,
     required T value,
     required ValueChanged<T> onChanged,
   }) {
-    return CuiSegmented<T>(
-      options: options,
-      value: value,
-      onChanged: onChanged,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: pal.cardC,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          for (final o in options)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(o.$1),
+                child: AnimatedContainer(
+                  duration: Motion.base,
+                  curve: Motion.curve,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: value == o.$1 ? pal.sel : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    o.$2,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: value == o.$1 ? pal.bg : pal.ink,
+                      fontWeight: value == o.$1
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  /// CUI toggle row: title + subtitle with the CUI switch (stretching
-  /// thumb, overshoot, press dip) — replaces Material SwitchListTile.
+  /// Custom capsule toggle (replaces Material SwitchListTile): title +
+  /// subtitle with an animated pill switch whose knob slides to the
+  /// reading-direction end when on.
   Widget _toggleRow({
     required String title,
     required String subtitle,
@@ -3469,7 +2078,32 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const SizedBox(width: 14),
-            CuiSwitch(value: value, onChanged: onChanged),
+            AnimatedContainer(
+              duration: Motion.base,
+              curve: Motion.curve,
+              width: 54,
+              height: 32,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: value ? pal.sel : pal.div,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: AnimatedAlign(
+                duration: Motion.base,
+                curve: Motion.curve,
+                alignment: value
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: pal.bg,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -3611,30 +2245,32 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const Divider(height: 32),
-            CuiListItem(
-              icon: LucideIcons.keyboard,
-              title: 'فعال‌کردن کیبورد سورن',
-              subtitle: 'تنظیمات کیبورد اندروید باز می‌شود',
+            ListTile(
+              leading: const Icon(PhosphorIconsRegular.keyboard),
+              title: const Text('فعال‌کردن کیبورد سورن'),
+              subtitle: const Text('تنظیمات کیبورد اندروید باز می‌شود'),
               onTap: () => SharedFiles.openInputSettings(),
             ),
-            CuiListItem(
-              icon: LucideIcons.repeat,
-              title: 'برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی',
+            ListTile(
+              leading: const Icon(PhosphorIconsRegular.arrowsLeftRight),
+              title: const Text('برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی'),
               onTap: () => SharedFiles.showKeyboardPicker(),
             ),
             const Divider(height: 32),
-            CuiListItem(
-              icon: LucideIcons.refreshCw,
-              title: 'به‌روزرسانی پایگاه واژه‌ها',
-              subtitle:
-                  'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — فایل JSON یا CSV برگزینید',
+            ListTile(
+              leading: const Icon(PhosphorIconsRegular.arrowClockwise),
+              title: const Text('به‌روزرسانی پایگاه واژه‌ها'),
+              subtitle: Text(
+                'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — فایل JSON یا CSV برگزینید',
+              ),
               onTap: () => _importDb(),
             ),
-            CuiListItem(
-              icon: LucideIcons.download,
-              title: 'به‌روزرسانی آنلاین از سرور',
-              subtitle:
-                  'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — با اینترنت، تازه‌ترین پایگاه از سرور گرفته می‌شود؛ آفلاین، آرشیو روی گوشی به کار می‌رود',
+            ListTile(
+              leading: const Icon(PhosphorIconsRegular.cloudArrowDown),
+              title: const Text('به‌روزرسانی آنلاین از سرور'),
+              subtitle: Text(
+                'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — با اینترنت، تازه‌ترین پایگاه از سرور گرفته می‌شود؛ آفلاین، آرشیو روی گوشی به کار می‌رود',
+              ),
               trailing: dbSyncing
                   ? const SizedBox(
                       width: 20,
@@ -3643,11 +2279,12 @@ class _ShellState extends State<Shell> {
                   : null,
               onTap: dbSyncing ? null : () => _syncDbNow(d),
             ),
-            CuiListItem(
-              icon: LucideIcons.upload,
-              title: 'خروجی از پایگاه واژه‌ها',
-              subtitle:
-                  'JSON پایگاه در حافظهٔ برنامه ذخیره و مسیرش نشان داده می‌شود',
+            ListTile(
+              leading: const Icon(PhosphorIconsRegular.export),
+              title: const Text('خروجی از پایگاه واژه‌ها'),
+              subtitle: const Text(
+                'JSON پایگاه در حافظهٔ برنامه ذخیره و مسیرش نشان داده می‌شود',
+              ),
               onTap: () => _exportDb(d),
             ),
             const Divider(height: 32),
@@ -3673,12 +2310,10 @@ class _ShellState extends State<Shell> {
     }
     if (mounted) {
       setState(() => dbSyncing = false);
-      CuiToast.show(
-        context,
-        updated
-            ? 'پایگاه واژه‌ها به‌روز شد'
-            : 'پایگاه به‌روز است یا ارتباط با سرور برقرار نشد',
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(updated
+              ? 'پایگاه واژه‌ها به‌روز شد'
+              : 'پایگاه به‌روز است یا ارتباط با سرور برقرار نشد')));
     }
   }
 
@@ -3725,13 +2360,16 @@ class _ShellState extends State<Shell> {
         'words': freshArs,
       });
       if (mounted) {
-        CuiToast.show(context, 'پایگاه واژه‌ها به‌روز شد');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('پایگاه واژه‌ها به‌روز شد')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        CuiToast.show(
-          context,
-          'این فایل خوانا نیست؛ JSON یا CSV درست برگزینید',
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('این فایل خوانا نیست؛ JSON یا CSV درست برگزینید'),
+          ),
         );
       }
     }
@@ -3748,7 +2386,8 @@ class _ShellState extends State<Shell> {
       }),
     );
     if (mounted) {
-      CuiToast.show(context, 'ذخیره شد: ${f.path}');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('ذخیره شد: ${f.path}')));
     }
   }
 
@@ -3758,7 +2397,7 @@ class _ShellState extends State<Shell> {
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
         child: Row(children: [
           if (back) ...[
-            const CuiBackButton(),
+            BackButton(color: pal.ink),
             const SizedBox(width: 4),
           ],
           Text(title,
@@ -3801,7 +2440,7 @@ Widget subScaffold(String title, Widget body) {
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Row(children: [
-                  const CuiBackButton(),
+                  BackButton(color: pal.ink),
                   const SizedBox(width: 2),
                   Expanded(
                     child: Text(title,
@@ -3973,7 +2612,7 @@ class _LexiconPageState extends State<LexiconPage> {
                                 style: TextStyle(
                                     color: pal.muted, fontSize: 13.5)),
                           ),
-                          Icon(LucideIcons.chevronLeft,
+                          Icon(PhosphorIconsRegular.caretLeft,
                               size: 13, color: pal.muted),
                         ]),
                       ),
@@ -4027,16 +2666,28 @@ class _CorrectorPageState extends State<CorrectorPage> {
               style: TextStyle(color: pal.muted, height: 1.8),
             ),
             const SizedBox(height: 14),
-            CuiTextField(
+            TextField(
               controller: _ctrl,
               onChanged: _run,
               maxLines: 4,
-              hint: 'مثلاً: میخام عالیترین کتابها رو به همه افراد بدم، سوال دارم',
+              decoration: InputDecoration(
+                hintText: 'مثلاً: میخام عالیترین کتابها رو به همه افراد بدم، سوال دارم',
+                filled: true,
+                fillColor: pal.cardC,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
             const SizedBox(height: 18),
-            CuiCard(
-              color: pal.pillC,
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: pal.pillC,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: AnimatedSwitcher(
                 duration: Motion.fast,
                 transitionBuilder: (child, anim) =>
@@ -4058,13 +2709,14 @@ class _CorrectorPageState extends State<CorrectorPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(height: 14),
-                        CuiButton(
-                          label: 'کپی متن درست‌شده',
-                          icon: LucideIcons.copy,
-                          variant: CuiButtonVariant.primary,
-                          fullWidth: true,
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: pal.sel,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
                           onPressed: () =>
                               Clipboard.setData(ClipboardData(text: _out)),
+                          child: const Text('کپی متن درست‌شده'),
                         ),
                       ],
                     ),
@@ -4126,12 +2778,14 @@ class NimeFaselePage extends StatelessWidget {
             for (var i = 0; i < items.length; i++)
               Enter(
                 index: i,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 13),
-                  child: CuiCard(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 13),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
                     color: pal.pillC,
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -4153,7 +2807,6 @@ class NimeFaselePage extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -4259,12 +2912,16 @@ class _PandvazhePageState extends State<PandvazhePage> {
             faNum(count),
             style: TextStyle(color: pal.muted, fontSize: 12.5),
           ),
-        CuiIconButton(
-          icon: LucideIcons.heart,
-          switchKey: isLiked,
-          size: 21,
-          color: isLiked ? pal.accent : pal.muted,
-          tooltip: 'پسندیدن',
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          icon: PopIcon(
+            active: isLiked,
+            child: Icon(
+              isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
+              size: 21,
+              color: isLiked ? pal.accent : pal.muted,
+            ),
+          ),
           onPressed: () => _toggleLike(key),
         ),
       ],
@@ -4273,30 +2930,68 @@ class _PandvazhePageState extends State<PandvazhePage> {
 
   Widget _favButton(String key) {
     final isFav = _faved.contains(key);
-    return CuiIconButton(
-      icon: LucideIcons.bookmark,
-      switchKey: isFav,
-      size: 21,
-      color: pal.ink,
-      tooltip: 'نشان کردن',
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      icon: PopIcon(
+        active: isFav,
+        child: Icon(
+          isFav ? PhosphorIconsFill.bookmark : PhosphorIconsRegular.bookmark,
+          size: 21,
+          color: pal.ink,
+        ),
+      ),
       onPressed: () => _toggleFav(key),
     );
   }
 
-  // The proverb popup is EXACTLY the word-entry popup (item 10):
-  // same DetailSheet — same size, shape and options.
   void _proverbSheet(BuildContext context, String title, String meaning) {
-    cuiShowSheet(
-      context,
-      DetailSheet(
-        title: title,
-        body: meaning,
-        liked: _liked.contains(title),
-        faved: _faved.contains(title),
-        onToggleLike: () => _toggleLike(title),
-        onToggleFav: () => _toggleFav(title),
-        copyLabel: 'کپی ضرب‌المثل',
-        copyText: title,
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: pal.cardC,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(26, 20, 26, 30),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                  color: pal.muted.withValues(alpha: .35),
+                  borderRadius: BorderRadius.circular(3))),
+          const SizedBox(height: 20),
+          Icon(PhosphorIconsRegular.quotes, size: 30, color: pal.accent),
+          const SizedBox(height: 12),
+          Text(title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 18.5,
+                  fontWeight: FontWeight.w800,
+                  color: pal.ink,
+                  height: 1.8)),
+          const SizedBox(height: 10),
+          Text(meaning,
+              textAlign: TextAlign.center,
+              style:
+                  TextStyle(color: pal.muted, height: 1.8, fontSize: 14.5)),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+                foregroundColor: pal.ink,
+                side: BorderSide(color: pal.ink.withValues(alpha: .25)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16))),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: title));
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('در حافظه کپی شد')));
+              }
+            },
+            icon: const Icon(PhosphorIconsRegular.copy, size: 17),
+            label: const Text('کپی'),
+          ),
+        ]),
       ),
     );
   }
@@ -4444,13 +3139,29 @@ class _FreshPageState extends State<FreshPage> {
         padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
         child: Column(
           children: [
-            CuiButton(
-              label: 'واژهٔ روز',
-              icon: LucideIcons.star,
-              variant: CuiButtonVariant.secondary,
-              height: 54,
-              fullWidth: true,
-              onPressed: widget.onWordOfDay,
+            SizedBox(
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: widget.onWordOfDay,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 17),
+                  decoration: BoxDecoration(
+                    color: pal.pillC,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(PhosphorIconsRegular.star, size: 20, color: pal.ink),
+                      const SizedBox(width: 9),
+                      Text(
+                        'واژهٔ روز',
+                        style: TextStyle(fontSize: 15, color: pal.ink),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 14),
             Expanded(
@@ -4621,12 +3332,23 @@ class _EtymologyPageState extends State<EtymologyPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            CuiTextField(
+            TextField(
               controller: _ctrl,
               onChanged: _onChanged,
-              hint: 'واژه‌ای بنویسید تا ریشه‌اش را ببینید',
-              icon: LucideIcons.search,
-              search: true,
+              decoration: InputDecoration(
+                hintText: 'واژه‌ای بنویسید تا ریشه‌اش را ببینید',
+                prefixIcon: Icon(
+                  PhosphorIconsRegular.magnifyingGlass,
+                  color: pal.muted,
+                  size: 23,
+                ),
+                filled: true,
+                fillColor: pal.cardC,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             AnimatedSwitcher(
@@ -4634,16 +3356,18 @@ class _EtymologyPageState extends State<EtymologyPage> {
               transitionBuilder: enterTransition,
               child: _result.isEmpty
                   ? const SizedBox.shrink(key: ValueKey('no-result'))
-                  : Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: CuiCard(
-                        key: ValueKey(_result),
+                  : Container(
+                      key: ValueKey(_result),
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
                         color: pal.pillC,
-                        padding: const EdgeInsets.all(18),
-                        child: Text(
-                          _result,
-                          style: const TextStyle(fontSize: 17, height: 1.9),
-                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _result,
+                        style: const TextStyle(fontSize: 17, height: 1.9),
                       ),
                     ),
             ),
@@ -4750,18 +3474,19 @@ class KeyboardGuidePage extends StatelessWidget {
               style: TextStyle(height: 2, fontSize: 15),
             ),
             const SizedBox(height: 20),
-            CuiButton(
-              label: 'بازکردن تنظیمات کیبورد اندروید',
-              variant: CuiButtonVariant.primary,
-              fullWidth: true,
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: pal.sel,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               onPressed: () => SharedFiles.openInputSettings(),
+              child: const Text('بازکردن تنظیمات کیبورد اندروید'),
             ),
             const SizedBox(height: 12),
-            CuiButton(
-              label: 'برگزیدن کیبورد کنونی',
-              variant: CuiButtonVariant.outline,
-              fullWidth: true,
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(side: BorderSide(color: pal.div)),
               onPressed: () => SharedFiles.showKeyboardPicker(),
+              child: const Text('برگزیدن کیبورد کنونی'),
             ),
           ],
         ),
