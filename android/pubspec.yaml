@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.4.1+7
+version: 0.4.2+9
 
 environment:
   sdk: ^3.13.5
@@ -15,7 +15,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 flutter:
-  uses-material-design: false # no Material icons: Phosphor only
+  uses-material-design: false # no Material icons: Lucide only
   assets:
     - assets/db/dataset.json
     - assets/db/categories.json
@@ -28,13 +28,11 @@ flutter:
           weight: 500
         - asset: assets/fonts/arad/Arad-Bold.ttf
           weight: 700
-    # Phosphor soft icon pack (MIT) — vendored: phosphor_flutter 2.1.0
-    # cannot compile on current stable (extends now-final IconData).
-    - family: PhosphorRegular
+    # Lucide icon pack as shipped by CUI (ISC) — vendored TTF; the
+    # code points live in lib/lucide.dart, decoded from CUI's
+    # include/cui/cui_icons.h. Single stroke weight: the selected state
+    # is conveyed by color, not a filled variant.
+    - family: Lucide
       fonts:
-        - asset: assets/fonts/phosphor/Phosphor-Regular.ttf
-          weight: 400
-    - family: PhosphorFill
-      fonts:
-        - asset: assets/fonts/phosphor/Phosphor-Fill.ttf
+        - asset: assets/fonts/lucide/Lucide-CUI.ttf
           weight: 400
