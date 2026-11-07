@@ -23,7 +23,7 @@ jobs:
           channel: stable
       - name: Dataset integrity (anchors)
         shell: bash
-        run: set -o pipefail && python3 tools/build_dataset.py | head -1
+        run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Pub get
         run: flutter pub get
       - name: Analyze
