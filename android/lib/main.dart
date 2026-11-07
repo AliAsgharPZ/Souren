@@ -4024,9 +4024,9 @@ class ArabicRoots {
     final rows = data['entries'] as List? ?? const [];
     final result = <String, Set<String>>{};
     for (final row in rows.whereType<Map>()) {
-      final word = normalize(row['word']?.toString() ?? '');
+      final word = row['word']?.toString().trim() ?? '';
       final roots = (row['roots'] as List? ?? const [])
-          .map((e) => normalize(e.toString()))
+          .map((e) => e.toString().trim())
           .where((e) => e.isNotEmpty);
       if (word.isEmpty) continue;
       result.putIfAbsent(word, () => <String>{}).addAll(roots);
@@ -4035,6 +4035,17 @@ class ArabicRoots {
       for (final entry in result.entries)
         entry.key: entry.value.toList(growable: false),
     };
+  }
+
+  static List<String>? find(
+    Map<String, List<String>> data,
+    String word,
+  ) {
+    final normalized = normalize(word);
+    for (final entry in data.entries) {
+      if (normalize(entry.key) == normalized) return entry.value;
+    }
+    return null;
   }
 
   static const sourceLabel =
@@ -4057,7 +4068,7 @@ class _RootInfoCard extends StatelessWidget {
             !snapshot.hasData) {
           return const SizedBox.shrink();
         }
-        final roots = snapshot.data![ArabicRoots.normalize(word)];
+        final roots = ArabicRoots.find(snapshot.data!, word);
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 14),
@@ -4131,7 +4142,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
     if (initial.isNotEmpty) {
       _ctrl.text = initial;
       _query = _norm(initial);
-      _selectedWord = _query;
+      _selectedWord = initial;
     }
   }
 
@@ -4178,20 +4189,29 @@ class _EtymologyPageState extends State<EtymologyPage> {
             }
             final roots = snapshot.data!;
             final query = _query;
-            final selected = _selectedWord ??
-                (query.isNotEmpty && roots.containsKey(query) ? query : null);
+            String? exactMatch;
+            if (query.isNotEmpty) {
+              for (final word in roots.keys) {
+                if (_norm(word) == query) {
+                  exactMatch = word;
+                  break;
+                }
+              }
+            }
+            final selected = _selectedWord ?? exactMatch;
             final words = roots.keys.where((word) {
               if (query.isEmpty) return true;
-              return word.contains(query) ||
-                  (roots[word] ?? const []).any((root) => root.contains(query));
+              return _norm(word).contains(query) ||
+                  (roots[word] ?? const [])
+                      .any((root) => _norm(root).contains(query));
             }).toList()
               ..sort();
             final selectedRoots =
-                selected == null ? null : roots[selected];
+                selected == null ? null : ArabicRoots.find(roots, selected);
             Entry? dictionaryEntry;
             if (selected != null) {
               for (final entry in widget.dict.entries) {
-                if (_norm(entry.ar) == selected) {
+                if (_norm(entry.ar) == _norm(selected)) {
                   dictionaryEntry = entry;
                   break;
                 }

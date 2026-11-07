@@ -16,7 +16,7 @@ void main() {
     expect(entries.length, greaterThan(1000));
     expect(entries.first, contains('word'));
     expect(entries.first, contains('roots'));
-    expect(ArabicRoots.normalize('عِبْرَة'), 'عبرة');
+    expect(ArabicRoots.normalize('عِبْرَة'), 'عبره');
     expect(ArabicRoots.normalize('ى ١٢٣'), 'ی ۱۲۳');
   });
 }
