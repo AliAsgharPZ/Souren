@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Share/copy paths for the generated word & proverb images (A10). -->
+<paths>
+    <cache-path
+        name="share"
+        path="share/" />
+</paths>

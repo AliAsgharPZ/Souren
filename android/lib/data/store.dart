@@ -21,6 +21,13 @@ class SharedFiles {
     return _dir!;
   }
 
+  /// Clears the cached filesDir so a later call re-resolves it. Used by
+  /// tests that point the channel at a fresh temp directory.
+  @visibleForTesting
+  static void resetDirCache() {
+    _dir = null;
+  }
+
   static Future<File> file(String name) async =>
       File('${await dir()}/$name');
 
@@ -39,6 +46,23 @@ class SharedFiles {
     await f.writeAsString(jsonEncode(data));
   }
 
+  /// Writes JSON atomically: the data lands in a temp file first and is
+  /// renamed over the target, so a crash/interrupt can never leave a
+  /// half-written dataset or settings file behind.
+  static Future<void> writeJsonAtomic(String name, Object data) async {
+    final target = await file(name);
+    final tmp = File('${target.path}.tmp');
+    await tmp.writeAsString(jsonEncode(data), flush: true);
+    try {
+      await tmp.rename(target.path);
+    } catch (_) {
+      await target.writeAsString(jsonEncode(data));
+      try {
+        if (await tmp.exists()) await tmp.delete();
+      } catch (_) {}
+    }
+  }
+
   static Future<void> openInputSettings() async {
     try {
       await _channel.invokeMethod('openInputSettings');
@@ -49,6 +73,44 @@ class SharedFiles {
     try {
       await _channel.invokeMethod('showKeyboardPicker');
     } catch (_) {}
+  }
+}
+
+/// Native share/save/copy support (owner A10) — implemented over the
+/// existing 'souren/files' channel in MainActivity, so no share package
+/// is needed.
+class SharePlatform {
+  static const _channel = MethodChannel('souren/files');
+
+  static Future<void> shareText(String text) async {
+    try {
+      await _channel.invokeMethod('shareText', {'text': text});
+    } catch (_) {}
+  }
+
+  static Future<void> shareImage(Uint8List png, {String? text}) async {
+    try {
+      await _channel.invokeMethod('shareImage', {'png': png, 'text': text});
+    } catch (_) {}
+  }
+
+  /// Saves the PNG to the phone gallery; returns the path or null.
+  static Future<String?> saveImage(Uint8List png) async {
+    try {
+      return await _channel.invokeMethod<String>('saveImage', {'png': png});
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Copies the PNG to the clipboard (as an image URI clip).
+  static Future<bool> copyImage(Uint8List png) async {
+    try {
+      return await _channel.invokeMethod<bool>('copyImage', {'png': png}) ??
+          false;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
@@ -79,17 +141,214 @@ class Dictionary {
     return Dictionary(list, (j['version'] as num?)?.toInt() ?? 1, fromUpdate);
   }
 
-  /// Updated dataset in filesDir wins over the bundled asset.
+  /// Updated dataset in filesDir wins over the bundled asset — but ONLY
+  /// after strict validation (owner B2/B6): a malformed, corrupt or
+  /// half-written dataset_updated.json is ignored and the bundled
+  /// dataset keeps the app (and the keyboard) working.
   static Future<Dictionary> load() async {
     final updated = await SharedFiles.readJson('dataset_updated.json');
     if (updated != null) {
-      try {
-        return _parse(updated, true);
-      } catch (_) {}
+      final check = validateDatasetMap(updated);
+      if (check.ok) {
+        try {
+          return _parse(updated, true);
+        } catch (_) {}
+      }
     }
     final raw = await rootBundle.loadString('assets/db/dataset.json');
     return _parse(jsonDecode(raw) as Map<String, dynamic>, false);
   }
+}
+
+// ---------------- Dataset validation (import + load safety) ----------------
+
+/// Result of validating an imported/updated dataset (owner B6).
+class DatasetCheck {
+  final bool ok;
+  final String? error;
+  final Map<String, dynamic>? data;
+  const DatasetCheck(this.ok, {this.error, this.data});
+}
+
+/// Validates a decoded dataset map: top-level object, `entries` array,
+/// every entry needs a non-empty `ar` string and a `fa` string array,
+/// and the version metadata must be a positive integer. Duplicate
+/// Arabic keys are reported as errors, never silently dropped.
+DatasetCheck validateDatasetMap(Map<String, dynamic>? j) {
+  if (j == null) {
+    return const DatasetCheck(false, error: 'فایل، یک شیء JSON نیست');
+  }
+  final entries = j['entries'];
+  if (entries is! List) {
+    return const DatasetCheck(false, error: '«entries» یک فهرست نیست');
+  }
+  final version = j['version'];
+  if (version is! num || version <= 0 || version % 1 != 0) {
+    return const DatasetCheck(
+      false,
+      error: '«version» باید یک عدد صحیح مثبت باشد',
+    );
+  }
+  final seen = <String>{};
+  for (var i = 0; i < entries.length; i++) {
+    final e = entries[i];
+    if (e is! Map) {
+      return DatasetCheck(false, error: 'مدخل ${i + 1} یک شیء نیست');
+    }
+    final ar = e['ar'];
+    if (ar is! String || ar.trim().isEmpty) {
+      return DatasetCheck(
+        false,
+        error: 'مدخل ${i + 1} واژهٔ عربی ندارد یا خالی است',
+      );
+    }
+    final fa = e['fa'];
+    if (fa is! List) {
+      return DatasetCheck(
+        false,
+        error: '«fa» در مدخل «${ar.trim()}» یک فهرست نیست',
+      );
+    }
+    for (final f in fa) {
+      if (f is! String) {
+        return DatasetCheck(
+          false,
+          error: 'برابرهای «${ar.trim()}» باید رشته باشند',
+        );
+      }
+    }
+    if (!seen.add(ar.trim())) {
+      return DatasetCheck(
+        false,
+        error: 'واژهٔ تکراری: «${ar.trim()}»',
+      );
+    }
+  }
+  return DatasetCheck(true, data: j);
+}
+
+/// Minimal RFC-4180-style CSV record reader: quoted fields may hold
+/// separators, newlines and escaped ("") quotes, which the old
+/// split-on-comma destroyed.
+List<List<String>> parseCsvRecords(String content) {
+  final rows = <List<String>>[];
+  final field = StringBuffer();
+  var row = <String>[];
+  var inQuotes = false;
+  var i = 0;
+
+  void endField() {
+    row.add(field.toString());
+    field.clear();
+  }
+
+  void endRow() {
+    endField();
+    rows.add(row);
+    row = <String>[];
+  }
+
+  while (i < content.length) {
+    final c = content[i];
+    if (inQuotes) {
+      if (c == '"') {
+        if (i + 1 < content.length && content[i + 1] == '"') {
+          field.write('"');
+          i += 2;
+          continue;
+        }
+        inQuotes = false;
+        i++;
+        continue;
+      }
+      field.write(c);
+      i++;
+      continue;
+    }
+    if (c == '"' && field.isEmpty) {
+      inQuotes = true;
+      i++;
+      continue;
+    }
+    if (c == '\r') {
+      i++;
+      continue;
+    }
+    if (c == '\n') {
+      endRow();
+      i++;
+      continue;
+    }
+    if (c == ',' || c == ';' || c == '\t') {
+      endField();
+      i++;
+      continue;
+    }
+    field.write(c);
+    i++;
+  }
+  if (field.isNotEmpty || row.isNotEmpty) endRow();
+  return rows;
+}
+
+/// Validates raw imported TEXT (JSON or CSV) into a dataset map. Never
+/// writes anything: the caller replaces the live dataset only when
+/// [DatasetCheck.ok] is true.
+DatasetCheck validateDatasetText(String content) {
+  final trimmed = content.trimLeft();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    Map<String, dynamic> decoded;
+    try {
+      final j = jsonDecode(content);
+      if (j is! Map<String, dynamic>) {
+        return const DatasetCheck(
+          false,
+          error: 'بالای فایل باید یک شیء JSON باشد',
+        );
+      }
+      decoded = j;
+    } catch (_) {
+      return const DatasetCheck(false, error: 'JSON درست خوانده نشد');
+    }
+    return validateDatasetMap(decoded);
+  }
+  // CSV: ar,fa[,fa…]
+  final rows = parseCsvRecords(content);
+  final entries = <Map<String, dynamic>>[];
+  final seen = <String>{};
+  for (var r = 0; r < rows.length; r++) {
+    final cells = rows[r].map((c) => c.trim()).toList();
+    if (cells.every((c) => c.isEmpty)) continue;
+    // A leading «ar,fa» header row is metadata, not a word.
+    if (r == 0 && cells.first.toLowerCase() == 'ar' && cells.length > 1) {
+      continue;
+    }
+    if (cells.length < 2) {
+      return DatasetCheck(
+        false,
+        error: 'سطر ${r + 1} دست‌کم دو ستون (واژه، برابر) دارد؟',
+      );
+    }
+    final ar = cells.first;
+    if (ar.isEmpty) {
+      return DatasetCheck(
+        false,
+        error: 'سطر ${r + 1} واژهٔ عربی ندارد یا خالی است',
+      );
+    }
+    final fa = cells.sublist(1).where((c) => c.isNotEmpty).toList();
+    if (!seen.add(ar)) {
+      return DatasetCheck(false, error: 'واژهٔ تکراری: «$ar»');
+    }
+    entries.add({'ar': ar, 'fa': fa});
+  }
+  if (entries.isEmpty) {
+    return const DatasetCheck(false, error: 'هیچ مدخلی در فایل نیست');
+  }
+  return DatasetCheck(true, data: {
+    'version': 0, // caller fills the real next version
+    'entries': entries,
+  });
 }
 
 class Settings {
@@ -220,7 +479,9 @@ class AuthUser {
 /// Talks to the Souren Worker (same backend as the website login).
 /// The session cookie is kept only in the app's private filesDir.
 class AuthService {
-  static const base = 'https://souren.aliasgharpanahizare.workers.dev';
+  /// Overridable (instead of const) so tests can point it at a dead
+  /// local port and prove the app works fully offline.
+  static String base = 'https://souren.aliasgharpanahizare.workers.dev';
   static String? _cookie;
   static AuthUser? user;
 
@@ -426,10 +687,14 @@ class DictionarySync {
       ];
       if (entries.isEmpty) return false;
       if (_sameAs(entries, current)) return false;
-      await SharedFiles.writeJson('dataset_updated.json', {
+      final candidate = {
         'version': current.version + 1,
         'entries': entries,
-      });
+      };
+      // Validate before replacing a working dataset (owner B2).
+      final check = validateDatasetMap(candidate);
+      if (!check.ok) return false;
+      await SharedFiles.writeJsonAtomic('dataset_updated.json', candidate);
       return true;
     } catch (_) {
       return false; // offline: keep the archive on the device

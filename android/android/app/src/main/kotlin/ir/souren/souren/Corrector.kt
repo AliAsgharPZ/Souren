@@ -194,41 +194,78 @@ object Corrector {
         return WordFix(w, suggestions)
     }
 
+    /** The word that ends [before], found WITHOUT destroying separators:
+     *  newlines, tabs and repeated spaces stay out of the word itself
+     *  (the old split(' ') could return empty/partial tokens). */
+    private fun lastWord(before: String): String {
+        val start = before.indexOfLast { it == ' ' || it == '\n' || it == '\t' || it == '\r' } + 1
+        return before.substring(start)
+    }
+
+    /** The word before [lastStart] and whether it is separated by
+     *  EXACTLY one ordinary space (the only case where the ها-merge and
+     *  the ezafe fix are allowed to rewrite the separator). */
+    private fun prevWord(before: String, lastStart: Int): Pair<Boolean, String> {
+        val sep = lastStart - 1
+        if (sep < 1 || before[sep] != ' ') return false to ""
+        if (before[sep - 1] == ' ' || before[sep - 1] == '\n' ||
+            before[sep - 1] == '\t' || before[sep - 1] == '\r'
+        ) return false to ""
+        val pStart = before.lastIndexOfAny(charArrayOf(' ', '\n', '\t', '\r'), sep - 1) + 1
+        return true to before.substring(pStart, sep)
+    }
+
+    /** Leading/trailing quotes, parentheses and punctuation around a
+     *  word — stripped for the dictionary/rules lookup, re-attached
+     *  afterwards so «اتفاق،» and (اتفاق) keep their marks. */
+    private val leadingMarks = "«\"'(‘“"
+    private val trailingMarks = "»\"')’”،.؟!؛:…"
+    private fun splitMarks(word: String): Triple<String, String, String> {
+        var lead = ""
+        var core = word
+        while (core.isNotEmpty() && core.length > lead.length + 1 && leadingMarks.contains(core.first())) {
+            lead = lead + core.first()
+            core = core.substring(1)
+        }
+        var trail = ""
+        while (core.length > 1 && trailingMarks.contains(core.last())) {
+            trail = core.last() + trail
+            core = core.dropLast(1)
+        }
+        return Triple(lead, core, trail)
+    }
+
     /** Fix to apply right before the cursor when a separator is typed.
-     *  Returns (charsToDelete, replacement) or null. */
+     *  Returns (charsToDelete, replacement) or null. Whitespace and
+     *  punctuation are preserved exactly (owner B3). */
     fun fixBeforeSeparator(
         before: String,
         dictionary: Map<String, List<String>>,
         replaceArabic: Boolean
     ): Pair<Int, String>? {
         if (before.isEmpty()) return null
-        val words = before.split(' ')
-        val rawLast = words.last()
+        val rawLast = lastWord(before)
         if (rawLast.isEmpty()) return null
-        // Strip trailing punctuation for the lookup; it is re-attached
-        // to the replacement («اتفاق،» used to match nothing).
-        var punct = ""
-        var last = rawLast
-        while (last.length > 1 && last.last() in "،.؟!؛:") {
-            punct = last.last() + punct
-            last = last.dropLast(1)
+        val lastStart = before.length - rawLast.length
+        val (singleSpace, prev) = prevWord(before, lastStart)
+        // Strip marks for the lookup; they are re-attached to the fix
+        // («اتفاق،» used to match nothing).
+        val (lead, core, trail) = splitMarks(rawLast)
+
+        if ((core == "ها" || core == "های" || core == "هایی") && singleSpace && prev.isNotEmpty()) {
+            // Delete exactly the one space + the typed word and merge it
+            // with ZWNJ — repeated spaces/newlines are left untouched.
+            return (rawLast.length + 1) to (ZWNJ + rawLast)
         }
 
-        if ((last == "ها" || last == "های" || last == "هایی") && words.size >= 2) {
-            val prev = words[words.size - 2]
-            if (prev.isNotEmpty()) {
-                return (last.length + 1) to (ZWNJ + last)
-            }
-        }
+        val fix = correctWord(core, dictionary, replaceArabic)
+        val newLast = lead + fix.fixed + trail
 
-        val fix = correctWord(last, dictionary, replaceArabic)
-        val newLast = fix.fixed + punct
-
-        if (words.size >= 2) {
-            val prev = words[words.size - 2]
+        if (singleSpace && prev.isNotEmpty()) {
             val prevBare = prev.replace(HAMZA, "")
-            if (prev.endsWith('ه') && prevBare in ezafeHeads && last.length >= 2) {
-                return (prev.length + 1 + rawLast.length) to (prev + HAMZA + " " + newLast)
+            if (prev.endsWith('ه') && prevBare in ezafeHeads && core.length >= 2) {
+                return (prev.length + 1 + rawLast.length) to
+                    (prev + HAMZA + " " + newLast)
             }
         }
         if (newLast != rawLast) return rawLast.length to newLast

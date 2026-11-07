@@ -229,40 +229,90 @@ WordFix correctWord(String word,
   return WordFix(w, suggestions);
 }
 
+/// Leading/trailing marks that must not block the lookup: quotes,
+/// parentheses and punctuation are stripped around a word and
+/// re-attached afterwards («اتفاق،» and (اتفاق) both get fixed).
+const String _leadingMarks = '«"\'(‘“';
+const String _trailingMarks = '»"\')’”،.؟!؛:…';
+
+(String lead, String core, String trail) _splitMarks(String word) {
+  var lead = '';
+  var core = word;
+  while (core.isNotEmpty && core.length > lead.length + 1) {
+    final c = core[0];
+    if (!_leadingMarks.contains(c)) break;
+    lead += c;
+    core = core.substring(1);
+  }
+  var trail = '';
+  while (core.length > 1) {
+    final c = core[core.length - 1];
+    if (!_trailingMarks.contains(c)) break;
+    trail = c + trail;
+    core = core.substring(0, core.length - 1);
+  }
+  return (lead, core, trail);
+}
+
 /// Correct a full [text]: word fixes + ها-merge + ezafe + spacing.
+/// Whitespace is PRESERVED exactly (owner B3): words and separators are
+/// tokenized independently, so newlines, tabs and repeated spaces
+/// survive correction untouched.
 String correctText(String text,
     {Map<String, List<String>> dictionary = const {}, bool replaceArabic = true}) {
   var t = normalizeLetters(text);
   t = t.replaceAllMapped(
       RegExp(r'\s+([،.؟!؛:])'), (m) => m.group(1)!);
-  final tokens = t.split(' ');
+  final wordRe = RegExp(r'[^\s]+');
+  final matches = wordRe.allMatches(t).toList();
+
+  // (separatorBefore, word) — separators kept verbatim.
+  final seps = <String>[];
+  final words = <String>[];
+  for (var i = 0; i < matches.length; i++) {
+    final m = matches[i];
+    final sepBefore = i == 0 ? '' : t.substring(matches[i - 1].end, m.start);
+    seps.add(sepBefore);
+    words.add(m.group(0)!);
+  }
+
   final out = <String>[];
-  for (var i = 0; i < tokens.length; i++) {
-    var tok = tokens[i];
-    if (tok.isEmpty) continue;
-    if ((tok == 'ها' || tok == 'های' || tok == 'هایی') && out.isNotEmpty) {
+  for (var i = 0; i < words.length; i++) {
+    var tok = words[i];
+    // «ها/های/هایی» merge: only across a SINGLE ordinary space — never
+    // across a newline, tab or repeated spaces.
+    if ((tok == 'ها' || tok == 'های' || tok == 'هایی') &&
+        out.isNotEmpty &&
+        seps[i] == ' ') {
       out[out.length - 1] = '${out.last}$zwnj$tok';
       continue;
     }
-    // Trailing punctuation must not block the dictionary/rules lookup:
-    // «اتفاق،» previously matched nothing and was left unreplaced.
-    var punct = '';
-    while (tok.length > 1 && '،.؟!؛:'.contains(tok[tok.length - 1])) {
-      punct = tok[tok.length - 1] + punct;
-      tok = tok.substring(0, tok.length - 1);
-    }
-    final fix = correctWord(tok, dictionary: dictionary, replaceArabic: replaceArabic);
-    tok = fix.fixed + punct;
-    if (out.isNotEmpty) {
+    // Trailing/leading marks must not block the dictionary/rules
+    // lookup; they are re-attached to the corrected core.
+    final (lead, core, trail) = _splitMarks(tok);
+    final fix = correctWord(core, dictionary: dictionary, replaceArabic: replaceArabic);
+    tok = lead + fix.fixed + trail;
+    if (out.isNotEmpty && seps[i] == ' ') {
       final prev = out.last;
       final prevBare = prev.replaceAll(hamzaAbove, '');
       if (prev.endsWith('ه') &&
           ezafeHeads.contains(prevBare) &&
-          tok.length >= 2) {
+          core.length >= 2) {
         out[out.length - 1] = '$prev$hamzaAbove';
       }
     }
     out.add(tok);
   }
-  return out.join(' ');
+
+  final buf = StringBuffer(t.substring(0, matches.isEmpty ? t.length : matches.first.start));
+  for (var i = 0; i < out.length; i++) {
+    buf.write(out[i]);
+    if (i + 1 < out.length) {
+      buf.write(t.substring(matches[i].end, matches[i + 1].start));
+    }
+  }
+  if (matches.isNotEmpty) {
+    buf.write(t.substring(matches.last.end));
+  }
+  return buf.toString();
 }

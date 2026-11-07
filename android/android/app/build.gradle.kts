@@ -75,4 +75,7 @@ flutter {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // android.jar's org.json is a stub in local unit tests; the real
+    // implementation is needed by the DatasetValidator/KbData tests.
+    testImplementation("org.json:json:20240303")
 }

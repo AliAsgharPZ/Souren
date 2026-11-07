@@ -9,10 +9,12 @@ import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedTextRequest
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -68,8 +70,37 @@ class SourenIME : InputMethodService() {
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
         super.onStartInput(info, restarting)
         KbData.load(this)
-        KbData.readSettings(this)
-        KbData.readLearned(this)
+        applySettingsIfNeeded()
+    }
+
+    override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        // The keyboard can stay active while the app changes its settings;
+        // re-read everything the moment the input view is shown again
+        // (owner B5/A16 — keyboard settings must actually apply).
+        KbData.load(this)
+        applySettingsIfNeeded()
+    }
+
+    override fun onWindowShown() {
+        super.onWindowShown()
+        applySettingsIfNeeded()
+    }
+
+    /** Rebuilds the key rows only when a RELEVANT setting actually
+     *  changed (height / correction toggles), so switching fields or
+     *  apps never flickers the layout. */
+    private var settingsStamp: ImeSettings.Snapshot? = null
+    private fun applySettingsIfNeeded() {
+        val now = ImeSettings.snapshot(
+            KbData.kbHeight,
+            KbData.autoCorrect,
+            KbData.replaceArabic,
+        )
+        if (ImeSettings.needsRebuild(settingsStamp, now)) {
+            settingsStamp = now
+            if (::keysBox.isInitialized) rebuildKeys()
+        }
     }
 
     override fun onCreateInputView(): View {
@@ -1166,10 +1197,30 @@ class SourenIME : InputMethodService() {
 
     private fun moveCursor(delta: Int) {
         val ic = currentInputConnection ?: return
-        val before = ic.getTextBeforeCursor(200, 0)?.toString() ?: ""
-        val after = ic.getTextAfterCursor(200, 0)?.toString() ?: ""
-        val pos = (before.length + delta).coerceIn(0, before.length + after.length)
-        ic.setSelection(pos, pos)
+        // ABSOLUTE positioning (owner B1): read the editor's absolute
+        // selection via ExtractedText — the old code passed a
+        // 200-char-window-relative offset to setSelection, which expects
+        // absolute offsets, so the cursor jumped past the window.
+        val extracted = try {
+            ic.getExtractedText(ExtractedTextRequest(), 0)
+        } catch (e: Exception) { null }
+        if (extracted?.text != null) {
+            val target = CursorMath.newSelection(
+                extracted.selectionStart,
+                extracted.selectionEnd,
+                extracted.text.length,
+                delta
+            )
+            ic.setSelection(target, target)
+            return
+        }
+        // Fallback for editors that refuse getExtractedText: DPAD keys
+        // move the caret by construction and cannot drift.
+        val code = if (delta < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        repeat(kotlin.math.abs(delta)) {
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, code))
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, code))
+        }
     }
 
     private fun openApp() {

@@ -20,7 +20,15 @@ jobs:
         with:
           channel: stable
       - name: Dataset integrity (anchors)
-        run: python3 tools/build_dataset.py | head -1
+        # The output goes to a log file first so the pipeline exit
+        # status is python's, not `head`'s (the old `| head -1` could
+        # hide a failed assertion — owner B7). A failed dataset
+        # assertion must fail the workflow.
+        run: |
+          python3 tools/build_dataset.py > dataset_build.log
+          head -1 dataset_build.log
+      - name: Dataset guard (invalid anchors must fail the build)
+        run: bash tools/test_anchor_guard.sh
       - name: Pub get
         run: flutter pub get
       - name: Analyze
