@@ -47,9 +47,13 @@ jobs:
       - name: Dart and widget tests
         run: flutter test
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
       - name: Kotlin IME unit tests
         working-directory: android/android
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: gradle :app:testDebugUnitTest --stacktrace
 
       - name: Configure production signing key
         env:
