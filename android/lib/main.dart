@@ -76,7 +76,7 @@ PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
   transitionDuration: Motion.slow,
   reverseTransitionDuration: Motion.base,
   pageBuilder: (_, __, ___) => page,
-  transitionsBuilder: (_, animation, secondaryAnimation, child) {
+  transitionsBuilder: (_, animation, __, child) {
     final curved = CurvedAnimation(
       parent: animation,
       curve: Motion.curve,
