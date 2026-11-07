@@ -519,6 +519,7 @@ class DetailSheet extends StatefulWidget {
   final int likeCount;
   final Future<void> Function() onToggleLike;
   final Future<void> Function() onToggleBookmark;
+  final VoidCallback? onOpenEtymology;
   const DetailSheet({
     super.key,
     required this.card,
@@ -527,6 +528,7 @@ class DetailSheet extends StatefulWidget {
     this.likeCount = 0,
     required this.onToggleLike,
     required this.onToggleBookmark,
+    this.onOpenEtymology,
   });
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -678,6 +680,25 @@ class _DetailSheetState extends State<DetailSheet> {
               ),
             ],
           ),
+          if (widget.onOpenEtymology != null) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: pal.ink,
+                  side: BorderSide(color: pal.div),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(capR(48)),
+                  ),
+                ),
+                onPressed: widget.onOpenEtymology,
+                icon: Icon(LucideIcons.gitBranch, size: 18, color: pal.sel),
+                label: const Text('دیدن ریشه‌شناسی واژه'),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -698,7 +719,7 @@ class ShareCardImage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
       decoration: BoxDecoration(
         color: pal.bg,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.zero,
         border: Border.all(color: pal.div),
       ),
       child: Column(
@@ -1838,6 +1859,14 @@ class _ShellState extends State<Shell> {
         likeCount: likeCounts[e.ar] ?? 0,
         onToggleLike: () => _toggleLike(e.ar),
         onToggleBookmark: () => _toggleFav(e.ar),
+        onOpenEtymology: () {
+          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _open(EtymologyPage(dict: d, initialWord: e.ar));
+            }
+          });
+        },
       ),
     );
   }
@@ -3186,39 +3215,24 @@ Widget subScaffold(String title, Widget body) {
             top: 0,
             left: 0,
             right: 0,
-            height: 66,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 9, sigmaY: 9),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        pal.bg.withValues(alpha: .94),
-                        pal.bg.withValues(alpha: .55),
-                      ],
+            height: 58,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Row(
+                children: [
+                  const BackIconButton(),
+                  const SizedBox(width: 2),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        color: pal.ink,
+                      ),
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Row(
-                    children: [
-                      const BackIconButton(),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w700,
-                            color: pal.ink,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
           ),
@@ -3989,7 +4003,8 @@ class _FreshPageState extends State<FreshPage> {
 // ================= ریشه‌شناسی =================
 class EtymologyPage extends StatefulWidget {
   final Dictionary dict;
-  const EtymologyPage({super.key, required this.dict});
+  final String? initialWord;
+  const EtymologyPage({super.key, required this.dict, this.initialWord});
   @override
   State<EtymologyPage> createState() => _EtymologyPageState();
 }
@@ -4063,6 +4078,16 @@ class _EtymologyPageState extends State<EtymologyPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialWord;
+    if (initial != null && initial.trim().isNotEmpty) {
+      _ctrl.text = initial;
+      _onChanged(initial);
+    }
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
@@ -4071,6 +4096,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
   @override
   Widget build(BuildContext context) {
     final emptyQuery = _query.isEmpty;
+    final visibleEntries = emptyQuery ? widget.dict.entries : _suggestions;
     return subScaffold(
       'ریشه‌شناسی',
       Padding(
@@ -4090,7 +4116,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
                 filled: true,
                 fillColor: pal.cardC,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(capR(56)),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -4117,15 +4143,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
                     ),
             ),
             Expanded(
-              child: emptyQuery
-                  ? Center(
-                      child: Text(
-                        'چند حرف از واژه را بنویسید؛ پیشنهادها همان‌جا می‌آیند.\nروی هر پیشنهاد بزنید تا ریشه‌اش را ببینید.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: pal.muted, height: 1.9),
-                      ),
-                    )
-                  : _suggestions.isEmpty
+              child: visibleEntries.isEmpty
                   ? Center(
                       child: Text(
                         '«${_ctrl.text.trim()}» در گنجینهٔ کنونی سورن نیست.',
@@ -4136,11 +4154,11 @@ class _EtymologyPageState extends State<EtymologyPage> {
                   : edgeFade(
                       child: ListView.separated(
                         padding: const EdgeInsets.only(top: 6, bottom: 24),
-                        itemCount: _suggestions.length,
+                        itemCount: visibleEntries.length,
                         separatorBuilder: (_, __) =>
                             Divider(height: 1, color: pal.div),
                         itemBuilder: (_, i) {
-                          final e = _suggestions[i];
+                          final e = visibleEntries[i];
                           return Enter(
                             index: i,
                             child: InkWell(
