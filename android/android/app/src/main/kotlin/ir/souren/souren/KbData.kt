@@ -20,15 +20,18 @@ object KbData {
     @Synchronized
     fun load(ctx: Context) {
         if (loaded) return
-        loaded = true
-        // Dataset: updated file wins, else the bundled asset.
-        val jsonText: String? = try {
-            val upd = File(ctx.filesDir, "dataset_updated.json")
-            if (upd.exists()) upd.readText()
-            else ctx.assets.open("flutter_assets/assets/db/dataset.json")
-                .bufferedReader().readText()
-        } catch (e: Exception) { null }
-        if (jsonText != null) {
+        // Prefer the imported dataset, but fall back to the bundled copy if it
+        // is missing or malformed. Do not mark loading complete before parsing.
+        val candidates = buildList {
+            val updated = File(ctx.filesDir, "dataset_updated.json")
+            if (updated.exists()) add(runCatching { updated.readText() }.getOrNull())
+            add(runCatching {
+                ctx.assets.open("flutter_assets/assets/db/dataset.json")
+                    .bufferedReader().use { it.readText() }
+            }.getOrNull())
+        }.filterNotNull()
+        var parsed = false
+        for (jsonText in candidates) {
             try {
                 val root = JSONObject(jsonText)
                 val arr = root.getJSONArray("entries")
@@ -45,8 +48,13 @@ object KbData {
                 }
                 dictionary = map
                 vocab = words.distinct()
-            } catch (e: Exception) { /* keep empty; suggestions just stop */ }
+                parsed = true
+                break
+            } catch (_: Exception) {
+                // Try the next source rather than leaving the keyboard empty.
+            }
         }
+        loaded = parsed
         readSettings(ctx)
         readLearned(ctx)
     }
