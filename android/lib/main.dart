@@ -57,10 +57,10 @@ Pal pal = Pal.light;
 /// borrowed from the Claude design system (whose own note says animation
 /// timings are out of scope, so these numbers are ours).
 class Motion {
-  static const fast = Duration(milliseconds: 180);
-  static const base = Duration(milliseconds: 280);
-  static const slow = Duration(milliseconds: 380);
-  static const curve = Curves.easeOutCubic;
+  static const fast = Duration(milliseconds: 210);
+  static const base = Duration(milliseconds: 320);
+  static const slow = Duration(milliseconds: 480);
+  static const curve = Curves.easeInOutCubic;
   static const pop = Curves.easeOutBack;
   static const staggerStep = Duration(milliseconds: 35);
 }
@@ -175,26 +175,71 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Soft top+bottom scroll fade (shared by every scrollable list in the app).
-/// The gradient spans the scrollable's full rect, so with extendBody the
-/// bottom fade reaches the viewport floor and content dissolves as it
-/// slides behind the floating nav bar.
-Widget edgeFade({required Widget child}) {
-  return ShaderMask(
-    shaderCallback: (rect) => const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        Colors.transparent,
-        Colors.black,
-        Colors.black,
-        Colors.transparent,
-      ],
-      stops: [0, 0.045, 0.955, 1],
-    ).createShader(rect),
-    blendMode: BlendMode.dstIn,
-    child: child,
-  );
+/// Scroll-edge fades stay invisible at rest, then ease in only after movement.
+Widget edgeFade({required Widget child}) => _EdgeFade(child: child);
+
+class _EdgeFade extends StatefulWidget {
+  final Widget child;
+  const _EdgeFade({required this.child});
+
+  @override
+  State<_EdgeFade> createState() => _EdgeFadeState();
+}
+
+class _EdgeFadeState extends State<_EdgeFade> {
+  bool _showTop = false;
+  bool _showBottom = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    final top = notification.metrics.pixels > 12;
+    final bottom = notification.metrics.extentAfter > 12;
+    if (top != _showTop || bottom != _showBottom) {
+      setState(() {
+        _showTop = top;
+        _showBottom = bottom;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: _showTop ? 1 : 0),
+        duration: const Duration(milliseconds: 460),
+        curve: Curves.easeInOutCubic,
+        builder: (_, topFade, child) => TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: _showBottom ? 1 : 0),
+          duration: const Duration(milliseconds: 460),
+          curve: Curves.easeInOutCubic,
+          builder: (_, bottomFade, child) => ShaderMask(
+            shaderCallback: (rect) => LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color.lerp(Colors.black, Colors.transparent, topFade)!,
+                Colors.black,
+                Colors.black,
+                Color.lerp(Colors.black, Colors.transparent, bottomFade)!,
+              ],
+              stops: [
+                0,
+                0.18 * topFade,
+                1 - 0.18 * bottomFade,
+                1,
+              ],
+            ).createShader(rect),
+            blendMode: BlendMode.dstIn,
+            child: child,
+          ),
+          child: child,
+        ),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 /// Category display metadata: id -> (icon, Persian title).
@@ -376,6 +421,7 @@ class _ShellState extends State<Shell> {
   bool authBusy = false;
   bool dbSyncing = false;
   String? authError;
+  OverlayEntry? _topNotice;
   final _userCtl = TextEditingController();
   final _passCtl = TextEditingController();
   final _nameCtl = TextEditingController();
@@ -396,6 +442,7 @@ class _ShellState extends State<Shell> {
     _userCtl.dispose();
     _passCtl.dispose();
     _nameCtl.dispose();
+    if (_topNotice?.mounted ?? false) _topNotice!.remove();
     super.dispose();
   }
 
@@ -503,9 +550,9 @@ class _ShellState extends State<Shell> {
         icon: PopIcon(
           active: isLiked,
           child: Icon(
-            isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
+            PhosphorIconsRegular.heart,
             size: 21,
-            color: isLiked ? pal.accent : pal.muted,
+            color: isLiked ? pal.accent : pal.muted.withValues(alpha: .65),
           ),
         ),
         onPressed: () => _toggleLike(ar),
@@ -513,7 +560,77 @@ class _ShellState extends State<Shell> {
     ]);
   }
 
+  Widget _favButton(String ar) {
+    final isFav = favorites.contains(ar);
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      tooltip: isFav ? 'برداشتن از نشان‌شده‌ها' : 'نشان‌کردن واژه',
+      icon: PopIcon(
+        active: isFav,
+        child: Icon(
+          PhosphorIconsRegular.bookmark,
+          size: 20,
+          color: isFav ? pal.ink : pal.muted.withValues(alpha: .65),
+        ),
+      ),
+      onPressed: () => _toggleFav(ar),
+    );
+  }
+
   void _go(int i) => setState(() => tab = i);
+
+  void _showTopNotice(String message) {
+    if (_topNotice?.mounted ?? false) _topNotice!.remove();
+    final overlay = Overlay.of(context);
+    late final OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (overlayContext) => Positioned(
+        top: MediaQuery.of(overlayContext).padding.top + 12,
+        left: 16,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: Motion.slow,
+            curve: Motion.curve,
+            builder: (_, value, child) => Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, -18 * (1 - value)),
+                child: child,
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+              decoration: BoxDecoration(
+                color: pal.cardC,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: pal.ink.withValues(alpha: .14),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: pal.ink, fontSize: 13.5),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    _topNotice = entry;
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (entry.mounted) entry.remove();
+      if (identical(_topNotice, entry)) _topNotice = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -576,132 +693,113 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _navBar() {
-    // (outlined, filled, label) — Phosphor soft icons; selected becomes filled.
     final items = <(IconData, IconData, String)>[
       (PhosphorIconsRegular.house, PhosphorIconsFill.house, 'پیشگاه'),
       (PhosphorIconsRegular.heart, PhosphorIconsFill.heart, 'پسندیده‌ها'),
-      (
-        PhosphorIconsRegular.squaresFour,
-        PhosphorIconsFill.squaresFour,
-        'بخش‌ها',
-      ),
+      (PhosphorIconsRegular.squaresFour, PhosphorIconsFill.squaresFour, 'بخش‌ها'),
       (PhosphorIconsRegular.bookmark, PhosphorIconsFill.bookmark, 'نشان‌شده'),
       (PhosphorIconsRegular.user, PhosphorIconsFill.user, 'نمایه'),
       (PhosphorIconsRegular.gear, PhosphorIconsFill.gear, 'پیکربندی'),
     ];
     _measureIndicator();
-    final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
+    final selected = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
-      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+      margin: const EdgeInsets.fromLTRB(18, 6, 18, 14),
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: pal.cardC,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: pal.ink.withValues(alpha: .10),
+            blurRadius: 26,
+            offset: const Offset(0, 9),
+          ),
+        ],
+      ),
+      child: Stack(
+        key: _navStackKey,
+        children: [
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 360),
+            curve: Curves.easeInOutCubic,
+            left: _indLeft + 4,
+            top: 4,
+            bottom: 4,
+            width: _indWidth > 8 ? _indWidth - 8 : 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: selected,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
-            child: Stack(
-              key: _navStackKey,
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  left: _indLeft,
-                  top: 0,
-                  bottom: 0,
-                  width: _indWidth,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: selSoft,
-                      borderRadius: BorderRadius.circular(19),
+          ),
+          Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: GestureDetector(
+                    key: _tabKeys[i],
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _go(i),
+                    onLongPress: () => HapticFeedback.selectionClick(),
+                    child: SizedBox(
+                      height: 54,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: Motion.base,
+                              switchInCurve: Motion.curve,
+                              switchOutCurve: Motion.curve,
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                opacity: animation,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(begin: .82, end: 1)
+                                      .animate(animation),
+                                  child: child,
+                                ),
+                              ),
+                              child: Icon(
+                                key: ValueKey<bool>(tab == i),
+                                tab == i ? items[i].$2 : items[i].$1,
+                                size: 21,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .62),
+                              ),
+                            ),
+                            AnimatedSize(
+                              duration: Motion.base,
+                              curve: Motion.curve,
+                              child: tab == i
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        items[i].$3,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        overflow: TextOverflow.clip,
+                                        style: TextStyle(
+                                          color: pal.bg,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 9.5,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox(height: 0),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      GestureDetector(
-                        key: _tabKeys[i],
-                        onTap: () => _go(i),
-                        child: AnimatedContainer(
-                          duration: Motion.base,
-                          curve: Motion.curve,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: tab == i ? 17 : 12,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: AnimatedSize(
-                            duration: Motion.base,
-                            curve: Motion.curve,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AnimatedSwitcher(
-                                  duration: Motion.fast,
-                                  switchInCurve: Motion.curve,
-                                  switchOutCurve: Motion.curve,
-                                  transitionBuilder: (child, anim) =>
-                                      FadeTransition(
-                                        opacity: anim,
-                                        child: ScaleTransition(
-                                          scale: Tween<double>(
-                                            begin: 0.8,
-                                            end: 1,
-                                          ).animate(anim),
-                                          child: child,
-                                        ),
-                                      ),
-                                  child: Icon(
-                                    key: ValueKey<bool>(tab == i),
-                                    tab == i ? items[i].$2 : items[i].$1,
-                                    size: 23,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                  ),
-                                ),
-                                if (tab == i)
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: 0, end: 1),
-                                    duration: Motion.base,
-                                    curve: Motion.curve,
-                                    builder: (_, v, c) =>
-                                        Opacity(opacity: v, child: c),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(width: 7),
-                                        Text(
-                                          items[i].$3,
-                                          style: TextStyle(
-                                            color: pal.bg,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 14.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -712,103 +810,93 @@ class _ShellState extends State<Shell> {
     final results = query.isEmpty
         ? frequent
         : d.entries
-              .where(
-                (e) =>
-                    e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
-              )
-              .toList();
+            .where(
+              (e) =>
+                  e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
+            )
+            .toList();
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
       child: Stack(
         children: [
           Column(
             children: [
-              // جای لوگو (در نسخه‌های بعد می‌آید) — اشیاء پایین‌تر شروع می‌شوند
-              const SizedBox(height: 58),
-              const SizedBox(height: 58), // جای کپسول سرچ (روی بلر شناور است)
+              const SizedBox(height: 58), // reserved logo space
+              const SizedBox(height: 64), // reserved search capsule
               const SizedBox(height: 26),
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            query.isEmpty
-                                ? 'پرکاربردترین واژگان فارسی'
-                                : 'نتیجه‌های جستجو',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 17.5,
-                            ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: kNavClearance),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          query.isEmpty
+                              ? 'پرکاربردترین واژگان فارسی · ${faNum(d.entries.length)} واژه'
+                              : 'نتیجه‌های جستجو',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15.5,
                           ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: _pairList(results, bottomPad: kNavClearance),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 124,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.only(bottom: kNavClearance),
-                        child: Column(
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _sidePill(
-                              'گنجینهٔ واژه‌ها',
-                              () => _open(LexiconPage(dict: d, onTapEntry: _showEntry)),
-                            ),
-                            _sidePill(
-                              'درست‌نویسی',
-                              () => _open(CorrectorPage(dict: d)),
-                            ),
-                            _sidePill(
-                              'نیم‌فاصله',
-                              () => _open(const NimeFaselePage()),
-                            ),
-                            _sidePill('پندواژه', () => _open(_pandvazhePage())),
-                            _sidePill(
-                              'واژه‌های تازه',
-                              () => _open(_freshPage(d)),
-                            ),
-                            _sidePill(
-                              'ریشه‌شناسی',
-                              () => _open(EtymologyPage(dict: d)),
-                            ),
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(top: 12),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: pal.pillC,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                            Expanded(child: _pairList(results)),
+                            const SizedBox(width: 16),
+                            SizedBox(
+                              width: 124,
                               child: Column(
                                 children: [
-                                  Text(
-                                    'شمار همهٔ واژه‌ها',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: pal.ink,
+                                  Expanded(
+                                    child: _sidePill(
+                                      'گنجینهٔ واژه‌ها',
+                                      () => _open(LexiconPage(
+                                        dict: d,
+                                        onTapEntry: _showEntry,
+                                      )),
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    faNum(d.entries.length),
-                                    style: const TextStyle(
-                                      fontSize: 23,
-                                      fontWeight: FontWeight.w700,
+                                  Expanded(
+                                    child: _sidePill(
+                                      'درست‌نویسی',
+                                      () => _open(CorrectorPage(dict: d)),
                                     ),
                                   ),
-                                  Text(
-                                    '(${faNum(d.pairCount)} با برابر فارسی)',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: pal.muted,
+                                  Expanded(
+                                    child: _sidePill(
+                                      'نیم‌فاصله',
+                                      () => _open(const NimeFaselePage()),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _sidePill(
+                                      'پندواژه',
+                                      () => _open(_pandvazhePage()),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _sidePill(
+                                      'واژه‌های تازه',
+                                      () => _open(_freshPage(d)),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _sidePill(
+                                      'ریشه‌شناسی',
+                                      () => _open(EtymologyPage(dict: d)),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _sidePill(
+                                      'واژهٔ روز',
+                                      () => _pushPage(_dailyPage(d)),
                                     ),
                                   ),
                                 ],
@@ -817,13 +905,12 @@ class _ShellState extends State<Shell> {
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          // بلر کل صفحه هنگام فوکوس سرچ — کپسول و دکمهٔ برگشت واضح می‌مانند.
           if (_searchFocused)
             Positioned.fill(
               child: GestureDetector(
@@ -834,9 +921,8 @@ class _ShellState extends State<Shell> {
                 ),
               ),
             ),
-          // کپسول سرچ (روی بلر، واضح)
           Positioned(
-            top: 58,
+            top: 64,
             left: 0,
             right: 0,
             child: SizedBox(
@@ -857,14 +943,21 @@ class _ShellState extends State<Shell> {
                   fillColor: pal.cardC,
                   contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(999),
                     borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(999),
+                    borderSide: BorderSide(color: pal.div, width: 1),
                   ),
                 ),
               ),
             ),
           ),
-          // آیکون برگشت بالای صفحه هنگام فوکوس سرچ
           if (_searchFocused)
             Positioned(
               top: 6,
@@ -885,19 +978,27 @@ class _ShellState extends State<Shell> {
 
   Widget _sidePill(String label, VoidCallback onTap) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Container(
+      onLongPress: () => HapticFeedback.selectionClick(),
+      child: AnimatedContainer(
+        duration: Motion.base,
+        curve: Motion.curve,
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.symmetric(vertical: 17),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
         decoration: BoxDecoration(
           color: pal.pillC,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(999),
         ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: pal.ink),
+        child: Center(
+          child: Text(
+            label,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 13.2, color: pal.ink),
+          ),
         ),
       ),
     );
@@ -929,25 +1030,38 @@ class _ShellState extends State<Shell> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Text(
-              e.ar,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 17.5,
-                color: pal.ink,
+            Flexible(
+              flex: 4,
+              child: Text(
+                e.ar,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  color: pal.ink,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
+              flex: 5,
               child: Text(
-                e.hasFa ? e.fa.join('، ') : 'برابر فارسی ثبت نشده',
+                e.hasFa ? e.fa.first : 'برابر فارسی ثبت نشده',
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.left,
                 style: TextStyle(
                   color: e.hasFa ? pal.muted : pal.faint,
-                  fontSize: 13.5,
+                  fontSize: 13.2,
                 ),
               ),
             ),
             _likeButton(e.ar),
+            _favButton(e.ar),
           ],
         ),
       ),
@@ -983,95 +1097,105 @@ class _ShellState extends State<Shell> {
   void _showEntry(Entry e) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: pal.bg,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    e.ar,
-                    style: const TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w700,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            22,
+            24,
+            24 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      e.ar,
+                      maxLines: 2,
+                      style: const TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: PopIcon(
-                        active: liked.contains(e.ar),
-                        child: Icon(
-                          liked.contains(e.ar)
-                              ? PhosphorIconsFill.heart
-                              : PhosphorIconsRegular.heart,
-                          color: liked.contains(e.ar) ? pal.accent : pal.ink,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'پسندیدن',
+                        icon: PopIcon(
+                          active: liked.contains(e.ar),
+                          child: Icon(
+                            PhosphorIconsRegular.heart,
+                            color: liked.contains(e.ar) ? pal.accent : pal.muted,
+                          ),
                         ),
+                        onPressed: () async {
+                          await _toggleLike(e.ar);
+                          if (sheetContext.mounted) setSheetState(() {});
+                        },
                       ),
-                      onPressed: () {
-                        _toggleLike(e.ar);
-                        Navigator.pop(context);
-                        _showEntry(e);
-                      },
-                    ),
-                    IconButton(
-                      icon: PopIcon(
-                        active: favorites.contains(e.ar),
-                        child: Icon(
-                          favorites.contains(e.ar)
-                              ? PhosphorIconsFill.bookmark
-                              : PhosphorIconsRegular.bookmark,
-                          color: pal.ink,
+                      IconButton(
+                        tooltip: 'نشان‌کردن',
+                        icon: PopIcon(
+                          active: favorites.contains(e.ar),
+                          child: Icon(
+                            PhosphorIconsRegular.bookmark,
+                            color: favorites.contains(e.ar) ? pal.ink : pal.muted,
+                          ),
                         ),
+                        onPressed: () async {
+                          await _toggleFav(e.ar);
+                          if (sheetContext.mounted) setSheetState(() {});
+                        },
                       ),
-                      onPressed: () {
-                        _toggleFav(e.ar);
-                        Navigator.pop(context);
-                        _showEntry(e);
-                      },
+                    ],
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  e.hasFa
+                      ? 'برابر فارسی: ${e.fa.first}'
+                      : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
+                  style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: pal.sel,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                  ],
+                  ),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: e.hasFa ? e.fa.first : e.ar),
+                    );
+                    if (sheetContext.mounted) {
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(content: Text('کپی شد')),
+                      );
+                    }
+                  },
+                  child: const Text('کپی برابر فارسی'),
                 ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                e.hasFa
-                    ? 'برابر فارسی: ${e.fa.join('، ')}'
-                    : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
-                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
               ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: pal.sel,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () {
-                  Clipboard.setData(
-                    ClipboardData(text: e.hasFa ? e.fa.first : e.ar),
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('کپی شد')));
-                },
-                child: const Text('کپی برابر فارسی'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1146,22 +1270,18 @@ class _ShellState extends State<Shell> {
         'واژه‌های تازه',
         () => _open(_freshPage(d)),
       ),
-      (PhosphorIconsRegular.heart, 'پسندیده‌ها', () => _go(1)),
-      (PhosphorIconsRegular.bookmark, 'نشان‌شده', () => _go(3)),
       (PhosphorIconsRegular.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
       (
         PhosphorIconsRegular.graduationCap,
         'یادگیری من',
         () => _pushPage(_learningPage()),
       ),
-      (PhosphorIconsRegular.user, 'نمایهٔ کاربری', () => _go(4)),
       (
         PhosphorIconsRegular.keyboard,
         'کیبورد سورن',
         () => _open(const KeyboardGuidePage()),
       ),
       (PhosphorIconsRegular.arrowClockwise, 'به‌روزرسانی پایگاه', () => _go(5)),
-      (PhosphorIconsRegular.gear, 'پیکربندی', () => _go(5)),
     ];
     return _pageShell(
       'بخش‌ها',
@@ -1176,7 +1296,7 @@ class _ShellState extends State<Shell> {
                   child: GestureDetector(
                     onTap: () => _pushPage(_categoriesPage(d)),
                     child: Container(
-                      height: 98,
+                      height: 130,
                       decoration: BoxDecoration(
                         color: pal.pillC,
                         borderRadius: BorderRadius.circular(24),
@@ -1674,9 +1794,7 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
+            Column(
               children: [
                 for (final id in badgeIds)
                   Builder(
@@ -1690,50 +1808,53 @@ class _ShellState extends State<Shell> {
                         score: score,
                       );
                       final meta = _badgeMeta[id]!;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: earned ? pal.sel : pal.pillC,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              meta.$1,
-                              size: 18,
-                              color: earned ? pal.bg : pal.muted,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 9),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _showTopNotice('${meta.$2}: ${meta.$3}'),
+                          onLongPress: () => HapticFeedback.selectionClick(),
+                          child: AnimatedContainer(
+                            duration: Motion.base,
+                            curve: Motion.curve,
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 13,
                             ),
-                            const SizedBox(width: 7),
-                            Text(
-                              meta.$2,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                color: earned ? pal.bg : pal.muted,
-                                fontWeight: earned
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                              ),
+                            decoration: BoxDecoration(
+                              color: earned ? pal.sel : pal.pillC,
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                          ],
+                            child: Row(
+                              children: [
+                                Icon(
+                                  meta.$1,
+                                  size: 19,
+                                  color: earned ? pal.bg : pal.muted,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    meta.$2,
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      color: earned ? pal.bg : pal.muted,
+                                      fontWeight: earned
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       );
                     },
                   ),
               ],
             ),
-            const SizedBox(height: 6),
-            for (final id in badgeIds)
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  '• ${_badgeMeta[id]!.$2}: ${_badgeMeta[id]!.$3}',
-                  style: TextStyle(fontSize: 12.5, color: pal.muted),
-                ),
-              ),
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -1859,14 +1980,16 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _authButtons() {
-    return Column(
+    return Row(
       children: [
-        SizedBox(
-          width: double.infinity,
+        Expanded(
           child: FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: pal.sel,
-              padding: const EdgeInsets.symmetric(vertical: 15),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
             onPressed: () => setState(() {
               showAuthForm = true;
@@ -1876,20 +1999,27 @@ class _ShellState extends State<Shell> {
             child: const Text('ورود به نمایه'),
           ),
         ),
-        const SizedBox(height: 11),
-        SizedBox(
-          width: double.infinity,
+        const SizedBox(width: 10),
+        Expanded(
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: pal.div),
-              padding: const EdgeInsets.symmetric(vertical: 15),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
             onPressed: () => setState(() {
               showAuthForm = true;
               authRegister = true;
               authError = null;
             }),
-            child: const Text('ساخت نمایهٔ تازه'),
+            child: const Text(
+              'ساخت نمایه',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
       ],
@@ -2003,7 +2133,7 @@ class _ShellState extends State<Shell> {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         children: [
@@ -2011,13 +2141,14 @@ class _ShellState extends State<Shell> {
             Expanded(
               child: GestureDetector(
                 onTap: () => onChanged(o.$1),
+                onLongPress: () => HapticFeedback.selectionClick(),
                 child: AnimatedContainer(
                   duration: Motion.base,
                   curve: Motion.curve,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
                     color: value == o.$1 ? pal.sel : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     o.$2,
@@ -2086,7 +2217,7 @@ class _ShellState extends State<Shell> {
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 color: value ? pal.sel : pal.div,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(999),
               ),
               child: AnimatedAlign(
                 duration: Motion.base,
@@ -2980,7 +3111,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
                 foregroundColor: pal.ink,
                 side: BorderSide(color: pal.ink.withValues(alpha: .25)),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
+                    borderRadius: BorderRadius.circular(999))),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: title));
               if (ctx.mounted) {
