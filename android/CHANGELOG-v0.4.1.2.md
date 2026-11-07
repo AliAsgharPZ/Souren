@@ -9,4 +9,4 @@
 - Refine the Persian keyboard layout, half-space access, emoji shortcut, keycap shape, dark appearance, and press/preview feedback.
 - Normalize Arabic-Indic digits to Persian digits in both app and IME correction.
 
-This is a release candidate. It must pass Flutter analysis, Dart tests, Kotlin IME tests, and signed APK verification before publication.
+QA status: pending. This is a release candidate. It must pass Flutter analysis, Dart tests, Kotlin IME tests, and signed APK verification before publication.
