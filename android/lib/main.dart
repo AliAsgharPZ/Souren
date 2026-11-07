@@ -4033,7 +4033,7 @@ class ArabicRoots {
       'arabic-digital-humanities/root-extraction-validation-data · CC BY 4.0';
 
   static String normalize(String value) => normalizeLetters(value)
-      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '');
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '');
 }
 
 class _RootInfoCard extends StatelessWidget {
