@@ -2,6 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:souren/engine/corrector.dart';
 
 void main() {
+  test('normalizes Arabic-Indic digits to Persian digits', () {
+    expect(normalizeLetters('١٢٣٤٥٦٧٨٩٠'), '۱۲۳۴۵۶۷۸۹۰');
+  });
+
   const dict = {
     'سوال': ['پرسش'],
     'جواب': ['پاسخ'],
