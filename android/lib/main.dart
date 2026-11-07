@@ -4404,8 +4404,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
   void _showSourceInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('داده‌ها: github.com/ganjoor/ganjoor-data
-نگه‌دارنده: https://github.com/hrmoh'),
+        content: const Text('داده‌ها: github.com/ganjoor/ganjoor-data\\nنگه‌دارنده: https://github.com/hrmoh'),
         action: SnackBarAction(
           label: 'کپی',
           onPressed: () => Clipboard.setData(
