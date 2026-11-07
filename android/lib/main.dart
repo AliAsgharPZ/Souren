@@ -4433,7 +4433,10 @@ class GanjoorData {
         );
       }
       final decoded = jsonDecode(body) as Map<String, dynamic>;
-      await SharedFiles.writeJson(_cacheName(path), decoded);
+      // A cache-write failure must not discard a successfully fetched page.
+      try {
+        await SharedFiles.writeJson(_cacheName(path), decoded);
+      } catch (_) {}
       return decoded;
     } catch (_) {
       if (cached != null) return cached;
