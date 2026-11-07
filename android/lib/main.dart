@@ -1932,6 +1932,11 @@ class _ShellState extends State<Shell> {
       ),
       (LucideIcons.sparkles, 'واژه‌های تازه', () => _open(_freshPage(d))),
       (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
+      (
+        LucideIcons.fileText,
+        'کتابخانهٔ شعر',
+        () => _open(const GanjoorPage()),
+      ),
       (LucideIcons.award, 'یادگیری من', () => _pushPage(_learningPage())),
       (
         LucideIcons.keyboard,
