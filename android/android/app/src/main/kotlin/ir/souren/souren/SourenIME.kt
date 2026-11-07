@@ -2,6 +2,8 @@ package ir.souren.souren
 
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -64,6 +66,12 @@ class SourenIME : InputMethodService() {
     private var lastWordShown = ""
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+    private val darkMode: Boolean
+        get() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+    private fun tone(light: String, dark: String): Int =
+        Color.parseColor(if (darkMode) dark else light)
+
     private fun rowHeight(): Int = when (KbData.kbHeight) {
         "short" -> dp(47)
         "normal" -> dp(53)
@@ -94,7 +102,7 @@ class SourenIME : InputMethodService() {
         rootFrame = FrameLayout(this)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.parseColor("#E3E4E7"))
+            setBackgroundColor(tone("#D9DBDF", "#000000"))
             // Bottom clearance so the last row never fights the phone's
             // gesture/navigation area (Samsung keeps the same gap).
             setPadding(dp(5), 0, dp(5), dp(12))
@@ -103,7 +111,7 @@ class SourenIME : InputMethodService() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         stripArea = FrameLayout(this).apply {
-            setBackgroundColor(Color.parseColor("#F7F7F8"))
+            setBackgroundColor(tone("#F1F2F4", "#151515"))
         }
         toolbarView = buildToolbar()
         suggestView = LinearLayout(this).apply {
@@ -125,11 +133,11 @@ class SourenIME : InputMethodService() {
         preview = TextView(this).apply {
             textSize = 26f
             gravity = Gravity.CENTER
-            setTextColor(Color.parseColor("#16181D"))
+            setTextColor(tone("#16181D", "#F5F5F5"))
             background = GradientDrawable().apply {
                 cornerRadius = dp(12).toFloat()
-                setColor(Color.WHITE)
-                setStroke(dp(1), Color.parseColor("#D8D8D8"))
+                setColor(tone("#FFFFFF", "#333333"))
+                setStroke(dp(1), tone("#D8D8D8", "#4A4A4A"))
             }
             visibility = View.GONE
         }
@@ -141,10 +149,10 @@ class SourenIME : InputMethodService() {
             setPadding(dp(5), dp(5), dp(5), dp(5))
             background = GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
-                setColor(Color.WHITE)
-                setStroke(dp(1), Color.parseColor("#C9CCD1"))
+                setColor(tone("#FFFFFF", "#2B2B2B"))
+                setStroke(dp(1), tone("#C9CCD1", "#494949"))
             }
-            elevation = dp(6).toFloat()
+            elevation = dp(3).toFloat()
             visibility = View.GONE
         }
         rootFrame.addView(popupBar, FrameLayout.LayoutParams(
@@ -156,11 +164,12 @@ class SourenIME : InputMethodService() {
     private fun iconButton(resId: Int, onClick: () -> Unit): ImageView {
         return ImageView(this).apply {
             setImageResource(resId)
+            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(10), dp(10), dp(10), dp(10))
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#ECEDEF"))
+                setColor(tone("#E8E9EC", "#2B2B2B"))
             }
             setOnClickListener { onClick() }
         }
@@ -169,6 +178,7 @@ class SourenIME : InputMethodService() {
     private fun plainIconButton(resId: Int, onClick: () -> Unit): ImageView {
         return ImageView(this).apply {
             setImageResource(resId)
+            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(8), dp(8), dp(8), dp(8))
             alpha = 0.75f
@@ -241,7 +251,7 @@ class SourenIME : InputMethodService() {
     }
 
     // ---------------- key model ----------------
-    private enum class Kind { CHAR, SHIFT, DELETE, SPACE, ENTER, MODE, BACK, ZWNJ, CUSTOM }
+    private enum class Kind { CHAR, SHIFT, DELETE, SPACE, ENTER, MODE, BACK, ZWNJ, CUSTOM, EMOJI }
 
     private data class K(
         val label: String,
@@ -296,7 +306,6 @@ class SourenIME : InputMethodService() {
 
     private fun rowsFor(p: Page): List<List<K>> = when (p) {
         Page.FA -> listOf(
-            "۱۲۳۴۵۶۷۸۹۰".map { K(it.toString()) },
             listOf("ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "چ").map { K(it) },
             listOf("ش", "س", "ی", "ب", "ل", "ا", "ت", "ن", "م", "ک", "گ").map { K(it) },
             listOf(K("", kind = Kind.SHIFT, iconRes = R.drawable.ic_shift, weight = 1.5f)) +
@@ -304,9 +313,8 @@ class SourenIME : InputMethodService() {
                 listOf(K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.5f)),
             listOf(
                 K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K("", kind = Kind.MODE, iconRes = R.drawable.ic_globe, weight = 1.1f),
-                K("،", kind = Kind.CUSTOM, weight = 1.0f),
-                K("فارسی", kind = Kind.SPACE, weight = 3.6f),
+                K("", kind = Kind.EMOJI, iconRes = R.drawable.ic_emoji, weight = 1.0f),
+                K("‹  فارسی  ›", kind = Kind.SPACE, weight = 4.0f),
                 K("◀┆▶", kind = Kind.ZWNJ, weight = 1.2f),
                 K("."),
                 K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
@@ -321,9 +329,8 @@ class SourenIME : InputMethodService() {
                 listOf(K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.5f)),
             listOf(
                 K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K("", kind = Kind.MODE, iconRes = R.drawable.ic_globe, weight = 1.1f),
                 K(",", kind = Kind.CUSTOM, weight = 1.0f),
-                K("English", kind = Kind.SPACE, weight = 3.9f),
+                K("‹  English  ›", kind = Kind.SPACE, weight = 4.0f),
                 K("."),
                 K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
             )
@@ -388,7 +395,7 @@ class SourenIME : InputMethodService() {
     }
 
     private fun isGrayKey(k: K): Boolean = when (k.kind) {
-        Kind.SHIFT, Kind.DELETE, Kind.ENTER, Kind.MODE -> true
+        Kind.SHIFT, Kind.DELETE, Kind.ENTER, Kind.MODE, Kind.EMOJI -> true
         else -> false
     }
 
@@ -410,6 +417,8 @@ class SourenIME : InputMethodService() {
 
     private fun makeKey(k: K): View {
         val frame = FrameLayout(this).apply {
+            layoutDirection = if (page == Page.FA) View.LAYOUT_DIRECTION_RTL
+                else View.LAYOUT_DIRECTION_LTR
             setBackgroundResource(
                 if (isGrayKey(k)) R.drawable.key_special else R.drawable.key_letter)
             val lp = LinearLayout.LayoutParams(0, rowHeight(), k.weight)
@@ -422,6 +431,7 @@ class SourenIME : InputMethodService() {
         if (effectiveIcon != 0) {
             iconIv = ImageView(this).apply {
                 setImageResource(effectiveIcon)
+                imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding(dp(11), dp(11), dp(11), dp(11))
             }
@@ -450,13 +460,14 @@ class SourenIME : InputMethodService() {
                 val alt = TextView(this).apply {
                     text = hint
                     textSize = 9.5f
-                    setTextColor(Color.parseColor("#A3A8AE"))
+                    setTextColor(tone("#A3A8AE", "#A5A5A5"))
                     setPadding(dp(6), dp(3), 0, 0)
                     tag = "hint"
                 }
                 frame.addView(alt, FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START))
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.TOP or (if (page == Page.FA) Gravity.END else Gravity.START)))
             }
         }
         val kv = KeyView(frame, k, labelTv, iconIv)
@@ -471,7 +482,8 @@ class SourenIME : InputMethodService() {
             kv.labelTv?.let { it.text = displayLabel(kv.k) }
             if (kv.k.kind == Kind.SHIFT) {
                 kv.iconIv?.setColorFilter(
-                    if (shifted || capsLock) Color.parseColor("#2F5FE8") else Color.TRANSPARENT)
+                    if (shifted || capsLock) Color.parseColor("#2F5FE8")
+                    else tone("#25282D", "#F0F0F0"))
                 if (shifted || capsLock) kv.iconIv?.alpha = 1f else kv.iconIv?.alpha = 0.85f
             }
             // hint visibility follows the shift layer
@@ -534,19 +546,45 @@ class SourenIME : InputMethodService() {
             Kind.DELETE -> {
                 kv.frame.setOnClickListener { deleteOnce() }
                 kv.frame.setOnLongClickListener { startDeleteRepeat(); true }
-                kv.frame.setOnTouchListener { _, ev ->
-                    if (ev.action == MotionEvent.ACTION_UP ||
-                        ev.action == MotionEvent.ACTION_CANCEL) stopDeleteRepeat()
+                kv.frame.setOnTouchListener { v, ev ->
+                    when (ev.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
+                            .setDuration(75).start()
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
+                            stopDeleteRepeat()
+                        }
+                    }
                     false
                 }
             }
             Kind.SHIFT -> {
+                kv.frame.setOnTouchListener { v, ev ->
+                    when (ev.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
+                            .setDuration(75).start()
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
+                    }
+                    false
+                }
                 kv.frame.setOnClickListener { onShiftTap() }
                 kv.frame.setOnLongClickListener {
                     capsLock = true; shifted = true; applyShiftLabels(); true
                 }
             }
-            Kind.ENTER -> kv.frame.setOnClickListener { onEnter() }
+            Kind.ENTER -> {
+                kv.frame.setOnTouchListener { v, ev ->
+                    when (ev.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
+                            .setDuration(75).start()
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
+                    }
+                    false
+                }
+                kv.frame.setOnClickListener { onEnter() }
+            }
             else -> kv.frame.setOnTouchListener { v, ev -> onKeyTouch(kv, v, ev) }
         }
     }
@@ -564,6 +602,8 @@ class SourenIME : InputMethodService() {
         val k = kv.k
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                v.animate().cancel()
+                v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(75).start()
                 // A second finger landing: finish the previous key as a tap.
                 if (activeKv != null && activeKv !== kv && !popupShown) finishAsTap()
                 activeKv = kv
@@ -596,6 +636,8 @@ class SourenIME : InputMethodService() {
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                v.animate().cancel()
+                v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
                 handler.removeCallbacks(longRunnable ?: Runnable {})
                 preview.visibility = View.GONE
                 val wasPopup = popupShown
@@ -658,6 +700,7 @@ class SourenIME : InputMethodService() {
             }
             Kind.CUSTOM -> commit(customSym())
             Kind.ZWNJ -> commit(Corrector.ZWNJ)
+            Kind.EMOJI -> { page = Page.EMOJI; emojiSearchOn = false; rebuildKeys() }
             Kind.SPACE -> onSpace()
             Kind.MODE -> {
                 page = when {
@@ -699,7 +742,7 @@ class SourenIME : InputMethodService() {
                 text = display
                 textSize = if (display.length > 2) 13f else 19f
                 gravity = Gravity.CENTER
-                setTextColor(Color.parseColor("#16181D"))
+                setTextColor(tone("#16181D", "#F5F5F5"))
             }
             popupBar.addView(cell, LinearLayout.LayoutParams(popupCellW, dp(48)))
         }
@@ -714,7 +757,11 @@ class SourenIME : InputMethodService() {
         lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(64)).coerceAtLeast(0)
         popupBar.layoutParams = lp
         popupLeftPx = rootLoc[0] + left + dp(5)
+        popupBar.alpha = 0f
+        popupBar.translationY = dp(7).toFloat()
         popupBar.visibility = View.VISIBLE
+        popupBar.animate().alpha(1f).translationY(0f)
+            .setDuration(160).start()
     }
 
     private fun paintPopup() {
@@ -722,12 +769,21 @@ class SourenIME : InputMethodService() {
             val cell = popupBar.getChildAt(i)
             cell.background = if (i == popupIndex) GradientDrawable().apply {
                 cornerRadius = dp(10).toFloat()
-                setColor(Color.parseColor("#E3E4E7"))
+                setColor(tone("#E3E4E7", "#474747"))
             } else null
         }
     }
 
-    private fun hidePopup() { popupBar.visibility = View.GONE }
+    private fun hidePopup() {
+        if (popupBar.visibility != View.VISIBLE) return
+        popupBar.animate().cancel()
+        popupBar.animate().alpha(0f).translationY(-dp(5).toFloat())
+            .setDuration(100).withEndAction {
+                popupBar.visibility = View.GONE
+                popupBar.alpha = 1f
+                popupBar.translationY = 0f
+            }.start()
+    }
 
     private fun commitPopupChoice() {
         val kv = activeKv ?: return
@@ -821,7 +877,7 @@ class SourenIME : InputMethodService() {
                 gravity = Gravity.CENTER_VERTICAL
                 background = GradientDrawable().apply {
                     cornerRadius = dp(12).toFloat()
-                    setColor(Color.WHITE)
+                    setColor(tone("#FFFFFF", "#2B2B2B"))
                 }
                 setPadding(dp(12), dp(10), dp(12), dp(10))
             }
