@@ -4451,9 +4451,13 @@ class GanjoorPage extends StatefulWidget {
 }
 
 class _GanjoorPageState extends State<GanjoorPage> {
-  late final Future<Map<String, dynamic>> _manifest =
+  late Future<Map<String, dynamic>> _manifest =
       GanjoorData.json('manifest.json');
   String _query = '';
+
+  void _retryManifest() {
+    setState(() => _manifest = GanjoorData.json('manifest.json'));
+  }
 
   void _showSourceInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -4540,7 +4544,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                   if (snapshot.hasError || !snapshot.hasData) {
                     return _ganjoorError(
                       'دریافت فهرست شاعران انجام نشد. اتصال اینترنت را بررسی کنید.',
-                      () => setState(() {}),
+                      _retryManifest,
                     );
                   }
                   final poets =
