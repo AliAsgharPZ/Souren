@@ -66,12 +66,34 @@ class Motion {
   static const pop = Curves.easeOutCubic;
   static const staggerStep = Duration(milliseconds: 35);
 
-  /// Apple-like press timing: the control dips fast, then springs back
-  /// slowly enough to feel, never instantly.
+  /// Apple-like press timing: a quick, restrained dip and a soft settle.
   static const pressDown = Duration(milliseconds: 90);
   static const pressUp = Duration(milliseconds: 260);
   static const spring = Curves.easeOutCubic;
 }
+
+PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
+  transitionDuration: Motion.slow,
+  reverseTransitionDuration: Motion.base,
+  pageBuilder: (_, __, ___) => page,
+  transitionsBuilder: (_, animation, secondaryAnimation, child) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Motion.curve,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.018),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
+    );
+  },
+);
 
 /// Capsule roundness (round 3): 90% of the maximum — the radius is
 /// 45% of the capsule's height, so a capsule is almost a pill but
@@ -1811,7 +1833,7 @@ class _ShellState extends State<Shell> {
   }
 
   void _open(Widget page) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    Navigator.of(context).push(_softRoute(page));
   }
 
   /// Proverb page wired to the shell's like/favorite storage.
@@ -1830,9 +1852,7 @@ class _ShellState extends State<Shell> {
   /// Pushes a shell-built page (pageShell column) as its own route.
   void _pushPage(Widget body) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => Scaffold(body: SafeArea(child: body)),
-      ),
+      _softRoute(Scaffold(body: SafeArea(child: body))),
     );
   }
 
@@ -4455,8 +4475,8 @@ class _GanjoorPageState extends State<GanjoorPage> {
     final fullUrl = poet['FullUrl']?.toString() ?? '';
     if (fullUrl.isEmpty) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GanjoorNodePage(
+      _softRoute(
+        GanjoorNodePage(
           title: poet['Nickname']?.toString() ?? 'شاعر',
           path: fullUrl.replaceFirst(RegExp(r'^/'), ''),
         ),
@@ -4629,8 +4649,8 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
     final path = poem['FullUrl']?.toString() ?? '';
     if (path.isEmpty) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GanjoorPoemPage(
+      _softRoute(
+        GanjoorPoemPage(
           title: poem['Title']?.toString() ?? 'شعر',
           path: 'poets/${path.replaceFirst(RegExp(r'^/'), '')}.json',
         ),
