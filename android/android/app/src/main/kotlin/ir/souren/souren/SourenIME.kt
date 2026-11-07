@@ -77,8 +77,8 @@ class SourenIME : InputMethodService() {
         KbData.readLearned(this)
     }
 
-    override fun onStartInputView() {
-        super.onStartInputView()
+    override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
         // The IME process stays alive while the user edits settings in
         // the app, so re-read them every time the keyboard is shown —
         // and rebuild the keys when the height changed, because the
