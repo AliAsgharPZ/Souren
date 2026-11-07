@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [maintenance/v0.4.1]
   workflow_dispatch:
 jobs:
   build:
@@ -20,7 +22,8 @@ jobs:
         with:
           channel: stable
       - name: Dataset integrity (anchors)
-        run: python3 tools/build_dataset.py | head -1
+        shell: bash
+        run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Pub get
         run: flutter pub get
       - name: Analyze
@@ -51,9 +54,12 @@ jobs:
           flutter build apk --release
           BT=$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
           $ANDROID_HOME/build-tools/$BT/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
-        run: ./gradlew :app:testDebugUnitTest --stacktrace
+        run: gradle :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
