@@ -11,6 +11,10 @@ class CorrectorTest {
         "احترام" to listOf("گرامیداشت", "ارج")
     )
 
+    @Test fun normalizesArabicAlefMaqsura() {
+        assertEquals("ی", Corrector.normalizeLetters("ى"))
+    }
+
     @Test fun normalizesArabicIndicDigits() {
         assertEquals("۱۲۳۴۵۶۷۸۹۰", Corrector.normalizeLetters("١٢٣٤٥٦٧٨٩٠"))
     }
