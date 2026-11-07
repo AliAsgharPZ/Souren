@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:ui' show ImageFilter;
 
@@ -1613,6 +1614,10 @@ class _ShellState extends State<Shell> {
                                     _sidePill(
                                       'واژهٔ روز',
                                       () => _pushPage(_dailyPage(d)),
+                                    ),
+                                    _sidePill(
+                                      'کتابخانهٔ شعر',
+                                      () => _open(const GanjoorPage()),
                                     ),
                                     _sidePill(
                                       'ریشه‌شناسی',
@@ -4205,6 +4210,502 @@ class _EtymologyPageState extends State<EtymologyPage> {
       ),
     );
   }
+}
+
+// ================= کتابخانهٔ شعر =================
+
+/// Ganjoor publishes its public poetry corpus as a static JSON API.
+/// The app fetches only the pages the reader opens and caches them locally;
+/// it does not mirror the full multi-hundred-megabyte repository into the APK.
+class GanjoorData {
+  static const _base =
+      'https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/';
+
+  static String _cacheName(String path) =>
+      'ganjoor_${base64Url.encode(utf8.encode(path))}.json';
+
+  static Future<Map<String, dynamic>> json(String path) async {
+    final cached = await SharedFiles.readJson(_cacheName(path));
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
+    try {
+      final request = await client.getUrl(Uri.parse('$_base$path'));
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      final response = await request.close();
+      final body = await utf8.decoder.bind(response).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException(
+          'Ganjoor returned HTTP ${response.statusCode}',
+          uri: Uri.parse('$_base$path'),
+        );
+      }
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      await SharedFiles.writeJson(_cacheName(path), decoded);
+      return decoded;
+    } catch (_) {
+      if (cached != null) return cached;
+      rethrow;
+    } finally {
+      client.close(force: true);
+    }
+  }
+}
+
+class GanjoorPage extends StatefulWidget {
+  const GanjoorPage({super.key});
+  @override
+  State<GanjoorPage> createState() => _GanjoorPageState();
+}
+
+class _GanjoorPageState extends State<GanjoorPage> {
+  late final Future<Map<String, dynamic>> _manifest =
+      GanjoorData.json('manifest.json');
+  String _query = '';
+
+  void _showSourceInfo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('منبع و نگه‌دارندهٔ پروژه: https://github.com/hrmoh'),
+        action: SnackBarAction(
+          label: 'کپی',
+          onPressed: () => Clipboard.setData(
+            const ClipboardData(text: 'https://github.com/hrmoh'),
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _openPoet(Map<String, dynamic> poet) {
+    final fullUrl = poet['FullUrl']?.toString() ?? '';
+    if (fullUrl.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GanjoorNodePage(
+          title: poet['Nickname']?.toString() ?? 'شاعر',
+          path: fullUrl.replaceFirst(RegExp(r'^/'), ''),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: pal.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 12, 10),
+              child: Row(
+                children: [
+                  const BackIconButton(),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'کتابخانهٔ شعر',
+                      style: TextStyle(
+                        color: pal.ink,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'دربارهٔ منبع',
+                    onPressed: _showSourceInfo,
+                    icon: Icon(LucideIcons.info, color: pal.muted, size: 20),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+              child: TextField(
+                onChanged: (v) => setState(() => _query = v.trim()),
+                decoration: InputDecoration(
+                  hintText: 'نام شاعر را جست‌وجو کنید',
+                  prefixIcon: Icon(LucideIcons.search, color: pal.muted),
+                  filled: true,
+                  fillColor: pal.cardC,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(capR(54)),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>>(
+                future: _manifest,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return _ganjoorError(
+                      'دریافت فهرست شاعران انجام نشد. اتصال اینترنت را بررسی کنید.',
+                      () => setState(() {}),
+                    );
+                  }
+                  final poets =
+                      (snapshot.data!['Poets'] as List? ?? const [])
+                          .whereType<Map>()
+                          .map((e) => Map<String, dynamic>.from(e))
+                          .where((p) {
+                            final q = _query;
+                            return q.isEmpty ||
+                                (p['Nickname']?.toString().contains(q) ?? false);
+                          })
+                          .toList();
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${faNum(poets.length)} شاعر',
+                            style: TextStyle(color: pal.muted, fontSize: 12.5),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: edgeFade(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+                            itemCount: poets.length,
+                            separatorBuilder: (_, __) =>
+                                Divider(height: 1, color: pal.div),
+                            itemBuilder: (_, i) {
+                              final poet = poets[i];
+                              return Enter(
+                                index: i,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  leading: Icon(
+                                    LucideIcons.userRound,
+                                    color: pal.sel,
+                                  ),
+                                  title: Text(
+                                    poet['Nickname']?.toString() ?? '',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(
+                                      color: pal.ink,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing: Icon(
+                                    LucideIcons.chevronLeft,
+                                    color: pal.muted,
+                                    size: 18,
+                                  ),
+                                  onTap: () => _openPoet(poet),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class GanjoorNodePage extends StatefulWidget {
+  final String title;
+  final String path;
+  const GanjoorNodePage({super.key, required this.title, required this.path});
+  @override
+  State<GanjoorNodePage> createState() => _GanjoorNodePageState();
+}
+
+class _GanjoorNodePageState extends State<GanjoorNodePage> {
+  late Future<Map<String, dynamic>> _future = _load();
+
+  Future<Map<String, dynamic>> _load() =>
+      GanjoorData.json('poets/${widget.path}/_cat.json');
+
+  void _openCategory(Map<String, dynamic> category) {
+    final path = category['FullUrl']?.toString() ?? '';
+    if (path.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GanjoorNodePage(
+          title: category['Title']?.toString() ?? 'مجموعه',
+          path: path.replaceFirst(RegExp(r'^/'), ''),
+        ),
+      ),
+    );
+  }
+
+  void _openPoem(Map<String, dynamic> poem) {
+    final path = poem['FullUrl']?.toString() ?? '';
+    if (path.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GanjoorPoemPage(
+          title: poem['Title']?.toString() ?? 'شعر',
+          path: 'poets/${path.replaceFirst(RegExp(r'^/'), '')}.json',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return subScaffold(
+      widget.title,
+      FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return _ganjoorError(
+              'بارگذاری این بخش انجام نشد.',
+              () => setState(() => _future = _load()),
+            );
+          }
+          final data = snapshot.data!;
+          final categories = (data['ChildCats'] as List? ?? const [])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+          final poems = (data['Poems'] as List? ?? const [])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+          return edgeFade(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              children: [
+                if ((data['Description']?.toString() ?? '').isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      data['Description'].toString(),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: pal.muted,
+                        height: 1.9,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                for (var i = 0; i < categories.length; i++)
+                  Enter(
+                    index: i,
+                    child: ListTile(
+                      leading: Icon(LucideIcons.folder, color: pal.sel),
+                      title: Text(
+                        categories[i]['Title']?.toString() ?? '',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.ink),
+                      ),
+                      trailing: Icon(
+                        LucideIcons.chevronLeft,
+                        color: pal.muted,
+                        size: 18,
+                      ),
+                      onTap: () => _openCategory(categories[i]),
+                    ),
+                  ),
+                if (categories.isNotEmpty && poems.isNotEmpty)
+                  Divider(height: 18, color: pal.div),
+                for (var i = 0; i < poems.length; i++)
+                  Enter(
+                    index: categories.length + i,
+                    child: ListTile(
+                      leading: Icon(
+                        LucideIcons.fileText,
+                        color: pal.muted,
+                      ),
+                      title: Text(
+                        poems[i]['Title']?.toString() ?? '',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.ink),
+                      ),
+                      onTap: () => _openPoem(poems[i]),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class GanjoorPoemPage extends StatefulWidget {
+  final String title;
+  final String path;
+  const GanjoorPoemPage({super.key, required this.title, required this.path});
+  @override
+  State<GanjoorPoemPage> createState() => _GanjoorPoemPageState();
+}
+
+class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
+  late Future<Map<String, dynamic>> _future =
+      GanjoorData.json(widget.path);
+
+  @override
+  Widget build(BuildContext context) {
+    return subScaffold(
+      widget.title,
+      FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return _ganjoorError(
+              'دریافت شعر انجام نشد.',
+              () => setState(() => _future = GanjoorData.json(widget.path)),
+            );
+          }
+          final data = snapshot.data!;
+          final verses = (data['Verses'] as List? ?? const [])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+          final couplets = <int, List<String>>{};
+          for (final verse in verses) {
+            final index = (verse['CoupletIndex'] as num?)?.toInt() ?? -1;
+            if (index < 0) continue;
+            couplets.putIfAbsent(index, () => <String>[]);
+            couplets[index]!.add(verse['Text']?.toString() ?? '');
+          }
+          final ordered = couplets.keys.toList()..sort();
+          return edgeFade(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(22, 10, 22, 32),
+              children: [
+                if ((data['PoemSummary']?.toString() ?? '').isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: pal.cardC,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      data['PoemSummary'].toString(),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: pal.muted,
+                        height: 1.9,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                  ),
+                if (data['Metre'] is Map &&
+                    (data['Metre']['Rhythm']?.toString() ?? '').isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Text(
+                      'وزن: ${data['Metre']['Rhythm']}',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: pal.faint, fontSize: 12),
+                    ),
+                  ),
+                for (var i = 0; i < ordered.length; i++)
+                  Enter(
+                    index: i,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: pal.pillC,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            couplets[ordered[i]]!.first,
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(
+                              color: pal.ink,
+                              fontSize: 16,
+                              height: 1.9,
+                            ),
+                          ),
+                          if (couplets[ordered[i]]!.length > 1) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              couplets[ordered[i]]![1],
+                              textAlign: TextAlign.center,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(
+                                color: pal.ink,
+                                fontSize: 16,
+                                height: 1.9,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Text(
+                  'متن شعر از گنجور — github.com/hrmoh',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: pal.faint, fontSize: 11.5),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+Widget _ganjoorError(String message, VoidCallback retry) {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.cloudOff, size: 30, color: pal.muted),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: pal.muted, height: 1.8),
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: retry,
+            icon: Icon(LucideIcons.refreshCw, color: pal.sel),
+            label: const Text('تلاش دوباره'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ================= راهنمای کیبورد =================
