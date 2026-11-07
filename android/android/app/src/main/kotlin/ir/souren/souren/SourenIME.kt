@@ -450,8 +450,8 @@ class SourenIME : InputMethodService() {
                 }
                 if (k.kind == Kind.MODE) paint.isFakeBoldText = true
                 gravity = Gravity.CENTER
-                setTextColor(Color.parseColor(
-                    if (k.kind == Kind.SPACE) "#3C4043" else "#191B1E"))
+                setTextColor(
+                    tone(if (k.kind == Kind.SPACE) "#3C4043" else "#191B1E", "#F4F4F4"))
             }
             frame.addView(labelTv, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
@@ -639,7 +639,8 @@ class SourenIME : InputMethodService() {
                 v.animate().cancel()
                 v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
                 handler.removeCallbacks(longRunnable ?: Runnable {})
-                preview.visibility = View.GONE
+                val cancelled = ev.actionMasked == MotionEvent.ACTION_CANCEL
+                hidePreview()
                 val wasPopup = popupShown
                 val wasConsumed = consumed
                 val wasCursor = cursorMode
@@ -647,12 +648,12 @@ class SourenIME : InputMethodService() {
                     (kotlin.math.abs(ev.rawX - downX) > dp(42) || wasCursor)
                 if (popupShown) {
                     hidePopup()
-                    commitPopupChoice()
+                    if (!cancelled) commitPopupChoice()
                 }
                 val act = activeKv
                 activeKv = null
                 popupShown = false; consumed = false; cursorMode = false
-                if (!wasPopup && !wasConsumed && !wasSpaceGesture && act === kv) doTap(k)
+                if (!cancelled && !wasPopup && !wasConsumed && !wasSpaceGesture && act === kv) doTap(k)
                 return true
             }
         }
@@ -671,7 +672,7 @@ class SourenIME : InputMethodService() {
         if (activeKv !== kv) return
         val k = kv.k
         longFired = true
-        preview.visibility = View.GONE
+        hidePreview()
         when {
             k.kind == Kind.SPACE -> { cursorMode = true; consumed = false }
             k.kind == Kind.ZWNJ -> {
@@ -805,12 +806,30 @@ class SourenIME : InputMethodService() {
     private fun showPreview(key: View, text: String) {
         val rootLoc = IntArray(2); rootFrame.getLocationInWindow(rootLoc)
         val keyLoc = IntArray(2); key.getLocationInWindow(keyLoc)
+        preview.animate().cancel()
         preview.text = text
         val lp = preview.layoutParams as FrameLayout.LayoutParams
         lp.leftMargin = keyLoc[0] - rootLoc[0] + key.width / 2 - dp(26)
         lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(62)).coerceAtLeast(0)
         preview.layoutParams = lp
+        preview.alpha = 0f
+        preview.scaleX = 0.88f
+        preview.scaleY = 0.88f
         preview.visibility = View.VISIBLE
+        preview.animate().alpha(1f).scaleX(1f).scaleY(1f)
+            .setDuration(115).start()
+    }
+
+    private fun hidePreview() {
+        if (preview.visibility != View.VISIBLE) return
+        preview.animate().cancel()
+        preview.animate().alpha(0f).scaleX(0.9f).scaleY(0.9f)
+            .setDuration(85).withEndAction {
+                preview.visibility = View.GONE
+                preview.alpha = 1f
+                preview.scaleX = 1f
+                preview.scaleY = 1f
+            }.start()
     }
 
     // ---------------- clipboard panel ----------------
