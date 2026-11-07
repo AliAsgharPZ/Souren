@@ -1,5 +1,9 @@
 name: Release Souren v0.4.1.1
 
+concurrency:
+  group: souren-v0.4.1.1-release
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -71,7 +75,8 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
           grep -q "Signer" "$RUNNER_TEMP/apk-cert.txt"
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep "package: name='ir.souren.souren' versionCode='9' versionName='0.4.1.1'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "package: name='ir.souren.souren' versionCode='9' versionName='0.4.1.1'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
 
       - name: Prepare release asset
         run: |
