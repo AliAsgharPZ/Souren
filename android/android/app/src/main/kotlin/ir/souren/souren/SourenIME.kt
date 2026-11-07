@@ -3,6 +3,7 @@ package ir.souren.souren
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -151,7 +152,7 @@ class SourenIME : InputMethodService() {
                 setColor(tone("#FFFFFF", "#2B2B2B"))
                 setStroke(dp(1), tone("#C9CCD1", "#494949"))
             }
-            elevation = dp(6).toFloat()
+            elevation = dp(3).toFloat()
             visibility = View.GONE
         }
         rootFrame.addView(popupBar, FrameLayout.LayoutParams(
@@ -163,6 +164,7 @@ class SourenIME : InputMethodService() {
     private fun iconButton(resId: Int, onClick: () -> Unit): ImageView {
         return ImageView(this).apply {
             setImageResource(resId)
+            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(10), dp(10), dp(10), dp(10))
             background = GradientDrawable().apply {
@@ -176,6 +178,7 @@ class SourenIME : InputMethodService() {
     private fun plainIconButton(resId: Int, onClick: () -> Unit): ImageView {
         return ImageView(this).apply {
             setImageResource(resId)
+            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(8), dp(8), dp(8), dp(8))
             alpha = 0.75f
@@ -428,6 +431,7 @@ class SourenIME : InputMethodService() {
         if (effectiveIcon != 0) {
             iconIv = ImageView(this).apply {
                 setImageResource(effectiveIcon)
+                imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding(dp(11), dp(11), dp(11), dp(11))
             }
@@ -463,7 +467,7 @@ class SourenIME : InputMethodService() {
                 frame.addView(alt, FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.TOP or if (page == Page.FA) Gravity.END else Gravity.START))
+                    Gravity.TOP or (if (page == Page.FA) Gravity.END else Gravity.START)))
             }
         }
         val kv = KeyView(frame, k, labelTv, iconIv)
