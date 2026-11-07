@@ -55,9 +55,8 @@ Pal pal = Pal.light;
 
 /// Motion language (Claude-inspired feel, Souren's own numbers): one place
 /// for every duration/curve so entrances, toggles and transitions match.
-/// Colors and general visuals stay Souren's own — only the motion feel is
-/// borrowed from the Claude design system (whose own note says animation
-/// timings are out of scope, so these numbers are ours).
+/// Souren's own visual language with purposeful, restrained motion:
+/// short ease-out transitions, subtle press feedback and no decorative bounce.
 class Motion {
   static const fast = Duration(milliseconds: 150);
   static const base = Duration(milliseconds: 240);
