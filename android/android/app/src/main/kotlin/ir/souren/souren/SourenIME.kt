@@ -70,6 +70,9 @@ class SourenIME : InputMethodService() {
         KbData.load(this)
         KbData.readSettings(this)
         KbData.readLearned(this)
+        // Shared settings are re-read for every new input session. Rebuild
+        // retained key views so keyboard height and correction toggles apply.
+        if (this::keysBox.isInitialized) rebuildKeys()
     }
 
     override fun onCreateInputView(): View {
