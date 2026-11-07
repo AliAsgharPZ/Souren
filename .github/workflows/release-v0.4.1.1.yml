@@ -47,6 +47,10 @@ jobs:
       - name: Dart and widget tests
         run: flutter test
 
+      - name: Kotlin IME unit tests
+        working-directory: android/android
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
       - name: Configure production signing key
         env:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
