@@ -1465,6 +1465,8 @@ class _ShellState extends State<Shell> {
                                     color: tab == i
                                         ? pal.bg
                                         : pal.ink.withValues(alpha: .72),
+                                    fill: tab == i ? 1.0 : 0.0,
+                                    weight: tab == i ? 700.0 : 400.0,
                                     shadows: tab == i
                                         ? [
                                             Shadow(
