@@ -4636,8 +4636,8 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
     final path = category['FullUrl']?.toString() ?? '';
     if (path.isEmpty) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GanjoorNodePage(
+      _softRoute(
+        GanjoorNodePage(
           title: category['Title']?.toString() ?? 'مجموعه',
           path: path.replaceFirst(RegExp(r'^/'), ''),
         ),
