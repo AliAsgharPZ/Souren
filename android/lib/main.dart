@@ -1188,7 +1188,7 @@ class _ShellState extends State<Shell> {
   int tab = 0;
   String query = '';
 
-  // search focus state (home): back icon + page blur while focused.
+  // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
@@ -4389,7 +4389,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                                     vertical: 2,
                                   ),
                                   leading: Icon(
-                                    LucideIcons.userRound,
+                                    LucideIcons.user,
                                     color: pal.sel,
                                   ),
                                   title: Text(
@@ -4689,7 +4689,7 @@ Widget _ganjoorError(String message, VoidCallback retry) {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.cloudOff, size: 30, color: pal.muted),
+          Icon(LucideIcons.cloud, size: 30, color: pal.muted),
           const SizedBox(height: 12),
           Text(
             message,
