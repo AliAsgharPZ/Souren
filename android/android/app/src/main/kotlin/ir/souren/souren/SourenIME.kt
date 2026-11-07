@@ -171,6 +171,15 @@ class SourenIME : InputMethodService() {
                 shape = GradientDrawable.OVAL
                 setColor(tone("#E8E9EC", "#2B2B2B"))
             }
+            setOnTouchListener { v, event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.92f).scaleY(0.92f)
+                        .setDuration(80).start()
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
+                }
+                false
+            }
             setOnClickListener { onClick() }
         }
     }
@@ -182,6 +191,15 @@ class SourenIME : InputMethodService() {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(8), dp(8), dp(8), dp(8))
             alpha = 0.75f
+            setOnTouchListener { v, event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.92f).scaleY(0.92f)
+                        .setDuration(80).start()
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
+                }
+                false
+            }
             setOnClickListener { onClick() }
         }
     }
