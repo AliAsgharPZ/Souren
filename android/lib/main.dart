@@ -4016,9 +4016,9 @@ class ArabicRoots {
     final rows = data['entries'] as List? ?? const [];
     final result = <String, Set<String>>{};
     for (final row in rows.whereType<Map>()) {
-      final word = normalizeLetters(row['word']?.toString() ?? '');
+      final word = normalize(row['word']?.toString() ?? '');
       final roots = (row['roots'] as List? ?? const [])
-          .map((e) => normalizeLetters(e.toString()))
+          .map((e) => normalize(e.toString()))
           .where((e) => e.isNotEmpty);
       if (word.isEmpty) continue;
       result.putIfAbsent(word, () => <String>{}).addAll(roots);
@@ -4031,6 +4031,9 @@ class ArabicRoots {
 
   static const sourceLabel =
       'arabic-digital-humanities/root-extraction-validation-data · CC BY 4.0';
+
+  static String normalize(String value) => normalizeLetters(value)
+      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '');
 }
 
 class _RootInfoCard extends StatelessWidget {
@@ -4046,7 +4049,7 @@ class _RootInfoCard extends StatelessWidget {
             !snapshot.hasData) {
           return const SizedBox.shrink();
         }
-        final roots = snapshot.data![normalizeLetters(word)];
+        final roots = snapshot.data![ArabicRoots.normalize(word)];
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 14),
@@ -4111,7 +4114,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
   String _query = '';
   String? _selectedWord;
 
-  String _norm(String value) => normalizeLetters(value.trim());
+  String _norm(String value) => ArabicRoots.normalize(value.trim());
 
   @override
   void initState() {
