@@ -282,6 +282,10 @@ class _PressableState extends State<Pressable> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final duration = reduceMotion
+        ? Duration.zero
+        : (_pressed ? Motion.pressDown : Motion.pressUp);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: (_) => _set(true),
@@ -289,12 +293,12 @@ class _PressableState extends State<Pressable> {
       onTapCancel: () => _set(false),
       onTap: widget.onTap,
       child: AnimatedScale(
-        scale: _pressed ? widget.scale : 1.0,
-        duration: _pressed ? Motion.pressDown : Motion.pressUp,
+        scale: reduceMotion ? 1.0 : (_pressed ? widget.scale : 1.0),
+        duration: duration,
         curve: _pressed ? Curves.easeOut : Motion.spring,
         child: AnimatedOpacity(
-          opacity: _pressed ? 0.82 : 1.0,
-          duration: _pressed ? Motion.pressDown : Motion.pressUp,
+          opacity: reduceMotion ? 1.0 : (_pressed ? 0.82 : 1.0),
+          duration: duration,
           child: widget.child,
         ),
       ),
