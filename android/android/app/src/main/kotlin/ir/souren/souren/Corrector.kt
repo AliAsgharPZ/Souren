@@ -7,7 +7,7 @@ object Corrector {
     const val HAMZA = "\u0654"
 
     private val letterFix = mapOf(
-        'ي' to "ی", 'ك' to "ک", 'ة' to "ه", 'ۀ' to "هٔ",
+        'ي' to "ی", 'ى' to "ی", 'ك' to "ک", 'ة' to "ه", 'ۀ' to "هٔ",
         'أ' to "ا", 'إ' to "ا", 'ٱ' to "ا", 'ؤ' to "و",
         // Arabic-Indic digits become Persian digits for consistent Farsi text.
         '٠' to "۰", '١' to "۱", '٢' to "۲", '٣' to "۳", '٤' to "۴",

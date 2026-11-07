@@ -262,11 +262,13 @@ Widget edgeFade({required Widget child}) => ScrollFade(child: child);
 class Pressable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double scale;
   const Pressable({
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.scale = 0.975,
   });
   @override
@@ -292,6 +294,7 @@ class _PressableState extends State<Pressable> {
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress ?? widget.onTap,
       child: AnimatedScale(
         scale: reduceMotion ? 1.0 : (_pressed ? widget.scale : 1.0),
         duration: duration,
@@ -1932,6 +1935,11 @@ class _ShellState extends State<Shell> {
       ),
       (LucideIcons.sparkles, 'واژه‌های تازه', () => _open(_freshPage(d))),
       (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
+      (
+        LucideIcons.fileText,
+        'کتابخانهٔ شعر',
+        () => _open(const GanjoorPage()),
+      ),
       (LucideIcons.award, 'یادگیری من', () => _pushPage(_learningPage())),
       (
         LucideIcons.keyboard,
@@ -2876,8 +2884,8 @@ class _ShellState extends State<Shell> {
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 22 + kNavClearance),
           children: [
             _toggleRow(
-              title: 'جایگزینی خودکار واژه‌های عربی با فارسی',
-              subtitle: 'در کیبورد، واژهٔ عربیِ دارای برابرِ تک‌واژه‌ای، خودکار فارسی می‌شود',
+              title: 'جایگزینی حروف و اعداد عربی با فارسی',
+              subtitle: 'حروف عربی و رقم‌های عربی‌هندی هنگام تایپ به شکل فارسی تبدیل می‌شوند',
               value: settings.replaceArabic,
               onChanged: (v) async {
                 setState(() => settings.replaceArabic = v);
@@ -4016,9 +4024,9 @@ class ArabicRoots {
     final rows = data['entries'] as List? ?? const [];
     final result = <String, Set<String>>{};
     for (final row in rows.whereType<Map>()) {
-      final word = normalizeLetters(row['word']?.toString() ?? '');
+      final word = normalize(row['word']?.toString() ?? '');
       final roots = (row['roots'] as List? ?? const [])
-          .map((e) => normalizeLetters(e.toString()))
+          .map((e) => normalize(e.toString()))
           .where((e) => e.isNotEmpty);
       if (word.isEmpty) continue;
       result.putIfAbsent(word, () => <String>{}).addAll(roots);
@@ -4031,6 +4039,9 @@ class ArabicRoots {
 
   static const sourceLabel =
       'arabic-digital-humanities/root-extraction-validation-data · CC BY 4.0';
+
+  static String normalize(String value) => normalizeLetters(value)
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '');
 }
 
 class _RootInfoCard extends StatelessWidget {
@@ -4046,7 +4057,7 @@ class _RootInfoCard extends StatelessWidget {
             !snapshot.hasData) {
           return const SizedBox.shrink();
         }
-        final roots = snapshot.data![normalizeLetters(word)];
+        final roots = snapshot.data![ArabicRoots.normalize(word)];
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 14),
@@ -4111,7 +4122,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
   String _query = '';
   String? _selectedWord;
 
-  String _norm(String value) => normalizeLetters(value.trim());
+  String _norm(String value) => ArabicRoots.normalize(value.trim());
 
   @override
   void initState() {
@@ -4863,13 +4874,13 @@ class KeyboardGuidePage extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           children: [
             const Text(
-              'کیبورد سورن کپیِ رفتار و چیدمان کیبورد سامسونگ است:\n\n'
+              'چیدمان و بازخورد لمسی کیبورد سورن با الهام از Samsung Keyboard بازطراحی شده است:\n\n'
               '• نوار بالا هنگام تایپ جای خود را به پیشنهادها می‌دهد و با پیکان برمی‌گردد.\n'
               '• هنگام زدن فاصله یا اینتر، اصلاح و جایگزینی خودکار انجام می‌شود: میخام ← می‌خوام، سوال ← پرسش.\n'
               '• روی هر کلید نگه دارید: پنجره‌ای بالای کلید باز می‌شود با همهٔ نویسه‌های لایهٔ شیفت و خویشاوندهای آن کلید؛ انگشت را بکشید و رها کنید تا همان نویسه بنشیند.\n'
               '• کلید شیفت لایهٔ اعراب و شکل‌های عربی/همزه‌دار را روی کلیدها نشان می‌دهد؛ نگه‌داشتنش لایه را قفل می‌کند.\n'
               '• برای انگلیسی، روی کلید فاصله به چپ یا راست بکشید؛ زبان عوض می‌شود. نگه‌داشتن فاصله آن را به صفحهٔ حرکتِ نشانگر تبدیل می‌کند.\n'
-              '• کلید نیم‌فاصله در ردیف پایین است؛ نگه‌داشتنش «چسبان» (ZWJ) می‌دهد.\n'
+              '• کلید نیم‌فاصله در ردیف پایین است؛ نگه‌داشتنش «چسبان» (ZWJ) می‌دهد.\n• رقم‌های عربی‌هندی نیز در صورت روشن‌بودن جایگزینی، به رقم‌های فارسی تبدیل می‌شوند.\n'
               '• کلید کنار فاصله «سفارشی» است: نگهش دارید و نمادی برگزینید؛ همان نماد روی کلید می‌ماند.\n'
               '• نگه‌داشتن نقطه، ده نماد و نشانهٔ پرکاربرد (اعراب و ؟) را باز می‌کند.\n'
               '• پنل ایموجی از نوار ابزار باز می‌شود: دسته‌بندی، جست‌وجو با واژه (مثل گربه یا خنده)، ایموجی‌های اخیر، و با نگه‌داشتن روی ایموجی‌های آدم، رنگ پوست.\n'
