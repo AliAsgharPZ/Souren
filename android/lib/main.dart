@@ -60,18 +60,18 @@ Pal pal = Pal.light;
 /// borrowed from the Claude design system (whose own note says animation
 /// timings are out of scope, so these numbers are ours).
 class Motion {
-  static const fast = Duration(milliseconds: 180);
-  static const base = Duration(milliseconds: 280);
-  static const slow = Duration(milliseconds: 380);
+  static const fast = Duration(milliseconds: 150);
+  static const base = Duration(milliseconds: 240);
+  static const slow = Duration(milliseconds: 320);
   static const curve = Curves.easeOutCubic;
-  static const pop = Curves.easeOutBack;
+  static const pop = Curves.easeOutCubic;
   static const staggerStep = Duration(milliseconds: 35);
 
   /// Apple-like press timing: the control dips fast, then springs back
   /// slowly enough to feel, never instantly.
-  static const pressDown = Duration(milliseconds: 110);
-  static const pressUp = Duration(milliseconds: 320);
-  static const spring = Curves.easeOutBack;
+  static const pressDown = Duration(milliseconds: 90);
+  static const pressUp = Duration(milliseconds: 260);
+  static const spring = Curves.easeOutCubic;
 }
 
 /// Capsule roundness (round 3): 90% of the maximum — the radius is
@@ -456,9 +456,9 @@ class _TopBannerState extends State<_TopBanner> {
                   borderRadius: BorderRadius.circular(capR(52)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 12,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -521,6 +521,7 @@ class DetailSheet extends StatefulWidget {
   final Future<void> Function() onToggleLike;
   final Future<void> Function() onToggleBookmark;
   final VoidCallback? onOpenEtymology;
+  final String? etymologyWord;
   const DetailSheet({
     super.key,
     required this.card,
@@ -530,6 +531,7 @@ class DetailSheet extends StatefulWidget {
     required this.onToggleLike,
     required this.onToggleBookmark,
     this.onOpenEtymology,
+    this.etymologyWord,
   });
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -681,6 +683,8 @@ class _DetailSheetState extends State<DetailSheet> {
               ),
             ],
           ),
+          if (widget.etymologyWord != null)
+            _RootInfoCard(word: widget.etymologyWord!),
           if (widget.onOpenEtymology != null) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -1455,25 +1459,29 @@ class _ShellState extends State<Shell> {
                               key: ValueKey<bool>(tab == i),
                               alignment: Alignment.center,
                               children: [
-                                Icon(
-                                  items[i].$1,
-                                  size: 23,
-                                  color: tab == i
-                                      ? pal.bg
-                                      : pal.ink.withValues(alpha: .72),
-                                ),
-                                if (tab == i)
-                                  Icon(
+                                AnimatedScale(
+                                  duration: Motion.fast,
+                                  curve: Motion.curve,
+                                  scale: tab == i ? 1.06 : 1,
+                                  child: Icon(
                                     items[i].$1,
                                     size: 23,
-                                    color: pal.bg,
-                                    shadows: [
-                                      Shadow(
-                                        color: pal.bg.withValues(alpha: .34),
-                                        blurRadius: 1.2,
-                                      ),
-                                    ],
+                                    color: tab == i
+                                        ? pal.bg
+                                        : pal.ink.withValues(alpha: .72),
+                                    fill: tab == i ? 1.0 : 0.0,
+                                    weight: tab == i ? 700.0 : 400.0,
+                                    shadows: tab == i
+                                        ? [
+                                            Shadow(
+                                              color: pal.bg.withValues(alpha: .24),
+                                              blurRadius: 0.35,
+                                              offset: const Offset(0.15, 0),
+                                            ),
+                                          ]
+                                        : null,
                                   ),
+                                ),
                               ],
                             ),
                           ),
@@ -1864,11 +1872,12 @@ class _ShellState extends State<Shell> {
         likeCount: likeCounts[e.ar] ?? 0,
         onToggleLike: () => _toggleLike(e.ar),
         onToggleBookmark: () => _toggleFav(e.ar),
+        etymologyWord: e.ar,
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _open(EtymologyPage(dict: d, initialWord: e.ar));
+            if (mounted && dict != null) {
+              _open(EtymologyPage(dict: dict!, initialWord: e.ar));
             }
           });
         },
@@ -4006,6 +4015,98 @@ class _FreshPageState extends State<FreshPage> {
 }
 
 // ================= ریشه‌شناسی =================
+class ArabicRoots {
+  static Future<Map<String, List<String>>>? _cached;
+
+  static Future<Map<String, List<String>>> load() =>
+      _cached ??= _load();
+
+  static Future<Map<String, List<String>>> _load() async {
+    final raw = await rootBundle.loadString('assets/db/arabic_roots.json');
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    final rows = data['entries'] as List? ?? const [];
+    final result = <String, Set<String>>{};
+    for (final row in rows.whereType<Map>()) {
+      final word = normalizeLetters(row['word']?.toString() ?? '');
+      final roots = (row['roots'] as List? ?? const [])
+          .map((e) => normalizeLetters(e.toString()))
+          .where((e) => e.isNotEmpty);
+      if (word.isEmpty) continue;
+      result.putIfAbsent(word, () => <String>{}).addAll(roots);
+    }
+    return {
+      for (final entry in result.entries)
+        entry.key: entry.value.toList(growable: false),
+    };
+  }
+
+  static const sourceLabel =
+      'Arabic Digital Humanities · CC BY 4.0';
+}
+
+class _RootInfoCard extends StatelessWidget {
+  final String word;
+  const _RootInfoCard({required this.word});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, List<String>>>(
+      future: ArabicRoots.load(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done ||
+            !snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+        final roots = snapshot.data![normalizeLetters(word)];
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 14),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: pal.cardC,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'ریشهٔ صرفی',
+                style: TextStyle(
+                  color: pal.muted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                roots == null || roots.isEmpty
+                    ? 'برای این واژه در دادهٔ ریشه‌شناسی فعلی مدخلی ثبت نشده است.'
+                    : roots.join('  /  '),
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: roots == null ? pal.muted : pal.ink,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                roots == null
+                    ? 'پوشش داده محدود است؛ نبودن مدخل به معنی بی‌ریشه بودن واژه نیست.'
+                    : ArabicRoots.sourceLabel,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: pal.faint, fontSize: 10.5),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class EtymologyPage extends StatefulWidget {
   final Dictionary dict;
   final String? initialWord;
@@ -4016,80 +4117,37 @@ class EtymologyPage extends StatefulWidget {
 
 class _EtymologyPageState extends State<EtymologyPage> {
   final _ctrl = TextEditingController();
+  late final Future<Map<String, List<String>>> _rootsFuture =
+      ArabicRoots.load();
   String _query = '';
-  List<Entry> _suggestions = const [];
-  String _result = '';
+  String? _selectedWord;
 
-  String _norm(String s) => normalizeLetters(s.trim());
-
-  void _onChanged(String v) {
-    final q = _norm(v);
-    if (q.isEmpty) {
-      setState(() {
-        _query = '';
-        _suggestions = const [];
-        _result = '';
-      });
-      return;
-    }
-    final scored = <(int, Entry)>[];
-    for (final e in widget.dict.entries) {
-      final ar = _norm(e.ar);
-      var score = -1;
-      if (ar.startsWith(q)) {
-        score = 0;
-      } else if (ar.contains(q)) {
-        score = 2;
-      } else {
-        for (final f in e.fa) {
-          final nf = _norm(f);
-          if (nf.startsWith(q)) {
-            score = 1;
-            break;
-          }
-          if (nf.contains(q)) {
-            score = 3;
-            break;
-          }
-        }
-      }
-      if (score >= 0) scored.add((score, e));
-    }
-    scored.sort((a, b) => a.$1.compareTo(b.$1));
-    final exact = scored.where((s) => _norm(s.$2.ar) == q).toList();
-    setState(() {
-      _query = q;
-      _suggestions = scored.take(20).map((s) => s.$2).toList();
-      _result = exact.isNotEmpty ? _resultFor(exact.first.$2, q) : '';
-    });
-  }
-
-  String _resultFor(Entry e, String q) {
-    final ar = _norm(e.ar);
-    if (ar == q || ar.startsWith(q) || ar.contains(q)) {
-      return e.hasFa
-          ? '«${e.ar}» واژه‌ای عربی است که در فارسی به کار می‌رود.\nبرابر فارسی آن: ${e.fa.join('، ')}'
-          : '«${e.ar}» واژه‌ای عربی است؛ هنوز برابر فارسی برایش ثبت نشده.';
-    }
-    final matchedFa = e.fa.firstWhere(
-      (f) => _norm(f).startsWith(q) || _norm(f).contains(q),
-      orElse: () => e.fa.first,
-    );
-    return '«$matchedFa» واژه‌ای فارسی است (برابرِ «${e.ar}»).';
-  }
-
-  void _select(Entry e) {
-    setState(() => _result = _resultFor(e, _query));
-  }
+  String _norm(String value) => normalizeLetters(value.trim());
 
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialWord;
-    if (initial != null && initial.trim().isNotEmpty) {
+    final initial = widget.initialWord?.trim() ?? '';
+    if (initial.isNotEmpty) {
       _ctrl.text = initial;
-      _onChanged(initial);
+      _query = _norm(initial);
+      _selectedWord = _query;
     }
+  }
+
+  void _onChanged(String value) {
+    setState(() {
+      _query = _norm(value);
+      _selectedWord = null;
+    });
+  }
+
+  void _select(String word) {
+    setState(() {
+      _selectedWord = word;
+      _ctrl.text = word;
+      _query = _norm(word);
+    });
   }
 
   @override
@@ -4100,112 +4158,208 @@ class _EtymologyPageState extends State<EtymologyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final emptyQuery = _query.isEmpty;
-    final visibleEntries = emptyQuery ? widget.dict.entries : _suggestions;
     return subScaffold(
       'ریشه‌شناسی',
       Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            TextField(
-              controller: _ctrl,
-              onChanged: _onChanged,
-              decoration: InputDecoration(
-                hintText: 'واژه‌ای بنویسید تا ریشه‌اش را ببینید',
-                prefixIcon: Icon(
-                  LucideIcons.search,
-                  color: pal.muted,
-                  size: 23,
+        child: FutureBuilder<Map<String, List<String>>>(
+          future: _rootsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(
+                child: Text(
+                  'دادهٔ ریشه‌ها بارگذاری نشد.',
+                  style: TextStyle(color: pal.muted),
                 ),
-                filled: true,
-                fillColor: pal.cardC,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(capR(56)),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            AnimatedSwitcher(
-              duration: Motion.base,
-              transitionBuilder: enterTransition,
-              child: _result.isEmpty
-                  ? const SizedBox.shrink(key: ValueKey('no-result'))
-                  : Container(
-                      key: ValueKey(_result),
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: pal.pillC,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _result,
-                        style: const TextStyle(fontSize: 17, height: 1.9),
-                      ),
+              );
+            }
+            final roots = snapshot.data!;
+            final query = _query;
+            final selected = _selectedWord ??
+                (query.isNotEmpty && roots.containsKey(query) ? query : null);
+            final words = roots.keys.where((word) {
+              if (query.isEmpty) return true;
+              return word.contains(query) ||
+                  (roots[word] ?? const []).any((root) => root.contains(query));
+            }).toList()
+              ..sort();
+            final selectedRoots =
+                selected == null ? null : roots[selected];
+            Entry? dictionaryEntry;
+            if (selected != null) {
+              for (final entry in widget.dict.entries) {
+                if (_norm(entry.ar) == selected) {
+                  dictionaryEntry = entry;
+                  break;
+                }
+              }
+            }
+
+            return Column(
+              children: [
+                TextField(
+                  controller: _ctrl,
+                  onChanged: _onChanged,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                  decoration: InputDecoration(
+                    hintText: 'واژه یا ریشهٔ عربی را جست‌وجو کنید',
+                    prefixIcon: Icon(
+                      LucideIcons.search,
+                      color: pal.muted,
+                      size: 23,
                     ),
-            ),
-            Expanded(
-              child: visibleEntries.isEmpty
-                  ? Center(
-                      child: Text(
-                        '«${_ctrl.text.trim()}» در گنجینهٔ کنونی سورن نیست.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: pal.muted, height: 1.9),
-                      ),
-                    )
-                  : edgeFade(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(top: 6, bottom: 24),
-                        itemCount: visibleEntries.length,
-                        separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: pal.div),
-                        itemBuilder: (_, i) {
-                          final e = visibleEntries[i];
-                          return Enter(
-                            index: i,
-                            child: InkWell(
-                              onTap: () => _select(e),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      e.ar,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 17.5,
-                                        color: pal.ink,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        e.hasFa
-                                            ? e.fa.join('، ')
-                                            : 'برابر فارسی ثبت نشده',
-                                        style: TextStyle(
-                                          color: e.hasFa
-                                              ? pal.muted
-                                              : pal.faint,
-                                          fontSize: 13.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                    filled: true,
+                    fillColor: pal.cardC,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(capR(56)),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                AnimatedSwitcher(
+                  duration: Motion.base,
+                  transitionBuilder: enterTransition,
+                  child: selected == null
+                      ? const SizedBox.shrink(key: ValueKey('no-root-selected'))
+                      : Container(
+                          key: ValueKey('root-$selected'),
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: pal.pillC,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                selected,
+                                textAlign: TextAlign.right,
+                                textDirection: TextDirection.rtl,
+                                style: TextStyle(
+                                  color: pal.ink,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-            ),
-          ],
+                              const SizedBox(height: 5),
+                              Text(
+                                'ریشهٔ صرفی: ${selectedRoots?.join(' / ') ?? 'ثبت نشده'}',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: pal.sel,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (dictionaryEntry?.hasFa == true) ...[
+                                const SizedBox(height: 5),
+                                Text(
+                                  'برابر فارسی: ${dictionaryEntry!.fa.join('، ')}',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    color: pal.muted,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 7),
+                              Text(
+                                'ریشهٔ صرفی واژه است؛ لزوماً تاریخچهٔ وام‌گیری یا خاستگاه تاریخی آن را نشان نمی‌دهد.',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: pal.muted,
+                                  height: 1.6,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${faNum(words.length)} واژه دارای دادهٔ ریشه',
+                    style: TextStyle(color: pal.muted, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: words.isEmpty
+                      ? Center(
+                          child: Text(
+                            'برای این جست‌وجو ریشه‌ای در مجموعه ثبت نشده است.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: pal.muted, height: 1.8),
+                          ),
+                        )
+                      : edgeFade(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.only(top: 4, bottom: 24),
+                            itemCount: words.length,
+                            separatorBuilder: (_, __) =>
+                                Divider(height: 1, color: pal.div),
+                            itemBuilder: (_, index) {
+                              final word = words[index];
+                              return Enter(
+                                index: index,
+                                child: InkWell(
+                                  onTap: () => _select(word),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 11,
+                                      horizontal: 4,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            (roots[word] ?? const []).join(' / '),
+                                            textAlign: TextAlign.left,
+                                            style: TextStyle(
+                                              color: pal.sel,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          word,
+                                          textDirection: TextDirection.rtl,
+                                          style: TextStyle(
+                                            color: pal.ink,
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(
+                    'منبع: ${ArabicRoots.sourceLabel}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: pal.faint, fontSize: 10.5),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
