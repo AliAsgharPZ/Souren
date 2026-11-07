@@ -4189,7 +4189,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
             }
             final roots = snapshot.data!;
             final query = _query;
-                    String? exactMatch;
+            String? exactMatch;
             if (query.isNotEmpty) {
               for (final word in roots.keys) {
                 if (_norm(word) == query) {
