@@ -1871,8 +1871,8 @@ class _ShellState extends State<Shell> {
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _open(EtymologyPage(dict: d, initialWord: e.ar));
+            if (mounted && dict != null) {
+              _open(EtymologyPage(dict: dict!, initialWord: e.ar));
             }
           });
         },
