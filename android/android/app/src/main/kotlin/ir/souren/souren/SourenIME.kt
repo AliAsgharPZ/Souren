@@ -223,7 +223,7 @@ class SourenIME : InputMethodService() {
         for (c in chips) if (slots.size < 3) slots.add(c to (slots.size == 1))
         slots.forEachIndexed { i, (text, bold) ->
             if (i > 0) {
-                val div = View(this).apply { setBackgroundColor(Color.parseColor("#D9DBDF")) }
+                val div = View(this).apply { setBackgroundColor(tone("#D9DBDF", "#454545")) }
                 suggestView.addView(div, LinearLayout.LayoutParams(dp(1), dp(24)))
             }
             val slot = TextView(this).apply {
@@ -231,7 +231,7 @@ class SourenIME : InputMethodService() {
                 textSize = 15.5f
                 if (bold) paint.isFakeBoldText = true
                 gravity = Gravity.CENTER
-                setTextColor(Color.parseColor("#191B1E"))
+                setTextColor(tone("#191B1E", "#F5F5F5"))
                 setOnClickListener {
                     if (i == 0) { showToolbar(); return@setOnClickListener }
                     val ic = currentInputConnection ?: return@setOnClickListener
@@ -835,13 +835,13 @@ class SourenIME : InputMethodService() {
             text = "کلیپ‌بورد"
             textSize = 16f
             paint.isFakeBoldText = true
-            setTextColor(Color.parseColor("#16181D"))
+            setTextColor(tone("#16181D", "#F5F5F5"))
         }
         header.addView(title, LinearLayout.LayoutParams(0, dp(40), 1f))
         val clear = TextView(this).apply {
             text = "پاک‌کردن همه"
             textSize = 13f
-            setTextColor(Color.parseColor("#8A2F2F"))
+            setTextColor(tone("#8A2F2F", "#E39B9B"))
             setPadding(dp(10), dp(6), dp(10), dp(6))
             setOnClickListener {
                 val kept = KbData.clipboardItems(this@SourenIME).filter { it.second }
@@ -853,7 +853,7 @@ class SourenIME : InputMethodService() {
         val back = TextView(this).apply {
             text = "بازگشت"
             textSize = 13f
-            setTextColor(Color.parseColor("#16181D"))
+            setTextColor(tone("#16181D", "#F5F5F5"))
             setPadding(dp(10), dp(6), dp(10), dp(6))
             setOnClickListener { page = lastLang; rebuildKeys() }
         }
@@ -867,7 +867,7 @@ class SourenIME : InputMethodService() {
             list.addView(TextView(this).apply {
                 text = "هنوز چیزی در کلیپ‌بورد نیست. متنی را کپی کنید و دوباره اینجا را باز کنید."
                 textSize = 14f
-                setTextColor(Color.parseColor("#6E6E6E"))
+                setTextColor(tone("#6E6E6E", "#A7A7A7"))
                 setPadding(dp(8), dp(16), dp(8), dp(16))
             })
         }
@@ -885,13 +885,13 @@ class SourenIME : InputMethodService() {
                 this.text = text
                 textSize = 15f
                 maxLines = 2
-                setTextColor(Color.parseColor("#16181D"))
+                setTextColor(tone("#16181D", "#F5F5F5"))
             }
             row.addView(body, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             val pin = TextView(this).apply {
                 this.text = if (pinned) "سنجاق‌شده" else "سنجاق"
                 textSize = 12f
-                setTextColor(Color.parseColor("#8A8172"))
+                setTextColor(tone("#8A8172", "#B6AB96"))
                 setPadding(dp(8), dp(4), dp(8), dp(4))
                 setOnClickListener {
                     val all = KbData.clipboardItems(this@SourenIME)
@@ -960,7 +960,7 @@ class SourenIME : InputMethodService() {
                 text = display
                 textSize = 20f
                 gravity = Gravity.CENTER
-                setTextColor(Color.parseColor("#16181D"))
+                setTextColor(tone("#16181D", "#F5F5F5"))
                 setOnClickListener {
                     hidePopup()
                     clickPopupCallback?.invoke(value)
@@ -1008,7 +1008,7 @@ class SourenIME : InputMethodService() {
                 setPadding(dp(9), dp(5), dp(9), dp(5))
                 if (selected) background = GradientDrawable().apply {
                     cornerRadius = dp(12).toFloat()
-                    setColor(Color.parseColor("#C9CCD1"))
+                    setColor(tone("#C9CCD1", "#474747"))
                 }
                 setOnClickListener { emojiCat = idx; rebuildKeys() }
             }
@@ -1019,7 +1019,7 @@ class SourenIME : InputMethodService() {
         val close = TextView(this).apply {
             text = "بستن"
             textSize = 13.5f
-            setTextColor(Color.parseColor("#16181D"))
+            setTextColor(tone("#16181D", "#F5F5F5"))
             setPadding(dp(10), dp(6), dp(10), dp(6))
             setOnClickListener { page = lastLang; rebuildKeys() }
         }
@@ -1068,20 +1068,20 @@ class SourenIME : InputMethodService() {
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setBackgroundColor(Color.parseColor("#F7F7F8"))
+            setBackgroundColor(tone("#F7F7F8", "#151515"))
             setPadding(dp(12), 0, dp(12), 0)
         }
         val q = TextView(this).apply {
             text = if (emojiQuery.isEmpty()) "جست‌وجوی ایموجی… (مثل: گربه، خنده، قلب)"
                    else "جست‌وجو: $emojiQuery"
             textSize = 14.5f
-            setTextColor(Color.parseColor("#191B1E"))
+            setTextColor(tone("#191B1E", "#F5F5F5"))
         }
         bar.addView(q, LinearLayout.LayoutParams(0, dp(42), 1f))
         val cancel = TextView(this).apply {
             text = "لغو"
             textSize = 13.5f
-            setTextColor(Color.parseColor("#8A2F2F"))
+            setTextColor(tone("#8A2F2F", "#E39B9B"))
             setPadding(dp(8), dp(6), dp(8), dp(6))
             setOnClickListener { emojiSearchOn = false; rebuildKeys() }
         }
@@ -1096,7 +1096,7 @@ class SourenIME : InputMethodService() {
                 text = if (emojiQuery.isEmpty()) ""
                        else "چیزی پیدا نشد؛ واژهٔ دیگری بنویسید."
                 textSize = 13.5f
-                setTextColor(Color.parseColor("#6E6E6E"))
+                setTextColor(tone("#6E6E6E", "#A7A7A7"))
                 setPadding(dp(12), dp(10), dp(12), dp(10))
             })
         }
