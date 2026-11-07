@@ -36,7 +36,7 @@ android {
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
         versionCode = flutter.versionCode
-        versionName = "0.4.1.1" // Four-part product release label; pubspec keeps SemVer-compatible 0.4.1+9
+        versionName = "0.4.1.2" // Four-part product release label; pubspec keeps SemVer-compatible 0.4.1+9
     }
 
     signingConfigs {
