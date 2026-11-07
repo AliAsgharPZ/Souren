@@ -19,6 +19,7 @@ flutter:
   assets:
     - assets/db/dataset.json
     - assets/db/categories.json
+    - assets/db/arabic_roots.json
   fonts:
     - family: Arad
       fonts:
