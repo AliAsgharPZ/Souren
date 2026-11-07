@@ -1385,6 +1385,7 @@ class _ShellState extends State<Shell> {
   /// between tabs. Only the surface changed from glass to a solid color.
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
+    // Original v0.4.1 geometry/behavior, with the current CUI icon pack.
     final items = <(IconData, String)>[
       (LucideIcons.house, 'پیشگاه'),
       (LucideIcons.heart, 'پسندیده‌ها'),
@@ -1394,136 +1395,112 @@ class _ShellState extends State<Shell> {
       (LucideIcons.settings, 'پیکربندی'),
     ];
     _measureIndicator();
-    final selectedSurface = Color.lerp(pal.sel, pal.bg, 0.38)!;
+    final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
       margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: pal.cardC,
-        borderRadius: BorderRadius.circular(capR(64)),
-        border: Border.all(color: pal.div.withValues(alpha: 0.42)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.055),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        key: _navStackKey,
-        children: [
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutCubic,
-            left: _indLeft,
-            top: 0,
-            bottom: 0,
-            width: _indWidth,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: selectedSurface,
-                borderRadius: BorderRadius.circular(capR(51)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: pal.cardC,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+        ),
+        child: Stack(
+          key: _navStackKey,
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              left: _indLeft,
+              top: 0,
+              bottom: 0,
+              width: _indWidth,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: selSoft,
+                  borderRadius: BorderRadius.circular(19),
+                ),
               ),
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < items.length; i++)
-                GestureDetector(
-                  key: _tabKeys[i],
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _go(i),
-                  child: AnimatedContainer(
-                    duration: Motion.base,
-                    curve: Motion.curve,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: tab == i ? 17 : 12,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: AnimatedSize(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  GestureDetector(
+                    key: _tabKeys[i],
+                    onTap: () => _go(i),
+                    child: AnimatedContainer(
                       duration: Motion.base,
                       curve: Motion.curve,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: Motion.fast,
-                            switchInCurve: Motion.curve,
-                            switchOutCurve: Motion.curve,
-                            transitionBuilder: (child, anim) => FadeTransition(
-                              opacity: anim,
-                              child: ScaleTransition(
-                                scale: Tween<double>(begin: 0.82, end: 1)
-                                    .animate(anim),
-                                child: child,
-                              ),
-                            ),
-                            child: Stack(
-                              key: ValueKey<bool>(tab == i),
-                              alignment: Alignment.center,
-                              children: [
-                                AnimatedScale(
-                                  duration: Motion.fast,
-                                  curve: Motion.curve,
-                                  scale: tab == i ? 1.06 : 1,
-                                  child: Icon(
-                                    items[i].$1,
-                                    size: 23,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                    fill: tab == i ? 1.0 : 0.0,
-                                    weight: tab == i ? 700.0 : 400.0,
-                                    shadows: tab == i
-                                        ? [
-                                            Shadow(
-                                              color: pal.bg.withValues(alpha: .24),
-                                              blurRadius: 0.35,
-                                              offset: const Offset(0.15, 0),
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: tab == i ? 17 : 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: AnimatedSize(
+                        duration: Motion.base,
+                        curve: Motion.curve,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: Motion.fast,
+                              switchInCurve: Motion.curve,
+                              switchOutCurve: Motion.curve,
+                              transitionBuilder: (child, anim) =>
+                                  FadeTransition(
+                                opacity: anim,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(begin: 0.8, end: 1)
+                                      .animate(anim),
+                                  child: child,
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (tab == i)
-                            TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: 1),
-                              duration: Motion.base,
-                              curve: Motion.curve,
-                              builder: (_, v, c) =>
-                                  Opacity(opacity: v, child: c),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(width: 7),
-                                  Text(
-                                    items[i].$2,
-                                    style: TextStyle(
-                                      color: pal.bg,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14.5,
-                                    ),
-                                  ),
-                                ],
+                              ),
+                              child: Icon(
+                                key: ValueKey<bool>(tab == i),
+                                items[i].$1,
+                                size: 23,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .72),
+                                fill: tab == i ? 1.0 : 0.0,
+                                weight: tab == i ? 700.0 : 400.0,
                               ),
                             ),
-                        ],
+                            if (tab == i)
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0, end: 1),
+                                duration: Motion.base,
+                                curve: Motion.curve,
+                                builder: (_, v, c) =>
+                                    Opacity(opacity: v, child: c),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      items[i].$2,
+                                      style: TextStyle(
+                                        color: pal.bg,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
