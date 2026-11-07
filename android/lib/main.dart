@@ -60,18 +60,18 @@ Pal pal = Pal.light;
 /// borrowed from the Claude design system (whose own note says animation
 /// timings are out of scope, so these numbers are ours).
 class Motion {
-  static const fast = Duration(milliseconds: 180);
-  static const base = Duration(milliseconds: 280);
-  static const slow = Duration(milliseconds: 380);
+  static const fast = Duration(milliseconds: 150);
+  static const base = Duration(milliseconds: 240);
+  static const slow = Duration(milliseconds: 320);
   static const curve = Curves.easeOutCubic;
-  static const pop = Curves.easeOutBack;
+  static const pop = Curves.easeOutCubic;
   static const staggerStep = Duration(milliseconds: 35);
 
   /// Apple-like press timing: the control dips fast, then springs back
   /// slowly enough to feel, never instantly.
-  static const pressDown = Duration(milliseconds: 110);
-  static const pressUp = Duration(milliseconds: 320);
-  static const spring = Curves.easeOutBack;
+  static const pressDown = Duration(milliseconds: 90);
+  static const pressUp = Duration(milliseconds: 260);
+  static const spring = Curves.easeOutCubic;
 }
 
 /// Capsule roundness (round 3): 90% of the maximum — the radius is
@@ -456,9 +456,9 @@ class _TopBannerState extends State<_TopBanner> {
                   borderRadius: BorderRadius.circular(capR(52)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 12,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -1455,25 +1455,27 @@ class _ShellState extends State<Shell> {
                               key: ValueKey<bool>(tab == i),
                               alignment: Alignment.center,
                               children: [
-                                Icon(
-                                  items[i].$1,
-                                  size: 23,
-                                  color: tab == i
-                                      ? pal.bg
-                                      : pal.ink.withValues(alpha: .72),
-                                ),
-                                if (tab == i)
-                                  Icon(
+                                AnimatedScale(
+                                  duration: Motion.fast,
+                                  curve: Motion.curve,
+                                  scale: tab == i ? 1.06 : 1,
+                                  child: Icon(
                                     items[i].$1,
                                     size: 23,
-                                    color: pal.bg,
-                                    shadows: [
-                                      Shadow(
-                                        color: pal.bg.withValues(alpha: .34),
-                                        blurRadius: 1.2,
-                                      ),
-                                    ],
+                                    color: tab == i
+                                        ? pal.bg
+                                        : pal.ink.withValues(alpha: .72),
+                                    shadows: tab == i
+                                        ? [
+                                            Shadow(
+                                              color: pal.bg.withValues(alpha: .24),
+                                              blurRadius: 0.35,
+                                              offset: const Offset(0.15, 0),
+                                            ),
+                                          ]
+                                        : null,
                                   ),
+                                ),
                               ],
                             ),
                           ),
