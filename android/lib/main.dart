@@ -1171,23 +1171,6 @@ class _ShellState extends State<Shell> {
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
 
-  // Home buttons column: measured post-frame so the word list's height
-  // equals the total height of the buttons (round 3).
-  final _homeButtonsKey = GlobalKey();
-  double? _homeListH;
-
-  void _measureHomeButtons() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final h = _homeButtonsKey.currentContext?.size?.height;
-      if (h != null &&
-          h > 0 &&
-          (_homeListH == null || (h - _homeListH!).abs() > 0.5)) {
-        setState(() => _homeListH = h);
-      }
-    });
-  }
-
   // auth form state (نمایهٔ کاربری)
   bool showAuthForm = false;
   bool authRegister = false;
@@ -1338,6 +1321,34 @@ class _ShellState extends State<Shell> {
   /// indicator pill slides. The pill is a fixed 42x42 box around the
   /// icon, so its padding is exactly equal on all four sides. The
   /// label fades in/out with opacity only and never changes layout.
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+  final GlobalKey _navStackKey = GlobalKey();
+  double _indLeft = 0;
+  double _indWidth = 0;
+
+  void _measureIndicator() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final stackBox =
+          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
+      final tabBox =
+          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
+      if (stackBox == null || tabBox == null) return;
+      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
+      if ((pos.dx - _indLeft).abs() > .5 ||
+          (tabBox.size.width - _indWidth).abs() > .5) {
+        setState(() {
+          _indLeft = pos.dx;
+          _indWidth = tabBox.size.width;
+        });
+      }
+    });
+  }
+
+  /// Restored v0.4.1 navigation geometry and interaction:
+  /// the selected item expands to reveal its label and one indicator slides
+  /// between tabs. Only the surface changed from glass to a solid color.
+  /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
     final items = <(IconData, String)>[
       (LucideIcons.house, 'پیشگاه'),
@@ -1347,94 +1358,133 @@ class _ShellState extends State<Shell> {
       (LucideIcons.user, 'نمایه'),
       (LucideIcons.settings, 'پیکربندی'),
     ];
+    _measureIndicator();
+    final selectedSurface = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 6, 20, 14),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const pill = 42.0;
-          const contentH = 58.0;
-          final slotW = (constraints.maxWidth - 16) / 6;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: pal.cardC,
-              borderRadius: BorderRadius.circular(capR(70)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: pal.cardC,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: pal.div.withValues(alpha: 0.42)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.055),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        key: _navStackKey,
+        children: [
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            left: _indLeft,
+            top: 0,
+            bottom: 0,
+            width: _indWidth,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: selectedSurface,
+                borderRadius: BorderRadius.circular(19),
+              ),
             ),
-            child: Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Motion.curve,
-                  left: tab * slotW + (slotW - pill) / 2,
-                  top: 0,
-                  width: pill,
-                  height: pill,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color.lerp(pal.sel, pal.bg, 0.38)!,
-                      borderRadius: BorderRadius.circular(capR(pill)),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (var i = 0; i < items.length; i++)
+                GestureDetector(
+                  key: _tabKeys[i],
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _go(i),
+                  child: AnimatedContainer(
+                    duration: Motion.base,
+                    curve: Motion.curve,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: tab == i ? 17 : 12,
+                      vertical: 14,
                     ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: Pressable(
-                          onTap: () => _go(i),
-                          child: SizedBox(
-                            height: contentH,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: AnimatedSize(
+                      duration: Motion.base,
+                      curve: Motion.curve,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: Motion.fast,
+                            switchInCurve: Motion.curve,
+                            switchOutCurve: Motion.curve,
+                            transitionBuilder: (child, anim) => FadeTransition(
+                              opacity: anim,
+                              child: ScaleTransition(
+                                scale: Tween<double>(begin: 0.82, end: 1)
+                                    .animate(anim),
+                                child: child,
+                              ),
+                            ),
+                            child: Stack(
+                              key: ValueKey<bool>(tab == i),
+                              alignment: Alignment.center,
                               children: [
-                                SizedBox(
-                                  width: pill,
-                                  height: pill,
-                                  child: Icon(
+                                Icon(
+                                  items[i].$1,
+                                  size: 23,
+                                  color: tab == i
+                                      ? pal.bg
+                                      : pal.ink.withValues(alpha: .72),
+                                ),
+                                if (tab == i)
+                                  Icon(
                                     items[i].$1,
-                                    size: 22,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                SizedBox(
-                                  height: 13,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: AnimatedOpacity(
-                                      opacity: tab == i ? 1 : 0,
-                                      duration: Motion.fast,
-                                      child: Text(
-                                        items[i].$2,
-                                        style: TextStyle(
-                                          color: pal.sel,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 11,
-                                        ),
+                                    size: 23,
+                                    color: pal.bg,
+                                    shadows: [
+                                      Shadow(
+                                        color: pal.bg.withValues(alpha: .34),
+                                        blurRadius: 1.2,
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ),
                               ],
                             ),
                           ),
-                        ),
+                          if (tab == i)
+                            TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: 1),
+                              duration: Motion.base,
+                              curve: Motion.curve,
+                              builder: (_, v, c) =>
+                                  Opacity(opacity: v, child: c),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    items[i].$2,
+                                    style: TextStyle(
+                                      color: pal.bg,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                  ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          );
-        },
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1445,28 +1495,21 @@ class _ShellState extends State<Shell> {
     final results = query.isEmpty
         ? frequent
         : d.entries
-              .where(
-                (e) =>
-                    e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
-              )
-              .toList();
-    _measureHomeButtons();
+            .where(
+              (e) =>
+                  e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
+            )
+            .toList();
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Logo reserve (top) + search + gap + two columns + ads reserve
-        // (the size of the nav bar) + nav bar. The nav bar's position
-        // is untouched; only the search sits a little lower and the
-        // two columns are sized to each other (round 3).
+        // Keep the logo and ad reserves, but let the content row consume
+        // every remaining pixel. The search capsule moves down by one
+        // capsule-height without constraining the page itself.
         const logoGap = 72.0;
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
         const adsGap = 96.0;
-        final cap =
-            constraints.maxHeight - logoGap - searchH - gapAfterSearch - adsGap;
-        final rowH = (_homeListH ?? 480.0).clamp(
-          180.0,
-          cap > 180 ? cap : 180.0,
-        );
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
           child: Stack(
@@ -1475,27 +1518,51 @@ class _ShellState extends State<Shell> {
                 children: [
                   const SizedBox(height: logoGap),
                   const SizedBox(height: searchH),
+                  const SizedBox(height: searchH),
                   const SizedBox(height: gapAfterSearch),
-                  SizedBox(
-                    height: rowH,
+                  Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: _pairList(
-                            results,
-                            bottomPad: 0,
-                            singleLine: true,
+                          child: AnimatedSwitcher(
+                            duration: Motion.slow,
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInOutCubic,
+                            transitionBuilder: (child, animation) =>
+                                FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axis: Axis.horizontal,
+                                child: child,
+                              ),
+                            ),
+                            child: KeyedSubtree(
+                              key: ValueKey('home-words-$_searchFocused'),
+                              child: _pairList(
+                                results,
+                                bottomPad: 0,
+                                singleLine: true,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        SizedBox(
-                          width: 124,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                Column(
-                                  key: _homeButtonsKey,
+                        AnimatedContainer(
+                          duration: Motion.slow,
+                          curve: Curves.easeInOutCubic,
+                          width: _searchFocused ? 0 : 16,
+                        ),
+                        AnimatedContainer(
+                          duration: Motion.slow,
+                          curve: Curves.easeInOutCubic,
+                          width: _searchFocused ? 0 : 124,
+                          child: ClipRect(
+                            child: AnimatedOpacity(
+                              opacity: _searchFocused ? 0 : 1,
+                              duration: Motion.fast,
+                              child: SingleChildScrollView(
+                                child: Column(
                                   children: [
                                     _sidePill(
                                       'گنجینهٔ واژه‌ها',
@@ -1532,44 +1599,7 @@ class _ShellState extends State<Shell> {
                                     ),
                                   ],
                                 ),
-                                Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(top: 12),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: pal.pillC,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'شمار همهٔ واژه‌ها',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: pal.ink,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        faNum(d.entries.length),
-                                        style: const TextStyle(
-                                          fontSize: 23,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      Text(
-                                        '(${faNum(d.pairCount)} با برابر فارسی)',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: pal.muted,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -1579,27 +1609,12 @@ class _ShellState extends State<Shell> {
                   const SizedBox(height: adsGap),
                 ],
               ),
-              // Page blur while the search is focused — the capsule and
-              // the back button stay sharp above it.
-              if (_searchFocused)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () => _searchFocus.unfocus(),
-                    child: BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(color: pal.bg.withValues(alpha: 0.35)),
-                    ),
-                  ),
-                ),
-              // Search capsule (above the blur, sharp).
               Positioned(
-                top: logoGap,
+                top: logoGap + searchH,
                 left: 0,
                 right: 0,
                 child: _searchCapsule(),
               ),
-              // Back button above the search capsule while focused,
-              // fading + sliding in.
               Positioned(
                 top: 20,
                 right: 0,
@@ -1608,7 +1623,7 @@ class _ShellState extends State<Shell> {
                   transitionBuilder: (child, anim) => FadeTransition(
                     opacity: anim,
                     child: ScaleTransition(
-                      scale: Tween<double>(begin: 0.8, end: 1).animate(anim),
+                      scale: Tween<double>(begin: 0.82, end: 1).animate(anim),
                       child: child,
                     ),
                   ),
@@ -1748,7 +1763,6 @@ class _ShellState extends State<Shell> {
                   style: meaningStyle,
                 ),
               ),
-              actions,
             ],
           ),
         ),
@@ -3457,7 +3471,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
                 filled: true,
                 fillColor: pal.cardC,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(capR(56)),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -3477,6 +3491,8 @@ class _CorrectorPageState extends State<CorrectorPage> {
                 child: Text(
                   _out.isEmpty ? '…' : _out,
                   key: ValueKey(_out),
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
                   style: const TextStyle(fontSize: 17.5, height: 1.8),
                 ),
               ),
@@ -3491,14 +3507,20 @@ class _CorrectorPageState extends State<CorrectorPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(height: 14),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: pal.sel,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: pal.sel,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(capR(50)),
+                              ),
+                            ),
+                            onPressed: () =>
+                                Clipboard.setData(ClipboardData(text: _out)),
+                            child: const Text('کپی متن درست‌شده'),
                           ),
-                          onPressed: () =>
-                              Clipboard.setData(ClipboardData(text: _out)),
-                          child: const Text('کپی متن درست‌شده'),
                         ),
                       ],
                     ),
