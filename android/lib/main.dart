@@ -203,14 +203,23 @@ class ScrollFade extends StatefulWidget {
 }
 
 class _ScrollFadeState extends State<ScrollFade> {
-  double _top = 0; // 0 = no top fade, 1 = full top fade
+  double _top = 0;
+  double _bottom = 0;
 
   void _onScroll(ScrollNotification n) {
     if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      final target = (n.metrics.pixels / 48).clamp(0.0, 1.0);
-      // smoothstep: eases into and out of the fade.
-      final eased = target * target * (3 - 2 * target);
-      if ((eased - _top).abs() > 0.005) setState(() => _top = eased);
+      final progress = (n.metrics.pixels / 48).clamp(0.0, 1.0);
+      // Smoothstep avoids a sudden fade when the finger first moves.
+      final eased = progress * progress * (3 - 2 * progress);
+      final top = eased;
+      final bottom = n.metrics.extentAfter > 1 ? eased : 0.0;
+      if ((top - _top).abs() > 0.005 ||
+          (bottom - _bottom).abs() > 0.005) {
+        setState(() {
+          _top = top;
+          _bottom = bottom;
+        });
+      }
     }
   }
 
@@ -230,8 +239,8 @@ class _ScrollFadeState extends State<ScrollFade> {
             Color.fromRGBO(0, 0, 0, 1 - _top * 0.55),
             Colors.black,
             Colors.black,
-            const Color.fromRGBO(0, 0, 0, 0.45),
-            Colors.transparent,
+            Color.fromRGBO(0, 0, 0, 1 - _bottom * 0.55),
+            Color.fromRGBO(0, 0, 0, 1 - _bottom),
           ],
           stops: const [0, 0.06, 0.16, 0.84, 0.94, 1],
         ).createShader(rect),
@@ -247,7 +256,7 @@ class _ScrollFadeState extends State<ScrollFade> {
 Widget edgeFade({required Widget child}) => ScrollFade(child: child);
 
 /// Apple-like press feedback for every custom button: the control
-/// dips (scale 0.96 + slight dim) the moment the finger lands and
+/// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
 /// springs back on release. Material buttons already do their own
 /// splash; this is for the GestureDetector-based controls that had
 /// no reaction at all when held.
@@ -259,7 +268,7 @@ class Pressable extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.scale = 0.96,
+    this.scale = 0.975,
   });
   @override
   State<Pressable> createState() => _PressableState();
@@ -1391,7 +1400,7 @@ class _ShellState extends State<Shell> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(capR(64)),
         border: Border.all(color: pal.div.withValues(alpha: 0.42)),
         boxShadow: [
           BoxShadow(
@@ -1414,7 +1423,7 @@ class _ShellState extends State<Shell> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: selectedSurface,
-                borderRadius: BorderRadius.circular(19),
+                borderRadius: BorderRadius.circular(capR(51)),
               ),
             ),
           ),
