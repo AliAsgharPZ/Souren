@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:souren/main.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -15,5 +16,7 @@ void main() {
     expect(entries.length, greaterThan(1000));
     expect(entries.first, contains('word'));
     expect(entries.first, contains('roots'));
+    expect(ArabicRoots.normalize('عِبْرَة'), 'عبرة');
+    expect(ArabicRoots.normalize('ى ١٢٣'), 'ی ۱۲۳');
   });
 }
