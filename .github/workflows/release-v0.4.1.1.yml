@@ -120,6 +120,7 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: false
+          overwrite_files: true
           body: |
             ## Souren v0.4.1.1
 
