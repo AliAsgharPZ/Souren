@@ -1296,7 +1296,7 @@ class _ShellState extends State<Shell> {
                   child: GestureDetector(
                     onTap: () => _pushPage(_categoriesPage(d)),
                     child: Container(
-                      height: 130,
+                      height: (MediaQuery.sizeOf(context).width - 48 - 14) / 2 / 1.25,
                       decoration: BoxDecoration(
                         color: pal.pillC,
                         borderRadius: BorderRadius.circular(24),
@@ -3048,9 +3048,9 @@ class _PandvazhePageState extends State<PandvazhePage> {
           icon: PopIcon(
             active: isLiked,
             child: Icon(
-              isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
+              PhosphorIconsRegular.heart,
               size: 21,
-              color: isLiked ? pal.accent : pal.muted,
+              color: isLiked ? pal.accent : pal.muted.withValues(alpha: .65),
             ),
           ),
           onPressed: () => _toggleLike(key),
@@ -3066,9 +3066,9 @@ class _PandvazhePageState extends State<PandvazhePage> {
       icon: PopIcon(
         active: isFav,
         child: Icon(
-          isFav ? PhosphorIconsFill.bookmark : PhosphorIconsRegular.bookmark,
+          PhosphorIconsRegular.bookmark,
           size: 21,
-          color: pal.ink,
+          color: isFav ? pal.ink : pal.muted.withValues(alpha: .65),
         ),
       ),
       onPressed: () => _toggleFav(key),
@@ -3078,51 +3078,99 @@ class _PandvazhePageState extends State<PandvazhePage> {
   void _proverbSheet(BuildContext context, String title, String meaning) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: pal.cardC,
+      backgroundColor: pal.bg,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(26, 20, 26, 30),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 5,
+                decoration: BoxDecoration(
                   color: pal.muted.withValues(alpha: .35),
-                  borderRadius: BorderRadius.circular(3))),
-          const SizedBox(height: 20),
-          Icon(PhosphorIconsRegular.quotes, size: 30, color: pal.accent),
-          const SizedBox(height: 12),
-          Text(title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 18.5,
-                  fontWeight: FontWeight.w800,
-                  color: pal.ink,
-                  height: 1.8)),
-          const SizedBox(height: 10),
-          Text(meaning,
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: pal.muted, height: 1.8, fontSize: 14.5)),
-          const SizedBox(height: 18),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-                foregroundColor: pal.ink,
-                side: BorderSide(color: pal.ink.withValues(alpha: .25)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999))),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: title));
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('در حافظه کپی شد')));
-              }
-            },
-            icon: const Icon(PhosphorIconsRegular.copy, size: 17),
-            label: const Text('کپی'),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        color: pal.ink,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        height: 1.7,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'پسندیدن',
+                    onPressed: () {
+                      _toggleLike(title);
+                      if (ctx.mounted) setSheetState(() {});
+                    },
+                    icon: Icon(
+                      PhosphorIconsRegular.heart,
+                      color: _liked.contains(title) ? pal.accent : pal.muted,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'نشان‌کردن',
+                    onPressed: () {
+                      _toggleFav(title);
+                      if (ctx.mounted) setSheetState(() {});
+                    },
+                    icon: Icon(
+                      PhosphorIconsRegular.bookmark,
+                      color: _faved.contains(title) ? pal.ink : pal.muted,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  meaning,
+                  style: TextStyle(color: pal.muted, height: 1.9, fontSize: 15),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: pal.ink,
+                    side: BorderSide(color: pal.div),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: '$title\n$meaning'),
+                    );
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('در حافظه کپی شد')),
+                      );
+                    }
+                  },
+                  icon: const Icon(PhosphorIconsRegular.copy, size: 17),
+                  label: const Text('کپی پندواژه'),
+                ),
+              ),
+            ],
           ),
-        ]),
+        ),
       ),
     );
   }
