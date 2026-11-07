@@ -57,6 +57,7 @@ class SourenIME : InputMethodService() {
     private val handler = Handler(Looper.getMainLooper())
     private var deleteRepeat: Runnable? = null
     private var lastWordShown = ""
+    private var appliedKbHeight = KbData.kbHeight
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
     private fun rowHeight(): Int = when (KbData.kbHeight) {
@@ -70,9 +71,19 @@ class SourenIME : InputMethodService() {
         KbData.load(this)
         KbData.readSettings(this)
         KbData.readLearned(this)
-        // Shared settings are re-read for every new input session. Rebuild
-        // retained key views so keyboard height and correction toggles apply.
-        if (this::keysBox.isInitialized) rebuildKeys()
+        appliedKbHeight = KbData.kbHeight
+    }
+
+    override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
+        super.onStartInputView(info, restarting)
+        // The IME process remains alive while the user edits app settings.
+        // Re-read them whenever the keyboard becomes visible and rebuild
+        // retained key views only when their measured height actually changed.
+        KbData.readSettings(this)
+        if (KbData.kbHeight != appliedKbHeight) {
+            appliedKbHeight = KbData.kbHeight
+            if (this::keysBox.isInitialized) rebuildKeys()
+        }
     }
 
     override fun onCreateInputView(): View {
