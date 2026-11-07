@@ -4026,7 +4026,7 @@ class ArabicRoots {
   }
 
   static const sourceLabel =
-      'Arabic Digital Humanities · CC BY 4.0';
+      'arabic-digital-humanities/root-extraction-validation-data · CC BY 4.0';
 }
 
 class _RootInfoCard extends StatelessWidget {
@@ -4404,7 +4404,8 @@ class _GanjoorPageState extends State<GanjoorPage> {
   void _showSourceInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('منبع و نگه‌دارندهٔ پروژه: https://github.com/hrmoh'),
+        content: const Text('داده‌ها: github.com/ganjoor/ganjoor-data
+نگه‌دارنده: https://github.com/hrmoh'),
         action: SnackBarAction(
           label: 'کپی',
           onPressed: () => Clipboard.setData(
