@@ -47,11 +47,6 @@ class SourenIME : InputMethodService() {
     private var lastLang = Page.FA
     private var shifted = false
     private var capsLock = false
-    // Keyboard height the key views were built with. The input view is
-    // created once and cached by the system, so a height change in the
-    // app never rebuilt the keys — the setting visibly "did nothing".
-    // onStartInputView re-reads the settings and rebuilds when it moved.
-    private var appliedKbHeight: String? = null
     private lateinit var rootFrame: FrameLayout
     private lateinit var stripArea: FrameLayout
     private lateinit var toolbarView: LinearLayout
@@ -75,19 +70,6 @@ class SourenIME : InputMethodService() {
         KbData.load(this)
         KbData.readSettings(this)
         KbData.readLearned(this)
-    }
-
-    override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
-        super.onStartInputView(info, restarting)
-        // The IME process stays alive while the user edits settings in
-        // the app, so re-read them every time the keyboard is shown —
-        // and rebuild the keys when the height changed, because the
-        // key views were built once with the old height.
-        KbData.readSettings(this)
-        if (KbData.kbHeight != appliedKbHeight) {
-            appliedKbHeight = KbData.kbHeight
-            if (::keysBox.isInitialized) rebuildKeys()
-        }
     }
 
     override fun onCreateInputView(): View {
@@ -120,7 +102,6 @@ class SourenIME : InputMethodService() {
         keysBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(keysBox)
         rebuildKeys()
-        appliedKbHeight = KbData.kbHeight
 
         preview = TextView(this).apply {
             textSize = 26f
