@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.4.1+8
+version: 0.4.1+9 # Android versionName is 0.4.1.1; build metadata increments versionCode
 
 environment:
   sdk: ^3.13.5
