@@ -26,6 +26,10 @@ jobs:
         run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Pub get
         run: flutter pub get
+      - name: Verify Souren package version
+        run: |
+          grep -F 'version: 0.4.5+11' pubspec.yaml
+          grep -F 'versionName = "0.4.5.5"' android/app/build.gradle.kts
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
