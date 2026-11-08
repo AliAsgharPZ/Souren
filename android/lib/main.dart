@@ -1290,8 +1290,10 @@ class _ShellState extends State<Shell> {
   int learnedCorrections = 0;
   int tab = 0;
   String query = '';
-  int _homeCollection = 0; // words, proverbs, poems
+  int _homeCollection = 0; // words, proverbs, poems, poets, books
   Future<List<Map<String, dynamic>>>? _homePoems;
+  Future<List<Map<String, dynamic>>>? _homePoets;
+  Future<List<Map<String, dynamic>>>? _homeBooks;
 
   // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
@@ -1762,7 +1764,13 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _homeCollectionHeader() {
-    final labels = ['گنجینۀ واژه‌ها', 'گنجینۀ پندواژه‌ها', 'گنجینۀ شعرها'];
+    final labels = [
+      'گنجینۀ واژه‌ها',
+      'گنجینۀ پندواژه‌ها',
+      'گنجینۀ شعرها',
+      'گنجینۀ شاعران',
+      'گنجینۀ کتاب‌ها',
+    ];
     return Row(
       children: [
         Expanded(
@@ -1815,6 +1823,10 @@ class _ShellState extends State<Shell> {
                 _homePoems = query.isEmpty
                     ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
                     : GanjoorData.searchPoems(query);
+              } else if (value == 3) {
+                _homePoets = _loadHomePoets();
+              } else if (value == 4) {
+                _homeBooks = GanjoorData.bookCatalog();
               }
             });
           },
@@ -1824,9 +1836,122 @@ class _ShellState extends State<Shell> {
             PopupMenuItem(value: 0, child: Text('گنجینۀ واژه‌ها')),
             PopupMenuItem(value: 1, child: Text('گنجینۀ پندواژه‌ها')),
             PopupMenuItem(value: 2, child: Text('گنجینۀ شعرها')),
+            PopupMenuItem(value: 3, child: Text('گنجینۀ شاعران')),
+            PopupMenuItem(value: 4, child: Text('گنجینۀ کتاب‌ها')),
           ],
         ),
       ],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _loadHomePoets() async {
+    final manifest = await GanjoorData.json('manifest.json');
+    return GanjoorData.rows(manifest['Poets'] ?? manifest['poets']);
+  }
+
+  Widget _homeEntityList(
+    Future<List<Map<String, dynamic>>> future, {
+    required bool poets,
+  }) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return _ganjoorError(
+            'بارگذاری این گنجینه انجام نشد.',
+            () => setState(() {
+              if (poets) {
+                _homePoets = _loadHomePoets();
+              } else {
+                _homeBooks = GanjoorData.bookCatalog();
+              }
+            }),
+          );
+        }
+        final rows = (snapshot.data ?? const <Map<String, dynamic>>[])
+            .where((row) {
+          final title = (row['Nickname'] ?? row['Title'] ?? row['Name'] ??
+                  row['nickname'] ?? row['title'] ?? row['name'] ?? '')
+              .toString();
+          final subtitle = (row['Name'] ?? row['PoetName'] ??
+                  row['PoetNickname'] ?? row['name'] ?? '')
+              .toString();
+          return query.isEmpty || title.contains(query) || subtitle.contains(query);
+        }).toList(growable: false);
+        if (rows.isEmpty) {
+          return Center(
+            child: Text(
+              poets ? 'شاعری پیدا نشد' : 'کتابی پیدا نشد',
+              style: TextStyle(color: pal.muted),
+            ),
+          );
+        }
+        return edgeFade(
+          child: ListView.separated(
+            padding: const EdgeInsets.only(top: 4, bottom: 12),
+            itemCount: rows.length,
+            separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
+            itemBuilder: (_, i) {
+              final row = rows[i];
+              String value(List<String> keys) {
+                for (final key in keys) {
+                  final v = row[key];
+                  if (v != null && v.toString().trim().isNotEmpty) {
+                    return v.toString();
+                  }
+                }
+                return '';
+              }
+              final title = value(
+                poets
+                    ? ['Nickname', 'nickname', 'Name', 'name']
+                    : ['Title', 'title', 'Name', 'name'],
+              );
+              final subtitle = value(
+                poets
+                    ? ['Name', 'name']
+                    : ['PoetName', 'PoetNickname', 'poetName'],
+              );
+              final full = value(['FullUrl', 'fullUrl', 'Url', 'url'])
+                  .replaceFirst(RegExp(r'^/'), '');
+              return ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                leading: Icon(
+                  poets ? LucideIcons.userRound : LucideIcons.bookOpen,
+                  color: pal.sel,
+                ),
+                title: Text(
+                  title.isEmpty ? (poets ? 'شاعر' : 'کتاب') : title,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  subtitle,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.muted, fontSize: 11.5),
+                ),
+                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                onTap: full.isEmpty
+                    ? null
+                    : () => _open(GanjoorNodePage(
+                          title: title,
+                          path: full,
+                          dictionary: dict,
+                          liked: liked,
+                          favorites: favorites,
+                          onToggleLike: _toggleLike,
+                          onToggleBookmark: _toggleFav,
+                          onOpenEntry: _showEntry,
+                        )),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -1872,6 +1997,12 @@ class _ShellState extends State<Shell> {
           ),
         ),
       );
+    }
+    if (_homeCollection == 3) {
+      return _homeEntityList(_homePoets ??= _loadHomePoets(), poets: true);
+    }
+    if (_homeCollection == 4) {
+      return _homeEntityList(_homeBooks ??= GanjoorData.bookCatalog(), poets: false);
     }
     final future = _homePoems ??= query.isEmpty
         ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
