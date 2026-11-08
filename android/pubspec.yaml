@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.5.0+10 # Persian lexicon, connected poetry library and rebuilt native IME
+version: 0.4.5+10 # Souren v0.4.5 — online Ganjoor API
 
 environment:
   sdk: ^3.13.5
