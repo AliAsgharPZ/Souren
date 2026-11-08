@@ -228,6 +228,17 @@ def build(source: Path, output: Path) -> dict:
 
         poet_names = {}
         poet_ids = {}
+        # Prime poet metadata before indexing poems; directory sorting does not
+        # guarantee poet.json is visited before every nested poem JSON file.
+        for poet_file in files:
+            poet_rel = poet_file.relative_to(source).as_posix()
+            if poet_rel.startswith("poets/") and poet_rel.endswith("/poet.json"):
+                poet_obj = json.loads(poet_file.read_bytes())
+                poet_slug = poet_rel.split("/")[1]
+                poet_names[poet_slug] = compact_text(
+                    poet_obj.get("Name") or poet_obj.get("Nickname")
+                )
+                poet_ids[poet_slug] = poet_obj.get("Id")
         db.execute("BEGIN")
         for index, file in enumerate(files, 1):
             if index == 1 or index % 5000 == 0:
@@ -410,12 +421,6 @@ def build(source: Path, output: Path) -> dict:
             SELECT 'poem', CAST(id AS TEXT), 'in_category', 'category', CAST(cat_id AS TEXT)
             FROM poems WHERE cat_id IS NOT NULL
         """)
-        for slug, name in poet_names.items():
-            db.execute(
-                "UPDATE poem_search SET poet=? WHERE rowid IN (SELECT id FROM poems WHERE poet_slug=?)",
-                (name, slug)
-            )
-
         # Verify every retained source payload against the digest recorded at import.
         verified_sources = 0
         for raw, digest, byte_length in db.execute(
