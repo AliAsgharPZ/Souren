@@ -312,7 +312,7 @@ class SourenIME : InputMethodService() {
             KeySpec(customSymbol, Action.CHAR, 1.0f),
             KeySpec(if (page == Page.FA) "فارسی" else "English", Action.SPACE, 4.1f),
         )
-        if (page == Page.FA) bottom.add(KeySpec("نیم‌فاصله", Action.ZWNJ, 1.25f))
+        if (page == Page.FA) bottom.add(KeySpec("", Action.ZWNJ, 1.25f, R.drawable.ic_half_space))
         bottom.add(KeySpec(".", Action.CHAR, 0.8f))
         bottom.add(KeySpec("", Action.ENTER, 1.35f, R.drawable.ic_enter))
         addRow(area, bottom)
