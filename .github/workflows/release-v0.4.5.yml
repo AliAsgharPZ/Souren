@@ -70,7 +70,7 @@ jobs:
           CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
           printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore
           test -s android/souren-release.keystore
-          printf 'storePassword=%s\\nkeyPassword=%s\\nkeyAlias=%s\\nstoreFile=souren-release.keystore\\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
 
       - name: Build release APK
         run: flutter build apk --release
