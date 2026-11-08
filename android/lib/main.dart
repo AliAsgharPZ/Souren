@@ -740,23 +740,16 @@ class _DetailSheetState extends State<DetailSheet> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           for (var i = 0; i < widget.copyableLines.length; i++)
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onLongPress: () => _copyText(
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: SelectableText(
                                 widget.copyableLines[i],
-                                'مصراع کپی شد',
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 2),
-                                child: Text(
-                                  widget.copyableLines[i],
-                                  textAlign: TextAlign.right,
-                                  textDirection: TextDirection.rtl,
-                                  style: const TextStyle(
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.7,
-                                  ),
+                                textAlign: TextAlign.right,
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.7,
                                 ),
                               ),
                             ),
@@ -795,7 +788,7 @@ class _DetailSheetState extends State<DetailSheet> {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  'برای کپی هر مصراع یا واژه، روی آن نگه دارید.',
+                  'برای کپی بیت از دکمهٔ کپی و برای واژه یا مصراع، متن را انتخاب کنید.',
                   textAlign: TextAlign.right,
                   style: TextStyle(color: pal.faint, fontSize: 10.5),
                 ),
