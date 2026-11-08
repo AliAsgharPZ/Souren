@@ -30,6 +30,14 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def compact_text(value) -> str:
     if value is None:
         return ""
@@ -51,50 +59,45 @@ def poem_text(obj: dict) -> str:
     return "\n".join(x for x in parts if x)
 
 
-def run_codec(command: list[str], output: Path) -> None:
-    subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+def run_codec(command: list[str], output: Path, timeout_seconds: int) -> bool:
+    print('[compress] start: ' + ' '.join(command), flush=True)
+    try:
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=timeout_seconds)
+        print(f'[compress] done: {output.name} ({output.stat().st_size:,} bytes)', flush=True)
+        return True
+    except subprocess.TimeoutExpired:
+        output.unlink(missing_ok=True)
+        print(f'[compress] timeout after {timeout_seconds // 60} min; skipping this codec', flush=True)
+        return False
 
 
 def compress_candidates(db_path: Path, work: Path) -> list[dict]:
     candidates = []
-
-    # XZ/LZMA2 extreme: high memory/time, generally excellent for text-heavy DBs.
-    xz_path = work / "ganjoor.sqlite.xz"
-    with db_path.open("rb") as src, lzma.open(
-        xz_path, "wb", format=lzma.FORMAT_XZ,
-        check=lzma.CHECK_CRC64, preset=9 | lzma.PRESET_EXTREME
-    ) as dst:
-        shutil.copyfileobj(src, dst, length=1024 * 1024)
-    candidates.append({"codec": "xz-lzma2-9e", "path": xz_path, "bytes": xz_path.stat().st_size})
-
-    gz_path = work / "ganjoor.sqlite.gz"
-    with db_path.open("rb") as src, gz_path.open("wb") as raw_dst:
-        with gzip.GzipFile(fileobj=raw_dst, mode="wb", compresslevel=9, mtime=0) as dst:
-            shutil.copyfileobj(src, dst, length=1024 * 1024)
-    candidates.append({"codec": "gzip-9", "path": gz_path, "bytes": gz_path.stat().st_size})
-
-    bz_path = work / "ganjoor.sqlite.bz2"
-    with db_path.open("rb") as src, bz2.open(bz_path, "wb", compresslevel=9) as dst:
-        shutil.copyfileobj(src, dst, length=1024 * 1024)
-    candidates.append({"codec": "bzip2-9", "path": bz_path, "bytes": bz_path.stat().st_size})
-
-    zstd = shutil.which("zstd")
+    # Strong codecs, but each has a time limit so no single one can stall the build.
+    xz_path = work / 'ganjoor.sqlite.xz'
+    xz = shutil.which('xz')
+    if xz and run_codec([xz, '-T0', '-9e', '--check=crc64', '-c', str(db_path)], xz_path, 45 * 60):
+        candidates.append({'codec': 'xz-lzma2-9e', 'path': xz_path, 'bytes': xz_path.stat().st_size})
+    zstd = shutil.which('zstd')
     if zstd:
-        zst_path = work / "ganjoor.sqlite.zst"
-        run_codec([zstd, "-q", "-22", "--ultra", "--long=27", "-T0", "-f",
-                   str(db_path), "-o", str(zst_path)], zst_path)
-        candidates.append({"codec": "zstd-22-ultra-long27", "path": zst_path,
-                           "bytes": zst_path.stat().st_size})
-
-    brotli = shutil.which("brotli")
+        zst_path = work / 'ganjoor.sqlite.zst'
+        # Avoid --long=27: very high RAM use for marginal/uncertain gains.
+        if run_codec([zstd, '-q', '-22', '--ultra', '-T0', '-f', str(db_path), '-o', str(zst_path)], zst_path, 20 * 60):
+            candidates.append({'codec': 'zstd-22-ultra', 'path': zst_path, 'bytes': zst_path.stat().st_size})
+    brotli = shutil.which('brotli')
     if brotli:
-        br_path = work / "ganjoor.sqlite.br"
-        run_codec([brotli, "-q", "11", "-f", str(db_path), "-o", str(br_path)], br_path)
-        candidates.append({"codec": "brotli-11", "path": br_path,
-                           "bytes": br_path.stat().st_size})
-
-    return sorted(candidates, key=lambda x: x["bytes"])
-
+        br_path = work / 'ganjoor.sqlite.br'
+        if run_codec([brotli, '-q', '11', '-f', str(db_path), '-o', str(br_path)], br_path, 20 * 60):
+            candidates.append({'codec': 'brotli-11', 'path': br_path, 'bytes': br_path.stat().st_size})
+    bz_path = work / 'ganjoor.sqlite.bz2'
+    if run_codec(['bzip2', '-9', '-c', str(db_path)], bz_path, 10 * 60):
+        candidates.append({'codec': 'bzip2-9', 'path': bz_path, 'bytes': bz_path.stat().st_size})
+    gz_path = work / 'ganjoor.sqlite.gz'
+    if run_codec(['gzip', '-9', '-c', str(db_path)], gz_path, 5 * 60):
+        candidates.append({'codec': 'gzip-9', 'path': gz_path, 'bytes': gz_path.stat().st_size})
+    if not candidates:
+        raise RuntimeError('Every compression codec failed or timed out')
+    return sorted(candidates, key=lambda x: x['bytes'])
 
 def verify_archive(candidate: dict, db_hash: str, work: Path) -> None:
     restored = work / "restored.sqlite"
@@ -116,7 +119,7 @@ def verify_archive(candidate: dict, db_hash: str, work: Path) -> None:
                         str(candidate["path"]), "-o", str(restored)], check=True)
     else:
         raise RuntimeError(f"Unknown codec: {codec}")
-    if sha256(restored.read_bytes()) != db_hash:
+    if sha256_file(restored) != db_hash:
         raise RuntimeError(f"Lossless round-trip failed for {codec}")
     with sqlite3.connect(restored) as db:
         result = db.execute("PRAGMA integrity_check").fetchone()[0]
@@ -175,7 +178,9 @@ def build(source: Path, output: Path) -> dict:
 
         poet_names = {}
         db.execute("BEGIN")
-        for file in files:
+        for index, file in enumerate(files, 1):
+            if index == 1 or index % 5000 == 0:
+                print(f'[build] imported {index:,}/{len(files):,} JSON files', flush=True)
             rel = file.relative_to(source).as_posix()
             raw = file.read_bytes()
             # Parse every JSON file before insertion: corrupt source must fail the build.
@@ -237,9 +242,10 @@ def build(source: Path, output: Path) -> dict:
     finally:
         db.close()
 
-    db_hash = sha256(db_path.read_bytes())
+    db_hash = sha256_file(db_path)
     with tempfile.TemporaryDirectory(prefix="souren-ganjoor-compress-") as temp:
         candidates = compress_candidates(db_path, Path(temp))
+        print('[build] codec sizes: ' + ', '.join(c['codec'] + '=' + str(c['bytes']) for c in candidates), flush=True)
         winner = candidates[0]
         verify_archive(winner, db_hash, Path(temp))
         suffix = winner["path"].suffix
