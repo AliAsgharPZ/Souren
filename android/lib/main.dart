@@ -1519,66 +1519,72 @@ class _ShellState extends State<Shell> {
                   GestureDetector(
                     key: _tabKeys[i],
                     onTap: () => _go(i),
-                    child: SizedBox(
-                      width: 42,
-                      height: 52,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.center,
-                        children: [
-                          Align(
-                            alignment: Alignment.topCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 5),
-                              child: AnimatedSwitcher(
-                                duration: Motion.base,
-                                switchInCurve: Motion.curve,
-                                switchOutCurve: Curves.easeInOut,
-                                transitionBuilder: (child, anim) =>
-                                    FadeTransition(
-                                  opacity: anim,
-                                  child: ScaleTransition(
-                                    scale: Tween<double>(begin: 0.88, end: 1)
-                                        .animate(anim),
-                                    child: child,
-                                  ),
-                                ),
-                                child: Icon(
-                                  tab == i ? items[i].$2 : items[i].$1,
-                                  key: ValueKey<bool>(tab == i),
-                                  size: 22,
-                                  color: tab == i
-                                      ? pal.bg
-                                      : pal.ink.withValues(alpha: .72),
-                                  fill: tab == i ? 1.0 : 0.0,
-                                  weight: tab == i ? 700.0 : 400.0,
+                    child: AnimatedContainer(
+                      duration: Motion.base,
+                      curve: Motion.curve,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: tab == i ? 17 : 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: AnimatedSize(
+                        duration: Motion.base,
+                        curve: Motion.curve,
+                        alignment: AlignmentDirectional.center,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: Motion.fast,
+                              switchInCurve: Motion.curve,
+                              switchOutCurve: Motion.curve,
+                              transitionBuilder: (child, anim) =>
+                                  FadeTransition(
+                                opacity: anim,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(begin: .8, end: 1)
+                                      .animate(anim),
+                                  child: child,
                                 ),
                               ),
-                            ),
-                          ),
-                          if (tab == i)
-                            Positioned(
-                              left: -5,
-                              right: -5,
-                              bottom: 1,
-                              child: AnimatedOpacity(
-                                opacity: 1,
-                                duration: Motion.base,
-                                child: Text(
-                                  items[i].$3,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.visible,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: pal.ink,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 9,
-                                  ),
-                                ),
+                              child: Icon(
+                                key: ValueKey<bool>(tab == i),
+                                tab == i ? items[i].$2 : items[i].$1,
+                                size: 23,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .72),
+                                fill: tab == i ? 1.0 : 0.0,
+                                weight: tab == i ? 700.0 : 400.0,
                               ),
                             ),
-                        ],
+                            if (tab == i)
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0, end: 1),
+                                duration: Motion.base,
+                                curve: Motion.curve,
+                                builder: (_, value, child) =>
+                                    Opacity(opacity: value, child: child),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      items[i].$3,
+                                      style: TextStyle(
+                                        color: pal.bg,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
