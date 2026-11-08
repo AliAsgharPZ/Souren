@@ -294,7 +294,7 @@ async function handleLike(request, env) {
     if (liked) likes.add(key);
     else likes.delete(key);
     s.rec.likes = [...likes].slice(0, 5000);
-    await env.USERS.put(\`user:\${s.rec.username}\`, JSON.stringify(s.rec));
+    await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
     return json(request, { key, liked, likes: s.rec.likes });
 }
 
