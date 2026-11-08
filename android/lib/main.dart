@@ -4209,9 +4209,8 @@ class BackIconButton extends StatelessWidget {
   }
 }
 
-/// Scaffold for sub-pages: the content scrolls under a header strip
-/// whose background fades and blurs into the page colour — no hard
-/// rectangle edge appears under the page title while scrolling.
+/// Plain sub-page scaffold: a transparent, right-aligned title row
+/// without a background strip or rectangle beneath the tab title.
 Widget subScaffold(String title, Widget body) {
   return Scaffold(
     backgroundColor: pal.bg,
@@ -5449,7 +5448,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
     showTopBanner(
       context,
       title: 'داده‌های کتابخانهٔ شعر',
-      message: 'متن و فهرست آثار از داده‌های عمومی گنجور دریافت می‌شود. جست‌وجوی شعر از API گنجور انجام می‌شود.',
+      message: 'فهرست شاعران و کتاب‌ها از داده‌های عمومی گنجور دریافت می‌شود؛ متن هر اثر هنگام بازکردن آن بارگیری و روی دستگاه نگه‌داری می‌شود.',
     );
   }
 
@@ -5476,23 +5475,6 @@ class _GanjoorPageState extends State<GanjoorPage> {
       title: _value(book, ['Title', 'title', 'Name', 'name']).isEmpty
           ? 'کتاب' : _value(book, ['Title', 'title', 'Name', 'name']),
       path: full.replaceFirst(RegExp(r'^/'), ''),
-      dictionary: widget.dictionary,
-      liked: widget.liked,
-      favorites: widget.favorites,
-      onToggleLike: widget.onToggleLike,
-      onToggleBookmark: widget.onToggleBookmark,
-      onOpenEntry: widget.onOpenEntry,
-    )));
-  }
-
-  void _openPoem(Map<String, dynamic> poem) {
-    final full = _value(poem, ['FullUrl', 'fullUrl', 'Url', 'url'])
-        .replaceFirst(RegExp(r'^/'), '');
-    if (full.isEmpty) return;
-    Navigator.of(context).push(_softRoute(GanjoorPoemPage(
-      title: _value(poem, ['Title', 'title']).isEmpty
-          ? 'شعر' : _value(poem, ['Title', 'title']),
-      path: 'poets/$full.json',
       dictionary: widget.dictionary,
       liked: widget.liked,
       favorites: widget.favorites,
@@ -5545,7 +5527,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: _view == 1 ? pal.cardC : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(22),
           border: _view == 1 ? Border.all(color: pal.div) : null,
         ),
         child: Row(
