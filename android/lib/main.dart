@@ -2225,11 +2225,12 @@ class _ShellState extends State<Shell> {
     final savedProverbs = proverbs.where((p) =>
       liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
+    final savedPoems = liked.where((key) => key.startsWith('poem:')).toList();
     return _pageShell(
       'پسندیده‌ها',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: mine.isEmpty && savedProverbs.isEmpty
+        child: mine.isEmpty && savedProverbs.isEmpty && savedPoems.isEmpty
             ? Center(
                 child: Text(
                   'هنوز چیزی را نپسندیده‌اید.\nبا زدن قلبِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
@@ -2243,6 +2244,7 @@ class _ShellState extends State<Shell> {
                   children: [
                     for (final e in mine) _pairRow(e),
                     for (final p in savedProverbs) _savedProverbRow(p),
+                    for (final poem in savedPoems) _savedPoemRow(poem, d),
                   ],
                 ),
               ),
@@ -2256,11 +2258,12 @@ class _ShellState extends State<Shell> {
     final savedProverbs = proverbs.where((p) =>
       favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
+    final savedPoems = favorites.where((key) => key.startsWith('poem:')).toList();
     return _pageShell(
       'نشان‌شده',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: favs.isEmpty && savedProverbs.isEmpty
+        child: favs.isEmpty && savedProverbs.isEmpty && savedPoems.isEmpty
             ? Center(
                 child: Text(
                   'هنوز چیزی را نشان نکرده‌اید.\nبا زدن نشانکِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
@@ -2274,10 +2277,46 @@ class _ShellState extends State<Shell> {
                   children: [
                     for (final e in favs) _pairRow(e),
                     for (final p in savedProverbs) _savedProverbRow(p),
+                    for (final poem in savedPoems) _savedPoemRow(poem, d),
                   ],
                 ),
               ),
       ),
+    );
+  }
+
+  Widget _savedPoemRow(String key, Dictionary dictionary) {
+    final value = key.substring('poem:'.length);
+    final marker = value.lastIndexOf('#');
+    if (marker <= 0) return const SizedBox.shrink();
+    final path = value.substring(0, marker);
+    final coupletIndex = int.tryParse(value.substring(marker + 1)) ?? 0;
+    return FutureBuilder<Map<String, dynamic>>(
+      future: GanjoorData.json(path),
+      builder: (context, snapshot) {
+        final title = snapshot.data?['Title']?.toString() ?? 'شعر ذخیره‌شده';
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          leading: Icon(LucideIcons.fileText, color: pal.sel),
+          title: Text(title,
+            textAlign: TextAlign.right,
+            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+          subtitle: Text('بیت ${coupletIndex + 1} · گنجور',
+            textAlign: TextAlign.right,
+            style: TextStyle(color: pal.muted, fontSize: 11.5)),
+          trailing: Icon(LucideIcons.chevronRight, color: pal.muted, size: 17),
+          onTap: () => _open(GanjoorPoemPage(
+            title: title,
+            path: path,
+            dictionary: dictionary,
+            liked: liked,
+            favorites: favorites,
+            onToggleLike: _toggleLike,
+            onToggleBookmark: _toggleFav,
+            onOpenEntry: _showEntry,
+          )),
+        );
+      },
     );
   }
 
