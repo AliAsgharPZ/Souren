@@ -55,7 +55,8 @@ jobs:
           flutter build apk --release
           APK=build/app/outputs/flutter-apk/app-release.apk
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
-          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" | head -3
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
+          sed -n '1,3p' /tmp/souren-apksigner.txt
           "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='11' versionName='0.4.5.5'"
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
