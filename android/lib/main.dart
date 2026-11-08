@@ -59,37 +59,42 @@ Pal pal = Pal.light;
 /// Souren's own visual language with purposeful, restrained motion:
 /// short ease-out transitions, subtle press feedback and no decorative bounce.
 class Motion {
-  static const fast = Duration(milliseconds: 150);
-  static const base = Duration(milliseconds: 240);
-  static const slow = Duration(milliseconds: 320);
-  static const curve = Curves.easeOutCubic;
-  static const pop = Curves.easeOutCubic;
-  static const staggerStep = Duration(milliseconds: 35);
+  static const fast = Duration(milliseconds: 180);
+  static const base = Duration(milliseconds: 320);
+  static const slow = Duration(milliseconds: 420);
+  static const curve = Cubic(0.22, 1.0, 0.36, 1.0);
+  static const pop = Curves.easeOutBack;
+  static const staggerStep = Duration(milliseconds: 22);
 
-  /// Apple-like press timing: a quick, restrained dip and a soft settle.
-  static const pressDown = Duration(milliseconds: 90);
-  static const pressUp = Duration(milliseconds: 260);
-  static const spring = Curves.easeOutCubic;
+  /// Short, interrupt-friendly interaction timings inspired by Apple's
+  /// continuity-first motion guidance. Keep overshoot subtle and optional.
+  static const pressDown = Duration(milliseconds: 100);
+  static const pressUp = Duration(milliseconds: 300);
+  static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
 }
 
 PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
   transitionDuration: Motion.slow,
   reverseTransitionDuration: Motion.base,
   pageBuilder: (_, __, ___) => page,
-  transitionsBuilder: (_, animation, __, child) {
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    if (MediaQuery.of(context).disableAnimations) return child;
     final curved = CurvedAnimation(
       parent: animation,
       curve: Motion.curve,
-      reverseCurve: Curves.easeInCubic,
+      reverseCurve: Curves.easeInOutCubic,
     );
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
         position: Tween<Offset>(
-          begin: const Offset(0, 0.018),
+          begin: const Offset(0, 0.028),
           end: Offset.zero,
         ).animate(curved),
-        child: child,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.975, end: 1.0).animate(curved),
+          child: child,
+        ),
       ),
     );
   },
@@ -113,10 +118,13 @@ Widget enterTransition(Widget child, Animation<double> animation) {
     opacity: curved,
     child: SlideTransition(
       position: Tween<Offset>(
-        begin: const Offset(0, 0.02),
+        begin: const Offset(0, 0.014),
         end: Offset.zero,
       ).animate(curved),
-      child: child,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.985, end: 1.0).animate(curved),
+        child: child,
+      ),
     ),
   );
 }
@@ -229,7 +237,7 @@ class _ScrollFadeState extends State<ScrollFade> {
 
   void _onScroll(ScrollNotification n) {
     if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      final progress = (n.metrics.pixels / 48).clamp(0.0, 1.0);
+      final progress = (n.metrics.pixels / 96).clamp(0.0, 1.0);
       // Smoothstep avoids a sudden fade when the finger first moves.
       final eased = progress * progress * (3 - 2 * progress);
       final top = eased;
@@ -263,7 +271,7 @@ class _ScrollFadeState extends State<ScrollFade> {
             Color.fromRGBO(0, 0, 0, 1 - _bottom * 0.55),
             Color.fromRGBO(0, 0, 0, 1 - _bottom),
           ],
-          stops: const [0, 0.06, 0.16, 0.84, 0.94, 1],
+          stops: const [0, 0.10, 0.22, 0.78, 0.90, 1],
         ).createShader(rect),
         blendMode: BlendMode.dstIn,
         child: widget.child,
@@ -1205,11 +1213,14 @@ class Enter extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: Motion.base + Duration(milliseconds: (index % 12) * 35),
+      duration: Motion.base + Duration(milliseconds: (index % 10) * 22),
       curve: Motion.curve,
       builder: (_, v, c) => Opacity(
         opacity: v,
-        child: Transform.translate(offset: Offset(0, 12 * (1 - v)), child: c),
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - v)),
+          child: Transform.scale(scale: 0.99 + (0.01 * v), child: c),
+        ),
       ),
       child: child,
     );
@@ -1233,6 +1244,8 @@ class _ShellState extends State<Shell> {
   int learnedCorrections = 0;
   int tab = 0;
   String query = '';
+  int _homeCollection = 0; // words, proverbs, poems
+  Future<List<Map<String, dynamic>>>? _homePoems;
 
   // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
@@ -1377,10 +1390,12 @@ class _ShellState extends State<Shell> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.transparent,
-        child: _navBar(),
-      ),
+      bottomNavigationBar: _searchFocused
+          ? const SizedBox.shrink()
+          : Container(
+              color: Colors.transparent,
+              child: _navBar(),
+            ),
     );
   }
 
@@ -1462,71 +1477,66 @@ class _ShellState extends State<Shell> {
                   GestureDetector(
                     key: _tabKeys[i],
                     onTap: () => _go(i),
-                    child: AnimatedContainer(
-                      duration: Motion.base,
-                      curve: Motion.curve,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tab == i ? 17 : 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: AnimatedSize(
-                        duration: Motion.base,
-                        curve: Motion.curve,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: Motion.fast,
-                              switchInCurve: Motion.curve,
-                              switchOutCurve: Motion.curve,
-                              transitionBuilder: (child, anim) =>
-                                  FadeTransition(
-                                opacity: anim,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(begin: 0.8, end: 1)
-                                      .animate(anim),
-                                  child: child,
+                    child: SizedBox(
+                      width: 42,
+                      height: 52,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 5),
+                              child: AnimatedSwitcher(
+                                duration: Motion.base,
+                                switchInCurve: Motion.curve,
+                                switchOutCurve: Curves.easeInOut,
+                                transitionBuilder: (child, anim) =>
+                                    FadeTransition(
+                                  opacity: anim,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(begin: 0.88, end: 1)
+                                        .animate(anim),
+                                    child: child,
+                                  ),
                                 ),
-                              ),
-                              child: Icon(
-                                tab == i ? items[i].$2 : items[i].$1,
-                                key: ValueKey<bool>(tab == i),
-                                size: 23,
-                                color: tab == i
-                                    ? pal.bg
-                                    : pal.ink.withValues(alpha: .72),
-                                fill: tab == i ? 1.0 : 0.0,
-                                weight: tab == i ? 700.0 : 400.0,
+                                child: Icon(
+                                  tab == i ? items[i].$2 : items[i].$1,
+                                  key: ValueKey<bool>(tab == i),
+                                  size: 22,
+                                  color: tab == i
+                                      ? pal.bg
+                                      : pal.ink.withValues(alpha: .72),
+                                  fill: tab == i ? 1.0 : 0.0,
+                                  weight: tab == i ? 700.0 : 400.0,
+                                ),
                               ),
                             ),
-                            if (tab == i)
-                              TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
+                          ),
+                          if (tab == i)
+                            Positioned(
+                              left: -5,
+                              right: -5,
+                              bottom: 1,
+                              child: AnimatedOpacity(
+                                opacity: 1,
                                 duration: Motion.base,
-                                curve: Motion.curve,
-                                builder: (_, v, c) =>
-                                    Opacity(opacity: v, child: c),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const SizedBox(width: 7),
-                                    Text(
-                                      items[i].$3,
-                                      style: TextStyle(
-                                        color: pal.bg,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14.5,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  items[i].$3,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.visible,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: pal.ink,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 9,
+                                  ),
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -1558,7 +1568,6 @@ class _ShellState extends State<Shell> {
         const logoGap = 72.0;
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
-        const adsGap = 96.0;
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
           child: Stack(
@@ -1574,27 +1583,38 @@ class _ShellState extends State<Shell> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: AnimatedSwitcher(
-                            duration: Motion.slow,
-                            switchInCurve: Curves.easeOutCubic,
-                            switchOutCurve: Curves.easeInOutCubic,
-                            transitionBuilder: (child, animation) =>
-                                FadeTransition(
-                              opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                axis: Axis.horizontal,
-                                child: child,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _homeCollectionHeader(),
+                              const SizedBox(height: 6),
+                              Expanded(
+                                child: AnimatedSwitcher(
+                                  duration: Motion.slow,
+                                  switchInCurve: Motion.curve,
+                                  switchOutCurve: Curves.easeInOutCubic,
+                                  transitionBuilder: (child, animation) =>
+                                      FadeTransition(
+                                    opacity: animation,
+                                    child: SizeTransition(
+                                      sizeFactor: animation,
+                                      axis: Axis.horizontal,
+                                      child: ScaleTransition(
+                                        scale: Tween<double>(begin: 0.985, end: 1)
+                                            .animate(animation),
+                                        child: child,
+                                      ),
+                                    ),
+                                  ),
+                                  child: KeyedSubtree(
+                                    key: ValueKey(
+                                      'home-$_homeCollection-$_searchFocused',
+                                    ),
+                                    child: _homeCollectionView(d, results),
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: KeyedSubtree(
-                              key: ValueKey('home-words-$_searchFocused'),
-                              child: _pairList(
-                                results,
-                                bottomPad: 0,
-                                singleLine: true,
-                              ),
-                            ),
+                            ],
                           ),
                         ),
                         AnimatedContainer(
@@ -1661,7 +1681,6 @@ class _ShellState extends State<Shell> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: adsGap),
                 ],
               ),
               Positioned(
@@ -1702,13 +1721,184 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  Widget _homeCollectionHeader() {
+    final labels = ['گنجینۀ واژه‌ها', 'گنجینۀ پندواژه‌ها', 'گنجینۀ شعرها'];
+    return Row(
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final base = labels[_homeCollection];
+              var best = base;
+              for (var count = 1; count <= 18; count++) {
+                final candidate = base.replaceFirst(
+                  ' ',
+                  '\${List<String>.filled(count, 'ـ').join()} ',
+                );
+                final painter = TextPainter(
+                  text: TextSpan(
+                    text: candidate,
+                    style: TextStyle(
+                      color: pal.ink,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  textDirection: TextDirection.rtl,
+                  maxLines: 1,
+                )..layout();
+                if (painter.width > constraints.maxWidth) break;
+                best = candidate;
+              }
+              return Text(
+                best,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.clip,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: pal.ink,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              );
+            },
+          ),
+        ),
+        PopupMenuButton<int>(
+          tooltip: 'انتخاب گنجینه',
+          onSelected: (value) {
+            setState(() {
+              _homeCollection = value;
+              if (value == 2) {
+                _homePoems = query.isEmpty
+                    ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
+                    : GanjoorData.searchPoems(query);
+              }
+            });
+          },
+          icon: Icon(LucideIcons.chevronDown, size: 19, color: pal.muted),
+          color: pal.cardC,
+          itemBuilder: (_) => const [
+            PopupMenuItem(value: 0, child: Text('گنجینۀ واژه‌ها')),
+            PopupMenuItem(value: 1, child: Text('گنجینۀ پندواژه‌ها')),
+            PopupMenuItem(value: 2, child: Text('گنجینۀ شعرها')),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _homeCollectionView(Dictionary d, List<Entry> wordResults) {
+    if (_homeCollection == 0) {
+      return _pairList(wordResults, bottomPad: 0, singleLine: true);
+    }
+    if (_homeCollection == 1) {
+      final rows = PandvazhePage.proverbs.where((item) =>
+        query.isEmpty || item.$1.contains(query) || item.$2.contains(query)
+      ).toList();
+      if (rows.isEmpty) {
+        return Center(
+          child: Text('پندواژه‌ای پیدا نشد', style: TextStyle(color: pal.muted)),
+        );
+      }
+      return edgeFade(
+        child: ListView.separated(
+          padding: const EdgeInsets.only(top: 4, bottom: 12),
+          itemCount: rows.length,
+          separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
+          itemBuilder: (_, i) => InkWell(
+            onTap: () => _showProverb(rows[i].$1, rows[i].$2),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(rows[i].$1,
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 15)),
+                  const SizedBox(height: 4),
+                  Text(rows[i].$2,
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: pal.muted, fontSize: 12.5)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final future = _homePoems ??= query.isEmpty
+        ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
+        : GanjoorData.searchPoems(query);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final poems = snapshot.data ?? const <Map<String, dynamic>>[];
+        if (poems.isEmpty) {
+          return Center(
+            child: Text('شعری پیدا نشد', style: TextStyle(color: pal.muted)),
+          );
+        }
+        return edgeFade(
+          child: ListView.separated(
+            padding: const EdgeInsets.only(top: 4, bottom: 12),
+            itemCount: poems.length,
+            separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
+            itemBuilder: (_, i) {
+              final poem = poems[i];
+              String value(List<String> keys) {
+                for (final key in keys) {
+                  final v = poem[key];
+                  if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+                }
+                return '';
+              }
+              final title = value(['Title', 'title']).isEmpty ? 'شعر' : value(['Title', 'title']);
+              final poet = value(['PoetName', 'PoetNickname', 'poetName']);
+              final full = value(['FullUrl', 'fullUrl', 'Url', 'url']).replaceFirst(RegExp(r'^/'), '');
+              return ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                title: Text(title, textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+                subtitle: Text(poet, textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.muted, fontSize: 11.5)),
+                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                onTap: full.isEmpty ? null : () => _open(GanjoorPoemPage(
+                  title: title,
+                  path: 'poets/$full.json',
+                )),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Widget _searchCapsule() {
     return SizedBox(
       height: 58,
       child: TextField(
         controller: _searchCtl,
         focusNode: _searchFocus,
-        onChanged: (v) => setState(() => query = v.trim()),
+        onChanged: (v) => setState(() {
+          query = v.trim();
+          if (_homeCollection == 2) {
+            _homePoems = query.isEmpty
+                ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
+                : GanjoorData.searchPoems(query);
+          }
+        }),
         decoration: InputDecoration(
           hintText: 'واژه‌ای را جستجو کنید',
           hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
