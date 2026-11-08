@@ -2020,7 +2020,13 @@ class _ShellState extends State<Shell> {
                                     ),
                                     _sidePill(
                                       'ریشه‌شناسی',
-                                      () => _open(EtymologyPage(dict: d)),
+                                      () => _open(EtymologyPage(
+                                        dict: d,
+                                        liked: liked,
+                                        favorites: favorites,
+                                        onToggleLike: _toggleLike,
+                                        onToggleBookmark: _toggleFav,
+                                      )),
                                     ),
                                     const SizedBox(height: 4),
                                     _homeMetrics(d),
@@ -2702,6 +2708,7 @@ class _ShellState extends State<Shell> {
   void _showRootPopup(String word) {
     final current = dict;
     if (current == null || word.trim().isEmpty) return;
+    final key = 'root:$word';
     final rows = PersianRoots.index(current);
     final base = PersianRoots.baseOf(word);
     final related = PersianRoots.sameBase(rows, word);
@@ -2727,14 +2734,13 @@ class _ShellState extends State<Shell> {
           child: DetailSheet(
             card: ShareCardData(
               title: word,
-            lines: lines,
-            caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
-          ),
-          initialLiked: false,
-          initialBookmarked: false,
-          onToggleLike: () async {},
-          onToggleBookmark: () async {},
-            showActions: false,
+              lines: lines,
+              caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
+            ),
+            initialLiked: liked.contains(key),
+            initialBookmarked: favorites.contains(key),
+            onToggleLike: () => _toggleLike(key),
+            onToggleBookmark: () => _toggleFav(key),
           ),
         ),
       ),
@@ -2833,6 +2839,9 @@ class _ShellState extends State<Shell> {
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
+    final savedRoots = PersianRoots.index(d)
+        .where((row) => liked.contains('root:${row.word}'))
+        .toList();
     final savedProverbs = proverbs.where((p) =>
       liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
@@ -2840,7 +2849,7 @@ class _ShellState extends State<Shell> {
     final wordsVisible = _likedFilter == 0 || _likedFilter == 1;
     final proverbsVisible = _likedFilter == 0 || _likedFilter == 2;
     final poemsVisible = _likedFilter == 0 || _likedFilter == 3;
-    final isEmpty = (!wordsVisible || mine.isEmpty) &&
+    final isEmpty = (!wordsVisible || (mine.isEmpty && savedRoots.isEmpty)) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
         (!poemsVisible || savedPoems.isEmpty);
 
@@ -2868,8 +2877,10 @@ class _ShellState extends State<Shell> {
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: kNavClearance),
                         children: [
-                          if (wordsVisible)
+                          if (wordsVisible) ...[
                             for (final e in mine) _pairRow(e),
+                            for (final row in savedRoots) _savedRootRow(row),
+                          ],
                           if (proverbsVisible)
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
@@ -2887,6 +2898,9 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
+    final savedRoots = PersianRoots.index(d)
+        .where((row) => favorites.contains('root:${row.word}'))
+        .toList();
     final savedProverbs = proverbs.where((p) =>
       favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
@@ -2894,7 +2908,7 @@ class _ShellState extends State<Shell> {
     final wordsVisible = _favoritesFilter == 0 || _favoritesFilter == 1;
     final proverbsVisible = _favoritesFilter == 0 || _favoritesFilter == 2;
     final poemsVisible = _favoritesFilter == 0 || _favoritesFilter == 3;
-    final isEmpty = (!wordsVisible || favs.isEmpty) &&
+    final isEmpty = (!wordsVisible || (favs.isEmpty && savedRoots.isEmpty)) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
         (!poemsVisible || savedPoems.isEmpty);
 
@@ -2922,8 +2936,10 @@ class _ShellState extends State<Shell> {
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: kNavClearance),
                         children: [
-                          if (wordsVisible)
+                          if (wordsVisible) ...[
                             for (final e in favs) _pairRow(e),
+                            for (final row in savedRoots) _savedRootRow(row),
+                          ],
                           if (proverbsVisible)
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
@@ -2935,6 +2951,27 @@ class _ShellState extends State<Shell> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _savedRootRow(PersianLexeme row) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      leading: Icon(LucideIcons.gitBranch, color: pal.sel),
+      title: Text(
+        row.word,
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
+        style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        'بن‌واژه: ${row.base}',
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
+        style: TextStyle(color: pal.muted, fontSize: 11.5),
+      ),
+      trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
+      onTap: () => _showRootPopup(row.word),
     );
   }
 
@@ -3049,7 +3086,13 @@ class _ShellState extends State<Shell> {
       (
         LucideIcons.gitBranch,
         'ریشه‌شناسی',
-        () => _open(EtymologyPage(dict: d)),
+        () => _open(EtymologyPage(
+                                        dict: d,
+                                        liked: liked,
+                                        favorites: favorites,
+                                        onToggleLike: _toggleLike,
+                                        onToggleBookmark: _toggleFav,
+                                      )),
       ),
       (LucideIcons.sparkles, 'واژه‌های تازه', () => _open(_freshPage(d))),
       (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
@@ -5161,7 +5204,19 @@ class _RootInfoCard extends StatelessWidget {
 class EtymologyPage extends StatefulWidget {
   final Dictionary dict;
   final String? initialWord;
-  const EtymologyPage({super.key, required this.dict, this.initialWord});
+  final Set<String>? liked;
+  final Set<String>? favorites;
+  final Future<void> Function(String)? onToggleLike;
+  final Future<void> Function(String)? onToggleBookmark;
+  const EtymologyPage({
+    super.key,
+    required this.dict,
+    this.initialWord,
+    this.liked,
+    this.favorites,
+    this.onToggleLike,
+    this.onToggleBookmark,
+  });
   @override
   State<EtymologyPage> createState() => _EtymologyPageState();
 }
@@ -5189,6 +5244,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
 
   void _showLexeme(PersianLexeme row) {
     final related = PersianRoots.sameBase(_rows, row.word);
+    final key = 'root:${row.word}';
     final lines = <String>[
       'بن‌واژه: ${row.base}',
       '${faNum(row.sourceCount)} پیوند به مدخل‌های واژگان',
@@ -5212,14 +5268,19 @@ class _EtymologyPageState extends State<EtymologyPage> {
           child: DetailSheet(
             card: ShareCardData(
               title: row.word,
-            lines: lines,
-            caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
-          ),
-          initialLiked: false,
-          initialBookmarked: false,
-          onToggleLike: () async {},
-          onToggleBookmark: () async {},
-            showActions: false,
+              lines: lines,
+              caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
+            ),
+            initialLiked: widget.liked?.contains(key) ?? false,
+            initialBookmarked: widget.favorites?.contains(key) ?? false,
+            onToggleLike: () async {
+              final callback = widget.onToggleLike;
+              if (callback != null) await callback(key);
+            },
+            onToggleBookmark: () async {
+              final callback = widget.onToggleBookmark;
+              if (callback != null) await callback(key);
+            },
           ),
         ),
       ),
