@@ -68,8 +68,9 @@ def compress_candidates(db_path: Path, work: Path) -> list[dict]:
     candidates.append({"codec": "xz-lzma2-9e", "path": xz_path, "bytes": xz_path.stat().st_size})
 
     gz_path = work / "ganjoor.sqlite.gz"
-    with db_path.open("rb") as src, gzip.open(gz_path, "wb", compresslevel=9, mtime=0) as dst:
-        shutil.copyfileobj(src, dst, length=1024 * 1024)
+    with db_path.open("rb") as src, gz_path.open("wb") as raw_dst:
+        with gzip.GzipFile(fileobj=raw_dst, mode="wb", compresslevel=9, mtime=0) as dst:
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
     candidates.append({"codec": "gzip-9", "path": gz_path, "bytes": gz_path.stat().st_size})
 
     bz_path = work / "ganjoor.sqlite.bz2"
