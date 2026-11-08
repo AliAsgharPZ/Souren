@@ -305,23 +305,33 @@ export default {
         if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
             return new Response(null, { status: 204, headers: corsHeaders(request) });
         }
+        const methodNotAllowed = () =>
+            json(request, { error: 'method_not_allowed' }, 405);
         switch (url.pathname) {
-            case '/api/upload': return handleUpload(request, env);
-            case '/api/dictionary': return handleDictionary(request, env);
-            case '/api/auth/register': return handleRegister(request, env);
-            case '/api/auth/login': return handleLogin(request, env);
-            case '/api/auth/logout': return handleLogout(request, env);
-            case '/api/auth/me': return handleMe(request, env);
-            case '/api/auth/profile': return handleProfile(request, env);
+            case '/api/upload': return request.method === 'POST'
+                ? handleUpload(request, env) : methodNotAllowed();
+            case '/api/dictionary': return request.method === 'GET'
+                ? handleDictionary(request, env) : methodNotAllowed();
+            case '/api/auth/register': return request.method === 'POST'
+                ? handleRegister(request, env) : methodNotAllowed();
+            case '/api/auth/login': return request.method === 'POST'
+                ? handleLogin(request, env) : methodNotAllowed();
+            case '/api/auth/logout': return request.method === 'POST'
+                ? handleLogout(request, env) : methodNotAllowed();
+            case '/api/auth/me': return request.method === 'GET'
+                ? handleMe(request, env) : methodNotAllowed();
+            case '/api/auth/profile': return request.method === 'PUT'
+                ? handleProfile(request, env) : methodNotAllowed();
             case '/api/likes': return request.method === 'POST'
-                ? handleLike(request, env)
-                : json(request, { error: 'method_not_allowed' }, 405);
-            case '/api/health': return json(request, {
-                service: 'souren-worker',
-                apiVersion: 2,
-                status: 'ok',
-                timestamp: new Date().toISOString(),
-            });
+                ? handleLike(request, env) : methodNotAllowed();
+            case '/api/health': return request.method === 'GET'
+                ? json(request, {
+                    service: 'souren-worker',
+                    apiVersion: 2,
+                    status: 'ok',
+                    timestamp: new Date().toISOString(),
+                })
+                : methodNotAllowed();
             default: break;
         }
         // سایت روی Pages میزبانی می‌شود؛ هر مسیر غیر API به همان مسیر در pages.dev ریدایرکت می‌شود.
