@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
@@ -305,11 +306,43 @@ class Pressable extends StatefulWidget {
   State<Pressable> createState() => _PressableState();
 }
 
-class _PressableState extends State<Pressable> {
+class _PressableState extends State<Pressable>
+    with SingleTickerProviderStateMixin {
   bool _pressed = false;
+  late final AnimationController _scaleController = AnimationController(
+    vsync: this,
+    lowerBound: .92,
+    upperBound: 1.02,
+    value: 1,
+  );
 
-  void _set(bool v) {
-    if (_pressed != v) setState(() => _pressed = v);
+  void _set(bool value) {
+    if (_pressed == value) return;
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    setState(() => _pressed = value);
+    if (reduceMotion) {
+      _scaleController.value = 1;
+      return;
+    }
+    final target = value ? widget.scale.clamp(.92, 1.02) : 1.0;
+    _scaleController.animateWith(
+      SpringSimulation(
+        const SpringDescription(
+          mass: 1,
+          stiffness: 520,
+          damping: 38,
+        ),
+        _scaleController.value,
+        target,
+        _scaleController.velocity,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
   }
 
   @override
@@ -323,16 +356,19 @@ class _PressableState extends State<Pressable> {
       onTapDown: (_) => _set(true),
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
+      onLongPressEnd: (_) => _set(false),
       onTap: widget.onTap,
       onLongPress: widget.onLongPress ?? widget.onTap,
-      child: AnimatedScale(
-        scale: reduceMotion ? 1.0 : (_pressed ? widget.scale : 1.0),
-        duration: duration,
-        curve: _pressed ? Curves.easeOut : Motion.spring,
+      child: AnimatedBuilder(
+        animation: _scaleController,
         child: AnimatedOpacity(
-          opacity: reduceMotion ? 1.0 : (_pressed ? 0.82 : 1.0),
+          opacity: reduceMotion ? 1.0 : (_pressed ? 0.84 : 1.0),
           duration: duration,
           child: widget.child,
+        ),
+        builder: (context, child) => Transform.scale(
+          scale: reduceMotion ? 1.0 : _scaleController.value,
+          child: child,
         ),
       ),
     );
