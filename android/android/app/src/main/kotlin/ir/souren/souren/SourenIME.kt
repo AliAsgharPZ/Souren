@@ -1,10 +1,8 @@
 package ir.souren.souren
 
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.res.Configuration
-import android.content.res.ColorStateList
 import android.content.Intent
+import android.content.ClipboardManager
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.inputmethodservice.InputMethodService
@@ -19,63 +17,72 @@ import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.TextView
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
-/** Souren keyboard v3 — a faithful copy of the Samsung Keyboard (One UI)
- *  behaviour, per the owner's order:
- *  - ISIRI Persian layout (the layout Samsung/Android use for Persian),
- *    optional Persian number row, toolbar that swaps with the
- *    suggestion strip while typing.
- *  - Long-press opens a popup ABOVE the key holding everything the
- *    shift layer would show plus the key's relatives; the first option
- *    is pre-selected, sliding the finger picks another, releasing
- *    inserts it (Samsung's exact gesture).
- *  - Spacebar: horizontal drag switches language (FA <-> EN);
- *    long-press turns it into a cursor trackpad.
- *  - The comma-side key is Samsung's "custom" key: it remembers the
- *    last symbol picked from its long-press popup.
- *  - Emoji panel with categories, recents, keyword search and
- *    long-press skin tones; two symbol pages, the second carrying the
- *    full Arabic ligature/glyph set (﷽ ﷲ ﷺ ﷻ ﷼, diacritics, tatweel).
- *  - Keys are built once per page; shift only relabels them in place
- *    (the v2 full-rebuild on every keystroke-state change was the lag).
- *  Icons are linear stroke vectors — no emoji anywhere in the chrome. */
+/**
+ * Souren Keyboard — rebuilt as a native Samsung One UI–inspired IME.
+ *
+ * The visual system is deliberately based on Samsung Keyboard's hierarchy:
+ * compact toolbar/suggestion rail, a dedicated number row, square-soft keys,
+ * restrained elevation, cool neutral surfaces, and high-contrast action keys.
+ * All input is committed through Android's InputConnection; no Flutter view
+ * is embedded in the IME.
+ */
 class SourenIME : InputMethodService() {
 
-    private enum class Page { FA, EN, SYMBOLS, SYMBOLS2, EMOJI, CLIPBOARD }
+    private enum class Page { FA, EN, SYMBOLS, EMOJI, CLIPBOARD }
+    private enum class Action { CHAR, SHIFT, DELETE, SPACE, ENTER, SYMBOLS, EMOJI, LANGUAGE, ZWNJ, CLIPBOARD, BACK }
+
+    private data class KeySpec(
+        val label: String,
+        val action: Action = Action.CHAR,
+        val weight: Float = 1f,
+        val icon: Int = 0
+    )
 
     private var page = Page.FA
-    private var lastLang = Page.FA
+    private var lastLanguage = Page.FA
     private var shifted = false
     private var capsLock = false
-    // Keyboard height the key views were built with. The input view is
-    // created once and cached by the system, so a height change in the
-    // app never rebuilt the keys — the setting visibly "did nothing".
-    // onStartInputView re-reads the settings and rebuilds when it moved.
-    private var appliedKbHeight: String? = null
-    private lateinit var rootFrame: FrameLayout
-    private lateinit var stripArea: FrameLayout
-    private lateinit var toolbarView: LinearLayout
-    private lateinit var suggestView: LinearLayout
-    private lateinit var keysBox: LinearLayout
-    private lateinit var preview: TextView
-    private lateinit var popupBar: LinearLayout
+    private var appliedHeight = ""
+    private var emojiCategory = -1
+    private var customSymbol = "،"
+    private var topArea: LinearLayout? = null
+    private var keyArea: LinearLayout? = null
+    private var root: FrameLayout? = null
+    private var popup: PopupWindow? = null
+    private var popupCells = mutableListOf<TextView>()
+    private var popupValues = emptyList<String>()
+    private var popupSelection = 0
     private val handler = Handler(Looper.getMainLooper())
-    private var deleteRepeat: Runnable? = null
-    private var lastWordShown = ""
+    private var repeatDelete: Runnable? = null
+    private var lastSuggestionWord = ""
 
-    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
-    private val darkMode: Boolean
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).roundToInt()
+
+    private val dark: Boolean
         get() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-    private fun tone(light: String, dark: String): Int =
-        Color.parseColor(if (darkMode) dark else light)
 
-    private fun rowHeight(): Int = when (KbData.kbHeight) {
-        "short" -> dp(47)
-        "normal" -> dp(53)
-        else -> dp(58)
+    private fun color(light: String, night: String): Int =
+        Color.parseColor(if (dark) night else light)
+
+    private val surface get() = color("#DDE1E8", "#17191E")
+    private val keySurface get() = color("#FFFFFF", "#30343B")
+    private val specialSurface get() = color("#C7CDD6", "#444A54")
+    private val ink get() = color("#20242B", "#F2F4F7")
+    private val mutedInk get() = color("#59616D", "#C0C6D0")
+    private val accent get() = color("#3974C6", "#8AB4F8")
+
+    private fun keyHeight(): Int = when (KbData.kbHeight) {
+        "short" -> dp(42)
+        "normal" -> dp(46)
+        else -> dp(49)
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
@@ -83,1146 +90,736 @@ class SourenIME : InputMethodService() {
         KbData.load(this)
         KbData.readSettings(this)
         KbData.readLearned(this)
+        customSymbol = KbData.customSymbol(this, page == Page.FA)
     }
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        // The IME process stays alive while the user edits settings in
-        // the app, so re-read them every time the keyboard is shown —
-        // and rebuild the keys when the height changed, because the
-        // key views were built once with the old height.
         KbData.readSettings(this)
-        if (KbData.kbHeight != appliedKbHeight) {
-            appliedKbHeight = KbData.kbHeight
-            if (::keysBox.isInitialized) rebuildKeys()
+        KbData.readLearned(this)
+        if (KbData.kbHeight != appliedHeight) {
+            appliedHeight = KbData.kbHeight
+            rebuildKeyboard()
+        } else {
+            refreshSuggestions()
         }
+    }
+
+    override fun onFinishInputView(finishingInput: Boolean) {
+        stopDeleteRepeat()
+        dismissPopup()
+        super.onFinishInputView(finishingInput)
     }
 
     override fun onCreateInputView(): View {
-        rootFrame = FrameLayout(this)
-        val content = LinearLayout(this).apply {
+        val frame = FrameLayout(this).apply {
+            setBackgroundColor(surface)
+            clipChildren = false
+            clipToPadding = false
+        }
+        root = frame
+        val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(tone("#D9DBDF", "#000000"))
-            // Bottom clearance so the last row never fights the phone's
-            // gesture/navigation area (Samsung keeps the same gap).
-            setPadding(dp(5), 0, dp(5), dp(12))
+            setBackgroundColor(surface)
+            setPadding(dp(4), dp(2), dp(4), dp(9))
         }
-        rootFrame.addView(content, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        frame.addView(shell, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
 
-        stripArea = FrameLayout(this).apply {
-            setBackgroundColor(tone("#F1F2F4", "#151515"))
-        }
-        toolbarView = buildToolbar()
-        suggestView = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL or Gravity.END
-            setPadding(dp(4), 0, dp(4), 0)
-            visibility = View.GONE
-        }
-        stripArea.addView(toolbarView)
-        stripArea.addView(suggestView)
-        content.addView(stripArea, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(48)))
-
-        keysBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        content.addView(keysBox)
-        rebuildKeys()
-        appliedKbHeight = KbData.kbHeight
-
-        preview = TextView(this).apply {
-            textSize = 26f
-            gravity = Gravity.CENTER
-            setTextColor(tone("#16181D", "#F5F5F5"))
-            background = GradientDrawable().apply {
-                cornerRadius = dp(12).toFloat()
-                setColor(tone("#FFFFFF", "#333333"))
-                setStroke(dp(1), tone("#D8D8D8", "#4A4A4A"))
-            }
-            visibility = View.GONE
-        }
-        rootFrame.addView(preview, FrameLayout.LayoutParams(dp(52), dp(58)))
-
-        popupBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(5), dp(5), dp(5), dp(5))
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(tone("#FFFFFF", "#2B2B2B"))
-                setStroke(dp(1), tone("#C9CCD1", "#494949"))
-            }
-            elevation = dp(3).toFloat()
-            visibility = View.GONE
-        }
-        rootFrame.addView(popupBar, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, dp(58)))
-        return rootFrame
-    }
-
-    // ---------------- toolbar / strip ----------------
-    private fun iconButton(resId: Int, onClick: () -> Unit): ImageView {
-        return ImageView(this).apply {
-            setImageResource(resId)
-            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
-            scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setPadding(dp(10), dp(10), dp(10), dp(10))
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(tone("#E8E9EC", "#2B2B2B"))
-            }
-            setOnTouchListener { v, event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.92f).scaleY(0.92f)
-                        .setDuration(80).start()
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                        v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                }
-                false
-            }
-            setOnClickListener { onClick() }
-        }
-    }
-
-    private fun plainIconButton(resId: Int, onClick: () -> Unit): ImageView {
-        return ImageView(this).apply {
-            setImageResource(resId)
-            imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
-            scaleType = ImageView.ScaleType.CENTER_INSIDE
-            setPadding(dp(8), dp(8), dp(8), dp(8))
-            alpha = 0.75f
-            setOnTouchListener { v, event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.92f).scaleY(0.92f)
-                        .setDuration(80).start()
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                        v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                }
-                false
-            }
-            setOnClickListener { onClick() }
-        }
-    }
-
-    private fun buildToolbar(): LinearLayout {
-        val bar = LinearLayout(this).apply {
+        topArea = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(3), dp(14), dp(3))
+            setPadding(dp(3), 0, dp(3), 0)
         }
-        val items = listOf(
-            R.drawable.ic_emoji to { page = Page.EMOJI; emojiSearchOn = false; rebuildKeys() },
-            R.drawable.ic_clipboard to { openClipboard() },
-            R.drawable.ic_keyboard to {
-                val target = if (page == Page.EN) Page.FA else Page.EN
-                page = target; lastLang = target
-                rebuildKeys()
-            },
-            R.drawable.ic_gear to { openApp() },
-            R.drawable.ic_more to { page = Page.SYMBOLS; rebuildKeys() }
-        )
-        items.forEachIndexed { i, (res, action) ->
-            if (i > 0) bar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-            bar.addView(iconButton(res, action), LinearLayout.LayoutParams(dp(42), dp(42)))
+        shell.addView(topArea, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(45)
+        ))
+
+        keyArea = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(1), 0, 0)
         }
-        return bar
-    }
-
-    private fun showToolbar() {
-        if (page != Page.FA && page != Page.EN) return
-        toolbarView.visibility = View.VISIBLE
-        suggestView.visibility = View.GONE
-    }
-
-    private fun showSuggestions(chips: List<String>, word: String) {
-        suggestView.removeAllViews()
-        val slots = mutableListOf<Pair<String, Boolean>>()
-        slots.add(word to false)
-        for (c in chips) if (slots.size < 3) slots.add(c to (slots.size == 1))
-        slots.forEachIndexed { i, (text, bold) ->
-            if (i > 0) {
-                val div = View(this).apply { setBackgroundColor(tone("#D9DBDF", "#454545")) }
-                suggestView.addView(div, LinearLayout.LayoutParams(dp(1), dp(24)))
-            }
-            val slot = TextView(this).apply {
-                this.text = text
-                textSize = 15.5f
-                if (bold) paint.isFakeBoldText = true
-                gravity = Gravity.CENTER
-                setTextColor(tone("#191B1E", "#F5F5F5"))
-                setOnClickListener {
-                    if (i == 0) { showToolbar(); return@setOnClickListener }
-                    val ic = currentInputConnection ?: return@setOnClickListener
-                    val w = currentWord()
-                    ic.deleteSurroundingText(w.length, 0)
-                    ic.commitText(text, 1)
-                    KbData.recordLearned(this@SourenIME, w, text)
-                    refreshStrip()
-                }
-            }
-            suggestView.addView(slot, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        }
-        suggestView.addView(plainIconButton(R.drawable.ic_arrow_back) { showToolbar() },
-            LinearLayout.LayoutParams(dp(38), dp(38)))
-        toolbarView.visibility = View.GONE
-        suggestView.visibility = View.VISIBLE
-    }
-
-    // ---------------- key model ----------------
-    private enum class Kind { CHAR, SHIFT, DELETE, SPACE, ENTER, MODE, BACK, ZWNJ, CUSTOM, EMOJI }
-
-    private data class K(
-        val label: String,
-        val weight: Float = 1f,
-        val kind: Kind = Kind.CHAR,
-        val iconRes: Int = 0
-    )
-
-    /** What the shift layer shows for a Persian key (diacritics on the
-     *  top row, hamza/Arabic forms elsewhere) — Samsung/ISIRI style. */
-    private val faShift = mapOf(
-        "ض" to "ً", "ص" to "ٌ", "ث" to "ٍ", "ق" to "َ", "ف" to "ُ",
-        "غ" to "ِ", "ع" to "ّ", "ه" to "ة", "خ" to "ْ", "ح" to "ٰ",
-        "ج" to "ٔ", "چ" to "ٓ", "ش" to "ـ", "ا" to "آ", "ی" to "ئ",
-        "ک" to "ك", "و" to "ؤ"
-    )
-
-    /** Extra long-press relatives per Persian key (beyond the shift form). */
-    private val faAlts = mapOf(
-        "ا" to listOf("أ", "إ", "ٱ", "ء"),
-        "و" to listOf("ؤ"),
-        "ی" to listOf("ي", "ى"),
-        "ک" to listOf("ك"),
-        "ه" to listOf("ۀ", "ھ"),
-        "گ" to listOf("ڧ"),
-        "ر" to listOf("ڑ"),
-        "ز" to listOf("ژ")
-    )
-
-    private val enAlts = mapOf(
-        "a" to listOf("à", "á", "â", "ä", "æ", "ã", "å", "ā"),
-        "c" to listOf("ç", "ć", "č"),
-        "e" to listOf("è", "é", "ê", "ë", "ē"),
-        "i" to listOf("ì", "í", "î", "ï", "ī", "ı"),
-        "n" to listOf("ñ", "ń"),
-        "o" to listOf("ò", "ó", "ô", "ö", "ø", "õ", "ō"),
-        "s" to listOf("ß", "ś", "š", "${'$'}"),
-        "u" to listOf("ù", "ú", "û", "ü", "ū"),
-        "y" to listOf("ý", "ÿ"),
-        "z" to listOf("ž", "ź", "ż"),
-        "l" to listOf("ł"), "d" to listOf("đ"),
-        "g" to listOf("ğ"), "r" to listOf("ŕ"), "t" to listOf("ť")
-    )
-
-    private val quickSymbols = listOf("ً", "ٌ", "ٍ", "َ", "ُ", "ِ", "ّ", "ْ", "ـ", "؟")
-    private val customPopupSymbols = listOf(
-        "،", "؛", "؟", "!", "«", "»", "(", ")", ":", "…", "@", "#", "&", "/", "٫", "٪"
-    )
-    private val customPopupSymbolsEn = listOf(
-        ",", ";", "?", "!", "(", ")", ":", "...", "@", "#", "&", "/", ".", "%", "'", "\""
-    )
-
-    private fun rowsFor(p: Page): List<List<K>> = when (p) {
-        Page.FA -> listOf(
-            listOf("ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "چ").map { K(it) },
-            listOf("ش", "س", "ی", "ب", "ل", "ا", "ت", "ن", "م", "ک", "گ").map { K(it) },
-            listOf(K("", kind = Kind.SHIFT, iconRes = R.drawable.ic_shift, weight = 1.5f)) +
-                listOf("ظ", "ط", "ز", "ژ", "ر", "ذ", "د", "پ", "و").map { K(it) } +
-                listOf(K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.5f)),
-            listOf(
-                K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K("", kind = Kind.EMOJI, iconRes = R.drawable.ic_emoji, weight = 1.0f),
-                K("‹  فارسی  ›", kind = Kind.SPACE, weight = 4.0f),
-                K("◀┆▶", kind = Kind.ZWNJ, weight = 1.2f),
-                K("."),
-                K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
-            )
-        )
-        Page.EN -> listOf(
-            "1234567890".map { K(it.toString()) },
-            "qwertyuiop".map { K(it.toString()) },
-            "asdfghjkl".map { K(it.toString()) },
-            listOf(K("", kind = Kind.SHIFT, iconRes = R.drawable.ic_shift, weight = 1.5f)) +
-                "zxcvbnm".map { K(it.toString()) } +
-                listOf(K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.5f)),
-            listOf(
-                K("!#1", kind = Kind.MODE, weight = 1.4f),
-                K(",", kind = Kind.CUSTOM, weight = 1.0f),
-                K("‹  English  ›", kind = Kind.SPACE, weight = 4.0f),
-                K("."),
-                K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
-            )
-        )
-        Page.SYMBOLS -> listOf(
-            (if (lastLang == Page.FA) "۱۲۳۴۵۶۷۸۹۰" else "1234567890").map { K(it.toString()) },
-            listOf("@", "#", "﷼", "&", "*", "(", ")", "-", "+").map { K(it) },
-            listOf("=", "/", "_", ":", "؛", "،", ".", "؟", "!").map { K(it) },
-            listOf("\"", "'", "«", "»", "[", "]", "{", "}", "<", ">").map { K(it) },
-            listOf(
-                K("=<", kind = Kind.MODE, weight = 1.5f),
-                K(if (lastLang == Page.FA) "اب" else "ABC", kind = Kind.BACK, weight = 1.5f),
-                K(if (lastLang == Page.FA) "فارسی" else "English", kind = Kind.SPACE, weight = 3.4f),
-                K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.4f),
-                K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
-            )
-        )
-        Page.SYMBOLS2 -> listOf(
-            listOf("﷽", "ﷲ", "ﷺ", "ﷻ", "﷼", "ـ", "ٰ", "٭", "۩").map { K(it) },
-            listOf("ً", "ٌ", "ٍ", "َ", "ُ", "ِ", "ّ", "ْ", "ٓ", "ٔ").map { K(it) },
-            listOf("^", "~", "`", "|", "\\", "•", "…", "÷", "×", "±").map { K(it) },
-            listOf("≠", "≈", "∞", "π", "√", "§", "¶", "©", "®", "™").map { K(it) },
-            listOf(
-                K("1/2", kind = Kind.MODE, weight = 1.5f),
-                K(if (lastLang == Page.FA) "اب" else "ABC", kind = Kind.BACK, weight = 1.5f),
-                K("€", weight = 1f), K("${'$'}", weight = 1f),
-                K("", kind = Kind.DELETE, iconRes = R.drawable.ic_backspace, weight = 1.4f),
-                K("", kind = Kind.ENTER, iconRes = R.drawable.ic_enter, weight = 1.4f)
-            )
-        )
-        else -> emptyList()
-    }
-
-    // ---------------- key views ----------------
-    private class KeyView(
-        val frame: FrameLayout,
-        val k: K,
-        val labelTv: TextView?,
-        val iconIv: ImageView?
-    )
-    private val keyViews = mutableListOf<KeyView>()
-
-    private fun rebuildKeys() {
-        keyViews.clear()
-        keysBox.removeAllViews()
-        stripArea.visibility =
-            if (page == Page.FA || page == Page.EN) View.VISIBLE else View.GONE
-        when (page) {
-            Page.CLIPBOARD -> { keysBox.addView(buildClipboardPanel()); return }
-            Page.EMOJI -> { keysBox.addView(buildEmojiPanel()); return }
-            else -> Unit
-        }
-        for (row in rowsFor(page)) {
-            val rowLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, dp(3), 0, dp(3))
-            }
-            for (k in row) rowLayout.addView(makeKey(k))
-            keysBox.addView(rowLayout)
-        }
-        applyShiftLabels()
-    }
-
-    private fun isGrayKey(k: K): Boolean = when (k.kind) {
-        Kind.SHIFT, Kind.DELETE, Kind.ENTER, Kind.MODE, Kind.EMOJI -> true
-        else -> false
-    }
-
-    private fun customSym(): String = KbData.customSymbol(this, page != Page.EN)
-
-    private fun displayLabel(k: K): String {
-        if (k.kind == Kind.CUSTOM) return customSym()
-        if (page == Page.FA && shifted) faShift[k.label]?.let { return it }
-        if (page == Page.EN && (shifted || capsLock) && k.kind == Kind.CHAR &&
-            k.label.length == 1 && k.label[0].isLetter()
-        ) return k.label.uppercase()
-        return k.label
-    }
-
-    private fun hintFor(k: K): String? {
-        if (page != Page.FA || shifted || k.kind != Kind.CHAR) return null
-        return faShift[k.label] ?: faAlts[k.label]?.firstOrNull()
-    }
-
-    private fun makeKey(k: K): View {
-        val frame = FrameLayout(this).apply {
-            layoutDirection = if (page == Page.FA) View.LAYOUT_DIRECTION_RTL
-                else View.LAYOUT_DIRECTION_LTR
-            setBackgroundResource(
-                if (isGrayKey(k)) R.drawable.key_special else R.drawable.key_letter)
-            val lp = LinearLayout.LayoutParams(0, rowHeight(), k.weight)
-            lp.marginStart = dp(3); lp.marginEnd = dp(3)
-            layoutParams = lp
-        }
-        val effectiveIcon = if (k.iconRes != 0) k.iconRes else 0
-        var labelTv: TextView? = null
-        var iconIv: ImageView? = null
-        if (effectiveIcon != 0) {
-            iconIv = ImageView(this).apply {
-                setImageResource(effectiveIcon)
-                imageTintList = ColorStateList.valueOf(tone("#24272B", "#F3F3F3"))
-                scaleType = ImageView.ScaleType.CENTER_INSIDE
-                setPadding(dp(11), dp(11), dp(11), dp(11))
-            }
-            frame.addView(iconIv, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        } else {
-            labelTv = TextView(this).apply {
-                text = displayLabel(k)
-                textSize = when {
-                    k.kind == Kind.SPACE -> 15f
-                    k.kind == Kind.ZWNJ -> 13f
-                    k.label.length == 1 && k.label[0].isDigit() -> 16.5f
-                    k.kind == Kind.MODE -> 15f
-                    k.label.length > 2 -> 15f
-                    else -> 19.5f
-                }
-                if (k.kind == Kind.MODE) paint.isFakeBoldText = true
-                gravity = Gravity.CENTER
-                setTextColor(
-                    tone(if (k.kind == Kind.SPACE) "#3C4043" else "#191B1E", "#F4F4F4"))
-            }
-            frame.addView(labelTv, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-            val hint = hintFor(k)
-            if (hint != null) {
-                val alt = TextView(this).apply {
-                    text = hint
-                    textSize = 9.5f
-                    setTextColor(tone("#A3A8AE", "#A5A5A5"))
-                    setPadding(dp(6), dp(3), 0, 0)
-                    tag = "hint"
-                }
-                frame.addView(alt, FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    Gravity.TOP or (if (page == Page.FA) Gravity.END else Gravity.START)))
-            }
-        }
-        val kv = KeyView(frame, k, labelTv, iconIv)
-        keyViews.add(kv)
-        attachBehavior(kv)
+        shell.addView(keyArea, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        appliedHeight = KbData.kbHeight
+        renderToolbar()
+        rebuildKeyboard()
         return frame
     }
 
-    /** Shift changes labels in place — no view rebuild (the lag fix). */
-    private fun applyShiftLabels() {
-        for (kv in keyViews) {
-            kv.labelTv?.let { it.text = displayLabel(kv.k) }
-            if (kv.k.kind == Kind.SHIFT) {
-                kv.iconIv?.setColorFilter(
-                    if (shifted || capsLock) Color.parseColor("#2F5FE8")
-                    else tone("#25282D", "#F0F0F0"))
-                if (shifted || capsLock) kv.iconIv?.alpha = 1f else kv.iconIv?.alpha = 0.85f
+    // ── Top toolbar and live suggestions ────────────────────────────────────
+
+    private fun toolbarButton(icon: Int, label: String, action: () -> Unit): View {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(7), dp(3), dp(7), dp(2))
+            background = rounded(specialSurface, 14, 0)
+            setOnClickListener { action() }
+        }
+        val image = ImageView(this).apply {
+            setImageResource(icon)
+            setColorFilter(mutedInk)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+        }
+        box.addView(image, LinearLayout.LayoutParams(dp(21), dp(21)))
+        box.addView(TextView(this).apply {
+            text = label
+            textSize = 9f
+            setTextColor(mutedInk)
+            gravity = Gravity.CENTER
+        })
+        box.setOnTouchListener { v, event ->
+            pressFeedback(v, event)
+            false
+        }
+        return box
+    }
+
+    private fun renderToolbar() {
+        val bar = topArea ?: return
+        bar.removeAllViews()
+        bar.addView(toolbarButton(R.drawable.ic_more, "بیشتر") {
+            lastLanguage = page
+            page = Page.SYMBOLS
+            rebuildKeyboard()
+        })
+        addSpacer(bar)
+        bar.addView(toolbarButton(R.drawable.ic_clipboard, "کلیپ‌بورد") {
+            lastLanguage = page
+            page = Page.CLIPBOARD
+            rebuildKeyboard()
+        })
+        addSpacer(bar)
+        bar.addView(toolbarButton(R.drawable.ic_emoji, "ایموجی") {
+            lastLanguage = page
+            page = Page.EMOJI
+            rebuildKeyboard()
+        })
+        addSpacer(bar)
+        bar.addView(toolbarButton(R.drawable.ic_keyboard, "زبان") {
+            switchLanguage()
+        })
+        addSpacer(bar)
+        bar.addView(toolbarButton(R.drawable.ic_gear, "تنظیمات") {
+            openApp()
+        })
+    }
+
+    private fun addSpacer(parent: LinearLayout) {
+        parent.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    }
+
+    private fun renderSuggestions(word: String, suggestions: List<String>) {
+        val bar = topArea ?: return
+        bar.removeAllViews()
+        val all = (listOf(word) + suggestions).filter { it.isNotBlank() }.distinct().take(3)
+        if (all.isEmpty()) {
+            renderToolbar()
+            return
+        }
+        all.forEachIndexed { index, candidate ->
+            val slot = TextView(this).apply {
+                text = candidate
+                textSize = if (index == 0) 14f else 15f
+                gravity = Gravity.CENTER
+                setTextColor(if (index == 0) mutedInk else ink)
+                if (index == 1) paint.isFakeBoldText = true
+                setPadding(dp(6), 0, dp(6), 0)
+                setOnClickListener { replaceCurrentWord(candidate) }
             }
-            // hint visibility follows the shift layer
-            val frame = kv.frame
-            for (i in 0 until frame.childCount) {
-                val child = frame.getChildAt(i)
-                if (child.tag == "hint") child.visibility =
-                    if (shifted) View.GONE else View.VISIBLE
+            bar.addView(slot, LinearLayout.LayoutParams(0, dp(42), 1f))
+            if (index != all.lastIndex) {
+                bar.addView(View(this).apply {
+                    setBackgroundColor(color("#C5CAD2", "#484E58"))
+                }, LinearLayout.LayoutParams(dp(1), dp(22)))
             }
+        }
+        bar.addView(toolbarButton(R.drawable.ic_more, "⋯") { renderToolbar() },
+            LinearLayout.LayoutParams(dp(48), dp(42)))
+    }
+
+    private fun refreshSuggestions() {
+        if (page != Page.FA && page != Page.EN) return
+        val word = currentWord()
+        if (word.length < 2 || page == Page.EN) {
+            lastSuggestionWord = word
+            renderToolbar()
+            return
+        }
+        if (word == lastSuggestionWord) return
+        lastSuggestionWord = word
+        val suggestions = Corrector.suggestionsFor(
+            word, KbData.dictionary, KbData.learnedCounts, KbData.vocab
+        )
+        if (suggestions.isEmpty()) renderToolbar()
+        else renderSuggestions(word, suggestions)
+    }
+
+    private fun replaceCurrentWord(value: String) {
+        val ic = currentInputConnection ?: return
+        val old = currentWord()
+        if (old.isEmpty()) return
+        ic.deleteSurroundingText(old.length, 0)
+        ic.commitText(value, 1)
+        KbData.recordLearned(this, old, value)
+        lastSuggestionWord = ""
+        refreshSuggestions()
+    }
+
+    // ── Keyboard layout ─────────────────────────────────────────────────────
+
+    private fun rebuildKeyboard() {
+        val area = keyArea ?: return
+        dismissPopup()
+        area.removeAllViews()
+        when (page) {
+            Page.FA, Page.EN -> buildLetters(area)
+            Page.SYMBOLS -> buildSymbols(area)
+            Page.EMOJI -> buildEmoji(area)
+            Page.CLIPBOARD -> buildClipboard(area)
         }
     }
 
-    // ---------------- popup options ----------------
-    /** (display, value) pairs; index 0 is the pre-selected default. */
-    private fun popupOptions(k: K): List<Pair<String, String>> {
-        val out = mutableListOf<Pair<String, String>>()
-        fun add(v: String) { if (v != k.label && out.none { it.second == v }) out.add(v to v) }
-        when {
-            k.kind == Kind.CUSTOM ->
-                (if (page == Page.EN) customPopupSymbolsEn else customPopupSymbols)
-                    .forEach { add(it) }
-            k.kind == Kind.ZWNJ -> {
-                out.add("نیم‌فاصله" to Corrector.ZWNJ)
-                out.add("چسبان" to "\u200D")
-            }
-            k.label == "." -> quickSymbols.forEach { add(it) }
-            page == Page.FA && k.kind == Kind.CHAR -> {
-                faShift[k.label]?.let { add(it) }
-                faAlts[k.label]?.forEach { add(it) }
-                // Persian digits <-> Latin digits, like Samsung.
-                val persianDigits = "۱۲۳۴۵۶۷۸۹۰"
-                val idx = persianDigits.indexOf(k.label)
-                if (idx >= 0) add(idx.toString())
-            }
-            page == Page.EN && k.kind == Kind.CHAR ->
-                enAlts[k.label.lowercase()]?.forEach { add(it) }
-        }
-        return out
-    }
+    private fun buildLetters(area: LinearLayout) {
+        val numberRow = if (page == Page.FA) "۱۲۳۴۵۶۷۸۹۰" else "1234567890"
+        addRow(area, numberRow.map { KeySpec(it.toString()) }, 0.72f)
 
-    // ---------------- touch machine (tap / hold-popup / space gestures) ----------------
-    private var activeKv: KeyView? = null
-    private var longFired = false
-    private var consumed = false
-    private var popupShown = false
-    private var popupOpts: List<Pair<String, String>> = emptyList()
-    private var popupIndex = 0
-    private var popupLeftPx = 0
-    private var popupCellW = 1
-    private var downX = 0f
-    private var downY = 0f
-    private var spaceAnchorX = 0f
-    private var cursorMode = false
-    private var cursorAccum = 0f
-    private var longRunnable: Runnable? = null
-
-    private fun attachBehavior(kv: KeyView) {
-        val k = kv.k
-        when (k.kind) {
-            Kind.DELETE -> {
-                kv.frame.setOnClickListener { deleteOnce() }
-                kv.frame.setOnLongClickListener { startDeleteRepeat(); true }
-                kv.frame.setOnTouchListener { v, ev ->
-                    when (ev.actionMasked) {
-                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
-                            .setDuration(75).start()
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                            stopDeleteRepeat()
-                        }
-                    }
-                    false
-                }
-            }
-            Kind.SHIFT -> {
-                kv.frame.setOnTouchListener { v, ev ->
-                    when (ev.actionMasked) {
-                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
-                            .setDuration(75).start()
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                    }
-                    false
-                }
-                kv.frame.setOnClickListener { onShiftTap() }
-                kv.frame.setOnLongClickListener {
-                    capsLock = true; shifted = true; applyShiftLabels(); true
-                }
-            }
-            Kind.ENTER -> {
-                kv.frame.setOnTouchListener { v, ev ->
-                    when (ev.actionMasked) {
-                        MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.94f).scaleY(0.94f)
-                            .setDuration(75).start()
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                            v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                    }
-                    false
-                }
-                kv.frame.setOnClickListener { onEnter() }
-            }
-            else -> kv.frame.setOnTouchListener { v, ev -> onKeyTouch(kv, v, ev) }
-        }
-    }
-
-    private fun onShiftTap() {
-        if (capsLock) {
-            capsLock = false; shifted = false
+        if (page == Page.FA) {
+            addRow(area, "ضصثقفغعهخحجچ".map { KeySpec(it.toString()) })
+            addRow(area, "شسیبلاتنمکگ".map { KeySpec(it.toString()) })
+            addRow(area,
+                listOf(KeySpec("", Action.SHIFT, 1.45f, R.drawable.ic_shift)) +
+                    "ظطزژرذدپو".map { KeySpec(it.toString()) } +
+                    listOf(KeySpec("", Action.DELETE, 1.45f, R.drawable.ic_backspace))
+            )
         } else {
-            shifted = !shifted
+            addRow(area, "qwertyuiop".map { KeySpec(it.toString()) })
+            addRow(area, "asdfghjkl".map { KeySpec(it.toString()) })
+            addRow(area,
+                listOf(KeySpec("", Action.SHIFT, 1.45f, R.drawable.ic_shift)) +
+                    "zxcvbnm".map { KeySpec(it.toString()) } +
+                    listOf(KeySpec("", Action.DELETE, 1.45f, R.drawable.ic_backspace))
+            )
         }
-        applyShiftLabels()
+
+        val bottom = mutableListOf(
+            KeySpec("?۱۲۳", Action.SYMBOLS, 1.35f),
+            KeySpec("", Action.EMOJI, 1.0f, R.drawable.ic_emoji),
+            KeySpec(customSymbol, Action.CHAR, 1.0f),
+            KeySpec(if (page == Page.FA) "فارسی" else "English", Action.SPACE, 4.1f),
+        )
+        if (page == Page.FA) bottom.add(KeySpec("نیم‌فاصله", Action.ZWNJ, 1.25f))
+        bottom.add(KeySpec(".", Action.CHAR, 0.8f))
+        bottom.add(KeySpec("", Action.ENTER, 1.35f, R.drawable.ic_enter))
+        addRow(area, bottom)
     }
 
-    private fun onKeyTouch(kv: KeyView, v: View, ev: MotionEvent): Boolean {
-        val k = kv.k
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                v.animate().cancel()
-                v.animate().scaleX(0.94f).scaleY(0.94f).setDuration(75).start()
-                // A second finger landing: finish the previous key as a tap.
-                if (activeKv != null && activeKv !== kv && !popupShown) finishAsTap()
-                activeKv = kv
-                longFired = false; consumed = false; popupShown = false
-                cursorMode = false; cursorAccum = 0f
-                downX = ev.rawX; downY = ev.rawY; spaceAnchorX = ev.rawX
-                if (k.kind == Kind.CHAR && displayLabel(k).length == 1) showPreview(v, displayLabel(k))
-                longRunnable = Runnable { onLongPress(kv) }
-                handler.postDelayed(longRunnable!!, 380)
-                return true
+    private fun buildSymbols(area: LinearLayout) {
+        val nums = if (lastLanguage == Page.FA) "۱۲۳۴۵۶۷۸۹۰" else "1234567890"
+        addRow(area, nums.map { KeySpec(it.toString()) }, 0.72f)
+        listOf("@#٪&*()-+".map { KeySpec(it.toString()) },
+            "=/_:؛،.؟!".map { KeySpec(it.toString()) },
+            listOf("«", "»", "'", "\"", "[", "]", "{", "}", "<", ">").map { KeySpec(it) },
+            listOf("﷼", "ـ", "…", "÷", "×", "±", "∞", "√", "©", "®").map { KeySpec(it) }
+        ).forEach { addRow(area, it) }
+        addRow(area, listOf(
+            KeySpec("ABC", Action.BACK, 1.5f),
+            KeySpec("", Action.DELETE, 1.4f, R.drawable.ic_backspace),
+            KeySpec("فاصله", Action.SPACE, 3.7f),
+            KeySpec("", Action.ENTER, 1.4f, R.drawable.ic_enter)
+        ))
+    }
+
+    private fun addRow(area: LinearLayout, keys: List<KeySpec>, topGap: Float = 0.0f) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, dp(if (topGap > 0) 2 else 3), 0, dp(3))
+        }
+        keys.forEach { spec ->
+            row.addView(createKey(spec), LinearLayout.LayoutParams(
+                0, keyHeight(), spec.weight
+            ).apply {
+                marginStart = dp(2)
+                marginEnd = dp(2)
+            })
+        }
+        area.addView(row)
+    }
+
+    private fun createKey(spec: KeySpec): View {
+        val frame = FrameLayout(this).apply {
+            val keyColor = when {
+                spec.action == Action.ENTER -> accent
+                spec.action in listOf(Action.SHIFT, Action.DELETE, Action.SYMBOLS,
+                    Action.EMOJI, Action.LANGUAGE, Action.ZWNJ, Action.CLIPBOARD) -> specialSurface
+                else -> keySurface
             }
-            MotionEvent.ACTION_MOVE -> {
-                if (popupShown) {
-                    val idx = ((ev.rawX - popupLeftPx) / popupCellW)
-                        .toInt().coerceIn(0, popupOpts.size - 1)
-                    if (idx != popupIndex) { popupIndex = idx; paintPopup() }
-                } else if (k.kind == Kind.SPACE && activeKv === kv) {
-                    if (cursorMode) {
-                        cursorAccum += ev.rawX - spaceAnchorX
-                        spaceAnchorX = ev.rawX
-                        val step = dp(13).toFloat()
-                        while (cursorAccum >= step) { moveCursor(1); cursorAccum -= step }
-                        while (cursorAccum <= -step) { moveCursor(-1); cursorAccum += step }
-                    } else {
-                        val dx = ev.rawX - spaceAnchorX
-                        if (dx > dp(42)) { switchLang(); spaceAnchorX = ev.rawX }
-                        else if (dx < -dp(42)) { switchLang(); spaceAnchorX = ev.rawX }
-                    }
+            background = rounded(
+                keyColor,
+                if (spec.action == Action.SPACE) 8 else 7,
+                if (spec.action == Action.ENTER) dp(2) else dp(1)
+            )
+            elevation = if (spec.action == Action.SPACE) dp(1).toFloat() else dp(2).toFloat()
+            isClickable = true
+            isFocusable = true
+        }
+        if (spec.icon != 0) {
+            frame.addView(ImageView(this).apply {
+                setImageResource(spec.icon)
+                setColorFilter(if (spec.action == Action.ENTER) color("#FFFFFF", "#FFFFFF") else ink)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding(dp(11), dp(11), dp(11), dp(11))
+            }, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+        } else {
+            val label = if (shifted && page == Page.EN &&
+                spec.action == Action.CHAR && spec.label.length == 1)
+                spec.label.uppercase() else spec.label
+            frame.addView(TextView(this).apply {
+                text = label
+                gravity = Gravity.CENTER
+                textSize = when {
+                    spec.action == Action.SPACE -> 13f
+                    spec.action == Action.ZWNJ -> 10f
+                    spec.label.length > 3 -> 11.5f
+                    spec.label.length == 1 && spec.label[0].isDigit() -> 17f
+                    else -> 19f
                 }
-                return true
+                setTextColor(if (spec.action == Action.ENTER) Color.WHITE else ink)
+                if (spec.action == Action.ENTER || spec.action == Action.SYMBOLS)
+                    paint.isFakeBoldText = true
+            }, FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            ))
+        }
+        attachKeyTouch(frame, spec)
+        return frame
+    }
+
+    private fun rounded(fill: Int, radius: Int, stroke: Int): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(fill)
+            cornerRadius = dp(radius).toFloat()
+            if (stroke > 0) setStroke(dp(1), color("#D5DAE2", "#4A505A"))
+        }
+
+    private fun pressFeedback(view: View, event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                view.animate().scaleX(0.96f).scaleY(0.94f).alpha(0.92f)
+                    .setDuration(65).start()
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                v.animate().cancel()
-                v.animate().scaleX(1f).scaleY(1f).setDuration(130).start()
-                handler.removeCallbacks(longRunnable ?: Runnable {})
-                val cancelled = ev.actionMasked == MotionEvent.ACTION_CANCEL
-                hidePreview()
-                val wasPopup = popupShown
-                val wasConsumed = consumed
-                val wasCursor = cursorMode
-                val wasSpaceGesture = k.kind == Kind.SPACE &&
-                    (kotlin.math.abs(ev.rawX - downX) > dp(42) || wasCursor)
-                if (popupShown) {
-                    hidePopup()
-                    if (!cancelled) commitPopupChoice()
-                }
-                val act = activeKv
-                activeKv = null
-                popupShown = false; consumed = false; cursorMode = false
-                if (!cancelled && !wasPopup && !wasConsumed && !wasSpaceGesture && act === kv) doTap(k)
-                return true
-            }
-        }
-        return true
-    }
-
-    private fun finishAsTap() {
-        handler.removeCallbacks(longRunnable ?: Runnable {})
-        val kv = activeKv ?: return
-        activeKv = null
-        if (!consumed) doTap(kv.k)
-        consumed = false
-    }
-
-    private fun onLongPress(kv: KeyView) {
-        if (activeKv !== kv) return
-        val k = kv.k
-        longFired = true
-        hidePreview()
-        when {
-            k.kind == Kind.SPACE -> { cursorMode = true; consumed = false }
-            k.kind == Kind.ZWNJ -> {
-                currentInputConnection?.commitText("\u200D", 1); consumed = true
-            }
-            else -> {
-                val opts = popupOptions(k)
-                if (opts.size == 1) {
-                    commitPopupValue(k, opts[0].second); consumed = true
-                } else if (opts.size > 1) {
-                    popupOpts = opts; popupIndex = 0
-                    showPopup(kv.frame, opts)
-                    popupShown = true
-                }
+                view.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                    .setDuration(115).start()
             }
         }
     }
 
-    private fun doTap(k: K) {
-        when (k.kind) {
-            Kind.CHAR -> {
-                commit(displayLabel(k))
-                if (shifted && !capsLock && (page == Page.FA || page == Page.EN)) {
-                    shifted = false; applyShiftLabels()
+    // ── Touch, long-press alternatives, language swipe and cursor pad ────────
+
+    private fun alternativesFor(label: String): List<String> {
+        val map = mapOf(
+            "ا" to listOf("آ", "أ", "إ", "ٱ"),
+            "و" to listOf("ؤ", "ۥ"),
+            "ی" to listOf("ئ", "ي"),
+            "ک" to listOf("ك", "ڪ"),
+            "ه" to listOf("ۀ", "ة", "ھ"),
+            "س" to listOf("ص", "ث"),
+            "ز" to listOf("ذ", "ض", "ظ"),
+            "ر" to listOf("ڑ", "ڕ"),
+            "." to listOf("؟", "!", "…", "؛", ":"),
+            "," to listOf("،", ";", "؛", "؟"),
+            "،" to listOf("؛", "؟", ".", "…"),
+        )
+        return map[label] ?: emptyList()
+    }
+
+    private fun attachKeyTouch(view: View, spec: KeySpec) {
+        var downX = 0f
+        var lastX = 0f
+        var longTriggered = false
+        var cursorMode = false
+        var popupValuesLocal = emptyList<String>()
+        var selected = 0
+        var longRunnable: Runnable? = null
+
+        view.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = event.rawX
+                    lastX = event.rawX
+                    longTriggered = false
+                    cursorMode = false
+                    pressFeedback(v, event)
+                    val options = if (spec.action == Action.CHAR) alternativesFor(spec.label)
+                        else emptyList()
+                    if (options.isNotEmpty()) {
+                        longRunnable = Runnable {
+                            longTriggered = true
+                            popupValuesLocal = listOf(spec.label) + options
+                            selected = 0
+                            showAlternatives(v, popupValuesLocal)
+                        }
+                        handler.postDelayed(longRunnable!!, 380)
+                    } else if (spec.action == Action.SPACE) {
+                        longRunnable = Runnable {
+                            longTriggered = true
+                            cursorMode = true
+                        }
+                        handler.postDelayed(longRunnable!!, 430)
+                    } else if (spec.action == Action.DELETE) {
+                        longRunnable = Runnable {
+                            longTriggered = true
+                            startDeleteRepeat()
+                        }
+                        handler.postDelayed(longRunnable!!, 380)
+                    } else if (spec.action == Action.SHIFT) {
+                        longRunnable = Runnable {
+                            longTriggered = true
+                            capsLock = !capsLock
+                            shifted = capsLock
+                        }
+                        handler.postDelayed(longRunnable!!, 430)
+                    }
+                    true
                 }
-            }
-            Kind.CUSTOM -> commit(customSym())
-            Kind.ZWNJ -> commit(Corrector.ZWNJ)
-            Kind.EMOJI -> { page = Page.EMOJI; emojiSearchOn = false; rebuildKeys() }
-            Kind.SPACE -> onSpace()
-            Kind.MODE -> {
-                page = when {
-                    k.label == "!#1" -> Page.SYMBOLS
-                    k.label == "=<" -> Page.SYMBOLS2
-                    k.label == "1/2" -> Page.SYMBOLS
-                    k.iconRes == R.drawable.ic_globe ->
-                        if (page == Page.EN) Page.FA else Page.EN
-                    else -> page
+                MotionEvent.ACTION_MOVE -> {
+                    if (cursorMode) {
+                        val delta = (event.rawX - lastX) / dp(7).toFloat()
+                        if (abs(delta) >= 1f) moveCursor(delta.roundToInt())
+                        lastX = event.rawX
+                    } else if (popupValuesLocal.isNotEmpty() && popup?.isShowing == true) {
+                        val loc = IntArray(2)
+                        popup?.contentView?.getLocationOnScreen(loc)
+                        val cellWidth = dp(44).coerceAtLeast(1)
+                        selected = ((event.rawX - loc[0]) / cellWidth)
+                            .toInt().coerceIn(0, popupValuesLocal.lastIndex)
+                        paintAlternatives(selected)
+                    }
+                    true
                 }
-                if (page == Page.FA || page == Page.EN) lastLang = page
-                rebuildKeys()
+                MotionEvent.ACTION_UP -> {
+                    longRunnable?.let { handler.removeCallbacks(it) }
+                    pressFeedback(v, event)
+                    stopDeleteRepeat()
+                    when {
+                        popupValuesLocal.isNotEmpty() && popup?.isShowing == true -> {
+                            val choice = popupValuesLocal[selected]
+                            dismissPopup()
+                            if (spec.label == customSymbol && spec.action == Action.CHAR) {
+                                customSymbol = choice
+                                KbData.setCustomSymbol(this, page == Page.FA, choice)
+                            }
+                            commit(choice)
+                        }
+                        cursorMode -> Unit
+                        longTriggered -> {
+                            if (spec.action == Action.SHIFT) applyShift()
+                        }
+                        spec.action == Action.SPACE && abs(event.rawX - downX) > dp(48) ->
+                            switchLanguage()
+                        else -> perform(spec)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    longRunnable?.let { handler.removeCallbacks(it) }
+                    stopDeleteRepeat()
+                    dismissPopup()
+                    pressFeedback(v, event)
+                    true
+                }
+                else -> false
             }
-            Kind.BACK -> { page = lastLang; rebuildKeys() }
-            else -> Unit
         }
     }
 
-    private fun switchLang() {
-        if (page != Page.FA && page != Page.EN) return
-        // The rebuild detaches the space key mid-gesture; cancel the
-        // gesture state so no stale tap fires afterwards.
-        handler.removeCallbacks(longRunnable ?: Runnable {})
-        activeKv = null
-        popupShown = false; consumed = false; cursorMode = false
-        emojiSearchOn = false
-        page = if (page == Page.FA) Page.EN else Page.FA
-        lastLang = page
-        shifted = false; capsLock = false
-        rebuildKeys()
-    }
-
-    // ---------------- popup UI ----------------
-    private fun showPopup(anchor: View, opts: List<Pair<String, String>>) {
-        popupBar.removeAllViews()
-        popupCellW = dp(46)
-        for ((display, _) in opts) {
+    private fun showAlternatives(anchor: View, values: List<String>) {
+        dismissPopup()
+        popupValues = values
+        popupSelection = 0
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            background = rounded(color("#FFFFFF", "#343941"), 12, dp(1))
+            elevation = dp(8).toFloat()
+        }
+        popupCells.clear()
+        values.forEachIndexed { index, value ->
             val cell = TextView(this).apply {
-                text = display
-                textSize = if (display.length > 2) 13f else 19f
+                text = value
+                textSize = 19f
                 gravity = Gravity.CENTER
-                setTextColor(tone("#16181D", "#F5F5F5"))
+                setTextColor(ink)
+                setBackground(if (index == 0) rounded(color("#DCE8F8", "#3E526E"), 9, 0) else null)
             }
-            popupBar.addView(cell, LinearLayout.LayoutParams(popupCellW, dp(48)))
+            row.addView(cell, LinearLayout.LayoutParams(dp(44), dp(44)))
+            popupCells.add(cell)
         }
-        paintPopup()
-        val rootLoc = IntArray(2); rootFrame.getLocationInWindow(rootLoc)
-        val keyLoc = IntArray(2); anchor.getLocationInWindow(keyLoc)
-        val totalW = popupCellW * opts.size + dp(10)
-        val lp = popupBar.layoutParams as FrameLayout.LayoutParams
-        var left = keyLoc[0] - rootLoc[0] + anchor.width / 2 - totalW / 2
-        left = left.coerceIn(0, (rootFrame.width - totalW).coerceAtLeast(0))
-        lp.leftMargin = left
-        lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(64)).coerceAtLeast(0)
-        popupBar.layoutParams = lp
-        popupLeftPx = rootLoc[0] + left + dp(5)
-        popupBar.alpha = 0f
-        popupBar.translationY = dp(7).toFloat()
-        popupBar.visibility = View.VISIBLE
-        popupBar.animate().alpha(1f).translationY(0f)
-            .setDuration(160).start()
+        val window = PopupWindow(row,
+            dp(44 * values.size + 8), dp(54), false).apply {
+            isOutsideTouchable = false
+            isTouchable = false
+            elevation = dp(8).toFloat()
+        }
+        popup = window
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        val y = (location[1] - dp(62)).coerceAtLeast(0)
+        val x = (location[0] + anchor.width / 2 - dp(22 * values.size + 4)).coerceAtLeast(0)
+        val parent = root ?: return
+        window.showAtLocation(parent, Gravity.TOP or Gravity.START, x, y)
     }
 
-    private fun paintPopup() {
-        for (i in 0 until popupBar.childCount) {
-            val cell = popupBar.getChildAt(i)
-            cell.background = if (i == popupIndex) GradientDrawable().apply {
-                cornerRadius = dp(10).toFloat()
-                setColor(tone("#E3E4E7", "#474747"))
-            } else null
+    private fun paintAlternatives(index: Int) {
+        popupCells.forEachIndexed { i, cell ->
+            cell.background = if (i == index)
+                rounded(color("#DCE8F8", "#3E526E"), 9, 0) else null
         }
     }
 
-    private fun hidePopup() {
-        if (popupBar.visibility != View.VISIBLE) return
-        popupBar.animate().cancel()
-        popupBar.animate().alpha(0f).translationY(-dp(5).toFloat())
-            .setDuration(100).withEndAction {
-                popupBar.visibility = View.GONE
-                popupBar.alpha = 1f
-                popupBar.translationY = 0f
-            }.start()
+    private fun dismissPopup() {
+        try { popup?.dismiss() } catch (_: Exception) {}
+        popup = null
+        popupCells.clear()
+        popupValues = emptyList()
     }
 
-    private fun commitPopupChoice() {
-        val kv = activeKv ?: return
-        val value = popupOpts.getOrNull(popupIndex)?.second ?: return
-        commitPopupValue(kv.k, value)
-    }
-
-    private fun commitPopupValue(k: K, value: String) {
-        if (k.kind == Kind.CUSTOM) {
-            KbData.setCustomSymbol(this, page != Page.EN, value)
-            applyShiftLabels()
-            commit(value)
-        } else {
-            commit(value)
+    private fun perform(spec: KeySpec) {
+        when (spec.action) {
+            Action.CHAR -> {
+                val value = if (shifted && page == Page.EN && spec.label.length == 1)
+                    spec.label.uppercase() else spec.label
+                commit(value)
+                if (shifted && !capsLock) {
+                    shifted = false
+                    rebuildKeyboard()
+                }
+            }
+            Action.SHIFT -> {
+                shifted = !shifted
+                if (!shifted) capsLock = false
+                applyShift()
+            }
+            Action.DELETE -> deleteOnce()
+            Action.SPACE -> onSpace()
+            Action.ENTER -> onEnter()
+            Action.SYMBOLS -> {
+                lastLanguage = page
+                page = Page.SYMBOLS
+                rebuildKeyboard()
+            }
+            Action.EMOJI -> {
+                lastLanguage = page
+                page = Page.EMOJI
+                rebuildKeyboard()
+            }
+            Action.LANGUAGE -> switchLanguage()
+            Action.ZWNJ -> commit("\u200c")
+            Action.CLIPBOARD -> {
+                page = Page.CLIPBOARD
+                rebuildKeyboard()
+            }
+            Action.BACK -> {
+                page = lastLanguage
+                rebuildKeyboard()
+            }
         }
-        if (shifted && !capsLock) { shifted = false; applyShiftLabels() }
     }
 
-    private fun showPreview(key: View, text: String) {
-        val rootLoc = IntArray(2); rootFrame.getLocationInWindow(rootLoc)
-        val keyLoc = IntArray(2); key.getLocationInWindow(keyLoc)
-        preview.animate().cancel()
-        preview.text = text
-        val lp = preview.layoutParams as FrameLayout.LayoutParams
-        lp.leftMargin = keyLoc[0] - rootLoc[0] + key.width / 2 - dp(26)
-        lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(62)).coerceAtLeast(0)
-        preview.layoutParams = lp
-        preview.alpha = 0f
-        preview.scaleX = 0.88f
-        preview.scaleY = 0.88f
-        preview.visibility = View.VISIBLE
-        preview.animate().alpha(1f).scaleX(1f).scaleY(1f)
-            .setDuration(115).start()
+    private fun applyShift() {
+        // The layout is rebuilt only on a deliberate shift action, never on each
+        // typed character; ordinary typing keeps the keyboard view tree stable.
+        rebuildKeyboard()
     }
 
-    private fun hidePreview() {
-        if (preview.visibility != View.VISIBLE) return
-        preview.animate().cancel()
-        preview.animate().alpha(0f).scaleX(0.9f).scaleY(0.9f)
-            .setDuration(85).withEndAction {
-                preview.visibility = View.GONE
-                preview.alpha = 1f
-                preview.scaleX = 1f
-                preview.scaleY = 1f
-            }.start()
+    private fun switchLanguage() {
+        val current = if (page == Page.FA || page == Page.EN) page else lastLanguage
+        page = if (current == Page.FA) Page.EN else Page.FA
+        lastLanguage = page
+        shifted = false
+        capsLock = false
+        customSymbol = KbData.customSymbol(this, page == Page.FA)
+        renderToolbar()
+        rebuildKeyboard()
     }
 
-    // ---------------- clipboard panel ----------------
-    private fun openClipboard() {
-        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val cur = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString()
-        if (!cur.isNullOrEmpty()) KbData.rememberClipboard(this, cur)
-        page = Page.CLIPBOARD
-        rebuildKeys()
-    }
+    // ── Emoji and clipboard panels ──────────────────────────────────────────
 
-    private fun buildClipboardPanel(): View {
-        val panel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(8), dp(6), dp(8), dp(8))
-        }
+    private fun buildEmoji(area: LinearLayout) {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        val title = TextView(this).apply {
-            text = "کلیپ‌بورد"
-            textSize = 16f
-            paint.isFakeBoldText = true
-            setTextColor(tone("#16181D", "#F5F5F5"))
+        val tabs = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
         }
-        header.addView(title, LinearLayout.LayoutParams(0, dp(40), 1f))
-        val clear = TextView(this).apply {
-            text = "پاک‌کردن همه"
-            textSize = 13f
-            setTextColor(tone("#8A2F2F", "#E39B9B"))
-            setPadding(dp(10), dp(6), dp(10), dp(6))
-            setOnClickListener {
-                val kept = KbData.clipboardItems(this@SourenIME).filter { it.second }
-                KbData.saveClipboardItems(this@SourenIME, kept)
-                rebuildKeys()
+        val tabRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        (listOf("🕘" to -1) + EmojiData.categories.mapIndexed { index, category ->
+            category.icon to index
+        }).forEach { (icon, index) ->
+            val tab = TextView(this).apply {
+                text = icon
+                textSize = 19f
+                gravity = Gravity.CENTER
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+                if (emojiCategory == index) background =
+                    rounded(specialSurface, 10, 0)
+                setOnClickListener { emojiCategory = index; rebuildKeyboard() }
             }
+            tabRow.addView(tab)
         }
-        header.addView(clear)
-        val back = TextView(this).apply {
-            text = "بازگشت"
-            textSize = 13f
-            setTextColor(tone("#16181D", "#F5F5F5"))
-            setPadding(dp(10), dp(6), dp(10), dp(6))
-            setOnClickListener { page = lastLang; rebuildKeys() }
-        }
-        header.addView(back)
-        panel.addView(header)
+        tabs.addView(tabRow)
+        header.addView(tabs, LinearLayout.LayoutParams(0, dp(44), 1f))
+        header.addView(TextView(this).apply {
+            text = "بستن"
+            textSize = 12f
+            setTextColor(ink)
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setOnClickListener { page = lastLanguage; renderToolbar(); rebuildKeyboard() }
+        })
+        area.addView(header)
 
+        val scroll = ScrollView(this)
+        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val items = if (emojiCategory == -1) KbData.emojiRecents(this).ifEmpty {
+            EmojiData.categories.firstOrNull()?.items?.take(24) ?: emptyList()
+        } else EmojiData.categories.getOrNull(emojiCategory)?.items ?: emptyList()
+        for (chunk in items.chunked(8)) {
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            chunk.forEach { emoji ->
+                row.addView(TextView(this).apply {
+                    text = emoji
+                    textSize = 24f
+                    gravity = Gravity.CENTER
+                    setOnClickListener {
+                        currentInputConnection?.commitText(emoji, 1)
+                        KbData.recordEmoji(this@SourenIME, emoji)
+                    }
+                }, LinearLayout.LayoutParams(0, dp(48), 1f))
+            }
+            repeat(8 - chunk.size) {
+                row.addView(View(this), LinearLayout.LayoutParams(0, dp(48), 1f))
+            }
+            grid.addView(row)
+        }
+        scroll.addView(grid)
+        area.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(206)))
+        addRow(area, listOf(
+            KeySpec("ABC", Action.BACK, 1.5f),
+            KeySpec("فاصله", Action.SPACE, 4f),
+            KeySpec("", Action.DELETE, 1.4f, R.drawable.ic_backspace)
+        ))
+    }
+
+    private fun buildClipboard(area: LinearLayout) {
+        val header = TextView(this).apply {
+            text = "کلیپ‌بورد"
+            textSize = 14f
+            setTextColor(ink)
+            gravity = Gravity.CENTER_VERTICAL or Gravity.END
+            setPadding(dp(12), 0, dp(12), 0)
+        }
+        area.addView(header, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(38)))
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager
+        val clipText = clipboard?.primaryClip?.takeIf { it.itemCount > 0 }
+            ?.getItemAt(0)?.coerceToText(this)?.toString()
+        if (!clipText.isNullOrBlank()) KbData.rememberClipboard(this, clipText)
         val items = KbData.clipboardItems(this)
         val scroll = ScrollView(this)
         val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         if (items.isEmpty()) {
             list.addView(TextView(this).apply {
-                text = "هنوز چیزی در کلیپ‌بورد نیست. متنی را کپی کنید و دوباره اینجا را باز کنید."
-                textSize = 14f
-                setTextColor(tone("#6E6E6E", "#A7A7A7"))
-                setPadding(dp(8), dp(16), dp(8), dp(16))
+                text = "چیزی در کلیپ‌بورد نیست."
+                textSize = 13f
+                setTextColor(mutedInk)
+                gravity = Gravity.CENTER
+                setPadding(dp(10), dp(25), dp(10), dp(25))
             })
         }
-        for ((text, pinned) in items) {
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(12).toFloat()
-                    setColor(tone("#FFFFFF", "#2B2B2B"))
-                }
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-            }
-            val body = TextView(this).apply {
-                this.text = text
-                textSize = 15f
+        items.forEachIndexed { index, pair ->
+            val item = TextView(this).apply {
+                text = (if (pair.second) "◆  " else "") + pair.first
+                textSize = 13f
+                setTextColor(ink)
+                gravity = Gravity.CENTER_VERTICAL or Gravity.END
                 maxLines = 2
-                setTextColor(tone("#16181D", "#F5F5F5"))
-            }
-            row.addView(body, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            val pin = TextView(this).apply {
-                this.text = if (pinned) "سنجاق‌شده" else "سنجاق"
-                textSize = 12f
-                setTextColor(tone("#8A8172", "#B6AB96"))
-                setPadding(dp(8), dp(4), dp(8), dp(4))
+                setPadding(dp(12), dp(10), dp(12), dp(10))
                 setOnClickListener {
-                    val all = KbData.clipboardItems(this@SourenIME)
-                    val updated = all.map {
-                        if (it.first == text) it.first to !it.second else it
-                    }
+                    currentInputConnection?.commitText(pair.first, 1)
+                    page = lastLanguage
+                    renderToolbar()
+                    rebuildKeyboard()
+                }
+                setOnLongClickListener {
+                    val updated = items.toMutableList()
+                    updated[index] = pair.first to !pair.second
                     KbData.saveClipboardItems(this@SourenIME, updated)
-                    rebuildKeys()
+                    rebuildKeyboard()
+                    true
                 }
             }
-            row.addView(pin)
-            row.setOnClickListener {
-                currentInputConnection?.commitText(text, 1)
-                page = lastLang
-                rebuildKeys()
-            }
-            val lp = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.bottomMargin = dp(7)
-            list.addView(row, lp)
+            list.addView(item)
+            list.addView(View(this).apply {
+                setBackgroundColor(color("#C9CFD8", "#414751"))
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1)))
         }
         scroll.addView(list)
-        panel.addView(scroll, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(208)))
-        return panel
+        area.addView(scroll, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(210)))
+        addRow(area, listOf(
+            KeySpec("ABC", Action.BACK, 1.5f),
+            KeySpec("فاصله", Action.SPACE, 4f),
+            KeySpec("", Action.DELETE, 1.4f, R.drawable.ic_backspace)
+        ))
     }
 
-    // ---------------- emoji panel ----------------
-    private var emojiCat = -1 // -1 = recents
-    private var emojiSearchOn = false
-    private var emojiQuery = ""
+    // ── Text editing ────────────────────────────────────────────────────────
 
-    private fun emojiCell(emoji: String): TextView {
-        return TextView(this).apply {
-            text = emoji
-            textSize = 25f
-            gravity = Gravity.CENTER
-            setOnClickListener {
-                hidePopup()
-                currentInputConnection?.commitText(emoji, 1)
-                KbData.recordEmoji(this@SourenIME, emoji)
-            }
-            setOnLongClickListener {
-                if (emoji in EmojiData.toneSet) {
-                    val options = listOf(emoji) + EmojiData.tones.map { emoji + it }
-                    showClickPopup(this, options.map { it to it }) { value ->
-                        currentInputConnection?.commitText(value, 1)
-                        KbData.recordEmoji(this@SourenIME, value)
-                    }
-                    true
-                } else false
-            }
-        }
-    }
-
-    private var clickPopupCallback: ((String) -> Unit)? = null
-
-    /** Click-to-pick popup (used by the emoji skin-tone picker). */
-    private fun showClickPopup(anchor: View, opts: List<Pair<String, String>>,
-                               onPick: (String) -> Unit) {
-        clickPopupCallback = onPick
-        popupBar.removeAllViews()
-        popupCellW = dp(46)
-        for ((display, value) in opts) {
-            val cell = TextView(this).apply {
-                text = display
-                textSize = 20f
-                gravity = Gravity.CENTER
-                setTextColor(tone("#16181D", "#F5F5F5"))
-                setOnClickListener {
-                    hidePopup()
-                    clickPopupCallback?.invoke(value)
-                }
-            }
-            popupBar.addView(cell, LinearLayout.LayoutParams(popupCellW, dp(48)))
-        }
-        val rootLoc = IntArray(2); rootFrame.getLocationInWindow(rootLoc)
-        val keyLoc = IntArray(2); anchor.getLocationInWindow(keyLoc)
-        val totalW = popupCellW * opts.size + dp(10)
-        val lp = popupBar.layoutParams as FrameLayout.LayoutParams
-        var left = keyLoc[0] - rootLoc[0] + anchor.width / 2 - totalW / 2
-        left = left.coerceIn(0, (rootFrame.width - totalW).coerceAtLeast(0))
-        lp.leftMargin = left
-        lp.topMargin = (keyLoc[1] - rootLoc[1] - dp(64)).coerceAtLeast(0)
-        popupBar.layoutParams = lp
-        popupBar.visibility = View.VISIBLE
-    }
-
-    private fun buildEmojiPanel(): View {
-        val panel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(4), dp(4), dp(4), dp(2))
-        }
-        // Header: search + category tabs + close
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        header.addView(plainIconButton(R.drawable.ic_search) {
-            emojiSearchOn = true; emojiQuery = ""; rebuildKeys()
-        }, LinearLayout.LayoutParams(dp(40), dp(40)))
-        val tabsScroll = HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled = false
-        }
-        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        val tabDefs = listOf("🕘" to -1) +
-            EmojiData.categories.mapIndexed { i, c -> c.icon to i }
-        for ((icon, idx) in tabDefs) {
-            val selected = emojiCat == idx
-            val tv = TextView(this).apply {
-                text = icon
-                textSize = 20f
-                gravity = Gravity.CENTER
-                setPadding(dp(9), dp(5), dp(9), dp(5))
-                if (selected) background = GradientDrawable().apply {
-                    cornerRadius = dp(12).toFloat()
-                    setColor(tone("#C9CCD1", "#474747"))
-                }
-                setOnClickListener { emojiCat = idx; rebuildKeys() }
-            }
-            tabs.addView(tv)
-        }
-        tabsScroll.addView(tabs)
-        header.addView(tabsScroll, LinearLayout.LayoutParams(0, dp(44), 1f))
-        val close = TextView(this).apply {
-            text = "بستن"
-            textSize = 13.5f
-            setTextColor(tone("#16181D", "#F5F5F5"))
-            setPadding(dp(10), dp(6), dp(10), dp(6))
-            setOnClickListener { page = lastLang; rebuildKeys() }
-        }
-        header.addView(close)
-        panel.addView(header)
-
-        val items = if (emojiCat == -1) {
-            KbData.emojiRecents(this).ifEmpty {
-                EmojiData.categories[0].items.take(24)
-            }
-        } else EmojiData.categories[emojiCat].items
-        val scroll = ScrollView(this)
-        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        for (chunk in items.chunked(8)) {
-            val rowL = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            for (e in chunk) {
-                rowL.addView(emojiCell(e),
-                    LinearLayout.LayoutParams(0, dp(50), 1f))
-            }
-            for (i in chunk.size until 8) {
-                rowL.addView(View(this), LinearLayout.LayoutParams(0, dp(50), 1f))
-            }
-            grid.addView(rowL)
-        }
-        scroll.addView(grid)
-        panel.addView(scroll, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(212)))
-
-        // Bottom row: back to letters / space / delete
-        val bottom = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(3), 0, dp(3))
-        }
-        bottom.addView(makeKey(K(if (lastLang == Page.FA) "اب" else "ABC",
-            kind = Kind.BACK, weight = 1.6f)))
-        bottom.addView(makeKey(K(if (lastLang == Page.FA) "فارسی" else "English",
-            kind = Kind.SPACE, weight = 4f)))
-        bottom.addView(makeKey(K("", kind = Kind.DELETE,
-            iconRes = R.drawable.ic_backspace, weight = 1.5f)))
-        panel.addView(bottom)
-        return panel
-    }
-
-    private fun buildEmojiSearch(): View {
-        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val bar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setBackgroundColor(tone("#F7F7F8", "#151515"))
-            setPadding(dp(12), 0, dp(12), 0)
-        }
-        val q = TextView(this).apply {
-            text = if (emojiQuery.isEmpty()) "جست‌وجوی ایموجی… (مثل: گربه، خنده، قلب)"
-                   else "جست‌وجو: $emojiQuery"
-            textSize = 14.5f
-            setTextColor(tone("#191B1E", "#F5F5F5"))
-        }
-        bar.addView(q, LinearLayout.LayoutParams(0, dp(42), 1f))
-        val cancel = TextView(this).apply {
-            text = "لغو"
-            textSize = 13.5f
-            setTextColor(tone("#8A2F2F", "#E39B9B"))
-            setPadding(dp(8), dp(6), dp(8), dp(6))
-            setOnClickListener { emojiSearchOn = false; rebuildKeys() }
-        }
-        bar.addView(cancel)
-        panel.addView(bar)
-
-        val results = EmojiData.search(emojiQuery)
-        val scroll = ScrollView(this)
-        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        if (results.isEmpty()) {
-            grid.addView(TextView(this).apply {
-                text = if (emojiQuery.isEmpty()) ""
-                       else "چیزی پیدا نشد؛ واژهٔ دیگری بنویسید."
-                textSize = 13.5f
-                setTextColor(tone("#6E6E6E", "#A7A7A7"))
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-            })
-        }
-        for (chunk in results.chunked(8)) {
-            val rowL = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            for (e in chunk) {
-                rowL.addView(emojiCell(e), LinearLayout.LayoutParams(0, dp(44), 1f))
-            }
-            for (i in chunk.size until 8) {
-                rowL.addView(View(this), LinearLayout.LayoutParams(0, dp(44), 1f))
-            }
-            grid.addView(rowL)
-        }
-        scroll.addView(grid)
-        panel.addView(scroll, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(96)))
-        for (row in rowsFor(lastLang)) {
-            val rowLayout = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, dp(3), 0, dp(3))
-            }
-            for (k in row) rowLayout.addView(makeKey(k))
-            panel.addView(rowLayout)
-        }
-        applyShiftLabels()
-        return panel
-    }
-
-    // ---------------- editing ----------------
-    private fun commit(text: String) {
-        if (page == Page.EMOJI && emojiSearchOn) {
-            if (text.length == 1 && text != " ") {
-                emojiQuery += text
-                rebuildKeys()
-            }
-            return
-        }
-        currentInputConnection?.commitText(text, 1)
-        refreshStrip()
+    private fun commit(value: String) {
+        currentInputConnection?.commitText(value, 1)
+        refreshSuggestions()
     }
 
     private fun currentWord(): String {
-        val ic = currentInputConnection ?: return ""
-        val before = ic.getTextBeforeCursor(48, 0)?.toString() ?: return ""
-        val seps = charArrayOf(' ', '\n', '،', '.', '؟', '!', '؛', ':', '(', ')', '«', '»', '"')
-        val idx = before.lastIndexOfAny(seps)
-        return if (idx < 0) before else before.substring(idx + 1)
-    }
-
-    private fun refreshStrip() {
-        if (page != Page.FA && page != Page.EN) return
-        val word = currentWord()
-        if (word == lastWordShown && suggestView.visibility == View.VISIBLE) return
-        if (word.length < 2 || page != Page.FA) {
-            lastWordShown = word
-            showToolbar(); return
-        }
-        val suggestions = Corrector.suggestionsFor(
-            word, KbData.dictionary, KbData.learnedCounts, KbData.vocab)
-        lastWordShown = word
-        if (suggestions.isEmpty()) showToolbar()
-        else showSuggestions(suggestions, word)
+        val before = currentInputConnection?.getTextBeforeCursor(64, 0)?.toString() ?: return ""
+        val separators = charArrayOf(' ', '\n', '،', ',', '.', '؟', '!', '؛', ':', '(', ')', '«', '»')
+        val index = before.lastIndexOfAny(separators)
+        return if (index < 0) before else before.substring(index + 1)
     }
 
     private fun onSpace() {
-        if (page == Page.EMOJI && emojiSearchOn) return
         val ic = currentInputConnection ?: return
         if (KbData.autoCorrect && page == Page.FA) {
             val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: ""
-            val fix = Corrector.fixBeforeSeparator(before, KbData.dictionary, KbData.replaceArabic)
+            val fix = Corrector.fixBeforeSeparator(
+                before, KbData.dictionary, KbData.replaceArabic
+            )
             if (fix != null) {
-                val fromWord = before.split(' ').lastOrNull() ?: ""
+                val from = currentWord()
                 ic.deleteSurroundingText(fix.first, 0)
                 ic.commitText(fix.second, 1)
-                val toWord = fix.second.split(' ').lastOrNull() ?: ""
-                if (fromWord.isNotEmpty() && toWord.isNotEmpty() && fromWord != toWord) {
-                    KbData.recordLearned(this, fromWord, toWord)
-                }
+                KbData.recordLearned(this, from, fix.second)
             }
         }
         ic.commitText(" ", 1)
-        lastWordShown = ""
-        showToolbar()
+        lastSuggestionWord = ""
+        renderToolbar()
     }
 
     private fun onEnter() {
-        if (page == Page.EMOJI && emojiSearchOn) {
-            emojiSearchOn = false; rebuildKeys(); return
-        }
         val ic = currentInputConnection ?: return
         if (KbData.autoCorrect && page == Page.FA) {
             val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: ""
@@ -1235,59 +832,52 @@ class SourenIME : InputMethodService() {
         val action = currentInputEditorInfo?.imeOptions?.and(EditorInfo.IME_MASK_ACTION)
             ?: EditorInfo.IME_ACTION_NONE
         if (action != EditorInfo.IME_ACTION_NONE &&
-            action != EditorInfo.IME_ACTION_UNSPECIFIED
-        ) {
+            action != EditorInfo.IME_ACTION_UNSPECIFIED) {
             ic.performEditorAction(action)
         } else {
             ic.commitText("\n", 1)
         }
-        lastWordShown = ""
+        lastSuggestionWord = ""
+        renderToolbar()
     }
 
     private fun deleteOnce() {
-        if (page == Page.EMOJI && emojiSearchOn) {
-            if (emojiQuery.isNotEmpty()) {
-                emojiQuery = emojiQuery.dropLast(1)
-                rebuildKeys()
-            }
-            return
-        }
         val ic = currentInputConnection ?: return
-        val sel = ic.getSelectedText(0)
-        if (sel.isNullOrEmpty()) ic.deleteSurroundingText(1, 0)
+        val selected = ic.getSelectedText(0)
+        if (selected.isNullOrEmpty()) ic.deleteSurroundingText(1, 0)
         else ic.commitText("", 1)
-        refreshStrip()
+        lastSuggestionWord = ""
+        refreshSuggestions()
     }
 
     private fun startDeleteRepeat() {
         deleteOnce()
-        val r = object : Runnable {
+        val runnable = object : Runnable {
             override fun run() {
                 deleteOnce()
                 handler.postDelayed(this, 55)
             }
         }
-        deleteRepeat = r
-        handler.postDelayed(r, 380)
+        repeatDelete = runnable
+        handler.postDelayed(runnable, 350)
     }
 
     private fun stopDeleteRepeat() {
-        deleteRepeat?.let { handler.removeCallbacks(it) }
-        deleteRepeat = null
+        repeatDelete?.let { handler.removeCallbacks(it) }
+        repeatDelete = null
     }
 
     private fun moveCursor(delta: Int) {
         val ic = currentInputConnection ?: return
-        val before = ic.getTextBeforeCursor(200, 0)?.toString() ?: ""
-        val after = ic.getTextAfterCursor(200, 0)?.toString() ?: ""
-        val pos = (before.length + delta).coerceIn(0, before.length + after.length)
-        ic.setSelection(pos, pos)
+        val before = ic.getTextBeforeCursor(500, 0)?.length ?: return
+        val after = ic.getTextAfterCursor(500, 0)?.length ?: 0
+        val position = (before + delta).coerceIn(0, before + after)
+        ic.setSelection(position, position)
     }
 
     private fun openApp() {
-        val intent = Intent(this, MainActivity::class.java).apply {
+        startActivity(Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        startActivity(intent)
+        })
     }
 }

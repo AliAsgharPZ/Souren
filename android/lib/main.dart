@@ -10,6 +10,7 @@ import 'lucide.dart';
 import 'share.dart';
 
 import 'data/store.dart';
+import 'data/persian_roots.dart';
 import 'engine/corrector.dart';
 
 /// App palette — pal.bg light theme, warm dark theme. `pal` is set from
@@ -719,8 +720,10 @@ class _DetailSheetState extends State<DetailSheet> {
               ),
             ],
           ),
-          if (widget.etymologyWord != null)
+          if (widget.etymologyWord != null) ...[
             _RootInfoCard(word: widget.etymologyWord!),
+            _PoemUsageCard(word: widget.etymologyWord!),
+          ],
           if (widget.onOpenEtymology != null) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -1413,13 +1416,13 @@ class _ShellState extends State<Shell> {
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
     // Original v0.4.1 geometry/behavior, with the current CUI icon pack.
-    final items = <(IconData, String)>[
-      (LucideIcons.house, 'پیشگاه'),
-      (LucideIcons.heart, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, 'نمایه'),
-      (LucideIcons.settings, 'پیکربندی'),
+    final items = <(IconData, IconData, String)>[
+      (LucideIcons.house, Icons.home_filled, 'پیشگاه'),
+      (LucideIcons.heart, Icons.favorite, 'پسندیده‌ها'),
+      (LucideIcons.layoutDashboard, Icons.dashboard, 'بخش‌ها'),
+      (LucideIcons.bookmark, Icons.bookmark, 'نشان‌شده'),
+      (LucideIcons.user, Icons.person, 'نمایه'),
+      (LucideIcons.settings, Icons.settings, 'پیکربندی'),
     ];
     _measureIndicator();
     final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
@@ -1487,8 +1490,8 @@ class _ShellState extends State<Shell> {
                                 ),
                               ),
                               child: Icon(
+                                tab == i ? items[i].$2 : items[i].$1,
                                 key: ValueKey<bool>(tab == i),
-                                items[i].$1,
                                 size: 23,
                                 color: tab == i
                                     ? pal.bg
@@ -1509,7 +1512,7 @@ class _ShellState extends State<Shell> {
                                   children: [
                                     const SizedBox(width: 7),
                                     Text(
-                                      items[i].$2,
+                                      items[i].$3,
                                       style: TextStyle(
                                         color: pal.bg,
                                         fontWeight: FontWeight.w700,
@@ -1644,6 +1647,8 @@ class _ShellState extends State<Shell> {
                                       'ریشه‌شناسی',
                                       () => _open(EtymologyPage(dict: d)),
                                     ),
+                                    const SizedBox(height: 4),
+                                    _homeMetrics(d),
                                   ],
                                 ),
                               ),
@@ -1717,6 +1722,53 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  Widget _homeMetrics(Dictionary d) {
+    return SizedBox(
+      width: 124,
+      height: 54,
+      child: FutureBuilder<Map<String, int>>(
+        future: GanjoorData.stats(),
+        builder: (context, snapshot) {
+          final stats = snapshot.data ?? const <String, int>{};
+          final values = <(String, int)>[
+            ('واژه', d.entries.length),
+            ('برابر', d.pairCount),
+            ('شاعر', stats['poets'] ?? 0),
+            ('کتاب', stats['books'] ?? 0),
+            ('شعر', stats['poems'] ?? 0),
+          ];
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                for (final item in values)
+                  Container(
+                    margin: const EdgeInsets.only(left: 6, top: 3, bottom: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: pal.cardC,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(faNum(item.$2),
+                            style: TextStyle(color: pal.ink,
+                                fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(item.$1,
+                            style: TextStyle(color: pal.muted, fontSize: 9.5)),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _sidePill(String label, VoidCallback onTap) {
     return Pressable(
       onTap: onTap,
@@ -1728,10 +1780,15 @@ class _ShellState extends State<Shell> {
           color: pal.pillC,
           borderRadius: BorderRadius.circular(capR(54)),
         ),
-        child: Text(
-          label,
+        child: SizedBox(
+          width: double.infinity,
+          child: Text(
+          label == 'گنجینهٔ واژه‌ها' ? 'گنجینۀ واژهــــها' : label,
+          maxLines: 1,
+          softWrap: false,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 14, color: pal.ink),
+          ),
         ),
       ),
     );
@@ -1883,12 +1940,12 @@ class _ShellState extends State<Shell> {
         likeCount: likeCounts[e.ar] ?? 0,
         onToggleLike: () => _toggleLike(e.ar),
         onToggleBookmark: () => _toggleFav(e.ar),
-        etymologyWord: e.ar,
+        etymologyWord: e.hasFa ? e.fa.first : null,
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && dict != null) {
-              _open(EtymologyPage(dict: dict!, initialWord: e.ar));
+              _open(EtymologyPage(dict: dict!, initialWord: e.hasFa ? e.fa.first : null));
             }
           });
         },
@@ -4030,49 +4087,7 @@ class _FreshPageState extends State<FreshPage> {
   }
 }
 
-// ================= ریشه‌شناسی =================
-class ArabicRoots {
-  static Future<Map<String, List<String>>>? _cached;
-
-  static Future<Map<String, List<String>>> load() =>
-      _cached ??= _load();
-
-  static Future<Map<String, List<String>>> _load() async {
-    final raw = await rootBundle.loadString('assets/db/arabic_roots.json');
-    final data = jsonDecode(raw) as Map<String, dynamic>;
-    final rows = data['entries'] as List? ?? const [];
-    final result = <String, Set<String>>{};
-    for (final row in rows.whereType<Map>()) {
-      final word = row['word']?.toString().trim() ?? '';
-      final roots = (row['roots'] as List? ?? const [])
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty);
-      if (word.isEmpty) continue;
-      result.putIfAbsent(word, () => <String>{}).addAll(roots);
-    }
-    return {
-      for (final entry in result.entries)
-        entry.key: entry.value.toList(growable: false),
-    };
-  }
-
-  static List<String>? find(
-    Map<String, List<String>> data,
-    String word,
-  ) {
-    final normalized = normalize(word);
-    for (final entry in data.entries) {
-      if (normalize(entry.key) == normalized) return entry.value;
-    }
-    return null;
-  }
-
-  static const sourceLabel =
-      'arabic-digital-humanities/root-extraction-validation-data · CC BY 4.0';
-
-  static String normalize(String value) => normalizeLetters(value)
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '');
-}
+// ================= ریشه‌شناسی فارسی =================
 
 class _RootInfoCard extends StatelessWidget {
   final String word;
@@ -4080,59 +4095,42 @@ class _RootInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, List<String>>>(
-      future: ArabicRoots.load(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done ||
-            !snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-        final roots = ArabicRoots.find(snapshot.data!, word);
-        return Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(top: 14),
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: pal.cardC,
-            borderRadius: BorderRadius.circular(18),
+    final base = PersianRoots.baseOf(word);
+    final isInflected = base != PersianRoots.normalize(word);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: pal.cardC,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('بن‌واژهٔ فارسی',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: pal.muted, fontSize: 12.5,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text(base,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(color: pal.ink, fontSize: 19,
+                  fontWeight: FontWeight.w700, height: 1.6)),
+          const SizedBox(height: 5),
+          Text(
+            isInflected
+                ? 'این بن‌واژه از ساخت صرفی واژه به‌دست آمده و یک پیشنهاد ساختاری است.'
+                : 'این واژه در دادهٔ فعلی به‌صورت پایه ثبت شده است.',
+            textAlign: TextAlign.right,
+            style: TextStyle(color: pal.faint, fontSize: 10.5, height: 1.7),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'ریشهٔ صرفی',
-                style: TextStyle(
-                  color: pal.muted,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                roots == null || roots.isEmpty
-                    ? 'برای این واژه در دادهٔ ریشه‌شناسی فعلی مدخلی ثبت نشده است.'
-                    : roots.join('  /  '),
-                textAlign: TextAlign.right,
-                textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  color: roots == null ? pal.muted : pal.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.6,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                roots == null
-                    ? 'پوشش داده محدود است؛ نبودن مدخل به معنی بی‌ریشه بودن واژه نیست.'
-                    : ArabicRoots.sourceLabel,
-                textAlign: TextAlign.right,
-                style: TextStyle(color: pal.faint, fontSize: 10.5),
-              ),
-            ],
-          ),
-        );
-      },
+          Text('بن‌واژه با خاستگاه تاریخی یا ریشه‌شناسی تطبیقی یکسان نیست.',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: pal.faint, fontSize: 10.5, height: 1.7)),
+        ],
+      ),
     );
   }
 }
@@ -4147,12 +4145,9 @@ class EtymologyPage extends StatefulWidget {
 
 class _EtymologyPageState extends State<EtymologyPage> {
   final _ctrl = TextEditingController();
-  late final Future<Map<String, List<String>>> _rootsFuture =
-      ArabicRoots.load();
+  late final List<PersianLexeme> _rows = PersianRoots.index(widget.dict);
   String _query = '';
   String? _selectedWord;
-
-  String _norm(String value) => ArabicRoots.normalize(value.trim());
 
   @override
   void initState() {
@@ -4160,24 +4155,9 @@ class _EtymologyPageState extends State<EtymologyPage> {
     final initial = widget.initialWord?.trim() ?? '';
     if (initial.isNotEmpty) {
       _ctrl.text = initial;
-      _query = _norm(initial);
+      _query = PersianRoots.normalize(initial);
       _selectedWord = initial;
     }
-  }
-
-  void _onChanged(String value) {
-    setState(() {
-      _query = _norm(value);
-      _selectedWord = null;
-    });
-  }
-
-  void _select(String word) {
-    setState(() {
-      _selectedWord = word;
-      _ctrl.text = word;
-      _query = _norm(word);
-    });
   }
 
   @override
@@ -4186,219 +4166,172 @@ class _EtymologyPageState extends State<EtymologyPage> {
     super.dispose();
   }
 
+  void _select(String word) {
+    setState(() {
+      _selectedWord = word;
+      _ctrl.text = word;
+      _query = PersianRoots.normalize(word);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return subScaffold(
-      'ریشه‌شناسی',
-      Padding(
-        padding: const EdgeInsets.all(24),
-        child: FutureBuilder<Map<String, List<String>>>(
-          future: _rootsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError || !snapshot.hasData) {
-              return Center(
-                child: Text(
-                  'دادهٔ ریشه‌ها بارگذاری نشد.',
-                  style: TextStyle(color: pal.muted),
-                ),
-              );
-            }
-            final roots = snapshot.data!;
-            final query = _query;
-            String? exactMatch;
-            if (query.isNotEmpty) {
-              for (final word in roots.keys) {
-                if (_norm(word) == query) {
-                  exactMatch = word;
-                  break;
-                }
-              }
-            }
-            final selected = _selectedWord ?? exactMatch;
-            final words = roots.keys.where((word) {
-              if (query.isEmpty) return true;
-              return _norm(word).contains(query) ||
-                  (roots[word] ?? const [])
-                      .any((root) => _norm(root).contains(query));
-            }).toList()
-              ..sort();
-            final selectedRoots =
-                selected == null ? null : ArabicRoots.find(roots, selected);
-            Entry? dictionaryEntry;
-            if (selected != null) {
-              for (final entry in widget.dict.entries) {
-                if (_norm(entry.ar) == _norm(selected)) {
-                  dictionaryEntry = entry;
-                  break;
-                }
-              }
-            }
+    final matches = PersianRoots.search(_rows, _query);
+    PersianLexeme? selected;
+    final target = _selectedWord == null ? _query : PersianRoots.normalize(_selectedWord!);
+    if (target.isNotEmpty) {
+      for (final row in _rows) {
+        if (PersianRoots.normalize(row.word) == target) {
+          selected = row;
+          break;
+        }
+      }
+    }
+    final related = selected == null
+        ? const <PersianLexeme>[]
+        : PersianRoots.sameBase(_rows, selected.word);
 
-            return Column(
-              children: [
-                TextField(
-                  controller: _ctrl,
-                  onChanged: _onChanged,
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.right,
-                  decoration: InputDecoration(
-                    hintText: 'واژه یا ریشهٔ عربی را جست‌وجو کنید',
-                    prefixIcon: Icon(
-                      LucideIcons.search,
-                      color: pal.muted,
-                      size: 23,
-                    ),
-                    filled: true,
-                    fillColor: pal.cardC,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(capR(56)),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+    return subScaffold(
+      'ریشه‌شناسی فارسی',
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _ctrl,
+              onChanged: (v) => setState(() {
+                _query = PersianRoots.normalize(v);
+                _selectedWord = null;
+              }),
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.right,
+              decoration: InputDecoration(
+                hintText: 'یک واژهٔ فارسی جست‌وجو کنید',
+                prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 22),
+                filled: true,
+                fillColor: pal.cardC,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(capR(54)),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(height: 14),
-                AnimatedSwitcher(
-                  duration: Motion.base,
-                  transitionBuilder: enterTransition,
-                  child: selected == null
-                      ? const SizedBox.shrink(key: ValueKey('no-root-selected'))
-                      : Container(
-                          key: ValueKey('root-$selected'),
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 14),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: pal.pillC,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                selected,
-                                textAlign: TextAlign.right,
-                                textDirection: TextDirection.rtl,
-                                style: TextStyle(
-                                  color: pal.ink,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                'ریشهٔ صرفی: ${selectedRoots?.join(' / ') ?? 'ثبت نشده'}',
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  color: pal.sel,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (dictionaryEntry?.hasFa == true) ...[
-                                const SizedBox(height: 5),
-                                Text(
-                                  'برابر فارسی: ${dictionaryEntry!.fa.join('، ')}',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: pal.muted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 7),
-                              Text(
-                                'ریشهٔ صرفی واژه است؛ لزوماً تاریخچهٔ وام‌گیری یا خاستگاه تاریخی آن را نشان نمی‌دهد.',
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  color: pal.muted,
-                                  height: 1.6,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (selected != null)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: pal.pillC,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${faNum(words.length)} واژه دارای دادهٔ ریشه',
-                    style: TextStyle(color: pal.muted, fontSize: 12),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(selected.word, textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.ink, fontSize: 20,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 5),
+                    Text('بن‌واژه: ${selected.base}',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.sel, fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('${faNum(selected.sourceCount)} پیوند به مدخل واژگان',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.muted, fontSize: 11.5)),
+                    if (related.length > 1) ...[
+                      const SizedBox(height: 10),
+                      Text('واژه‌های هم‌بن', textAlign: TextAlign.right,
+                          style: TextStyle(color: pal.muted, fontSize: 11.5)),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final item in related)
+                            ActionChip(
+                              label: Text(item.word,
+                                  textDirection: TextDirection.rtl),
+                              onPressed: () => _select(item.word),
+                              backgroundColor: pal.cardC,
+                              side: BorderSide.none,
+                              labelStyle: TextStyle(color: pal.ink),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Expanded(
-                  child: words.isEmpty
-                      ? Center(
-                          child: Text(
-                            'برای این جست‌وجو ریشه‌ای در مجموعه ثبت نشده است.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: pal.muted, height: 1.8),
-                          ),
-                        )
-                      : edgeFade(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.only(top: 4, bottom: 24),
-                            itemCount: words.length,
-                            separatorBuilder: (_, __) =>
-                                Divider(height: 1, color: pal.div),
-                            itemBuilder: (_, index) {
-                              final word = words[index];
-                              return Enter(
-                                index: index,
-                                child: InkWell(
-                                  onTap: () => _select(word),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 11,
-                                      horizontal: 4,
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '${faNum(matches.length)} واژهٔ فارسی',
+                textAlign: TextAlign.right,
+                style: TextStyle(color: pal.muted, fontSize: 12),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: matches.isEmpty
+                  ? Center(
+                      child: Text('واژه‌ای در برابرهای فارسی پیدا نشد.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: pal.muted, height: 1.8)),
+                    )
+                  : edgeFade(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(top: 4, bottom: 24),
+                        itemCount: matches.length,
+                        separatorBuilder: (_, __) =>
+                            Divider(height: 1, color: pal.div),
+                        itemBuilder: (_, i) {
+                          final row = matches[i];
+                          return Enter(
+                            index: i,
+                            child: InkWell(
+                              onTap: () => _select(row.word),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12, horizontal: 4),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text('بن: ${row.base}',
+                                          textAlign: TextAlign.left,
+                                          style: TextStyle(color: pal.sel,
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w600)),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            (roots[word] ?? const []).join(' / '),
-                                            textAlign: TextAlign.left,
-                                            style: TextStyle(
-                                              color: pal.sel,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          word,
-                                          textDirection: TextDirection.rtl,
-                                          style: TextStyle(
-                                            color: pal.ink,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                    const SizedBox(width: 12),
+                                    Text(row.word,
+                                        textDirection: TextDirection.rtl,
+                                        style: TextStyle(color: pal.ink,
+                                            fontSize: 16.5,
+                                            fontWeight: FontWeight.w700)),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    'منبع: ${ArabicRoots.sourceLabel}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: pal.faint, fontSize: 10.5),
-                  ),
-                ),
-              ],
-            );
-          },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Text(
+                'این بخش واژه‌های فارسیِ ثبت‌شده در برابرهای دیکشنری را بررسی می‌کند؛ دادهٔ ریشه‌های عربی در آن استفاده نمی‌شود.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: pal.faint, fontSize: 10.5, height: 1.6),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -4407,12 +4340,14 @@ class _EtymologyPageState extends State<EtymologyPage> {
 
 // ================= کتابخانهٔ شعر =================
 
-/// Ganjoor publishes its public poetry corpus as a static JSON API.
-/// The app fetches only the pages the reader opens and caches them locally;
-/// it does not mirror the full multi-hundred-megabyte repository into the APK.
+/// Ganjoor static corpus for reading and the official API for full-text
+/// poem search and the book catalogue.
 class GanjoorData {
   static const _base =
       'https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/';
+  static const _apiBase = 'https://api.ganjoor.net';
+  static Future<Map<String, int>>? _statsFuture;
+  static final Map<String, Future<List<Map<String, dynamic>>>> _poemSearchCache = {};
 
   static String _cacheName(String path) =>
       'ganjoor_${base64Url.encode(utf8.encode(path))}.json';
@@ -4427,16 +4362,11 @@ class GanjoorData {
       final response = await request.close();
       final body = await utf8.decoder.bind(response).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException(
-          'Ganjoor returned HTTP ${response.statusCode}',
-          uri: Uri.parse('$_base$path'),
-        );
+        throw HttpException('Ganjoor returned HTTP ${response.statusCode}',
+            uri: Uri.parse('$_base$path'));
       }
       final decoded = jsonDecode(body) as Map<String, dynamic>;
-      // A cache-write failure must not discard a successfully fetched page.
-      try {
-        await SharedFiles.writeJson(_cacheName(path), decoded);
-      } catch (_) {}
+      try { await SharedFiles.writeJson(_cacheName(path), decoded); } catch (_) {}
       return decoded;
     } catch (_) {
       if (cached != null) return cached;
@@ -4444,6 +4374,147 @@ class GanjoorData {
     } finally {
       client.close(force: true);
     }
+  }
+
+  static List<Map<String, dynamic>> rows(dynamic value) {
+    dynamic list = value;
+    if (value is Map) {
+      for (final key in ['Poems', 'poems', 'Books', 'books', 'Items',
+        'items', 'Results', 'results', 'Data', 'data']) {
+        if (value[key] is List) { list = value[key]; break; }
+      }
+    }
+    if (list is! List) return const [];
+    return list.whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e)).toList(growable: false);
+  }
+
+  static Future<dynamic> _apiJson(String path) async {
+    final cacheKey = _cacheName('api_$path');
+    final cached = await SharedFiles.readJson(cacheKey);
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 12);
+    try {
+      final request = await client.getUrl(Uri.parse('$_apiBase/$path'));
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      final response = await request.close().timeout(
+          const Duration(seconds: 18));
+      final body = await utf8.decoder.bind(response).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException('Ganjoor API HTTP ${response.statusCode}');
+      }
+      final decoded = jsonDecode(body);
+      try { await SharedFiles.writeJson(cacheKey, {'payload': decoded}); }
+      catch (_) {}
+      return decoded;
+    } catch (_) {
+      if (cached != null && cached['payload'] != null) return cached['payload'];
+      rethrow;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> bookCatalog() async {
+    final data = await _apiJson('api/ganjoor/book-catalog');
+    return rows(data);
+  }
+
+  static Future<List<Map<String, dynamic>>> searchPoems(String term) {
+    final q = term.trim();
+    if (q.isEmpty) return Future.value(const []);
+    return _poemSearchCache.putIfAbsent(q, () async {
+      final uri = Uri(
+        path: '/api/ganjoor/poems/search',
+        queryParameters: {'term': q, 'page': '1', 'pageSize': '40'},
+      );
+      final data = await _apiJson(uri.toString().replaceFirst('/', ''));
+      return rows(data);
+    });
+  }
+
+  static Future<Map<String, int>> stats() =>
+      _statsFuture ??= _loadStats();
+
+  static Future<Map<String, int>> _loadStats() async {
+    var poets = 0, books = 0, poems = 0;
+    try {
+      final manifest = await json('manifest.json');
+      poets = rows(manifest['Poets']).length;
+      poems = (manifest['PoemCount'] as num?)?.toInt() ??
+          (manifest['poemCount'] as num?)?.toInt() ??
+          (manifest['TotalPoems'] as num?)?.toInt() ?? 0;
+    } catch (_) {}
+    try { books = (await bookCatalog()).length; } catch (_) {}
+    return {'poets': poets, 'books': books, 'poems': poems};
+  }
+}
+
+class _PoemUsageCard extends StatelessWidget {
+  final String word;
+  const _PoemUsageCard({required this.word});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: GanjoorData.searchPoems(word),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done ||
+            !snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        final poems = snapshot.data!.take(3).toList();
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: pal.cardC,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('شعرهایی که این واژه در آن‌ها آمده',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700,
+                      fontSize: 13.5)),
+              const SizedBox(height: 6),
+              for (final poem in poems)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    poem['Title']?.toString() ?? poem['title']?.toString() ?? 'شعر',
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: pal.ink, fontSize: 12.5),
+                  ),
+                  subtitle: Text(
+                    poem['PoetName']?.toString() ??
+                        poem['PoetNickname']?.toString() ??
+                        poem['poetName']?.toString() ?? '',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.muted, fontSize: 11),
+                  ),
+                  trailing: Icon(LucideIcons.chevronLeft,
+                      size: 16, color: pal.muted),
+                  onTap: () {
+                    final full = (poem['FullUrl'] ?? poem['fullUrl'] ?? '')
+                        .toString().replaceFirst(RegExp(r'^/'), '');
+                    if (full.isEmpty) return;
+                    Navigator.of(context).push(_softRoute(GanjoorPoemPage(
+                      title: poem['Title']?.toString() ?? 'شعر',
+                      path: 'poets/$full.json',
+                    )));
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -4454,39 +4525,208 @@ class GanjoorPage extends StatefulWidget {
 }
 
 class _GanjoorPageState extends State<GanjoorPage> {
-  late Future<Map<String, dynamic>> _manifest =
-      GanjoorData.json('manifest.json');
+  late Future<Map<String, dynamic>> _manifest = GanjoorData.json('manifest.json');
+  late Future<List<Map<String, dynamic>>> _books = GanjoorData.bookCatalog();
+  Future<List<Map<String, dynamic>>>? _poems;
   String _query = '';
+  int _filter = 0; // all, poets, books, poems
+  int _view = 0; // list, two columns, cards
+  int _searchTicket = 0;
 
-  void _retryManifest() {
-    setState(() => _manifest = GanjoorData.json('manifest.json'));
+  String _value(Map<String, dynamic> row, List<String> keys) {
+    for (final key in keys) {
+      final value = row[key];
+      if (value != null && value.toString().trim().isNotEmpty) return value.toString();
+    }
+    return '';
+  }
+
+  bool _matches(Map<String, dynamic> row, String query) {
+    if (query.isEmpty) return true;
+    return row.values.any((v) => v != null &&
+        v.toString().toLowerCase().contains(query.toLowerCase()));
+  }
+
+  void _queryChanged(String value) {
+    final q = value.trim();
+    setState(() {
+      _query = q;
+      _poems = null;
+    });
+    final ticket = ++_searchTicket;
+    if (q.isEmpty) return;
+    Future.delayed(const Duration(milliseconds: 350), () async {
+      if (!mounted || ticket != _searchTicket) return;
+      final future = GanjoorData.searchPoems(q);
+      if (mounted) setState(() => _poems = future);
+    });
   }
 
   void _showSourceInfo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('داده‌ها: github.com/ganjoor/ganjoor-data\nنگه‌دارنده: https://github.com/hrmoh'),
-        action: SnackBarAction(
-          label: 'کپی',
-          onPressed: () => Clipboard.setData(
-            const ClipboardData(text: 'https://github.com/hrmoh'),
-          ),
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showTopBanner(
+      context,
+      title: 'داده‌های کتابخانهٔ شعر',
+      message: 'متن و فهرست آثار از داده‌های عمومی گنجور دریافت می‌شود. جست‌وجوی شعر از API گنجور انجام می‌شود.',
     );
   }
 
   void _openPoet(Map<String, dynamic> poet) {
-    final fullUrl = poet['FullUrl']?.toString() ?? '';
-    if (fullUrl.isEmpty) return;
-    Navigator.of(context).push(
-      _softRoute(
-        GanjoorNodePage(
-          title: poet['Nickname']?.toString() ?? 'شاعر',
-          path: fullUrl.replaceFirst(RegExp(r'^/'), ''),
+    final full = _value(poet, ['FullUrl', 'fullUrl', 'Url', 'url']);
+    if (full.isEmpty) return;
+    Navigator.of(context).push(_softRoute(GanjoorNodePage(
+      title: _value(poet, ['Nickname', 'nickname', 'Name', 'name']).isEmpty
+          ? 'شاعر' : _value(poet, ['Nickname', 'nickname', 'Name', 'name']),
+      path: full.replaceFirst(RegExp(r'^/'), ''),
+    )));
+  }
+
+  void _openBook(Map<String, dynamic> book) {
+    final full = _value(book, ['FullUrl', 'fullUrl', 'Url', 'url']);
+    if (full.isEmpty) return;
+    Navigator.of(context).push(_softRoute(GanjoorNodePage(
+      title: _value(book, ['Title', 'title', 'Name', 'name']).isEmpty
+          ? 'کتاب' : _value(book, ['Title', 'title', 'Name', 'name']),
+      path: full.replaceFirst(RegExp(r'^/'), ''),
+    )));
+  }
+
+  void _openPoem(Map<String, dynamic> poem) {
+    final full = _value(poem, ['FullUrl', 'fullUrl', 'Url', 'url'])
+        .replaceFirst(RegExp(r'^/'), '');
+    if (full.isEmpty) return;
+    Navigator.of(context).push(_softRoute(GanjoorPoemPage(
+      title: _value(poem, ['Title', 'title']).isEmpty
+          ? 'شعر' : _value(poem, ['Title', 'title']),
+      path: 'poets/$full.json',
+    )));
+  }
+
+  Widget _resultTile({
+    required Map<String, dynamic> item,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    if (_view == 2) {
+      return Pressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: pal.cardC,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: pal.div.withValues(alpha: .7)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Icon(icon, color: pal.sel, size: 20),
+              const SizedBox(height: 8),
+              Text(title, textAlign: TextAlign.right, maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(subtitle, textAlign: TextAlign.right, maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: pal.muted, fontSize: 11.5)),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        height: _view == 1 ? 76 : 64,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: _view == 1 ? pal.cardC : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          border: _view == 1 ? Border.all(color: pal.div) : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: pal.sel, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(title, textAlign: TextAlign.right, maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: pal.ink, fontWeight: FontWeight.w600)),
+                  if (subtitle.isNotEmpty)
+                    Text(subtitle, textAlign: TextAlign.right, maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: pal.muted, fontSize: 11.5)),
+                ],
+              ),
+            ),
+            Icon(LucideIcons.chevronLeft, color: pal.muted, size: 16),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _section(
+    String title,
+    List<Map<String, dynamic>> items,
+    IconData icon,
+    String Function(Map<String, dynamic>) titleOf,
+    String Function(Map<String, dynamic>) subtitleOf,
+    void Function(Map<String, dynamic>) onTap,
+  ) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final grid = _view != 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+          child: Row(
+            children: [
+              Text('${faNum(items.length)}',
+                  style: TextStyle(color: pal.faint, fontSize: 11)),
+              const Spacer(),
+              Text(title, textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700,
+                      fontSize: 14)),
+            ],
+          ),
+        ),
+        if (grid)
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: _view == 1 ? 2 : 1,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              mainAxisExtent: _view == 1 ? 82 : 112,
+            ),
+            itemBuilder: (_, i) => _resultTile(
+              item: items[i],
+              title: titleOf(items[i]),
+              subtitle: subtitleOf(items[i]),
+              icon: icon,
+              onTap: () => onTap(items[i]),
+            ),
+          )
+        else
+          ...items.map((item) => _resultTile(
+            item: item,
+            title: titleOf(item),
+            subtitle: subtitleOf(item),
+            icon: icon,
+            onTap: () => onTap(item),
+          )),
+      ],
     );
   }
 
@@ -4504,14 +4744,10 @@ class _GanjoorPageState extends State<GanjoorPage> {
                   const BackIconButton(),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Text(
-                      'کتابخانهٔ شعر',
-                      style: TextStyle(
-                        color: pal.ink,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    child: Text('کتابخانهٔ شعر',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: pal.ink, fontSize: 20,
+                            fontWeight: FontWeight.w700)),
                   ),
                   IconButton(
                     tooltip: 'دربارهٔ منبع',
@@ -4522,11 +4758,13 @@ class _GanjoorPageState extends State<GanjoorPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
               child: TextField(
-                onChanged: (v) => setState(() => _query = v.trim()),
+                onChanged: _queryChanged,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
                 decoration: InputDecoration(
-                  hintText: 'نام شاعر را جست‌وجو کنید',
+                  hintText: 'جست‌وجو در شاعر، کتاب و متن شعر',
                   prefixIcon: Icon(LucideIcons.search, color: pal.muted),
                   filled: true,
                   fillColor: pal.cardC,
@@ -4537,82 +4775,158 @@ class _GanjoorPageState extends State<GanjoorPage> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+              child: Row(
+                children: [
+                  for (var i = 0; i < 4; i++)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Pressable(
+                          onTap: () => setState(() => _filter = i),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              color: _filter == i ? pal.sel : pal.cardC,
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: Text(
+                              ['همه', 'شاعران', 'کتاب‌ها', 'شعرها'][i],
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _filter == i ? pal.bg : pal.muted,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+              child: Row(
+                children: [
+                  for (var i = 0; i < 3; i++)
+                    Pressable(
+                      onTap: () => setState(() => _view = i),
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 7),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _view == i ? pal.pillC : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          [LucideIcons.list, LucideIcons.layoutGrid,
+                            LucideIcons.panelsTopLeft][i],
+                          size: 18,
+                          color: _view == i ? pal.sel : pal.muted,
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  Text(
+                    ['فهرست', 'دوستونه', 'کاشی‌ای'][_view],
+                    style: TextStyle(color: pal.muted, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: FutureBuilder<Map<String, dynamic>>(
                 future: _manifest,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
+                builder: (context, manifestSnapshot) {
+                  if (manifestSnapshot.connectionState != ConnectionState.done) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  if (snapshot.hasError || !snapshot.hasData) {
-                    return _ganjoorError(
-                      'دریافت فهرست شاعران انجام نشد. اتصال اینترنت را بررسی کنید.',
-                      _retryManifest,
-                    );
+                  if (!manifestSnapshot.hasData || manifestSnapshot.hasError) {
+                    return _ganjoorError('دریافت فهرست شاعران انجام نشد.',
+                        () => setState(() => _manifest = GanjoorData.json('manifest.json')));
                   }
-                  final poets =
-                      (snapshot.data!['Poets'] as List? ?? const [])
-                          .whereType<Map>()
-                          .map((e) => Map<String, dynamic>.from(e))
-                          .where((p) {
-                            final q = _query;
-                            return q.isEmpty ||
-                                (p['Nickname']?.toString().contains(q) ?? false);
-                          })
-                          .toList();
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            '${faNum(poets.length)} شاعر',
-                            style: TextStyle(color: pal.muted, fontSize: 12.5),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: edgeFade(
-                          child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-                            itemCount: poets.length,
-                            separatorBuilder: (_, __) =>
-                                Divider(height: 1, color: pal.div),
-                            itemBuilder: (_, i) {
-                              final poet = poets[i];
-                              return Enter(
-                                index: i,
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  leading: Icon(
+                  final poets = GanjoorData.rows(manifestSnapshot.data!['Poets'])
+                      .where((p) => _matches(p, _query)).toList();
+                  return FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _books,
+                    builder: (context, bookSnapshot) {
+                      if (bookSnapshot.connectionState != ConnectionState.done &&
+                          _filter == 2) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final books = (bookSnapshot.data ?? const <Map<String, dynamic>>[])
+                          .where((b) => _matches(b, _query)).toList();
+                      final poemFuture = _query.isEmpty ? null : _poems;
+                      if (_filter == 3 && poemFuture == null && _query.isNotEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      return FutureBuilder<List<Map<String, dynamic>>>(
+                        future: poemFuture,
+                        builder: (context, poemSnapshot) {
+                          final poems = poemSnapshot.data ?? const <Map<String, dynamic>>[];
+                          final showPoets = _filter == 0 || _filter == 1;
+                          final showBooks = _filter == 0 || _filter == 2;
+                          final showPoems = _filter == 0 || _filter == 3;
+                          if (_filter == 3 && _query.isNotEmpty &&
+                              poemSnapshot.connectionState != ConnectionState.done) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          return edgeFade(
+                            child: ListView(
+                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
+                              children: [
+                                if (showPoets)
+                                  _section(
+                                    'شاعران',
+                                    poets,
                                     LucideIcons.user,
-                                    color: pal.sel,
+                                    (p) => _value(p, ['Nickname', 'nickname', 'Name', 'name']),
+                                    (p) => _value(p, ['Bio', 'bio', 'Period', 'period']),
+                                    _openPoet,
                                   ),
-                                  title: Text(
-                                    poet['Nickname']?.toString() ?? '',
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: pal.ink,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                if (showBooks)
+                                  _section(
+                                    'کتاب‌ها و مجموعه‌ها',
+                                    books,
+                                    LucideIcons.bookOpen,
+                                    (b) => _value(b, ['Title', 'title', 'Name', 'name']),
+                                    (b) => _value(b, ['PoetName', 'PoetNickname', 'poetName']),
+                                    _openBook,
                                   ),
-                                  trailing: Icon(
-                                    LucideIcons.chevronLeft,
-                                    color: pal.muted,
-                                    size: 18,
+                                if (showPoems && _query.isNotEmpty)
+                                  _section(
+                                    'شعرهای پیدا‌شده',
+                                    poems,
+                                    LucideIcons.fileText,
+                                    (p) => _value(p, ['Title', 'title']),
+                                    (p) => _value(p, ['PoetName', 'PoetNickname', 'poetName']),
+                                    _openPoem,
                                   ),
-                                  onTap: () => _openPoet(poet),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
+                                if (_query.isEmpty && _filter == 3)
+                                  Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text('برای جست‌وجوی شعر، نام یا بخشی از متن آن را بنویسید.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: pal.muted, height: 1.8)),
+                                  ),
+                                if (_query.isNotEmpty && poets.isEmpty &&
+                                    books.isEmpty && poems.isEmpty &&
+                                    poemSnapshot.connectionState == ConnectionState.done)
+                                  Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text('در شاعرها، کتاب‌ها و متن شعرها نتیجه‌ای پیدا نشد.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(color: pal.muted, height: 1.8)),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
