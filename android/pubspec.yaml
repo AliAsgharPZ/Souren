@@ -19,6 +19,7 @@ flutter:
   assets:
     - assets/db/dataset.json
     - assets/db/categories.json
+    - assets/db/proverbs.json
   fonts:
     - family: Arad
       fonts:
