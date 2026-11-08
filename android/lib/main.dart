@@ -2179,32 +2179,6 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  void _showProverb(String title, String meaning) {
-    final key = 'proverb:$title';
-    final card = ShareCardData(
-      title: title,
-      lines: [meaning],
-      caption: 'پندواژه فارسی',
-    );
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: pal.bg,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-          card: card,
-          initialLiked: liked.contains(key) || liked.contains(title),
-          initialBookmarked: favorites.contains(key) || favorites.contains(title),
-          onToggleLike: () => _toggleLike(key),
-          onToggleBookmark: () => _toggleFav(key),
-        ),
-      ),
-    );
-  }
-
   void _showEntry(Entry e) {
     final catId = categories.categoryOf(e.ar);
     final card = ShareCardData(
