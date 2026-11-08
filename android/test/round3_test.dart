@@ -65,7 +65,6 @@ void main() {
           body: LikeBookmarkButtons(
             liked: false,
             bookmarked: false,
-            likeCount: 0,
             onToggleLike: noop,
             onToggleBookmark: noop,
           ),
@@ -82,7 +81,6 @@ void main() {
           body: LikeBookmarkButtons(
             liked: true,
             bookmarked: true,
-            likeCount: 5,
             onToggleLike: noop,
             onToggleBookmark: noop,
           ),
@@ -97,7 +95,6 @@ void main() {
       tester.widget<Icon>(find.byIcon(LucideIcons.bookmark)).color,
       pal.ink,
     );
-    expect(find.text('۵'), findsOneWidget);
   });
 
   testWidgets('DetailSheet shows the same options for a word and '
