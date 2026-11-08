@@ -7,6 +7,9 @@ on:
     paths:
       - '.github/workflows/ganjoor-dataset.yml'
       - 'android/tools/build_ganjoor_bundle.py'
+      - 'android/assets/db/dataset.json'
+      - 'android/assets/db/categories.json'
+      - 'android/assets/db/proverbs.json'
 
 permissions:
   contents: read
@@ -37,9 +40,9 @@ jobs:
       - name: Upload verified corpus and report
         uses: actions/upload-artifact@v4
         with:
-          name: souren-ganjoor-maximum-compression
+          name: souren-unified-content-database
           path: |
-            dist/ganjoor/ganjoor-full.sqlite.*
+            dist/ganjoor/souren-content.sqlite.*
             dist/ganjoor/compression-report.json
           if-no-files-found: error
           compression-level: 0
