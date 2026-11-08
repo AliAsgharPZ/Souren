@@ -324,7 +324,7 @@ class _PressableState extends State<Pressable>
       _scaleController.value = 1;
       return;
     }
-    final target = value ? widget.scale.clamp(.92, 1.02) : 1.0;
+    final target = value ? widget.scale.clamp(.92, 1.02).toDouble() : 1.0;
     _scaleController.animateWith(
       SpringSimulation(
         const SpringDescription(
