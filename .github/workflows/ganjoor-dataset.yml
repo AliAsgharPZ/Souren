@@ -2,6 +2,11 @@ name: Build maximum-compression Ganjoor corpus
 
 on:
   workflow_dispatch:
+  push:
+    branches: [fix/v0.4.1-cui-ui]
+    paths:
+      - '.github/workflows/ganjoor-dataset.yml'
+      - 'android/tools/build_ganjoor_bundle.py'
 
 permissions:
   contents: read
