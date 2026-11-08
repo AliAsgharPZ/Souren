@@ -559,6 +559,7 @@ class DetailSheet extends StatefulWidget {
   final Future<void> Function() onToggleBookmark;
   final VoidCallback? onOpenEtymology;
   final String? etymologyWord;
+  final List<String> relatedPersianWords;
   const DetailSheet({
     super.key,
     required this.card,
@@ -569,6 +570,7 @@ class DetailSheet extends StatefulWidget {
     required this.onToggleBookmark,
     this.onOpenEtymology,
     this.etymologyWord,
+    this.relatedPersianWords = const [],
   });
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -722,7 +724,8 @@ class _DetailSheetState extends State<DetailSheet> {
           ),
           if (widget.etymologyWord != null) ...[
             _RootInfoCard(word: widget.etymologyWord!),
-            _PoemUsageCard(word: widget.etymologyWord!),
+            _PoemUsageCard(words: widget.relatedPersianWords.isNotEmpty
+                ? widget.relatedPersianWords : [widget.etymologyWord!]),
           ],
           if (widget.onOpenEtymology != null) ...[
             const SizedBox(height: 12),
@@ -1942,6 +1945,7 @@ class _ShellState extends State<Shell> {
         onToggleLike: () => _toggleLike(e.ar),
         onToggleBookmark: () => _toggleFav(e.ar),
         etymologyWord: e.hasFa ? e.fa.first : null,
+        relatedPersianWords: e.fa,
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -4435,6 +4439,24 @@ class GanjoorData {
     });
   }
 
+  static Future<List<Map<String, dynamic>>> searchPoemsForTerms(
+    List<String> terms,
+  ) async {
+    final uniqueTerms = terms.map((e) => e.trim())
+        .where((e) => e.isNotEmpty).toSet().take(3).toList();
+    if (uniqueTerms.isEmpty) return const [];
+    final groups = await Future.wait(uniqueTerms.map(searchPoems));
+    final merged = <String, Map<String, dynamic>>{};
+    for (final group in groups) {
+      for (final poem in group) {
+        final key = (poem['FullUrl'] ?? poem['fullUrl'] ??
+            poem['Title'] ?? poem['title'] ?? '').toString();
+        if (key.isNotEmpty) merged.putIfAbsent(key, () => poem);
+      }
+    }
+    return merged.values.take(5).toList(growable: false);
+  }
+
   static Future<Map<String, int>> stats() =>
       _statsFuture ??= _loadStats();
 
@@ -4453,13 +4475,13 @@ class GanjoorData {
 }
 
 class _PoemUsageCard extends StatelessWidget {
-  final String word;
-  const _PoemUsageCard({required this.word});
+  final List<String> words;
+  const _PoemUsageCard({required this.words});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: GanjoorData.searchPoems(word),
+      future: GanjoorData.searchPoemsForTerms(words),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done ||
             !snapshot.hasData || snapshot.data!.isEmpty) {
