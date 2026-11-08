@@ -111,7 +111,6 @@ void main() {
             ),
             initialLiked: false,
             initialBookmarked: false,
-            likeCount: 3,
             onToggleLike: () async {
               toggled++;
             },
