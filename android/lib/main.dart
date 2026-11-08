@@ -2572,16 +2572,22 @@ class _ShellState extends State<Shell> {
       context: context,
       backgroundColor: pal.bg,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-          card: card,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
           initialLiked: liked.contains(key) || liked.contains(title),
           initialBookmarked: favorites.contains(key) || favorites.contains(title),
           onToggleLike: () => _toggleLike(key),
-          onToggleBookmark: () => _toggleFav(key),
+            onToggleBookmark: () => _toggleFav(key),
+          ),
         ),
       ),
     );
@@ -2607,10 +2613,14 @@ class _ShellState extends State<Shell> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-          card: ShareCardData(
-            title: word,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: ShareCardData(
+              title: word,
             lines: lines,
             caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
           ),
@@ -2618,7 +2628,8 @@ class _ShellState extends State<Shell> {
           initialBookmarked: false,
           onToggleLike: () async {},
           onToggleBookmark: () async {},
-          showActions: false,
+            showActions: false,
+          ),
         ),
       ),
     );
@@ -2637,13 +2648,19 @@ class _ShellState extends State<Shell> {
     );
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: pal.bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-        card: card,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
         initialLiked: liked.contains(e.ar),
         initialBookmarked: favorites.contains(e.ar),
         onToggleLike: () => _toggleLike(e.ar),
@@ -2658,6 +2675,7 @@ class _ShellState extends State<Shell> {
             }
           });
         },
+          ),
         ),
       ),
     );
@@ -4719,16 +4737,25 @@ class _PandvazhePageState extends State<PandvazhePage> {
     );
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: pal.bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => DetailSheet(
-        card: card,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
         initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
         initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
         onToggleLike: () async => _toggleLike(title),
-        onToggleBookmark: () async => _toggleFav(title),
+            onToggleBookmark: () async => _toggleFav(title),
+          ),
+        ),
       ),
     );
   }
@@ -5071,10 +5098,14 @@ class _EtymologyPageState extends State<EtymologyPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-          card: ShareCardData(
-            title: row.word,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: ShareCardData(
+              title: row.word,
             lines: lines,
             caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
           ),
@@ -5082,7 +5113,8 @@ class _EtymologyPageState extends State<EtymologyPage> {
           initialBookmarked: false,
           onToggleLike: () async {},
           onToggleBookmark: () async {},
-          showActions: false,
+            showActions: false,
+          ),
         ),
       ),
     );
