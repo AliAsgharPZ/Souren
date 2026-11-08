@@ -199,10 +199,10 @@ def build(source: Path, output: Path) -> dict:
               PRIMARY KEY(source_type, source_id, relation, target_type, target_id)
             ) WITHOUT ROWID;
             CREATE VIRTUAL TABLE poem_search USING fts5(
-              title, poet, body, tokenize='unicode61'
+              title, poet, body, content='', tokenize='unicode61'
             );
             CREATE VIRTUAL TABLE dictionary_search USING fts5(
-              headword, meanings, tokenize='unicode61'
+              headword, meanings, content='', tokenize='unicode61'
             );
             CREATE INDEX idx_categories_poet ON categories(poet_id);
             CREATE INDEX idx_poems_cat ON poems(cat_id);
@@ -210,6 +210,20 @@ def build(source: Path, output: Path) -> dict:
             CREATE INDEX idx_dictionary_meanings_entry ON dictionary_meanings(entry_id);
             CREATE INDEX idx_dictionary_category_entries_entry ON dictionary_category_entries(entry_id);
             CREATE INDEX idx_relations_target ON content_relations(target_type, target_id);
+            CREATE VIEW poem_catalog AS
+              SELECT p.id, p.cat_id, p.title, p.full_title, p.full_url,
+                     p.poet_slug, po.name AS poet_name, c.title AS category_title,
+                     p.source_path
+              FROM poems p
+              LEFT JOIN poets po ON po.slug = p.poet_slug
+              LEFT JOIN categories c ON c.id = p.cat_id;
+            CREATE VIEW dictionary_catalog AS
+              SELECT e.id, e.headword,
+                     group_concat(m.meaning, ' | ') AS meanings,
+                     e.source_path
+              FROM dictionary_entries e
+              LEFT JOIN dictionary_meanings m ON m.entry_id = e.id
+              GROUP BY e.id, e.headword, e.source_path;
         """)
 
         poet_names = {}
