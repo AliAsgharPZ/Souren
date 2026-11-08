@@ -1,0 +1,116 @@
+name: Ganjoor dataset compression benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - compression/ganjoor-under-50mb
+    paths:
+      - .github/workflows/ganjoor-compression.yml
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Install compressors
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xz-utils zstd brotli
+
+      - name: Download official Ganjoor dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 5 --retry-all-errors \
+            https://codeload.github.com/ganjoor/ganjoor-data/tar.gz/refs/heads/main \
+            -o /tmp/ganjoor-source.tar.gz
+          mkdir -p /tmp/source
+          tar -xzf /tmp/ganjoor-source.tar.gz --strip-components=1 -C /tmp/source
+          test -s /tmp/source/manifest.json
+          python3 - <<'PY'
+          import json
+          p='/tmp/source/manifest.json'
+          m=json.load(open(p,encoding='utf-8'))
+          print('GeneratedAtUtc:',m.get('GeneratedAtUtc'))
+          print('PoetsCount:',m.get('PoetsCount'))
+          print('PoemsCount:',m.get('PoemsCount'))
+          PY
+          du -sh /tmp/source
+
+      - name: Create deterministic uncompressed tar stream
+        run: |
+          set -euo pipefail
+          tar --sort=name --mtime='UTC 2020-01-01' --owner=0 --group=0 --numeric-owner \
+            -C /tmp/source -cf /tmp/ganjoor-data.tar .
+          ls -lh /tmp/ganjoor-data.tar
+
+      - name: Benchmark lossless compressors
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp /tmp/source/manifest.json out/manifest.json
+          (
+            /usr/bin/time -v xz -9e --threads=1 --lzma2=dict=256MiB \
+              -c /tmp/ganjoor-data.tar > out/ganjoor-data.tar.xz
+          ) 2> out/xz.log
+          (
+            /usr/bin/time -v zstd --ultra -22 --long=31 -T0 -c /tmp/ganjoor-data.tar \
+              > out/ganjoor-data.tar.zst
+          ) 2> out/zstd.log
+          (
+            /usr/bin/time -v brotli -q 11 -w 24 -c /tmp/ganjoor-data.tar \
+              > out/ganjoor-data.tar.br
+          ) 2> out/brotli.log
+          python3 - <<'PY'
+          import os
+          files=['out/ganjoor-data.tar.xz','out/ganjoor-data.tar.zst','out/ganjoor-data.tar.br']
+          for f in files:
+              n=os.path.getsize(f)
+              print(f'{f}: {n:,} bytes ({n/1_000_000:.2f} MB)')
+          PY
+
+      - name: Verify every archive is lossless
+        shell: bash
+        run: |
+          set -euo pipefail
+          xz -dc out/ganjoor-data.tar.xz | sha256sum > out/xz.sha256
+          zstd -dc out/ganjoor-data.tar.zst | sha256sum > out/zstd.sha256
+          brotli -d -c out/ganjoor-data.tar.br | sha256sum > out/brotli.sha256
+          ORIGINAL=$(sha256sum /tmp/ganjoor-data.tar | cut -d' ' -f1)
+          for f in out/xz.sha256 out/zstd.sha256 out/brotli.sha256; do
+            ACTUAL=$(cut -d' ' -f1 "$f")
+            test "$ACTUAL" = "$ORIGINAL"
+          done
+          echo "All compressed streams round-trip byte-for-byte."
+
+      - name: Write benchmark report
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          methods=['xz','zst','br']
+          with open('out/REPORT.md','w') as f:
+              f.write('# Ganjoor lossless compression benchmark\\n\\n')
+              f.write('Source: https://github.com/ganjoor/ganjoor-data\\n\\n')
+              f.write('| Method | Bytes | Decimal MB | Under 50 MB |\\n|---|---:|---:|---|\\n')
+              for m,ext in [('XZ -9e, 256 MiB dictionary','xz'),('Zstandard -22, long 31','zst'),('Brotli -11, window 24','br')]:
+                  p=f'out/ganjoor-data.tar.{ext}'
+                  if os.path.exists(p):
+                      n=os.path.getsize(p)
+                      f.write(f'| {m} | {n:,} | {n/1_000_000:.2f} | {"YES" if n < 50_000_000 else "NO"} |\\n')
+          PY
+          cat out/REPORT.md
+
+      - name: Upload benchmark outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ganjoor-lossless-compression-benchmark
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
