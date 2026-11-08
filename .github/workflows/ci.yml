@@ -62,11 +62,12 @@ jobs:
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           sed -n '1,3p' /tmp/souren-apksigner.txt
           "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='11' versionName='0.4.5.5'"
+          cp "$APK" Souren-v0.4.5.5.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: souren-release-apk
-          path: android/build/app/outputs/flutter-apk/app-release.apk
+          name: souren-v0.4.5.5-apk
+          path: android/Souren-v0.4.5.5.apk
