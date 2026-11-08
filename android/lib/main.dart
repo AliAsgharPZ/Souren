@@ -6400,7 +6400,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   maxWidth: 560,
-                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .78,
+                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .92,
                 ),
                 child: SingleChildScrollView(
                   child: DetailSheet(
