@@ -1785,7 +1785,7 @@ class _ShellState extends State<Shell> {
               for (var count = 1; count <= 18; count++) {
                 final candidate = base.replaceFirst(
                   ' ',
-                  List<String>.filled(count, String.fromCharCode(0x0640)).join() + ' ',
+                  '${List<String>.filled(count, String.fromCharCode(0x0640)).join()} ',
                 );
                 final painter = TextPainter(
                   text: TextSpan(
