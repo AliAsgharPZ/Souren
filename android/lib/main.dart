@@ -552,6 +552,8 @@ class DetailSheet extends StatefulWidget {
   final VoidCallback? onOpenEtymology;
   final String? etymologyWord;
   final List<String> relatedPersianWords;
+  final List<Entry> relatedEntries;
+  final void Function(Entry)? onOpenRelatedEntry;
   const DetailSheet({
     super.key,
     required this.card,
@@ -563,6 +565,8 @@ class DetailSheet extends StatefulWidget {
     this.onOpenEtymology,
     this.etymologyWord,
     this.relatedPersianWords = const [],
+    this.relatedEntries = const [],
+    this.onOpenRelatedEntry,
   });
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -636,6 +640,38 @@ class _DetailSheetState extends State<DetailSheet> {
                 widget.card.caption!,
                 style: TextStyle(color: pal.faint, fontSize: 12.5),
               ),
+            ),
+          ],
+          if (widget.relatedEntries.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'واژه‌های موجود در این بیت',
+                style: TextStyle(
+                  color: pal.muted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final entry in widget.relatedEntries)
+                  ActionChip(
+                    label: Text(entry.ar),
+                    onPressed: widget.onOpenRelatedEntry == null
+                        ? null
+                        : () => widget.onOpenRelatedEntry!(entry),
+                    backgroundColor: pal.pillC,
+                    side: BorderSide(color: pal.div),
+                    labelStyle: TextStyle(color: pal.ink, fontWeight: FontWeight.w600),
+                  ),
+              ],
             ),
           ],
           const SizedBox(height: 18),
@@ -1644,7 +1680,7 @@ class _ShellState extends State<Shell> {
                                     ),
                                     _sidePill(
                                       'کتابخانهٔ شعر',
-                                      () => _open(const GanjoorPage()),
+                                      () => _open(_ganjoorPage(d)),
                                     ),
                                     _sidePill(
                                       'ریشه‌شناسی',
@@ -1856,6 +1892,12 @@ class _ShellState extends State<Shell> {
                 onTap: full.isEmpty ? null : () => _open(GanjoorPoemPage(
                   title: title,
                   path: 'poets/$full.json',
+                  dictionary: d,
+                  liked: liked,
+                  favorites: favorites,
+                  onToggleLike: _toggleLike,
+                  onToggleBookmark: _toggleFav,
+                  onOpenEntry: _showEntry,
                 )),
               );
             },
@@ -2303,6 +2345,15 @@ class _ShellState extends State<Shell> {
   }
 
   // ---------- بخش‌ها (همهٔ قابلیت‌ها) ----------
+  Widget _ganjoorPage(Dictionary d) => GanjoorPage(
+    dictionary: d,
+    liked: liked,
+    favorites: favorites,
+    onToggleLike: _toggleLike,
+    onToggleBookmark: _toggleFav,
+    onOpenEntry: _showEntry,
+  );
+
   Widget _sectionsPage(Dictionary d) {
     final tiles = <(IconData, String, VoidCallback)>[
       (
@@ -2323,7 +2374,7 @@ class _ShellState extends State<Shell> {
       (
         LucideIcons.fileText,
         'کتابخانهٔ شعر',
-        () => _open(const GanjoorPage()),
+        () => _open(_ganjoorPage(d)),
       ),
       (LucideIcons.award, 'یادگیری من', () => _pushPage(_learningPage())),
       (
@@ -4806,7 +4857,22 @@ class _PoemUsageCard extends StatelessWidget {
 }
 
 class GanjoorPage extends StatefulWidget {
-  const GanjoorPage({super.key});
+  final Dictionary? dictionary;
+  final Set<String>? liked;
+  final Set<String>? favorites;
+  final Future<void> Function(String)? onToggleLike;
+  final Future<void> Function(String)? onToggleBookmark;
+  final void Function(Entry)? onOpenEntry;
+
+  const GanjoorPage({
+    super.key,
+    this.dictionary,
+    this.liked,
+    this.favorites,
+    this.onToggleLike,
+    this.onToggleBookmark,
+    this.onOpenEntry,
+  });
   @override
   State<GanjoorPage> createState() => _GanjoorPageState();
 }
@@ -4864,6 +4930,12 @@ class _GanjoorPageState extends State<GanjoorPage> {
       title: _value(poet, ['Nickname', 'nickname', 'Name', 'name']).isEmpty
           ? 'شاعر' : _value(poet, ['Nickname', 'nickname', 'Name', 'name']),
       path: full.replaceFirst(RegExp(r'^/'), ''),
+      dictionary: widget.dictionary,
+      liked: widget.liked,
+      favorites: widget.favorites,
+      onToggleLike: widget.onToggleLike,
+      onToggleBookmark: widget.onToggleBookmark,
+      onOpenEntry: widget.onOpenEntry,
     )));
   }
 
@@ -4874,6 +4946,12 @@ class _GanjoorPageState extends State<GanjoorPage> {
       title: _value(book, ['Title', 'title', 'Name', 'name']).isEmpty
           ? 'کتاب' : _value(book, ['Title', 'title', 'Name', 'name']),
       path: full.replaceFirst(RegExp(r'^/'), ''),
+      dictionary: widget.dictionary,
+      liked: widget.liked,
+      favorites: widget.favorites,
+      onToggleLike: widget.onToggleLike,
+      onToggleBookmark: widget.onToggleBookmark,
+      onOpenEntry: widget.onOpenEntry,
     )));
   }
 
@@ -4885,6 +4963,12 @@ class _GanjoorPageState extends State<GanjoorPage> {
       title: _value(poem, ['Title', 'title']).isEmpty
           ? 'شعر' : _value(poem, ['Title', 'title']),
       path: 'poets/$full.json',
+      dictionary: widget.dictionary,
+      liked: widget.liked,
+      favorites: widget.favorites,
+      onToggleLike: widget.onToggleLike,
+      onToggleBookmark: widget.onToggleBookmark,
+      onOpenEntry: widget.onOpenEntry,
     )));
   }
 
@@ -5227,7 +5311,24 @@ class _GanjoorPageState extends State<GanjoorPage> {
 class GanjoorNodePage extends StatefulWidget {
   final String title;
   final String path;
-  const GanjoorNodePage({super.key, required this.title, required this.path});
+  final Dictionary? dictionary;
+  final Set<String>? liked;
+  final Set<String>? favorites;
+  final Future<void> Function(String)? onToggleLike;
+  final Future<void> Function(String)? onToggleBookmark;
+  final void Function(Entry)? onOpenEntry;
+
+  const GanjoorNodePage({
+    super.key,
+    required this.title,
+    required this.path,
+    this.dictionary,
+    this.liked,
+    this.favorites,
+    this.onToggleLike,
+    this.onToggleBookmark,
+    this.onOpenEntry,
+  });
   @override
   State<GanjoorNodePage> createState() => _GanjoorNodePageState();
 }
@@ -5246,6 +5347,12 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
         GanjoorNodePage(
           title: category['Title']?.toString() ?? 'مجموعه',
           path: path.replaceFirst(RegExp(r'^/'), ''),
+          dictionary: widget.dictionary,
+          liked: widget.liked,
+          favorites: widget.favorites,
+          onToggleLike: widget.onToggleLike,
+          onToggleBookmark: widget.onToggleBookmark,
+          onOpenEntry: widget.onOpenEntry,
         ),
       ),
     );
@@ -5259,6 +5366,12 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
         GanjoorPoemPage(
           title: poem['Title']?.toString() ?? 'شعر',
           path: 'poets/${path.replaceFirst(RegExp(r'^/'), '')}.json',
+          dictionary: widget.dictionary,
+          liked: widget.liked,
+          favorites: widget.favorites,
+          onToggleLike: widget.onToggleLike,
+          onToggleBookmark: widget.onToggleBookmark,
+          onOpenEntry: widget.onOpenEntry,
         ),
       ),
     );
@@ -5354,7 +5467,24 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
 class GanjoorPoemPage extends StatefulWidget {
   final String title;
   final String path;
-  const GanjoorPoemPage({super.key, required this.title, required this.path});
+  final Dictionary? dictionary;
+  final Set<String>? liked;
+  final Set<String>? favorites;
+  final Future<void> Function(String)? onToggleLike;
+  final Future<void> Function(String)? onToggleBookmark;
+  final void Function(Entry)? onOpenEntry;
+
+  const GanjoorPoemPage({
+    super.key,
+    required this.title,
+    required this.path,
+    this.dictionary,
+    this.liked,
+    this.favorites,
+    this.onToggleLike,
+    this.onToggleBookmark,
+    this.onOpenEntry,
+  });
   @override
   State<GanjoorPoemPage> createState() => _GanjoorPoemPageState();
 }
