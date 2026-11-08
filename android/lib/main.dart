@@ -5550,75 +5550,77 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
       lines: lines,
       caption: 'بیت ${index + 1} · گنجور',
     );
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'بیت شعر',
-      barrierColor: Colors.black.withValues(alpha: .34),
-      transitionDuration: Motion.slow,
-      pageBuilder: (dialogContext, _, __) => Center(
-        child: Material(
-          color: pal.bg,
-          borderRadius: BorderRadius.circular(24),
-          clipBehavior: Clip.antiAlias,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 560,
-              maxHeight: MediaQuery.sizeOf(dialogContext).height * .78,
-            ),
-            child: SingleChildScrollView(
-              child: DetailSheet(
-                card: card,
-                initialLiked: widget.liked?.contains(key) ?? false,
-                initialBookmarked: widget.favorites?.contains(key) ?? false,
-                onToggleLike: () async {
-                  final callback = widget.onToggleLike;
-                  if (callback != null) {
-                    await callback(key);
-                  } else {
-                    await _toggleLocalContent('liked.json', key);
-                  }
-                },
-                onToggleBookmark: () async {
-                  final callback = widget.onToggleBookmark;
-                  if (callback != null) {
-                    await callback(key);
-                  } else {
-                    await _toggleLocalContent('favorites.json', key);
-                  }
-                },
-                relatedEntries: related,
-                onOpenRelatedEntry: (entry) {
-                  Navigator.of(dialogContext).pop();
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    widget.onOpenEntry?.call(entry);
-                  });
-                },
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: .34),
+        barrierLabel: 'بیت شعر',
+        transitionDuration: Motion.slow,
+        reverseTransitionDuration: Motion.base,
+        pageBuilder: (dialogContext, _, __) => Center(
+          child: Hero(
+            tag: key,
+            child: Material(
+              color: pal.bg,
+              borderRadius: BorderRadius.circular(24),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 560,
+                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .78,
+                ),
+                child: SingleChildScrollView(
+                  child: DetailSheet(
+                    card: card,
+                    initialLiked: widget.liked?.contains(key) ?? false,
+                    initialBookmarked: widget.favorites?.contains(key) ?? false,
+                    onToggleLike: () async {
+                      final callback = widget.onToggleLike;
+                      if (callback != null) {
+                        await callback(key);
+                      } else {
+                        await _toggleLocalContent('liked.json', key);
+                      }
+                    },
+                    onToggleBookmark: () async {
+                      final callback = widget.onToggleBookmark;
+                      if (callback != null) {
+                        await callback(key);
+                      } else {
+                        await _toggleLocalContent('favorites.json', key);
+                      }
+                    },
+                    relatedEntries: related,
+                    onOpenRelatedEntry: widget.onOpenEntry == null
+                        ? null
+                        : (entry) {
+                            Navigator.of(dialogContext).pop();
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              widget.onOpenEntry?.call(entry);
+                            });
+                          },
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Motion.curve,
-          reverseCurve: Curves.easeInOutCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, .035),
-              end: Offset.zero,
-            ).animate(curved),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Motion.curve,
+            reverseCurve: Curves.easeInOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
             child: ScaleTransition(
               scale: Tween<double>(begin: .94, end: 1).animate(curved),
               child: child,
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -5687,13 +5689,17 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                 for (var i = 0; i < ordered.length; i++)
                   Enter(
                     index: i,
-                    child: InkWell(
-                      onTap: () => _showCouplet(
-                        ordered[i],
-                        couplets[ordered[i]]!,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
+                    child: Hero(
+                      tag: 'poem:${widget.path}#${ordered[i]}',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          onTap: () => _showCouplet(
+                            ordered[i],
+                            couplets[ordered[i]]!,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -5730,7 +5736,9 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                           ],
                         ],
                       ),
-                    ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 12),
