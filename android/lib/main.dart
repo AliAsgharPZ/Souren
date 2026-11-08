@@ -6199,6 +6199,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                       }
                     },
                     relatedEntries: related,
+                    copyableLines: lines,
                     onOpenRelatedEntry: widget.onOpenEntry == null
                         ? null
                         : (entry) {
