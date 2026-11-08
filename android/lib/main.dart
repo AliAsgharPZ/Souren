@@ -1441,156 +1441,98 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// Floating nav bar (round 3): opaque, no glassmorphism. Six FIXED
-  /// slots — the buttons never move when switching tabs; only the
-  /// indicator pill slides. The pill is a fixed 42x42 box around the
-  /// icon, so its padding is exactly equal on all four sides. The
-  /// label fades in/out with opacity only and never changes layout.
-  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
-  final GlobalKey _navStackKey = GlobalKey();
-  double _indLeft = 0;
-  double _indWidth = 0;
-
-  void _measureIndicator() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final stackBox =
-          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
-      final tabBox =
-          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
-      if (stackBox == null || tabBox == null) return;
-      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
-      if ((pos.dx - _indLeft).abs() > .5 ||
-          (tabBox.size.width - _indWidth).abs() > .5) {
-        setState(() {
-          _indLeft = pos.dx;
-          _indWidth = tabBox.size.width;
-        });
-      }
-    });
-  }
-
   /// Restored v0.4.1 navigation geometry and interaction:
   /// the selected item expands to reveal its label and one indicator slides
   /// between tabs. Only the surface changed from glass to a solid color.
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
-    // Original v0.4.1 geometry/behavior, with the current CUI icon pack.
-    final items = <(IconData, IconData, String)>[
-      (LucideIcons.house, Icons.home_filled, 'پیشگاه'),
-      (LucideIcons.heart, Icons.favorite, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, Icons.dashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, Icons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, Icons.person, 'نمایه'),
-      (LucideIcons.settings, Icons.settings, 'پیکربندی'),
+    final items = <(IconData, String)>[
+      (LucideIcons.house, 'پیشگاه'),
+      (LucideIcons.heart, 'پسندیده‌ها'),
+      (LucideIcons.layoutDashboard, 'بخش‌ها'),
+      (LucideIcons.bookmark, 'نشان‌شده'),
+      (LucideIcons.user, 'نمایه'),
+      (LucideIcons.settings, 'پیکربندی'),
     ];
-    _measureIndicator();
-    final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
+    final selectedColor = Color.lerp(pal.sel, pal.bg, 0.38)!;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         decoration: BoxDecoration(
           color: pal.cardC,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: pal.div.withValues(alpha: 0.6)),
         ),
-        child: Stack(
-          key: _navStackKey,
-          children: [
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
-              left: _indLeft,
-              top: 0,
-              bottom: 0,
-              width: _indWidth,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: selSoft,
-                  borderRadius: BorderRadius.circular(19),
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  GestureDetector(
-                    key: _tabKeys[i],
-                    onTap: () => _go(i),
-                    child: AnimatedContainer(
-                      duration: Motion.base,
-                      curve: Motion.curve,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tab == i ? 17 : 12,
-                        vertical: 14,
-                      ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const indicatorSize = 46.0;
+            const barHeight = 54.0;
+            final slotWidth = constraints.maxWidth / items.length;
+            final indicatorLeft =
+                slotWidth * tab + (slotWidth - indicatorSize) / 2;
+
+            return SizedBox(
+              height: barHeight,
+              child: Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 460),
+                    curve: Motion.spring,
+                    left: indicatorLeft,
+                    top: (barHeight - indicatorSize) / 2,
+                    width: indicatorSize,
+                    height: indicatorSize,
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: AnimatedSize(
-                        duration: Motion.base,
-                        curve: Motion.curve,
-                        alignment: AlignmentDirectional.center,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: Motion.fast,
-                              switchInCurve: Motion.curve,
-                              switchOutCurve: Motion.curve,
-                              transitionBuilder: (child, anim) =>
-                                  FadeTransition(
-                                opacity: anim,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(begin: .8, end: 1)
-                                      .animate(anim),
-                                  child: child,
-                                ),
-                              ),
-                              child: Icon(
-                                key: ValueKey<bool>(tab == i),
-                                tab == i ? items[i].$2 : items[i].$1,
-                                size: 23,
-                                color: tab == i
-                                    ? pal.bg
-                                    : pal.ink.withValues(alpha: .72),
-                                fill: tab == i ? 1.0 : 0.0,
-                                weight: tab == i ? 700.0 : 400.0,
-                              ),
-                            ),
-                            if (tab == i)
-                              TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
-                                duration: Motion.base,
-                                curve: Motion.curve,
-                                builder: (_, value, child) =>
-                                    Opacity(opacity: value, child: child),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const SizedBox(width: 7),
-                                    Text(
-                                      items[i].$3,
-                                      style: TextStyle(
-                                        color: pal.bg,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
+                        color: selectedColor,
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
                   ),
-              ],
-            ),
-          ],
+                  Row(
+                    children: [
+                      for (var i = 0; i < items.length; i++)
+                        Expanded(
+                          child: Semantics(
+                            button: true,
+                            selected: tab == i,
+                            label: items[i].$2,
+                            child: Tooltip(
+                              message: items[i].$2,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _go(i),
+                                child: SizedBox(
+                                  height: barHeight,
+                                  child: Center(
+                                    child: TweenAnimationBuilder<Color?>(
+                                      tween: ColorTween(
+                                        end: tab == i
+                                            ? pal.bg
+                                            : pal.ink.withValues(alpha: .72),
+                                      ),
+                                      duration: Motion.base,
+                                      curve: Motion.curve,
+                                      builder: (context, color, child) => Icon(
+                                        items[i].$1,
+                                        size: 23,
+                                        color: color,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -1927,7 +1869,7 @@ class _ShellState extends State<Shell> {
                 dense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                 leading: Icon(
-                  poets ? LucideIcons.userRound : LucideIcons.bookOpen,
+                  poets ? LucideIcons.user : LucideIcons.book,
                   color: pal.sel,
                 ),
                 title: Text(
