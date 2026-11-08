@@ -1947,8 +1947,8 @@ class _ShellState extends State<Shell> {
                               Expanded(
                                 child: AnimatedSwitcher(
                                   duration: Motion.slow,
-                                  switchInCurve: Motion.curve,
-                                  switchOutCurve: Curves.easeInOutCubic,
+                                  switchInCurve: Motion.spring,
+                                  switchOutCurve: Motion.spring,
                                   transitionBuilder: (child, animation) =>
                                       FadeTransition(
                                     opacity: animation,
@@ -1975,12 +1975,12 @@ class _ShellState extends State<Shell> {
                         ),
                         AnimatedContainer(
                           duration: Motion.slow,
-                          curve: Curves.easeInOutCubic,
+                          curve: Motion.spring,
                           width: _searchFocused ? 0 : 16,
                         ),
                         AnimatedContainer(
                           duration: Motion.slow,
-                          curve: Curves.easeInOutCubic,
+                          curve: Motion.spring,
                           width: _searchFocused ? 0 : 124,
                           child: ClipRect(
                             child: AnimatedOpacity(
