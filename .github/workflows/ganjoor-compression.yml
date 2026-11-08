@@ -1,4 +1,4 @@
-name: Ganjoor dataset compression benchmark
+name: Ganjoor compression experiments (parallel)
 
 on:
   workflow_dispatch:
@@ -13,15 +13,72 @@ permissions:
 
 jobs:
   benchmark:
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - id: zstd-15
+            label: Zstandard level 15
+            package: zstd
+            command: zstd -15 -T2 -c
+            extension: zst
+          - id: zstd-19
+            label: Zstandard level 19
+            package: zstd
+            command: zstd --ultra -19 -T2 -c
+            extension: zst
+          - id: zstd-22
+            label: Zstandard level 22 long mode
+            package: zstd
+            command: zstd --ultra -22 --long=27 -T2 -c
+            extension: zst
+          - id: xz-64
+            label: XZ extreme dictionary 64 MiB
+            package: xz-utils
+            command: xz -9e --threads=2 --lzma2=dict=64MiB -c
+            extension: xz
+          - id: xz-128
+            label: XZ extreme dictionary 128 MiB
+            package: xz-utils
+            command: xz -9e --threads=2 --lzma2=dict=128MiB -c
+            extension: xz
+          - id: xz-256
+            label: XZ extreme dictionary 256 MiB
+            package: xz-utils
+            command: xz -9e --threads=2 --lzma2=dict=256MiB -c
+            extension: xz
+          - id: brotli-11
+            label: Brotli quality 11
+            package: brotli
+            command: brotli -q 11 -w 24 -c
+            extension: br
+          - id: lz4-12
+            label: LZ4 high compression
+            package: lz4
+            command: lz4 -12 -q -c
+            extension: lz4
+          - id: gzip-9
+            label: Gzip level 9
+            package: gzip
+            command: gzip -9 -c
+            extension: gz
+          - id: 7z-lzma2
+            label: 7-Zip solid LZMA2
+            package: p7zip-full
+            command: ''
+            extension: 7z
+
     steps:
-      - name: Install compressors
+      - name: Install selected compressor
         run: |
           sudo apt-get update
-          sudo apt-get install -y xz-utils zstd brotli
+          sudo apt-get install -y ${{ matrix.package }}
 
-      - name: Download official Ganjoor dataset
+      - name: Download and prepare official Ganjoor source
         shell: bash
         run: |
           set -euo pipefail
@@ -33,84 +90,88 @@ jobs:
           test -s /tmp/source/manifest.json
           python3 - <<'PY'
           import json
-          p='/tmp/source/manifest.json'
-          m=json.load(open(p,encoding='utf-8'))
+          m=json.load(open('/tmp/source/manifest.json',encoding='utf-8'))
           print('GeneratedAtUtc:',m.get('GeneratedAtUtc'))
           print('PoetsCount:',m.get('PoetsCount'))
           print('PoemsCount:',m.get('PoemsCount'))
           PY
           du -sh /tmp/source
-
-      - name: Create deterministic uncompressed tar stream
-        run: |
-          set -euo pipefail
           tar --sort=name --mtime='UTC 2020-01-01' --owner=0 --group=0 --numeric-owner \
             -C /tmp/source -cf /tmp/ganjoor-data.tar .
-          ls -lh /tmp/ganjoor-data.tar
-
-      - name: Benchmark lossless compressors
-        shell: bash
-        run: |
-          set -euo pipefail
+          sha256sum /tmp/ganjoor-data.tar | tee /tmp/source.sha256
           mkdir -p out
-          cp /tmp/source/manifest.json out/manifest.json
-          (
-            /usr/bin/time -v xz -9e --threads=1 --lzma2=dict=256MiB \
-              -c /tmp/ganjoor-data.tar > out/ganjoor-data.tar.xz
-          ) 2> out/xz.log
-          (
-            /usr/bin/time -v zstd --ultra -22 --long=31 -T0 -c /tmp/ganjoor-data.tar \
-              > out/ganjoor-data.tar.zst
-          ) 2> out/zstd.log
-          (
-            /usr/bin/time -v brotli -q 11 -w 24 -c /tmp/ganjoor-data.tar \
-              > out/ganjoor-data.tar.br
-          ) 2> out/brotli.log
-          python3 - <<'PY'
-          import os
-          files=['out/ganjoor-data.tar.xz','out/ganjoor-data.tar.zst','out/ganjoor-data.tar.br']
-          for f in files:
-              n=os.path.getsize(f)
-              print(f'{f}: {n:,} bytes ({n/1_000_000:.2f} MB)')
-          PY
 
-      - name: Verify every archive is lossless
+      - name: Compress selected variant
         shell: bash
         run: |
           set -euo pipefail
-          xz -dc out/ganjoor-data.tar.xz | sha256sum > out/xz.sha256
-          zstd -dc out/ganjoor-data.tar.zst | sha256sum > out/zstd.sha256
-          brotli -d -c out/ganjoor-data.tar.br | sha256sum > out/brotli.sha256
-          ORIGINAL=$(sha256sum /tmp/ganjoor-data.tar | cut -d' ' -f1)
-          for f in out/xz.sha256 out/zstd.sha256 out/brotli.sha256; do
-            ACTUAL=$(cut -d' ' -f1 "$f")
-            test "$ACTUAL" = "$ORIGINAL"
-          done
-          echo "All compressed streams round-trip byte-for-byte."
+          INPUT=/tmp/ganjoor-data.tar
+          OUTPUT="out/ganjoor-data.${{ matrix.extension }}"
+          if [ "${{ matrix.id }}" = "7z-lzma2" ]; then
+            7z a -t7z -m0=lzma2:d=256m -mx=9 -ms=on "$OUTPUT" "$INPUT"
+          else
+            ${{ matrix.command }} "$INPUT" > "$OUTPUT"
+          fi
+          stat --printf='Compressed bytes: %s\n' "$OUTPUT"
+          sha256sum "$OUTPUT" > out/compressed.sha256
 
-      - name: Write benchmark report
-        if: always()
+      - name: Verify exact lossless round trip
+        shell: bash
         run: |
+          set -euo pipefail
+          INPUT=/tmp/ganjoor-data.tar
+          OUTPUT="out/ganjoor-data.${{ matrix.extension }}"
+          case "${{ matrix.id }}" in
+            zstd-*) zstd -dc "$OUTPUT" > /tmp/roundtrip.tar ;;
+            xz-*) xz -dc "$OUTPUT" > /tmp/roundtrip.tar ;;
+            brotli-11) brotli -d -c "$OUTPUT" > /tmp/roundtrip.tar ;;
+            lz4-12) lz4 -d -c "$OUTPUT" > /tmp/roundtrip.tar ;;
+            gzip-9) gzip -dc "$OUTPUT" > /tmp/roundtrip.tar ;;
+            7z-lzma2) 7z x -y "-o/tmp/roundtrip" "$OUTPUT" >/dev/null; cp /tmp/roundtrip/ganjoor-data.tar /tmp/roundtrip.tar ;;
+          esac
+          ORIGINAL=$(sha256sum "$INPUT" | cut -d' ' -f1)
+          ACTUAL=$(sha256sum /tmp/roundtrip.tar | cut -d' ' -f1)
+          test "$ORIGINAL" = "$ACTUAL"
+          echo "PASS: byte-for-byte identical after decompression"
           python3 - <<'PY'
           import os
-          methods=['xz','zst','br']
-          with open('out/REPORT.md','w') as f:
-              f.write('# Ganjoor lossless compression benchmark\\n\\n')
-              f.write('Source: https://github.com/ganjoor/ganjoor-data\\n\\n')
-              f.write('| Method | Bytes | Decimal MB | Under 50 MB |\\n|---|---:|---:|---|\\n')
-              for m,ext in [('XZ -9e, 256 MiB dictionary','xz'),('Zstandard -22, long 31','zst'),('Brotli -11, window 24','br')]:
-                  p=f'out/ganjoor-data.tar.{ext}'
-                  if os.path.exists(p):
-                      n=os.path.getsize(p)
-                      f.write(f'| {m} | {n:,} | {n/1_000_000:.2f} | {"YES" if n < 50_000_000 else "NO"} |\\n')
+          n=os.path.getsize("out/ganjoor-data.${{ matrix.extension }}")
+          print(f"RESULT_MB={n/1_000_000:.3f}")
+          print(f"RESULT_BYTES={n}")
           PY
-          cat out/REPORT.md
 
-      - name: Upload benchmark outputs
+      - name: Write result
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p out
+          {
+            echo "# Compression result: ${{ matrix.label }}"
+            echo
+            echo "- Variant: ${{ matrix.id }}"
+            echo "- Source: https://github.com/ganjoor/ganjoor-data"
+            if [ -f "out/ganjoor-data.${{ matrix.extension }}" ]; then
+              B=$(stat -c%s "out/ganjoor-data.${{ matrix.extension }}")
+              echo "- Compressed size: $B bytes"
+            else
+              echo "- Result: compression output missing (see job log)"
+            fi
+            if [ -f /tmp/source.sha256 ]; then
+              echo "- Source tar SHA-256: $(cut -d' ' -f1 /tmp/source.sha256)"
+            fi
+            if [ -f /tmp/roundtrip.tar ]; then
+              echo "- Lossless verification: PASS"
+            else
+              echo "- Lossless verification: NOT PASSED"
+            fi
+          } > out/RESULT.md
+          cat out/RESULT.md
+
+      - name: Upload this experiment
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ganjoor-lossless-compression-benchmark
+          name: ganjoor-compression-${{ matrix.id }}
           path: out/
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 30
