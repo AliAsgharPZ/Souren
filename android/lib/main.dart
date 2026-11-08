@@ -1223,6 +1223,7 @@ class _ShellState extends State<Shell> {
   Set<String> favorites = {};
   Set<String> liked = {};
   Map<String, int> likeCounts = {};
+  List<(String, String)> proverbs = const [];
   Categories categories = const Categories({});
   int learnedWords = 0;
   int learnedCorrections = 0;
@@ -1269,6 +1270,7 @@ class _ShellState extends State<Shell> {
     final d = await Dictionary.load();
     final s = await SettingsStore.ensureLoaded();
     final cats = await Categories.load();
+    final loadedProverbs = await Proverbs.load();
     final fav = await SharedFiles.readJson('favorites.json');
     final lk = await SharedFiles.readJson('liked.json');
     final learned = await SharedFiles.readJson('learned.json');
@@ -1285,6 +1287,7 @@ class _ShellState extends State<Shell> {
       dict = d;
       settings = s;
       categories = cats;
+      proverbs = loadedProverbs;
       if (fav != null && fav['words'] is List) {
         favorites = (fav['words'] as List).map((e) => e.toString()).toSet();
       }
@@ -1772,7 +1775,7 @@ class _ShellState extends State<Shell> {
       return _pairList(wordResults, bottomPad: 0, singleLine: true);
     }
     if (_homeCollection == 1) {
-      final rows = PandvazhePage.proverbs.where((item) =>
+      final rows = proverbs.where((item) =>
         query.isEmpty || item.$1.contains(query) || item.$2.contains(query)
       ).toList();
       if (rows.isEmpty) {
@@ -2085,6 +2088,7 @@ class _ShellState extends State<Shell> {
 
   /// Proverb page wired to the shell's like/favorite storage.
   Widget _pandvazhePage() => PandvazhePage(
+    proverbs: proverbs,
     liked: liked,
     favorites: favorites,
     likeCounts: likeCounts,
@@ -2176,7 +2180,7 @@ class _ShellState extends State<Shell> {
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
-    final proverbs = PandvazhePage.proverbs.where((p) =>
+    final proverbs = proverbs.where((p) =>
       liked.contains('proverb:\${p.$1}') || liked.contains(p.$1)
     ).toList();
     return _pageShell(
@@ -2207,7 +2211,7 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
-    final proverbs = PandvazhePage.proverbs.where((p) =>
+    final proverbs = proverbs.where((p) =>
       favorites.contains('proverb:\${p.$1}') || favorites.contains(p.$1)
     ).toList();
     return _pageShell(
@@ -3999,6 +4003,7 @@ class NimeFaselePage extends StatelessWidget {
 
 // ================= پندواژه (ضرب‌المثل‌ها) =================
 class PandvazhePage extends StatefulWidget {
+  final List<(String, String)> proverbs;
   final Set<String> liked;
   final Set<String> favorites;
   final Map<String, int> likeCounts;
@@ -4007,6 +4012,7 @@ class PandvazhePage extends StatefulWidget {
 
   const PandvazhePage({
     super.key,
+    required this.proverbs,
     required this.liked,
     required this.favorites,
     required this.likeCounts,
@@ -4014,50 +4020,7 @@ class PandvazhePage extends StatefulWidget {
     required this.onToggleFav,
   });
 
-  static const proverbs = <(String, String)>[
-    ('از کوره دررفتن', 'زود خشمگین شدن و از اندازه بیرون رفتن.'),
-    ('آب در هاون کوبیدن', 'کار بیهوده و بی‌سرانجام کردن.'),
-    ('دست بالای دست بسیار است', 'همیشه کسی تواناتر از تو هست.'),
-    (
-      'جوجه را آخر پاییز می‌شمارند',
-      'نتیجهٔ کار را باید در پایان دید، نه آغاز.',
-    ),
-    ('از دل برود هر آنکه از دیده برفت', 'دوری، مهر را کم می‌کند.'),
-    (
-      'کار نیکو کردن از پر کردن است',
-      'خوبی با انباشته‌شدن از کارهای کوچک ساخته می‌شود.',
-    ),
-    (
-      'هر که بامش بیش، برفش بیشتر',
-      'هر که دارایی و جایگاهش بزرگ‌تر، گرفتاری‌اش هم بیشتر.',
-    ),
-    (
-      'آش کشک خاله‌ته، بخوری پاته نخوری پاته',
-      'کاری که گریزی از آن نیست؛ چه بخواهی چه نه، در آنی.',
-    ),
-    ('یک دست صدا ندارد', 'کار گروهی به‌تنهایی شدنی نیست.'),
-    (
-      'از این ستون به آن ستون فرج است',
-      'با گذر زمان و جابه‌جایی، گشایشی پیش می‌آید.',
-    ),
-    ('عجله کار شیطان است', 'شتاب‌زدگی کار را خراب می‌کند.'),
-    (
-      'حرف راست را باید از بچه شنید',
-      'راستِ بی‌پرده را کسی می‌گوید که نفعی در پنهان‌کردنش ندارد.',
-    ),
-    ('تا نباشد چیزکی، مردم نگویند چیزها', 'هر شایعه‌ای ریشه‌ای از راستی دارد.'),
-    ('دل به دل راه دارد', 'مهر و احساس میان دو کس دوسویه است.'),
-    (
-      'صبر تلخ است ولیکن بر شیرین دارد',
-      'شکیبایی سخت است اما میوه‌اش شیرین است.',
-    ),
-    (
-      'آنچه شیران را کند روبه‌مزاج، احتیاج است',
-      'نیاز، آدمِ دلیر را هم وادار به فروتنی می‌کند.',
-    ),
-    ('خواستن، توانستن است', 'ارادهٔ استوار راه رسیدن را باز می‌کند.'),
-    ('کبوتر با کبوتر، باز با باز', 'هر کس با هم‌گونهٔ خود می‌آمیزد.'),
-  ];
+
 
   @override
   State<PandvazhePage> createState() => _PandvazhePageState();
@@ -4132,7 +4095,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
           children: [
-            for (var i = 0; i < PandvazhePage.proverbs.length; i++)
+            for (var i = 0; i < proverbs.length; i++)
               Enter(
                 index: i,
                 child: Container(
@@ -4140,8 +4103,8 @@ class _PandvazhePageState extends State<PandvazhePage> {
                   child: Pressable(
                     onTap: () => _proverbSheet(
                       context,
-                      PandvazhePage.proverbs[i].$1,
-                      PandvazhePage.proverbs[i].$2,
+                      proverbs[i].$1,
+                      proverbs[i].$2,
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
@@ -4163,19 +4126,19 @@ class _PandvazhePageState extends State<PandvazhePage> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      PandvazhePage.proverbs[i].$1,
+                                      proverbs[i].$1,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 19,
                                       ),
                                     ),
                                   ),
-                                  _actions(PandvazhePage.proverbs[i].$1),
+                                  _actions(proverbs[i].$1),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                PandvazhePage.proverbs[i].$2,
+                                proverbs[i].$2,
                                 style: const TextStyle(
                                   color: Color(0xFF5C5546),
                                   height: 1.9,
