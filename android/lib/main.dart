@@ -772,6 +772,30 @@ class _DetailSheetState extends State<DetailSheet> {
             ],
           ),
           const SizedBox(height: 8),
+          if (widget.card.breadcrumb != null) ...[
+            const SizedBox(height: 5),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.breadcrumb!,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.faint, fontSize: 11.5, height: 1.6),
+              ),
+            ),
+          ],
+          if (widget.card.meaning != null) ...[
+            const SizedBox(height: 9),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.meaning!,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+              ),
+            ),
+          ],
           if (widget.card.lines.isNotEmpty)
             Align(
               alignment: Alignment.centerRight,
@@ -987,6 +1011,24 @@ class ShareCardImage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          if (card.breadcrumb != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              card.breadcrumb!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontSize: 12, color: pal.faint, height: 1.6),
+            ),
+          ],
+          if (card.meaning != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              card.meaning!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontSize: 15, color: pal.muted, height: 1.8),
+            ),
+          ],
           for (final line in card.lines)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -6154,8 +6196,10 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
     final summary = meaning?.trim();
     final card = ShareCardData(
       title: lines.join('\n'),
-      lines: summary == null || summary.isEmpty ? const [] : [summary],
-      caption: '$path  ·  بیت ${faNum(index + 1)}',
+      lines: const [],
+      breadcrumb: path,
+      meaning: summary == null || summary.isEmpty ? null : summary,
+      caption: 'بیت ${faNum(index + 1)} · گنجور',
     );
     Navigator.of(context).push(
       PageRouteBuilder<void>(
