@@ -136,7 +136,7 @@ def build(source: Path, output: Path) -> dict:
         raise RuntimeError(f"No JSON source files found under {source}")
 
     output.mkdir(parents=True, exist_ok=True)
-    db_path = output / "ganjoor-full.sqlite"
+    db_path = output / "souren-content.sqlite"
     if db_path.exists():
         db_path.unlink()
 
@@ -384,6 +384,35 @@ def build(source: Path, output: Path) -> dict:
                 ("category", str(row[0]), "belongs_to", "poet", str(row[1]))
             )
 
+        # Complete cross-links after all source rows have been imported, so
+        # path ordering can never leave poems disconnected from their poet.
+        db.execute("""
+            INSERT OR IGNORE INTO content_relations
+            SELECT 'poem', CAST(p.id AS TEXT), 'by_poet', 'poet', CAST(po.id AS TEXT)
+            FROM poems p JOIN poets po ON po.slug = p.poet_slug
+        """)
+        db.execute("""
+            INSERT OR IGNORE INTO content_relations
+            SELECT 'poem', CAST(id AS TEXT), 'in_category', 'category', CAST(cat_id AS TEXT)
+            FROM poems WHERE cat_id IS NOT NULL
+        """)
+        for slug, name in poet_names.items():
+            db.execute(
+                "UPDATE poem_search SET poet=? WHERE rowid IN (SELECT id FROM poems WHERE poet_slug=?)",
+                (name, slug)
+            )
+
+        # Verify every retained source payload against the digest recorded at import.
+        verified_sources = 0
+        for raw, digest, byte_length in db.execute(
+            "SELECT raw_json, sha256, byte_length FROM source_files"
+        ):
+            if len(raw) != byte_length or sha256(raw) != digest:
+                raise RuntimeError("A source JSON payload failed its byte-level SHA-256 check")
+            verified_sources += 1
+        if verified_sources != counts["json_files"]:
+            raise RuntimeError("Source payload verification count mismatch")
+
         counts["content_relations"] = db.execute(
             "SELECT COUNT(*) FROM content_relations"
         ).fetchone()[0]
@@ -412,7 +441,7 @@ def build(source: Path, output: Path) -> dict:
         winner = candidates[0]
         verify_archive(winner, db_hash, Path(temp))
         suffix = winner["path"].suffix
-        final_archive = output / f"ganjoor-full.sqlite{suffix}"
+        final_archive = output / f"souren-content.sqlite{suffix}"
         shutil.copy2(winner["path"], final_archive)
 
     report = {
@@ -439,6 +468,8 @@ def build(source: Path, output: Path) -> dict:
         "selected_bytes": final_archive.stat().st_size,
         "lossless_round_trip_verified": True,
         "source_payloads_preserved_byte_for_byte": True,
+        "source_payloads_sha256_verified": True,
+        "database_scope": ["ganjoor", "dictionary", "dictionary_categories", "proverbs"],
     }
     (output / "compression-report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
