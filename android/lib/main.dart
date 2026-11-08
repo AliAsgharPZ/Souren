@@ -6026,6 +6026,88 @@ class _GanjoorPageState extends State<GanjoorPage> {
   }
 }
 
+Widget _ganjoorBreadcrumb(
+  BuildContext context, {
+  required String fullTitle,
+  required String path,
+  Dictionary? dictionary,
+  Set<String>? liked,
+  Set<String>? favorites,
+  Future<void> Function(String)? onToggleLike,
+  Future<void> Function(String)? onToggleBookmark,
+  void Function(Entry)? onOpenEntry,
+}) {
+  final titles = fullTitle
+      .split(RegExp(r'\s*[»›>]+\s*'))
+      .where((part) => part.trim().isNotEmpty)
+      .toList();
+  var cleanPath = path.replaceFirst(RegExp(r'^/'), '');
+  if (cleanPath.startsWith('poets/')) {
+    cleanPath = cleanPath.substring('poets/'.length);
+  }
+  cleanPath = cleanPath.replaceFirst(RegExp(r'\.json$'), '');
+  final segments = cleanPath
+      .split('/')
+      .where((part) => part.trim().isNotEmpty)
+      .toList();
+
+  return SizedBox(
+    height: 24,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < titles.length; i++) ...[
+            Pressable(
+              onTap: i < titles.length - 1 && i < segments.length - 1
+                  ? () {
+                      final target = segments.take(i + 1).join('/');
+                      Navigator.of(context).pushAndRemoveUntil(
+                        _softRoute(
+                          GanjoorNodePage(
+                            title: titles[i],
+                            path: target,
+                            dictionary: dictionary,
+                            liked: liked,
+                            favorites: favorites,
+                            onToggleLike: onToggleLike,
+                            onToggleBookmark: onToggleBookmark,
+                            onOpenEntry: onOpenEntry,
+                          ),
+                        ),
+                        (route) => route.isFirst,
+                      );
+                    }
+                  : null,
+              child: Text(
+                titles[i],
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: i < titles.length - 1 && i < segments.length - 1
+                      ? pal.sel
+                      : pal.muted,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (i < titles.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: Icon(
+                  LucideIcons.chevronLeft,
+                  color: pal.faint,
+                  size: 12,
+                ),
+              ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
 class GanjoorNodePage extends StatefulWidget {
   final String title;
   final String path;
@@ -6112,6 +6194,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
             );
           }
           final data = snapshot.data!;
+          final fullTitle = data['FullTitle']?.toString() ?? widget.title;
           final categories = (data['ChildCats'] as List? ?? const [])
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
@@ -6120,61 +6203,89 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
-          return edgeFade(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-              children: [
-                if ((data['Description']?.toString() ?? '').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      data['Description'].toString(),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: pal.muted,
-                        height: 1.9,
-                        fontSize: 13.5,
-                      ),
-                    ),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _ganjoorBreadcrumb(
+                    context,
+                    fullTitle: fullTitle,
+                    path: widget.path,
+                    dictionary: widget.dictionary,
+                    liked: widget.liked,
+                    favorites: widget.favorites,
+                    onToggleLike: widget.onToggleLike,
+                    onToggleBookmark: widget.onToggleBookmark,
+                    onOpenEntry: widget.onOpenEntry,
                   ),
-                for (var i = 0; i < categories.length; i++)
-                  Enter(
-                    index: i,
-                    child: ListTile(
-                      leading: Icon(LucideIcons.folder, color: pal.sel),
-                      title: Text(
-                        categories[i]['Title']?.toString() ?? '',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink),
-                      ),
-                      trailing: Icon(
-                        LucideIcons.chevronRight,
-                        color: pal.muted,
-                        size: 18,
-                      ),
-                      onTap: () => _openCategory(categories[i]),
-                    ),
+                ),
+              ),
+              Expanded(
+                child: edgeFade(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, kNavClearance),
+                    children: [
+                      if ((data['Description']?.toString() ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            data['Description'].toString(),
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(
+                              color: pal.muted,
+                              height: 1.9,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
+                      for (var i = 0; i < categories.length; i++)
+                        Enter(
+                          index: i,
+                          child: ListTile(
+                            leading: Icon(LucideIcons.folder, color: pal.sel),
+                            title: Text(
+                              categories[i]['Title']?.toString() ?? '',
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: pal.ink),
+                            ),
+                            trailing: Icon(
+                              LucideIcons.chevronLeft,
+                              color: pal.muted,
+                              size: 18,
+                            ),
+                            onTap: () => _openCategory(categories[i]),
+                          ),
+                        ),
+                      if (categories.isNotEmpty && poems.isNotEmpty)
+                        Divider(height: 18, color: pal.div),
+                      for (var i = 0; i < poems.length; i++)
+                        Enter(
+                          index: categories.length + i,
+                          child: ListTile(
+                            leading: Icon(LucideIcons.fileText, color: pal.muted),
+                            title: Text(
+                              poems[i]['Title']?.toString() ?? '',
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: pal.ink),
+                            ),
+                            trailing: Icon(
+                              LucideIcons.chevronLeft,
+                              color: pal.muted,
+                              size: 18,
+                            ),
+                            onTap: () => _openPoem(poems[i]),
+                          ),
+                        ),
+                    ],
                   ),
-                if (categories.isNotEmpty && poems.isNotEmpty)
-                  Divider(height: 18, color: pal.div),
-                for (var i = 0; i < poems.length; i++)
-                  Enter(
-                    index: categories.length + i,
-                    child: ListTile(
-                      leading: Icon(
-                        LucideIcons.fileText,
-                        color: pal.muted,
-                      ),
-                      title: Text(
-                        poems[i]['Title']?.toString() ?? '',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink),
-                      ),
-                      onTap: () => _openPoem(poems[i]),
-                    ),
-                  ),
-              ],
-            ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -6356,6 +6467,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
             );
           }
           final data = snapshot.data!;
+          final fullTitle = data['FullTitle']?.toString() ?? widget.title;
           final verses = (data['Verses'] as List? ?? const [])
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
@@ -6373,120 +6485,144 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
             }
           }
           final ordered = couplets.keys.toList()..sort();
-          final breadcrumb = data['FullTitle']?.toString() ?? widget.title;
-          return edgeFade(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(22, 10, 22, 32),
-              children: [
-                if ((data['PoemSummary']?.toString() ?? '').isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 18),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: pal.cardC,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Text(
-                      data['PoemSummary'].toString(),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: pal.muted,
-                        height: 1.9,
-                        fontSize: 13.5,
-                      ),
-                    ),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _ganjoorBreadcrumb(
+                    context,
+                    fullTitle: fullTitle,
+                    path: widget.path,
+                    dictionary: widget.dictionary,
+                    liked: widget.liked,
+                    favorites: widget.favorites,
+                    onToggleLike: widget.onToggleLike,
+                    onToggleBookmark: widget.onToggleBookmark,
+                    onOpenEntry: widget.onOpenEntry,
                   ),
-                if (data['Metre'] is Map &&
-                    (data['Metre']['Rhythm']?.toString() ?? '').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Text(
-                      'وزن: ${data['Metre']['Rhythm']}',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(color: pal.faint, fontSize: 12),
-                    ),
-                  ),
-                for (var i = 0; i < ordered.length; i++)
-                  Enter(
-                    index: i,
-                    child: Hero(
-                      tag: 'poem:${widget.path}#${ordered[i]}',
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          onTap: () => _showCouplet(
-                            ordered[i],
-                            couplets[ordered[i]]!,
-                            meaning: coupletMeanings[ordered[i]],
-                            breadcrumb: breadcrumb,
+                ),
+              ),
+              Expanded(
+                child: edgeFade(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(22, 10, 22, kNavClearance),
+                    children: [
+                      if ((data['PoemSummary']?.toString() ?? '').isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 18),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: pal.cardC,
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          borderRadius: BorderRadius.circular(23),
-                          child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pal.pillC,
-                        borderRadius: BorderRadius.circular(23),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            couplets[ordered[i]]!.first,
-                            textAlign: TextAlign.center,
+                          child: Text(
+                            data['PoemSummary'].toString(),
+                            textAlign: TextAlign.right,
                             textDirection: TextDirection.rtl,
                             style: TextStyle(
-                              color: pal.ink,
-                              fontSize: 16,
+                              color: pal.muted,
                               height: 1.9,
+                              fontSize: 13.5,
                             ),
-                          ),
-                          if (couplets[ordered[i]]!.length > 1) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              couplets[ordered[i]]![1],
-                              textAlign: TextAlign.center,
-                              textDirection: TextDirection.rtl,
-                              style: TextStyle(
-                                color: pal.ink,
-                                fontSize: 16,
-                                height: 1.9,
-                              ),
-                            ),
-                          ],
-                          if ((coupletMeanings[ordered[i]] ?? '').isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              coupletMeanings[ordered[i]]!,
-                              textAlign: TextAlign.right,
-                              textDirection: TextDirection.rtl,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: pal.muted,
-                                fontSize: 12,
-                                height: 1.65,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
                           ),
                         ),
+                      if (data['Metre'] is Map &&
+                          (data['Metre']['Rhythm']?.toString() ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Text(
+                            'وزن: ${data['Metre']['Rhythm']}',
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(color: pal.faint, fontSize: 12),
+                          ),
+                        ),
+                      for (var i = 0; i < ordered.length; i++)
+                        Enter(
+                          index: i,
+                          child: Hero(
+                            tag: 'poem:${widget.path}#${ordered[i]}',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(
+                                onTap: () => _showCouplet(
+                                  ordered[i],
+                                  couplets[ordered[i]]!,
+                                  meaning: coupletMeanings[ordered[i]],
+                                  breadcrumb: fullTitle,
+                                ),
+                                borderRadius: BorderRadius.circular(23),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: pal.pillC,
+                                    borderRadius: BorderRadius.circular(23),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        couplets[ordered[i]]!.first,
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                        style: TextStyle(
+                                          color: pal.ink,
+                                          fontSize: 16,
+                                          height: 1.9,
+                                        ),
+                                      ),
+                                      if (couplets[ordered[i]]!.length > 1) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          couplets[ordered[i]]![1],
+                                          textAlign: TextAlign.center,
+                                          textDirection: TextDirection.rtl,
+                                          style: TextStyle(
+                                            color: pal.ink,
+                                            fontSize: 16,
+                                            height: 1.9,
+                                          ),
+                                        ),
+                                      ],
+                                      if ((coupletMeanings[ordered[i]] ?? '').isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          coupletMeanings[ordered[i]]!,
+                                          textAlign: TextAlign.right,
+                                          textDirection: TextDirection.rtl,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: pal.muted,
+                                            fontSize: 12,
+                                            height: 1.65,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'متن شعر از گنجور — github.com/hrmoh',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: pal.faint, fontSize: 11.5),
                       ),
-                    ),
+                    ],
                   ),
-                const SizedBox(height: 12),
-                Text(
-                  'متن شعر از گنجور — github.com/hrmoh',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: pal.faint, fontSize: 11.5),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
