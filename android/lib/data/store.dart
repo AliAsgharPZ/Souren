@@ -209,6 +209,28 @@ class Categories {
   }
 }
 
+/// Structured proverb content shared by the home collection, detail
+/// cards, saved-items views, and the unified dataset builder.
+class Proverbs {
+  static Future<List<(String, String)>> load() async {
+    try {
+      final raw = await rootBundle.loadString('assets/db/proverbs.json');
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final rows = (data['proverbs'] as List? ?? const [])
+          .whereType<Map>()
+          .map((row) => (
+                row['title']?.toString() ?? '',
+                row['meaning']?.toString() ?? '',
+              ))
+          .where((row) => row.$1.isNotEmpty && row.$2.isNotEmpty)
+          .toList(growable: false);
+      return rows;
+    } catch (_) {
+      return const [];
+    }
+  }
+}
+
 // ---------------- Auth + likes (Worker API) ----------------
 
 class AuthUser {
