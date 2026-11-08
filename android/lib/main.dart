@@ -3086,13 +3086,15 @@ class _ShellState extends State<Shell> {
       (
         LucideIcons.gitBranch,
         'ریشه‌شناسی',
-        () => _open(EtymologyPage(
-                                        dict: d,
-                                        liked: liked,
-                                        favorites: favorites,
-                                        onToggleLike: _toggleLike,
-                                        onToggleBookmark: _toggleFav,
-                                      )),
+        () => _open(
+          EtymologyPage(
+            dict: d,
+            liked: liked,
+            favorites: favorites,
+            onToggleLike: _toggleLike,
+            onToggleBookmark: _toggleFav,
+          ),
+        ),
       ),
       (LucideIcons.sparkles, 'واژه‌های تازه', () => _open(_freshPage(d))),
       (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
