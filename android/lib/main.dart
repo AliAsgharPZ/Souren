@@ -1783,15 +1783,35 @@ class _ShellState extends State<Shell> {
           color: pal.pillC,
           borderRadius: BorderRadius.circular(capR(54)),
         ),
-        child: SizedBox(
-          width: double.infinity,
-          child: Text(
-          label == 'گنجینهٔ واژه‌ها' ? 'گنجینۀ واژهــــها' : label,
-          maxLines: 1,
-          softWrap: false,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: pal.ink),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            var display = label;
+            if (label == 'گنجینهٔ واژه‌ها') {
+              var best = 'گنجینۀ واژه‌ها';
+              for (var count = 1; count <= 12; count++) {
+                final candidate = 'گنجینۀ واژه${List.filled(count, 'ـ').join()}ها';
+                final painter = TextPainter(
+                  text: TextSpan(
+                    text: candidate,
+                    style: TextStyle(fontSize: 14, color: pal.ink),
+                  ),
+                  textDirection: TextDirection.rtl,
+                  maxLines: 1,
+                )..layout();
+                if (painter.width > constraints.maxWidth) break;
+                best = candidate;
+              }
+              display = best;
+            }
+            return Text(
+              display,
+              maxLines: 1,
+              softWrap: false,
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: pal.ink),
+            );
+          },
         ),
       ),
     );
