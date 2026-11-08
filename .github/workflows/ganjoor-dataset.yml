@@ -1,4 +1,4 @@
-name: Build maximum-compression Ganjoor corpus
+name: Build unified Souren content database
 
 on:
   workflow_dispatch:
@@ -10,6 +10,10 @@ on:
       - 'android/assets/db/dataset.json'
       - 'android/assets/db/categories.json'
       - 'android/assets/db/proverbs.json'
+
+concurrency:
+  group: souren-unified-content-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
