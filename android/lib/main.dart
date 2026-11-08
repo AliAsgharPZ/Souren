@@ -6059,39 +6059,46 @@ Widget _ganjoorBreadcrumb(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (var i = 0; i < titles.length; i++) ...[
-            Pressable(
-              onTap: i < titles.length - 1 && i < segments.length - 1
-                  ? () {
-                      final target = segments.take(i + 1).join('/');
-                      Navigator.of(context).pushAndRemoveUntil(
-                        _softRoute(
-                          GanjoorNodePage(
-                            title: titles[i],
-                            path: target,
-                            dictionary: dictionary,
-                            liked: liked,
-                            favorites: favorites,
-                            onToggleLike: onToggleLike,
-                            onToggleBookmark: onToggleBookmark,
-                            onOpenEntry: onOpenEntry,
-                          ),
-                        ),
-                        (route) => route.isFirst,
-                      );
-                    }
-                  : null,
-              child: Text(
+            if (i < titles.length - 1 && i < segments.length - 1)
+              Pressable(
+                onTap: () {
+                  final target = segments.take(i + 1).join('/');
+                  Navigator.of(context).pushAndRemoveUntil(
+                    _softRoute(
+                      GanjoorNodePage(
+                        title: titles[i],
+                        path: target,
+                        dictionary: dictionary,
+                        liked: liked,
+                        favorites: favorites,
+                        onToggleLike: onToggleLike,
+                        onToggleBookmark: onToggleBookmark,
+                        onOpenEntry: onOpenEntry,
+                      ),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+                child: Text(
+                  titles[i],
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: pal.sel,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              Text(
                 titles[i],
                 textDirection: TextDirection.rtl,
                 style: TextStyle(
-                  color: i < titles.length - 1 && i < segments.length - 1
-                      ? pal.sel
-                      : pal.muted,
+                  color: pal.muted,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
             if (i < titles.length - 1)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
