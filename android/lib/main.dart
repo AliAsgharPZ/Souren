@@ -4095,7 +4095,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
           children: [
-            for (var i = 0; i < proverbs.length; i++)
+            for (var i = 0; i < widget.proverbs.length; i++)
               Enter(
                 index: i,
                 child: Container(
@@ -4103,8 +4103,8 @@ class _PandvazhePageState extends State<PandvazhePage> {
                   child: Pressable(
                     onTap: () => _proverbSheet(
                       context,
-                      proverbs[i].$1,
-                      proverbs[i].$2,
+                      widget.proverbs[i].$1,
+                      widget.proverbs[i].$2,
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
@@ -4126,19 +4126,19 @@ class _PandvazhePageState extends State<PandvazhePage> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      proverbs[i].$1,
+                                      widget.proverbs[i].$1,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 19,
                                       ),
                                     ),
                                   ),
-                                  _actions(proverbs[i].$1),
+                                  _actions(widget.proverbs[i].$1),
                                 ],
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                proverbs[i].$2,
+                                widget.proverbs[i].$2,
                                 style: const TextStyle(
                                   color: Color(0xFF5C5546),
                                   height: 1.9,
