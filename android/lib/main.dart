@@ -4116,8 +4116,8 @@ class _PandvazhePageState extends State<PandvazhePage> {
       ),
       builder: (_) => DetailSheet(
         card: card,
-        initialLiked: _liked.contains(title),
-        initialBookmarked: _faved.contains(title),
+        initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
+        initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
         onToggleLike: () async => _toggleLike(title),
         onToggleBookmark: () async => _toggleFav(title),
       ),
