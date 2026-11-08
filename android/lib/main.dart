@@ -1935,7 +1935,7 @@ class _ShellState extends State<Shell> {
                 dense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                 leading: Icon(
-                  poets ? LucideIcons.user : LucideIcons.book,
+                  poets ? LucideIcons.user : LucideIcons.notebookPen,
                   color: pal.sel,
                 ),
                 title: Text(
