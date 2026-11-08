@@ -1933,7 +1933,8 @@ class _ShellState extends State<Shell> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => DetailSheet(
+      builder: (_) => SingleChildScrollView(
+        child: DetailSheet(
         card: card,
         initialLiked: liked.contains(e.ar),
         initialBookmarked: favorites.contains(e.ar),
@@ -1949,6 +1950,7 @@ class _ShellState extends State<Shell> {
             }
           });
         },
+        ),
       ),
     );
   }
