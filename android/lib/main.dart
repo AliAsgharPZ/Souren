@@ -2587,6 +2587,43 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  void _showRootPopup(String word) {
+    final current = dict;
+    if (current == null || word.trim().isEmpty) return;
+    final rows = PersianRoots.index(current);
+    final base = PersianRoots.baseOf(word);
+    final related = PersianRoots.sameBase(rows, word);
+    final lines = <String>[
+      'بن‌واژه: $base',
+      if (related.isNotEmpty)
+        'واژه‌های هم‌بن: ${related.map((item) => item.word).join('، ')}',
+      'این بن‌واژه از ساخت صرفی واژه به‌دست آمده و لزوماً خاستگاه تاریخی آن نیست.',
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => SingleChildScrollView(
+        child: DetailSheet(
+          card: ShareCardData(
+            title: word,
+            lines: lines,
+            caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
+          ),
+          initialLiked: false,
+          initialBookmarked: false,
+          onToggleLike: () async {},
+          onToggleBookmark: () async {},
+          showActions: false,
+        ),
+      ),
+    );
+  }
+
   void _showEntry(Entry e) {
     final catId = categories.categoryOf(e.ar);
     final card = ShareCardData(
@@ -2616,8 +2653,8 @@ class _ShellState extends State<Shell> {
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && dict != null) {
-              _open(EtymologyPage(dict: dict!, initialWord: e.hasFa ? e.fa.first : null));
+            if (mounted && e.hasFa) {
+              _showRootPopup(e.fa.first);
             }
           });
         },
