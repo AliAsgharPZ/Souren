@@ -79,14 +79,16 @@ class Motion {
 class SpringSlideIndicator extends StatefulWidget {
   final double left;
   final double top;
-  final double size;
+  final double width;
+  final double height;
   final Color color;
 
   const SpringSlideIndicator({
     super.key,
     required this.left,
     required this.top,
-    required this.size,
+    required this.width,
+    required this.height,
     required this.color,
   });
 
@@ -95,53 +97,63 @@ class SpringSlideIndicator extends StatefulWidget {
 }
 
 class _SpringSlideIndicatorState extends State<SpringSlideIndicator>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _position = AnimationController.unbounded(
     vsync: this,
     value: widget.left,
   );
+  late final AnimationController _width = AnimationController.unbounded(
+    vsync: this,
+    value: widget.width,
+  );
 
-  @override
-  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.left == widget.left) return;
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduceMotion) {
-      _position.value = widget.left;
-      return;
-    }
-    _position.animateWith(
+  void _springTo(AnimationController controller, double target) {
+    controller.animateWith(
       SpringSimulation(
         const SpringDescription(mass: 1, stiffness: 520, damping: 38),
-        _position.value,
-        widget.left,
-        _position.velocity,
+        controller.value,
+        target,
+        controller.velocity,
       ),
     );
   }
 
   @override
+  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion) {
+      _position.value = widget.left;
+      _width.value = widget.width;
+      return;
+    }
+    if (oldWidget.left != widget.left) _springTo(_position, widget.left);
+    if (oldWidget.width != widget.width) _springTo(_width, widget.width);
+  }
+
+  @override
   void dispose() {
     _position.dispose();
+    _width.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _position,
+      animation: Listenable.merge([_position, _width]),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: widget.color,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(19),
         ),
       ),
       builder: (context, child) => Positioned(
         left: _position.value,
         top: widget.top,
-        width: widget.size,
-        height: widget.size,
+        width: _width.value,
+        height: widget.height,
         child: child!,
       ),
     );
@@ -1363,6 +1375,30 @@ class _ShellState extends State<Shell> {
   int learnedWords = 0;
   int learnedCorrections = 0;
   int tab = 0;
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+  final GlobalKey _navStackKey = GlobalKey();
+  double _indLeft = 0;
+  double _indWidth = 0;
+
+  void _measureIndicator() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final stackBox =
+          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
+      final tabBox =
+          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
+      if (stackBox == null || tabBox == null) return;
+      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
+      if ((pos.dx - _indLeft).abs() > .5 ||
+          (tabBox.size.width - _indWidth).abs() > .5) {
+        setState(() {
+          _indLeft = pos.dx;
+          _indWidth = tabBox.size.width;
+        });
+      }
+    });
+  }
+
   String query = '';
   int _homeCollection = 0; // words, proverbs, poems, poets, books
   Future<List<Map<String, dynamic>>>? _homePoems;
@@ -1520,85 +1556,116 @@ class _ShellState extends State<Shell> {
   /// between tabs. Only the surface changed from glass to a solid color.
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
-    final items = <(IconData, String)>[
-      (LucideIcons.house, 'پیشگاه'),
-      (LucideIcons.heart, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, 'نمایه'),
-      (LucideIcons.settings, 'پیکربندی'),
+    // The first and last actions stay anchored at the edges. The selected
+    // middle item expands; the other middle items reflow around it.
+    final items = <(IconData, IconData, String)>[
+      (LucideIcons.house, Icons.home_filled, 'پیشگاه'),
+      (LucideIcons.heart, Icons.favorite, 'پسندیده‌ها'),
+      (LucideIcons.layoutDashboard, Icons.dashboard, 'بخش‌ها'),
+      (LucideIcons.bookmark, Icons.bookmark, 'نشان‌شده'),
+      (LucideIcons.user, Icons.person, 'نمایه'),
+      (LucideIcons.settings, Icons.settings, 'پیکربندی'),
     ];
+    _measureIndicator();
     final selectedColor = Color.lerp(pal.sel, pal.bg, 0.38)!;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: pal.cardC,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(color: pal.div.withValues(alpha: 0.6)),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            const indicatorSize = 46.0;
-            const barHeight = 54.0;
-            final slotWidth = constraints.maxWidth / items.length;
-            final indicatorLeft =
-                slotWidth * tab + (slotWidth - indicatorSize) / 2;
-
-            return SizedBox(
-              height: barHeight,
-              child: Stack(
-                children: [
-                  SpringSlideIndicator(
-                    left: indicatorLeft,
-                    top: (barHeight - indicatorSize) / 2,
-                    size: indicatorSize,
-                    color: selectedColor,
-                  ),
-                  Row(
-                    children: [
-                      for (var i = 0; i < items.length; i++)
-                        Expanded(
-                          child: Semantics(
-                            button: true,
-                            selected: tab == i,
-                            label: items[i].$2,
-                            child: Tooltip(
-                              message: items[i].$2,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => _go(i),
-                                child: SizedBox(
-                                  height: barHeight,
-                                  child: Center(
-                                    child: TweenAnimationBuilder<Color?>(
-                                      tween: ColorTween(
-                                        end: tab == i
-                                            ? pal.bg
-                                            : pal.ink.withValues(alpha: .72),
-                                      ),
-                                      duration: Motion.base,
-                                      curve: Motion.curve,
-                                      builder: (context, color, child) => Icon(
-                                        items[i].$1,
-                                        size: 23,
-                                        color: color,
-                                      ),
-                                    ),
-                                  ),
+        child: Stack(
+          key: _navStackKey,
+          children: [
+            SpringSlideIndicator(
+              left: _indLeft,
+              top: 0,
+              width: _indWidth,
+              height: 52,
+              color: selectedColor,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  GestureDetector(
+                    key: _tabKeys[i],
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _go(i),
+                    child: AnimatedContainer(
+                      duration: Motion.base,
+                      curve: Motion.curve,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: tab == i ? 17 : 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: AnimatedSize(
+                        duration: Motion.base,
+                        curve: Motion.curve,
+                        alignment: AlignmentDirectional.center,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: Motion.fast,
+                              switchInCurve: Motion.curve,
+                              switchOutCurve: Motion.curve,
+                              transitionBuilder: (child, anim) =>
+                                  FadeTransition(
+                                opacity: anim,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(begin: .8, end: 1)
+                                      .animate(anim),
+                                  child: child,
                                 ),
                               ),
+                              child: Icon(
+                                key: ValueKey<bool>(tab == i),
+                                tab == i ? items[i].$2 : items[i].$1,
+                                size: 23,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .72),
+                              ),
                             ),
-                          ),
+                            if (tab == i)
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(begin: 0, end: 1),
+                                duration: Motion.base,
+                                curve: Motion.curve,
+                                builder: (_, value, child) =>
+                                    Opacity(opacity: value, child: child),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      items[i].$3,
+                                      style: TextStyle(
+                                        color: pal.bg,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            );
-          },
+              ],
+            ),
+          ],
         ),
       ),
     );
