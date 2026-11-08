@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:path_drawing/path_drawing.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -1235,6 +1236,125 @@ String faNum(Object n) {
   }).join();
 }
 
+/// The official Souren mark, drawn progressively from its original SVG paths.
+class SourenLogo extends StatefulWidget {
+  final double width;
+  const SourenLogo({super.key, required this.width});
+
+  @override
+  State<SourenLogo> createState() => _SourenLogoState();
+}
+
+class _SourenLogoState extends State<SourenLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1900),
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final height = widget.width * 291.68 / 980.05;
+    return SizedBox(
+      width: widget.width,
+      height: height,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => CustomPaint(
+          painter: _SourenLogoPainter(
+            progress: Curves.easeInOutCubic.transform(_controller.value),
+            color: pal.accent,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SourenLogoPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _SourenLogoPainter({required this.progress, required this.color});
+
+  static final List<Path> _shapes = [
+    parseSvgPathData(
+      'M932.05 27.17v96.3c0 13.24-10.77 24-24 24h-11.67c-13.23 0-24-10.76-24-24V51.22h-48v72.25c0 13.24-10.76 24-24 24h-12.79c-13.24 0-24-10.76-24-24V36.44h-48v72.99c-23.25 12.09-83.09 38.04-168.41 38.04h-.05V57.91c0-14.89-6.73-28.68-18.46-37.84-11.73-9.16-26.74-12.34-41.19-8.73l-29.94 7.49c-32.16 8.03-54.62 36.8-54.62 69.94v58.7c0 26.47 21.53 48 48 48h48.21v31.71c-.16.33-.44.73-.68 1-15.06 5.91-43.77 15.5-71.53 15.5v48c34.33 0 67.81-10.41 89.85-19.13 17.59-6.96 30.36-25.74 30.36-44.64v-32.44h.05c82.82 0 144.23-21.58 177.52-36.98 12.32 22.04 35.89 36.98 62.89 36.98h12.79c18.42 0 35.25-6.95 48-18.38 12.75 11.43 29.58 18.38 48 18.38h11.67c39.7 0 72-32.3 72-72V27.17h-48ZM499.13 147.47h-48.21v-58.7c0-11.08 7.51-20.69 18.26-23.38l29.95-7.48v89.56Z',
+    ),
+    parseSvgPathData(
+      'M268.56 290.86v-48c28.17 0 57.32-9.87 72.19-15.76l.02-200.75h48v200.74c0 19.82-11.91 37.34-30.35 44.64-22.05 8.73-55.53 19.13-89.85 19.13Z',
+    ),
+    parseSvgPathData(
+      'M144.26 290.86h-24.05c-21.45 0-45.04-4.06-70.11-12.08C20.13 269.21 0 241.64 0 210.19V51.22h48v158.98c0 10.48 6.71 19.67 16.71 22.87,20.06 6.41,39.25 9.8,55.5 9.8h24.05c16.25 0 35.44-3.39 55.5-9.8,9.99-3.19 16.71-12.38 16.71-22.87V26.35h48v183.85c0 31.45-20.13 59.01-50.09 68.59-25.07 8.01-48.66 12.08-70.11 12.08Z',
+    ),
+  ];
+
+  static final Path _square = Path()
+    ..addRect(const Rect.fromLTWH(108.18, 0, 48.1, 48.1));
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 980.05, size.height / 291.68);
+
+    final fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    if (progress >= 1) {
+      for (final shape in _shapes) {
+        canvas.drawPath(shape, fill);
+      }
+      canvas.drawPath(_square, fill);
+    } else {
+      final metrics = <ui.PathMetric>[];
+      for (final shape in _shapes) {
+        metrics.addAll(shape.computeMetrics().toList());
+      }
+      metrics.addAll(_square.computeMetrics().toList());
+      final totalLength = metrics.fold<double>(
+        0,
+        (sum, metric) => sum + metric.length,
+      );
+      var remaining = totalLength * progress;
+      ui.Tangent? tip;
+
+      for (final metric in metrics) {
+        if (remaining <= 0) break;
+        final segmentLength = remaining.clamp(0.0, metric.length).toDouble();
+        final segment = metric.extractPath(0, segmentLength);
+        canvas.drawPath(segment, stroke);
+        if (segmentLength > 0) {
+          tip = metric.getTangentForOffset(segmentLength);
+        }
+        remaining -= segmentLength;
+      }
+
+      if (tip != null) {
+        canvas.drawCircle(tip.position, 5.5, Paint()..color = color);
+      }
+    }
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SourenLogoPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
+}
+
 void main() => runApp(const SourenApp());
 
 class SourenApp extends StatefulWidget {
@@ -1314,7 +1434,7 @@ class _SourenAppState extends State<SourenApp> {
             : const KeyedSubtree(
                 key: ValueKey('loading'),
                 child: Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
+                  body: Center(child: SourenLogo(width: 190)),
                 ),
               ),
       ),
@@ -1738,6 +1858,12 @@ class _ShellState extends State<Shell> {
                     ),
                   ),
                 ],
+              ),
+              Positioned(
+                top: 5,
+                left: 0,
+                right: 0,
+                child: Center(child: SourenLogo(width: 164)),
               ),
               Positioned(
                 top: logoGap + searchH,
