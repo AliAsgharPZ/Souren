@@ -1,8 +1,7 @@
 import 'package:flutter/services.dart';
 
-/// Data for one shareable card: a word or a proverb, with everything we
-/// know about it. The same data feeds the share text, the share image
-/// and the detail sheet, so the three never disagree.
+/// Data for a shareable word, proverb or poem card. The same data feeds
+/// share text, the share image and the detail sheet.
 class ShareCardData {
   /// The headword (Arabic word) or the proverb itself.
   final String title;
@@ -10,11 +9,22 @@ class ShareCardData {
   /// Detail lines, one per line (Persian equivalent, meaning, ...).
   final List<String> lines;
 
-  /// Extra context, e.g. the category («دسته: سخن و نوشتار») or
-  /// «ضرب‌المثل فارسی». May be null.
+  /// Full Ganjoor hierarchy, shown between a verse and its meaning.
+  final String? breadcrumb;
+
+  /// Meaning of a couplet, rendered below its breadcrumb.
+  final String? meaning;
+
+  /// Extra context, e.g. the category or «ضرب‌المثل فارسی».
   final String? caption;
 
-  const ShareCardData({required this.title, required this.lines, this.caption});
+  const ShareCardData({
+    required this.title,
+    required this.lines,
+    this.breadcrumb,
+    this.meaning,
+    this.caption,
+  });
 }
 
 enum ShareFormat { text, image, textAndImage }
@@ -23,7 +33,10 @@ enum ShareAction { share, save, copy }
 
 /// The plain-text form of a card: title, detail lines, caption, sign-off.
 String buildShareText(ShareCardData card) {
-  final parts = <String>[card.title, ...card.lines];
+  final parts = <String>[card.title];
+  if (card.breadcrumb != null) parts.add(card.breadcrumb!);
+  if (card.meaning != null) parts.add(card.meaning!);
+  parts.addAll(card.lines);
   if (card.caption != null) parts.add(card.caption!);
   parts.add('— سورن');
   return parts.join('\n');
