@@ -383,22 +383,6 @@ class LikeBookmarkButtons extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 26,
-          child: AnimatedSwitcher(
-            duration: Motion.fast,
-            transitionBuilder: (child, anim) =>
-                FadeTransition(opacity: anim, child: child),
-            child: likeCount > 0
-                ? Text(
-                    faNum(likeCount),
-                    key: ValueKey(likeCount),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: pal.muted, fontSize: 12.5),
-                  )
-                : const SizedBox.shrink(key: ValueKey('none')),
-          ),
-        ),
         pressIcon(
           active: liked,
           icon: LucideIcons.heart,
@@ -1289,7 +1273,6 @@ class _ShellState extends State<Shell> {
     final lk = await SharedFiles.readJson('liked.json');
     final learned = await SharedFiles.readJson('learned.json');
     await AuthService.restore();
-    final counts = await AuthService.fetchLikeCounts();
     Set<String> srvFav = {}, srvLiked = {};
     if (AuthService.user != null) {
       final prof = await AuthService.fetchProfile();
@@ -1310,7 +1293,7 @@ class _ShellState extends State<Shell> {
       }
       favorites = {...favorites, ...srvFav};
       liked = {...liked, ...srvLiked};
-      likeCounts = counts;
+      likeCounts = {};
       if (learned != null) {
         learnedWords = ((learned['counts'] as Map?) ?? {}).length;
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
@@ -1345,17 +1328,11 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _toggleLike(String word) async {
-    final nowLiked = !liked.contains(word);
     setState(() {
-      nowLiked ? liked.add(word) : liked.remove(word);
-      final c = likeCounts[word] ?? 0;
-      likeCounts[word] = nowLiked ? c + 1 : (c > 0 ? c - 1 : 0);
+      liked.contains(word) ? liked.remove(word) : liked.add(word);
     });
     await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
-    final serverCount = await AuthService.setLike(word, nowLiked);
-    if (serverCount != null && mounted) {
-      setState(() => likeCounts[word] = serverCount);
-    }
+    await AuthService.pushProfile(favorites, liked);
   }
 
   void _go(int i) => setState(() => tab = i);
@@ -2130,6 +2107,32 @@ class _ShellState extends State<Shell> {
   /// card as a proverb's. Like/bookmark update in place; the sheet is
   /// never closed and re-opened (that was the "another card opens"
   /// bug: the old handlers did Navigator.pop + _showEntry again).
+  void _showProverb(String title, String meaning) {
+    final key = 'proverb:$title';
+    final card = ShareCardData(
+      title: title,
+      lines: [meaning],
+      caption: 'پندواژه فارسی',
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: pal.bg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => SingleChildScrollView(
+        child: DetailSheet(
+          card: card,
+          initialLiked: liked.contains(key) || liked.contains(title),
+          initialBookmarked: favorites.contains(key) || favorites.contains(title),
+          onToggleLike: () => _toggleLike(key),
+          onToggleBookmark: () => _toggleFav(key),
+        ),
+      ),
+    );
+  }
+
   void _showEntry(Entry e) {
     final catId = categories.categoryOf(e.ar);
     final card = ShareCardData(
@@ -2173,19 +2176,30 @@ class _ShellState extends State<Shell> {
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
+    final proverbs = PandvazhePage.proverbs.where((p) =>
+      liked.contains('proverb:\${p.$1}') || liked.contains(p.$1)
+    ).toList();
     return _pageShell(
       'پسندیده‌ها',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: mine.isEmpty
+        child: mine.isEmpty && proverbs.isEmpty
             ? Center(
                 child: Text(
-                  'هنوز واژه‌ای را نپسندیده‌اید.\nروی قلبِ هر واژه بزنید تا اینجا بیاید.\nشمار کنار قلب، پسندهای همهٔ کاربران است.',
+                  'هنوز چیزی را نپسندیده‌اید.\nبا زدن قلبِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: pal.muted, height: 1.9),
                 ),
               )
-            : _pairList(mine, bottomPad: kNavClearance),
+            : edgeFade(
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: kNavClearance),
+                  children: [
+                    for (final e in mine) _pairRow(e),
+                    for (final p in proverbs) _savedProverbRow(p),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -2193,19 +2207,67 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
+    final proverbs = PandvazhePage.proverbs.where((p) =>
+      favorites.contains('proverb:\${p.$1}') || favorites.contains(p.$1)
+    ).toList();
     return _pageShell(
       'نشان‌شده',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: favs.isEmpty
+        child: favs.isEmpty && proverbs.isEmpty
             ? Center(
                 child: Text(
-                  'هنوز واژه‌ای را نشان نکرده‌اید.\nروی نشانکِ هر واژه بزنید.',
+                  'هنوز چیزی را نشان نکرده‌اید.\nبا زدن نشانکِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: pal.muted, height: 1.9),
                 ),
               )
-            : _pairList(favs, bottomPad: kNavClearance),
+            : edgeFade(
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: kNavClearance),
+                  children: [
+                    for (final e in favs) _pairRow(e),
+                    for (final p in proverbs) _savedProverbRow(p),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _savedProverbRow((String, String) proverb) {
+    final key = 'proverb:\${proverb.$1}';
+    return InkWell(
+      onTap: () => _showProverb(proverb.$1, proverb.$2),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(proverb.$1,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.ink, fontSize: 16, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(proverb.$2,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: pal.muted, fontSize: 12.5)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            LikeBookmarkButtons(
+              liked: liked.contains(key) || liked.contains(proverb.$1),
+              bookmarked: favorites.contains(key) || favorites.contains(proverb.$1),
+              onToggleLike: () => _toggleLike(key),
+              onToggleBookmark: () => _toggleFav(key),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2593,8 +2655,7 @@ class _ShellState extends State<Shell> {
       await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
       await AuthService.pushProfile(favorites, liked);
     }
-    final counts = await AuthService.fetchLikeCounts();
-    if (mounted) setState(() => likeCounts = counts);
+    if (mounted) setState(() => likeCounts = {});
   }
 
   /// One badge tile: full-width row cell, earned = filled with a
@@ -4007,31 +4068,35 @@ class _PandvazhePageState extends State<PandvazhePage> {
   late final Set<String> _faved = {...widget.favorites};
   late final Map<String, int> _counts = {...widget.likeCounts};
 
-  void _toggleLike(String key) {
-    final now = !_liked.contains(key);
+  void _toggleLike(String title) {
+    final key = 'proverb:$title';
+    final current = _liked.contains(key) || _liked.contains(title);
     setState(() {
-      now ? _liked.add(key) : _liked.remove(key);
-      final c = _counts[key] ?? 0;
-      _counts[key] = now ? c + 1 : (c > 0 ? c - 1 : 0);
+      current ? _liked.remove(key) : _liked.add(key);
+      _liked.remove(title);
     });
     widget.onToggleLike(key);
   }
 
-  void _toggleFav(String key) {
-    final now = !_faved.contains(key);
-    setState(() => now ? _faved.add(key) : _faved.remove(key));
+  void _toggleFav(String title) {
+    final key = 'proverb:$title';
+    final current = _faved.contains(key) || _faved.contains(title);
+    setState(() {
+      current ? _faved.remove(key) : _faved.add(key);
+      _faved.remove(title);
+    });
     widget.onToggleFav(key);
   }
 
   /// Like + bookmark side by side, outline only — the same widget
   /// word rows use (round 3).
-  Widget _actions(String key) {
+  Widget _actions(String title) {
+    final key = 'proverb:$title';
     return LikeBookmarkButtons(
-      liked: _liked.contains(key),
-      bookmarked: _faved.contains(key),
-      likeCount: _counts[key] ?? 0,
-      onToggleLike: () => _toggleLike(key),
-      onToggleBookmark: () => _toggleFav(key),
+      liked: _liked.contains(key) || _liked.contains(title),
+      bookmarked: _faved.contains(key) || _faved.contains(title),
+      onToggleLike: () => _toggleLike(title),
+      onToggleBookmark: () => _toggleFav(title),
     );
   }
 
@@ -4053,7 +4118,6 @@ class _PandvazhePageState extends State<PandvazhePage> {
         card: card,
         initialLiked: _liked.contains(title),
         initialBookmarked: _faved.contains(title),
-        likeCount: _counts[title] ?? 0,
         onToggleLike: () async => _toggleLike(title),
         onToggleBookmark: () async => _toggleFav(title),
       ),
@@ -4733,7 +4797,7 @@ class _PoemUsageCard extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(color: pal.muted, fontSize: 11),
                   ),
-                  trailing: Icon(LucideIcons.chevronLeft,
+                  trailing: Icon(LucideIcons.chevronRight,
                       size: 16, color: pal.muted),
                   onTap: () {
                     final full = (poem['FullUrl'] ?? poem['fullUrl'] ?? '')
