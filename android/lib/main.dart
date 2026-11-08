@@ -1713,7 +1713,7 @@ class _ShellState extends State<Shell> {
               for (var count = 1; count <= 18; count++) {
                 final candidate = base.replaceFirst(
                   ' ',
-                  '\${List<String>.filled(count, 'ـ').join()} ',
+                  List<String>.filled(count, String.fromCharCode(0x0640)).join() + ' ',
                 );
                 final painter = TextPainter(
                   text: TextSpan(
@@ -2137,6 +2137,32 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  void _showProverb(String title, String meaning) {
+    final key = 'proverb:$title';
+    final card = ShareCardData(
+      title: title,
+      lines: [meaning],
+      caption: 'پندواژه فارسی',
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: pal.bg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => SingleChildScrollView(
+        child: DetailSheet(
+          card: card,
+          initialLiked: liked.contains(key) || liked.contains(title),
+          initialBookmarked: favorites.contains(key) || favorites.contains(title),
+          onToggleLike: () => _toggleLike(key),
+          onToggleBookmark: () => _toggleFav(key),
+        ),
+      ),
+    );
+  }
+
   void _showEntry(Entry e) {
     final catId = categories.categoryOf(e.ar);
     final card = ShareCardData(
@@ -2180,14 +2206,14 @@ class _ShellState extends State<Shell> {
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
-    final proverbs = proverbs.where((p) =>
-      liked.contains('proverb:\${p.$1}') || liked.contains(p.$1)
+    final savedProverbs = proverbs.where((p) =>
+      liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
     return _pageShell(
       'پسندیده‌ها',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: mine.isEmpty && proverbs.isEmpty
+        child: mine.isEmpty && savedProverbs.isEmpty
             ? Center(
                 child: Text(
                   'هنوز چیزی را نپسندیده‌اید.\nبا زدن قلبِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
@@ -2200,7 +2226,7 @@ class _ShellState extends State<Shell> {
                   padding: const EdgeInsets.only(bottom: kNavClearance),
                   children: [
                     for (final e in mine) _pairRow(e),
-                    for (final p in proverbs) _savedProverbRow(p),
+                    for (final p in savedProverbs) _savedProverbRow(p),
                   ],
                 ),
               ),
@@ -2211,14 +2237,14 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
-    final proverbs = proverbs.where((p) =>
-      favorites.contains('proverb:\${p.$1}') || favorites.contains(p.$1)
+    final savedProverbs = proverbs.where((p) =>
+      favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
     return _pageShell(
       'نشان‌شده',
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: favs.isEmpty && proverbs.isEmpty
+        child: favs.isEmpty && savedProverbs.isEmpty
             ? Center(
                 child: Text(
                   'هنوز چیزی را نشان نکرده‌اید.\nبا زدن نشانکِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
@@ -2231,7 +2257,7 @@ class _ShellState extends State<Shell> {
                   padding: const EdgeInsets.only(bottom: kNavClearance),
                   children: [
                     for (final e in favs) _pairRow(e),
-                    for (final p in proverbs) _savedProverbRow(p),
+                    for (final p in savedProverbs) _savedProverbRow(p),
                   ],
                 ),
               ),
@@ -2240,7 +2266,7 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _savedProverbRow((String, String) proverb) {
-    final key = 'proverb:\${proverb.$1}';
+    final key = 'proverb:${proverb.$1}';
     return InkWell(
       onTap: () => _showProverb(proverb.$1, proverb.$2),
       child: Padding(
@@ -4029,7 +4055,6 @@ class PandvazhePage extends StatefulWidget {
 class _PandvazhePageState extends State<PandvazhePage> {
   late final Set<String> _liked = {...widget.liked};
   late final Set<String> _faved = {...widget.favorites};
-  late final Map<String, int> _counts = {...widget.likeCounts};
 
   void _toggleLike(String title) {
     final key = 'proverb:$title';
