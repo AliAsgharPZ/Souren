@@ -18,6 +18,7 @@ import hashlib
 import json
 import lzma
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -139,7 +140,11 @@ def build(source: Path, output: Path) -> dict:
     if db_path.exists():
         db_path.unlink()
 
-    counts = {"json_files": 0, "poets": 0, "categories": 0, "poems": 0}
+    counts = {
+        "json_files": 0, "poets": 0, "categories": 0, "poems": 0,
+        "dictionary_entries": 0, "dictionary_meanings": 0, "proverbs": 0,
+        "content_relations": 0,
+    }
     source_bytes = 0
 
     db = sqlite3.connect(db_path)
@@ -169,15 +174,46 @@ def build(source: Path, output: Path) -> dict:
               full_title TEXT, full_url TEXT, poet_slug TEXT NOT NULL,
               source_path TEXT NOT NULL
             );
+            CREATE TABLE dictionary_entries(
+              id INTEGER PRIMARY KEY, headword TEXT NOT NULL UNIQUE,
+              source_path TEXT NOT NULL
+            );
+            CREATE TABLE dictionary_meanings(
+              entry_id INTEGER NOT NULL, ordinal INTEGER NOT NULL,
+              meaning TEXT NOT NULL, PRIMARY KEY(entry_id, ordinal)
+            );
+            CREATE TABLE dictionary_categories(
+              category_key TEXT PRIMARY KEY, title TEXT NOT NULL
+            );
+            CREATE TABLE dictionary_category_entries(
+              category_key TEXT NOT NULL, entry_id INTEGER NOT NULL,
+              PRIMARY KEY(category_key, entry_id)
+            );
+            CREATE TABLE proverbs(
+              id TEXT PRIMARY KEY, title TEXT NOT NULL, meaning TEXT NOT NULL
+            );
+            CREATE TABLE content_relations(
+              source_type TEXT NOT NULL, source_id TEXT NOT NULL,
+              relation TEXT NOT NULL, target_type TEXT NOT NULL,
+              target_id TEXT NOT NULL,
+              PRIMARY KEY(source_type, source_id, relation, target_type, target_id)
+            ) WITHOUT ROWID;
             CREATE VIRTUAL TABLE poem_search USING fts5(
-              title, poet, body, content='', tokenize='unicode61'
+              title, poet, body, tokenize='unicode61'
+            );
+            CREATE VIRTUAL TABLE dictionary_search USING fts5(
+              headword, meanings, tokenize='unicode61'
             );
             CREATE INDEX idx_categories_poet ON categories(poet_id);
             CREATE INDEX idx_poems_cat ON poems(cat_id);
             CREATE INDEX idx_poems_slug ON poems(poet_slug);
+            CREATE INDEX idx_dictionary_meanings_entry ON dictionary_meanings(entry_id);
+            CREATE INDEX idx_dictionary_category_entries_entry ON dictionary_category_entries(entry_id);
+            CREATE INDEX idx_relations_target ON content_relations(target_type, target_id);
         """)
 
         poet_names = {}
+        poet_ids = {}
         db.execute("BEGIN")
         for index, file in enumerate(files, 1):
             if index == 1 or index % 5000 == 0:
@@ -200,6 +236,7 @@ def build(source: Path, output: Path) -> dict:
             if rel.startswith("poets/") and rel.endswith("/poet.json"):
                 slug = rel.split("/")[1]
                 poet_names[slug] = compact_text(obj.get("Name") or obj.get("Nickname"))
+                poet_ids[slug] = obj.get("Id")
                 db.execute(
                     "INSERT OR REPLACE INTO poets VALUES(?,?,?,?,?,?)",
                     (obj.get("Id"), slug, obj.get("Name"), obj.get("Nickname"),
@@ -223,20 +260,145 @@ def build(source: Path, output: Path) -> dict:
                     (poem_id, obj.get("CatId"), obj.get("Title"),
                      obj.get("FullTitle"), obj.get("FullUrl"), slug, rel)
                 )
+                if poet_ids.get(slug) is not None:
+                    db.execute(
+                        "INSERT OR IGNORE INTO content_relations VALUES(?,?,?,?,?)",
+                        ("poem", str(poem_id), "by_poet", "poet", str(poet_ids[slug]))
+                    )
+                if obj.get("CatId") is not None:
+                    db.execute(
+                        "INSERT OR IGNORE INTO content_relations VALUES(?,?,?,?,?)",
+                        ("poem", str(poem_id), "in_category", "category", str(obj.get("CatId")))
+                    )
                 db.execute(
                     "INSERT INTO poem_search(rowid,title,poet,body) VALUES(?,?,?,?)",
                     (int(poem_id), compact_text(obj.get("Title")),
                      poet_names.get(slug, slug), poem_text(obj))
                 )
                 counts["poems"] += 1
+        # Import Souren's own word/category/proverb data into this same DB.
+        # The original JSON bytes are retained in source_files for lossless recovery.
+        local_data = Path(__file__).resolve().parents[1] / "assets" / "db"
+        local_paths = {
+            "dictionary": local_data / "dataset.json",
+            "categories": local_data / "categories.json",
+            "proverbs": local_data / "proverbs.json",
+        }
+        local_objects = {}
+        for kind, local_path in local_paths.items():
+            if not local_path.is_file():
+                raise RuntimeError(f"Required Souren data file is missing: {local_path}")
+            raw = local_path.read_bytes()
+            obj = json.loads(raw)
+            rel = f"souren/assets/db/{local_path.name}"
+            db.execute(
+                "INSERT INTO source_files(path,raw_json,sha256,byte_length) VALUES(?,?,?,?)",
+                (rel, sqlite3.Binary(raw), sha256(raw), len(raw))
+            )
+            counts["json_files"] += 1
+            source_bytes += len(raw)
+            local_objects[kind] = obj
+
+        dictionary_obj = local_objects["dictionary"]
+        meaning_index = {}
+        for row in dictionary_obj.get("entries", []):
+            if not isinstance(row, dict):
+                continue
+            headword = compact_text(row.get("ar")).strip()
+            if not headword:
+                continue
+            cursor = db.execute(
+                "INSERT OR IGNORE INTO dictionary_entries(headword,source_path) VALUES(?,?)",
+                (headword, "souren/assets/db/dataset.json")
+            )
+            found = db.execute(
+                "SELECT id FROM dictionary_entries WHERE headword=?", (headword,)
+            ).fetchone()
+            if not found:
+                continue
+            entry_id = found[0]
+            meanings = [compact_text(x).strip() for x in (row.get("fa") or [])]
+            meanings = [x for x in meanings if x]
+            for ordinal, meaning in enumerate(meanings):
+                db.execute(
+                    "INSERT OR IGNORE INTO dictionary_meanings(entry_id,ordinal,meaning) VALUES(?,?,?)",
+                    (entry_id, ordinal, meaning)
+                )
+                for token in re.findall(r"[\u0600-\u06FF]+", meaning):
+                    if len(token) >= 3:
+                        meaning_index.setdefault(token, set()).add(entry_id)
+            db.execute(
+                "INSERT INTO dictionary_search(rowid,headword,meanings) VALUES(?,?,?)",
+                (entry_id, headword, " ".join(meanings))
+            )
+            counts["dictionary_entries"] += 1
+            counts["dictionary_meanings"] += len(meanings)
+
+        cats_obj = local_objects["categories"]
+        for category_key, words in (cats_obj.get("cats") or {}).items():
+            db.execute(
+                "INSERT OR REPLACE INTO dictionary_categories(category_key,title) VALUES(?,?)",
+                (str(category_key), str(category_key))
+            )
+            for word in words or []:
+                match = db.execute(
+                    "SELECT id FROM dictionary_entries WHERE headword=?", (str(word),)
+                ).fetchone()
+                if match:
+                    db.execute(
+                        "INSERT OR IGNORE INTO dictionary_category_entries VALUES(?,?)",
+                        (str(category_key), match[0])
+                    )
+                    db.execute(
+                        "INSERT OR IGNORE INTO content_relations VALUES(?,?,?,?,?)",
+                        ("word", str(match[0]), "in_category", "dictionary_category", str(category_key))
+                    )
+
+        for proverb in (local_objects["proverbs"].get("proverbs") or []):
+            if not isinstance(proverb, dict):
+                continue
+            proverb_id = compact_text(proverb.get("id")).strip()
+            title = compact_text(proverb.get("title")).strip()
+            meaning = compact_text(proverb.get("meaning")).strip()
+            if not proverb_id or not title or not meaning:
+                continue
+            db.execute(
+                "INSERT OR REPLACE INTO proverbs(id,title,meaning) VALUES(?,?,?)",
+                (proverb_id, title, meaning)
+            )
+            counts["proverbs"] += 1
+            for token in set(re.findall(r"[\u0600-\u06FF]+", title + " " + meaning)):
+                if len(token) < 3:
+                    continue
+                for entry_id in meaning_index.get(token, ()):
+                    db.execute(
+                        "INSERT OR IGNORE INTO content_relations VALUES(?,?,?,?,?)",
+                        ("proverb", proverb_id, "mentions_word", "word", str(entry_id))
+                    )
+
+        # Categories and poems point to the same poet records; this relation
+        # table gives the app one stable join surface for cross-content links.
+        for row in db.execute("SELECT id, poet_id FROM categories WHERE poet_id IS NOT NULL"):
+            db.execute(
+                "INSERT OR IGNORE INTO content_relations VALUES(?,?,?,?,?)",
+                ("category", str(row[0]), "belongs_to", "poet", str(row[1]))
+            )
+
+        counts["content_relations"] = db.execute(
+            "SELECT COUNT(*) FROM content_relations"
+        ).fetchone()[0]
         db.commit()
         db.execute("ANALYZE")
         db.execute("VACUUM")
 
         file_count = db.execute("SELECT COUNT(*) FROM source_files").fetchone()[0]
         poem_count = db.execute("SELECT COUNT(*) FROM poems").fetchone()[0]
-        if file_count != counts["json_files"] or poem_count != counts["poems"]:
-            raise RuntimeError("Row-count verification failed")
+        dictionary_count = db.execute("SELECT COUNT(*) FROM dictionary_entries").fetchone()[0]
+        proverb_count = db.execute("SELECT COUNT(*) FROM proverbs").fetchone()[0]
+        if (file_count != counts["json_files"] or poem_count != counts["poems"]
+                or dictionary_count != counts["dictionary_entries"]
+                or proverb_count != counts["proverbs"]):
+            raise RuntimeError("Unified database row-count verification failed")
         check = db.execute("PRAGMA integrity_check").fetchone()[0]
         if check != "ok":
             raise RuntimeError(f"SQLite integrity check failed: {check}")
@@ -261,6 +423,10 @@ def build(source: Path, output: Path) -> dict:
         "poets": counts["poets"],
         "categories": counts["categories"],
         "poems": counts["poems"],
+        "dictionary_entries": counts["dictionary_entries"],
+        "dictionary_meanings": counts["dictionary_meanings"],
+        "proverbs": counts["proverbs"],
+        "content_relations": counts["content_relations"],
         "sqlite_bytes": db_path.stat().st_size,
         "sqlite_sha256": db_hash,
         "compression_candidates": [
