@@ -4570,7 +4570,7 @@ class GanjoorPage extends StatefulWidget {
 
 class _GanjoorPageState extends State<GanjoorPage> {
   late Future<Map<String, dynamic>> _manifest = GanjoorData.json('manifest.json');
-  late Future<List<Map<String, dynamic>>> _books = GanjoorData.bookCatalog();
+  late final Future<List<Map<String, dynamic>>> _books = GanjoorData.bookCatalog();
   Future<List<Map<String, dynamic>>>? _poems;
   String _query = '';
   int _filter = 0; // all, poets, books, poems
@@ -4734,7 +4734,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
           padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
           child: Row(
             children: [
-              Text('${faNum(items.length)}',
+              Text(faNum(items.length),
                   style: TextStyle(color: pal.faint, fontSize: 11)),
               const Spacer(),
               Text(title, textAlign: TextAlign.right,
@@ -4866,8 +4866,8 @@ class _GanjoorPageState extends State<GanjoorPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
-                          [LucideIcons.list, LucideIcons.layoutGrid,
-                            LucideIcons.panelsTopLeft][i],
+                          [LucideIcons.list, LucideIcons.grid3x3,
+                            LucideIcons.panelLeft][i],
                           size: 18,
                           color: _view == i ? pal.sel : pal.muted,
                         ),
@@ -4935,7 +4935,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                                   _section(
                                     'کتاب‌ها و مجموعه‌ها',
                                     books,
-                                    LucideIcons.bookOpen,
+                                    LucideIcons.notebookPen,
                                     (b) => _value(b, ['Title', 'title', 'Name', 'name']),
                                     (b) => _value(b, ['PoetName', 'PoetNickname', 'poetName']),
                                     _openBook,
