@@ -209,6 +209,28 @@ class Categories {
   }
 }
 
+/// Structured proverb content shared by the home collection, detail
+/// cards, saved-items views, and the unified dataset builder.
+class Proverbs {
+  static Future<List<(String, String)>> load() async {
+    try {
+      final raw = await rootBundle.loadString('assets/db/proverbs.json');
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final rows = (data['proverbs'] as List? ?? const [])
+          .whereType<Map>()
+          .map((row) => (
+                row['title']?.toString() ?? '',
+                row['meaning']?.toString() ?? '',
+              ))
+          .where((row) => row.$1.isNotEmpty && row.$2.isNotEmpty)
+          .toList(growable: false);
+      return rows;
+    } catch (_) {
+      return const [];
+    }
+  }
+}
+
 // ---------------- Auth + likes (Worker API) ----------------
 
 class AuthUser {
@@ -356,35 +378,7 @@ class AuthService {
     } catch (_) {}
   }
 
-  /// Public like counts for all words: {arabicWord: count}.
-  static Future<Map<String, int>> fetchLikeCounts() async {
-    try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 10);
-      final req = await client
-          .getUrl(Uri.parse('$base/api/likes'))
-          .timeout(const Duration(seconds: 15));
-      final res = await req.close().timeout(const Duration(seconds: 15));
-      final j = await _json(res);
-      final counts = (j['counts'] as Map<String, dynamic>?) ?? {};
-      return counts.map((k, v) => MapEntry(k, (v as num).toInt()));
-    } catch (_) {
-      return {};
-    }
-  }
 
-  /// Sets the user's like for [ar]; returns the new global count or null.
-  static Future<int?> setLike(String ar, bool liked) async {
-    if (_cookie == null) return null;
-    try {
-      final res = await _send('POST', '/api/likes', {'ar': ar, 'liked': liked});
-      if (res.statusCode >= 400) return null;
-      final j = await _json(res);
-      return (j['count'] as num?)?.toInt();
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 // ---------------- Dictionary auto-update (Worker) ----------------

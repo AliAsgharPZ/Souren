@@ -23,8 +23,11 @@ const String zwnj = '\u200C';
 const String hamzaAbove = '\u0654'; // ٔ
 
 const Map<String, String> _letterFix = {
-  'ي': 'ی', 'ك': 'ک', 'ة': 'ه', 'ۀ': 'هٔ',
+  'ي': 'ی', 'ى': 'ی', 'ك': 'ک', 'ة': 'ه', 'ۀ': 'هٔ',
   'أ': 'ا', 'إ': 'ا', 'ٱ': 'ا', 'ؤ': 'و',
+  // Arabic-Indic digits typed through imported layouts become Persian digits.
+  '٠': '۰', '١': '۱', '٢': '۲', '٣': '۳', '٤': '۴',
+  '٥': '۵', '٦': '۶', '٧': '۷', '٨': '۸', '٩': '۹',
 };
 
 String normalizeLetters(String s) {

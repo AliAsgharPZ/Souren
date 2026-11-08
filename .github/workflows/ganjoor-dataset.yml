@@ -1,0 +1,62 @@
+name: Build unified Souren content database
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/v0.4.1-cui-ui]
+    paths:
+      - '.github/workflows/ganjoor-dataset.yml'
+      - 'android/tools/build_ganjoor_bundle.py'
+      - 'android/tools/build_ganjoor_compact.py'
+      - 'android/assets/db/dataset.json'
+      - 'android/assets/db/categories.json'
+      - 'android/assets/db/proverbs.json'
+
+concurrency:
+  group: souren-unified-content-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout Souren
+        uses: actions/checkout@v4
+      - name: Checkout complete official Ganjoor export
+        uses: actions/checkout@v4
+        with:
+          repository: ganjoor/ganjoor-data
+          ref: main
+          path: upstream/ganjoor-data
+          fetch-depth: 1
+      - name: Install compression codecs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd brotli xz-utils
+          python3 -m pip install --user cbor2
+      - name: Build lossless SQLite and benchmark codecs
+        run: |
+          python3 android/tools/build_ganjoor_bundle.py \
+            --source upstream/ganjoor-data \
+            --out dist/ganjoor
+      - name: Build dictionary-coded lossless CBOR archive
+        run: |
+          python3 android/tools/build_ganjoor_compact.py \
+            --source upstream/ganjoor-data \
+            --out dist/ganjoor
+      - name: Upload verified corpus and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: souren-unified-content-database
+          path: |
+            dist/ganjoor/*.sqlite.*
+            dist/ganjoor/compression-report.json
+            dist/ganjoor/ganjoor-full.cbor.xz
+            dist/ganjoor/compact-compression-report.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

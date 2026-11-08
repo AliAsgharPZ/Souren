@@ -1,13 +1,19 @@
 package ir.souren.souren
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private var pendingPick: MethodChannel.Result? = null
@@ -38,9 +44,111 @@ class MainActivity : FlutterActivity() {
                         }
                         startActivityForResult(intent, 4711)
                     }
+                    "shareText" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
+                        startActivity(Intent.createChooser(intent, "اشتراک‌گذاری"))
+                        result.success(true)
+                    }
+                    "shareImage" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        val name = call.argument<String>("name") ?: "souren-share.png"
+                        val uri = if (bytes != null) savePng(bytes, name) else null
+                        if (uri != null) {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "image/png"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(Intent.createChooser(intent, "اشتراک‌گذاری"))
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    }
+                    "shareTextAndImage" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val bytes = call.argument<ByteArray>("bytes")
+                        val name = call.argument<String>("name") ?: "souren-share.png"
+                        val uri = if (bytes != null) savePng(bytes, name) else null
+                        if (uri != null) {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "image/png"
+                                putExtra(Intent.EXTRA_TEXT, text)
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(Intent.createChooser(intent, "اشتراک‌گذاری"))
+                            result.success(true)
+                        } else {
+                            result.success(false)
+                        }
+                    }
+                    "saveImage" -> {
+                        val bytes = call.argument<ByteArray>("bytes")
+                        val name = call.argument<String>("name") ?: "souren-share.png"
+                        result.success(bytes != null && savePng(bytes, name) != null)
+                    }
+                    "saveText" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val name = call.argument<String>("name") ?: "souren-share.txt"
+                        result.success(saveTextFile(text, name))
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    /** Saves PNG bytes to Pictures/Souren and returns the content URI,
+     *  which can also be shared (grant read permission on the intent). */
+    private fun savePng(bytes: ByteArray, name: String): Uri? {
+        return try {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, name)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Souren")
+                }
+            }
+            val uri = contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
+            contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                ?: return null
+            uri
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** Saves plain text to Download/Souren (Q+) or the app's external
+     *  Downloads dir on older Android. */
+    private fun saveTextFile(text: String, name: String): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, name)
+                    put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/Souren")
+                }
+                val uri = contentResolver.insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: return false
+                contentResolver.openOutputStream(uri)?.use {
+                    it.write(text.toByteArray(Charsets.UTF_8))
+                } ?: return false
+                true
+            } else {
+                val dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    ?: return false
+                File(dir, name).writeText(text)
+                true
+            }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
