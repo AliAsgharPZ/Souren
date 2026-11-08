@@ -39,7 +39,10 @@ function json(request, obj, status = 200, extra = {}) {
     return new Response(JSON.stringify(obj), {
         status,
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-store',
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'no-referrer',
             ...corsHeaders(request),
             ...extra,
         },
@@ -258,43 +261,41 @@ async function handleProfile(request, env) {
         s.rec.displayName = body.displayName.trim().slice(0, 40);
     }
     if (Array.isArray(body.favorites)) {
-        s.rec.favorites = body.favorites.filter((f) => typeof f === 'string').slice(0, 500);
+        s.rec.favorites = [...new Set(body.favorites
+            .filter((f) => typeof f === 'string' && f.trim().length > 0 && f.length <= 512)
+            .map((f) => f.trim()))].slice(0, 5000);
     }
     if (Array.isArray(body.likes)) {
-        s.rec.likes = body.likes.filter((f) => typeof f === 'string').slice(0, 500);
+        s.rec.likes = [...new Set(body.likes
+            .filter((f) => typeof f === 'string' && f.trim().length > 0 && f.length <= 512)
+            .map((f) => f.trim()))].slice(0, 5000);
     }
     await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
     return json(request, { user: publicUser(s.rec) });
 }
 
-// ---------- Likes (شمارندهٔ همگانی پسندها) ----------
-async function handleLikeCounts(request, env) {
-    const counts = (await env.USERS.get('likes:counts', 'json')) || {};
-    return new Response(JSON.stringify({ counts }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', ...corsHeaders(request) },
-    });
-}
-
+// ---------- Likes (per-user only; no public/global counters) ----------
 async function handleLike(request, env) {
     const s = await getSessionUser(request, env);
     if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401);
     let body;
-    try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
-    const ar = typeof body.ar === 'string' ? body.ar.trim() : '';
-    if (!ar || ar.length > 60) return json(request, { error: 'واژه نامعتبر است' }, 400);
-    const want = body.liked === true;
-    const likes = new Set(s.rec.likes || []);
-    const has = likes.has(ar);
-    const counts = (await env.USERS.get('likes:counts', 'json')) || {};
-    let count = counts[ar] || 0;
-    if (want && !has) { likes.add(ar); count += 1; }
-    if (!want && has) { likes.delete(ar); count = Math.max(0, count - 1); }
-    counts[ar] = count;
-    s.rec.likes = [...likes];
-    await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
-    await env.USERS.put('likes:counts', JSON.stringify(counts));
-    return json(request, { ar, count, likes: s.rec.likes });
+    try { body = await request.json(); }
+    catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+
+    const key = typeof body.key === 'string'
+        ? body.key.trim()
+        : (typeof body.ar === 'string' ? body.ar.trim() : '');
+    if (!key || key.length > 512) {
+        return json(request, { error: 'شناسهٔ محتوا نامعتبر است' }, 400);
+    }
+
+    const likes = new Set(Array.isArray(s.rec.likes) ? s.rec.likes : []);
+    const liked = body.liked === true;
+    if (liked) likes.add(key);
+    else likes.delete(key);
+    s.rec.likes = [...likes].slice(0, 5000);
+    await env.USERS.put(\`user:\${s.rec.username}\`, JSON.stringify(s.rec));
+    return json(request, { key, liked, likes: s.rec.likes });
 }
 
 // ---------- Router ----------
@@ -312,7 +313,15 @@ export default {
             case '/api/auth/logout': return handleLogout(request, env);
             case '/api/auth/me': return handleMe(request, env);
             case '/api/auth/profile': return handleProfile(request, env);
-            case '/api/likes': return request.method === 'POST' ? handleLike(request, env) : handleLikeCounts(request, env);
+            case '/api/likes': return request.method === 'POST'
+                ? handleLike(request, env)
+                : json(request, { error: 'method_not_allowed' }, 405);
+            case '/api/health': return json(request, {
+                service: 'souren-worker',
+                apiVersion: 2,
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+            });
             default: break;
         }
         // سایت روی Pages میزبانی می‌شود؛ هر مسیر غیر API به همان مسیر در pages.dev ریدایرکت می‌شود.
