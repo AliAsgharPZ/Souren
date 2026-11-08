@@ -2310,8 +2310,6 @@ class _ShellState extends State<Shell> {
           final stats = snapshot.data ?? const <String, int>{};
           final values = <(String, int)>[
             ('واژه', d.entries.length),
-            ('برابر', d.pairCount),
-            ('شاعر', stats['poets'] ?? 0),
             ('کتاب', stats['books'] ?? 0),
             ('شعر', stats['poems'] ?? 0),
           ];
