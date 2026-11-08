@@ -83,13 +83,13 @@ def compress_candidates(db_path: Path, work: Path) -> list[dict]:
     zstd = shutil.which('zstd')
     if zstd:
         zst_path = work / 'ganjoor.sqlite.zst'
-        # Avoid --long=27: very high RAM use for marginal/uncertain gains.
-        if run_codec([zstd, '-q', '-22', '--ultra', '-T0', '-f', str(db_path), '-o', str(zst_path)], zst_path, 20 * 60):
+        # Use a 1 GiB window for long-range redundancy across the complete corpus.
+        if run_codec([zstd, '-q', '-22', '--ultra', '-T0', '--long=30', '-c', str(db_path)], zst_path, 30 * 60):
             candidates.append({'codec': 'zstd-22-ultra', 'path': zst_path, 'bytes': zst_path.stat().st_size})
     brotli = shutil.which('brotli')
     if brotli:
         br_path = work / 'ganjoor.sqlite.br'
-        if run_codec([brotli, '-q', '11', '-f', str(db_path), '-o', str(br_path)], br_path, 20 * 60):
+        if run_codec([brotli, '-q', '11', '-w', '24', '-c', str(db_path)], br_path, 30 * 60):
             candidates.append({'codec': 'brotli-11', 'path': br_path, 'bytes': br_path.stat().st_size})
     bz_path = work / 'ganjoor.sqlite.bz2'
     if run_codec(['bzip2', '-9', '-c', str(db_path)], bz_path, 10 * 60):
