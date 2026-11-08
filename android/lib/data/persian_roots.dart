@@ -26,7 +26,7 @@ class PersianLexeme {
 class PersianRoots {
   static const _suffixes = <String>[
     'هایشان', 'هایمان', 'هایتان', 'هایش', 'هایم', 'هایت',
-    'ترین', 'های', 'گان', 'ان', 'ها', 'تر', 'ات',
+    'ترین', 'های', 'گان', 'ها',
   ];
 
   static String normalize(String value) => value
