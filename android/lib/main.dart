@@ -673,6 +673,7 @@ class DetailSheet extends StatefulWidget {
   final List<String> relatedPersianWords;
   final List<Entry> relatedEntries;
   final void Function(Entry)? onOpenRelatedEntry;
+  final List<String> copyableLines;
   final bool showActions;
   const DetailSheet({
     super.key,
@@ -686,6 +687,7 @@ class DetailSheet extends StatefulWidget {
     this.relatedPersianWords = const [],
     this.relatedEntries = const [],
     this.onOpenRelatedEntry,
+    this.copyableLines = const [],
     this.showActions = true,
   });
   @override
@@ -695,6 +697,14 @@ class DetailSheet extends StatefulWidget {
 class _DetailSheetState extends State<DetailSheet> {
   late bool _liked = widget.initialLiked;
   late bool _bookmarked = widget.initialBookmarked;
+
+  Future<void> _copyText(String value, String message) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -716,13 +726,42 @@ class _DetailSheetState extends State<DetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  widget.card.title,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: widget.copyableLines.isEmpty
+                    ? Text(
+                        widget.card.title,
+                        textAlign: TextAlign.right,
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < widget.copyableLines.length; i++)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onLongPress: () => _copyText(
+                                widget.copyableLines[i],
+                                'مصراع کپی شد',
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Text(
+                                  widget.copyableLines[i],
+                                  textAlign: TextAlign.right,
+                                  textDirection: TextDirection.rtl,
+                                  style: const TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.7,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
               ),
               if (widget.showActions)
                 LikeBookmarkButtons(
@@ -740,13 +779,28 @@ class _DetailSheetState extends State<DetailSheet> {
             ],
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              widget.card.lines.join('\n'),
-              style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+          if (widget.card.lines.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.lines.join('\n'),
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+              ),
             ),
-          ),
+          if (widget.copyableLines.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'برای کپی هر مصراع یا واژه، روی آن نگه دارید.',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.faint, fontSize: 10.5),
+                ),
+              ),
+            ),
           if (widget.card.caption != null) ...[
             const SizedBox(height: 6),
             Align(
@@ -777,14 +831,20 @@ class _DetailSheetState extends State<DetailSheet> {
               runSpacing: 8,
               children: [
                 for (final entry in widget.relatedEntries)
-                  ActionChip(
-                    label: Text(entry.ar),
-                    onPressed: widget.onOpenRelatedEntry == null
-                        ? null
-                        : () => widget.onOpenRelatedEntry!(entry),
-                    backgroundColor: pal.pillC,
-                    side: BorderSide(color: pal.div),
-                    labelStyle: TextStyle(color: pal.ink, fontWeight: FontWeight.w600),
+                  GestureDetector(
+                    onLongPress: () => _copyText(entry.ar, 'واژه کپی شد'),
+                    child: ActionChip(
+                      label: Text(entry.ar),
+                      onPressed: widget.onOpenRelatedEntry == null
+                          ? null
+                          : () => widget.onOpenRelatedEntry!(entry),
+                      backgroundColor: pal.pillC,
+                      side: BorderSide(color: pal.div),
+                      labelStyle: TextStyle(
+                        color: pal.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -833,12 +893,18 @@ class _DetailSheetState extends State<DetailSheet> {
               const SizedBox(width: 10),
               Pressable(
                 onTap: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: buildShareText(widget.card)),
-                  );
+                  final copyText = widget.copyableLines.isEmpty
+                      ? buildShareText(widget.card)
+                      : widget.copyableLines.join('\n');
+                  await Clipboard.setData(ClipboardData(text: copyText));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('کپی شد')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          widget.copyableLines.isEmpty ? 'کپی شد' : 'بیت کپی شد',
+                        ),
+                      ),
+                    );
                   }
                 },
                 child: Container(
@@ -918,10 +984,13 @@ class ShareCardImage extends StatelessWidget {
         children: [
           Text(
             card.title,
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: pal.ink,
+              height: 1.75,
             ),
           ),
           const SizedBox(height: 10),
@@ -930,6 +999,8 @@ class ShareCardImage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 line,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
                 style: TextStyle(fontSize: 15, color: pal.muted, height: 1.8),
               ),
             ),
@@ -937,6 +1008,8 @@ class ShareCardImage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               card.caption!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
               style: TextStyle(fontSize: 12.5, color: pal.faint),
             ),
           ],
@@ -6076,13 +6149,20 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
     await SharedFiles.writeJson(file, {'words': values.toList()});
   }
 
-  void _showCouplet(int index, List<String> lines) {
+  void _showCouplet(
+    int index,
+    List<String> lines, {
+    String? meaning,
+    String? breadcrumb,
+  }) {
     final key = 'poem:${widget.path}#$index';
     final related = _relatedEntries(lines.join(' '));
+    final path = (breadcrumb ?? widget.title).replaceAll(' » ', ' > ');
+    final summary = meaning?.trim();
     final card = ShareCardData(
-      title: widget.title,
-      lines: lines,
-      caption: 'بیت ${index + 1} · گنجور',
+      title: lines.join('\n'),
+      lines: summary == null || summary.isEmpty ? const [] : [summary],
+      caption: '$path  ·  بیت ${faNum(index + 1)}',
     );
     Navigator.of(context).push(
       PageRouteBuilder<void>(
@@ -6180,13 +6260,19 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
           final couplets = <int, List<String>>{};
+          final coupletMeanings = <int, String>{};
           for (final verse in verses) {
             final index = (verse['CoupletIndex'] as num?)?.toInt() ?? -1;
             if (index < 0) continue;
             couplets.putIfAbsent(index, () => <String>[]);
             couplets[index]!.add(verse['Text']?.toString() ?? '');
+            final summary = verse['CoupletSummary']?.toString().trim();
+            if (summary != null && summary.isNotEmpty) {
+              coupletMeanings.putIfAbsent(index, () => summary);
+            }
           }
           final ordered = couplets.keys.toList()..sort();
+          final breadcrumb = data['FullTitle']?.toString() ?? widget.title;
           return edgeFade(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(22, 10, 22, 32),
@@ -6231,6 +6317,8 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                           onTap: () => _showCouplet(
                             ordered[i],
                             couplets[ordered[i]]!,
+                            meaning: coupletMeanings[ordered[i]],
+                            breadcrumb: breadcrumb,
                           ),
                           borderRadius: BorderRadius.circular(23),
                           child: Container(
@@ -6265,6 +6353,21 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                 color: pal.ink,
                                 fontSize: 16,
                                 height: 1.9,
+                              ),
+                            ),
+                          ],
+                          if ((coupletMeanings[ordered[i]] ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              coupletMeanings[ordered[i]]!,
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: pal.muted,
+                                fontSize: 12,
+                                height: 1.65,
                               ),
                             ),
                           ],
