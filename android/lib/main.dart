@@ -74,6 +74,80 @@ class Motion {
   static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
 }
 
+/// A real, interruptible spring for the single navigation selection capsule.
+/// The six tab hit-targets never move; only this fixed-size surface travels.
+class SpringSlideIndicator extends StatefulWidget {
+  final double left;
+  final double top;
+  final double size;
+  final Color color;
+
+  const SpringSlideIndicator({
+    super.key,
+    required this.left,
+    required this.top,
+    required this.size,
+    required this.color,
+  });
+
+  @override
+  State<SpringSlideIndicator> createState() => _SpringSlideIndicatorState();
+}
+
+class _SpringSlideIndicatorState extends State<SpringSlideIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _position = AnimationController.unbounded(
+    vsync: this,
+    value: widget.left,
+  );
+
+  @override
+  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.left == widget.left) return;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion) {
+      _position.value = widget.left;
+      return;
+    }
+    _position.animateWith(
+      SpringSimulation(
+        const SpringDescription(mass: 1, stiffness: 520, damping: 38),
+        _position.value,
+        widget.left,
+        _position.velocity,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _position.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _position,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(18),
+        ),
+      ),
+      builder: (context, child) => Positioned(
+        left: _position.value,
+        top: widget.top,
+        width: widget.size,
+        height: widget.size,
+        child: child!,
+      ),
+    );
+  }
+}
+
 PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
   transitionDuration: Motion.slow,
   reverseTransitionDuration: Motion.base,
@@ -1477,19 +1551,11 @@ class _ShellState extends State<Shell> {
               height: barHeight,
               child: Stack(
                 children: [
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 460),
-                    curve: Motion.spring,
+                  SpringSlideIndicator(
                     left: indicatorLeft,
                     top: (barHeight - indicatorSize) / 2,
-                    width: indicatorSize,
-                    height: indicatorSize,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: selectedColor,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
+                    size: indicatorSize,
+                    color: selectedColor,
                   ),
                   Row(
                     children: [
