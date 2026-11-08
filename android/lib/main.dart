@@ -1790,7 +1790,7 @@ class _ShellState extends State<Shell> {
               var best = 'گنجینۀ واژه‌ها';
               for (var count = 1; count <= 12; count++) {
                 final kashida = List<String>.filled(count, 'ـ').join();
-                final candidate = 'گنجینۀ واژه${kashida}ها';
+                final candidate = 'گنجینۀ واژه$kashidaها';
                 final painter = TextPainter(
                   text: TextSpan(
                     text: candidate,
