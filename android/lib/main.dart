@@ -4965,7 +4965,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                 ],
               ),
             ),
-            Icon(LucideIcons.chevronLeft, color: pal.muted, size: 16),
+            Icon(LucideIcons.chevronRight, color: pal.muted, size: 16),
           ],
         ),
       ),
@@ -5086,17 +5086,16 @@ class _GanjoorPageState extends State<GanjoorPage> {
                           onTap: () => setState(() => _filter = i),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 9),
-                            decoration: BoxDecoration(
-                              color: _filter == i ? pal.sel : pal.cardC,
-                              borderRadius: BorderRadius.circular(13),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
                             ),
                             child: Text(
                               ['همه', 'شاعران', 'کتاب‌ها', 'شعرها'][i],
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: _filter == i ? pal.bg : pal.muted,
+                                color: _filter == i ? pal.sel : pal.muted,
                                 fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: _filter == i ? FontWeight.w800 : FontWeight.w600,
                               ),
                             ),
                           ),
@@ -5330,7 +5329,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                         style: TextStyle(color: pal.ink),
                       ),
                       trailing: Icon(
-                        LucideIcons.chevronLeft,
+                        LucideIcons.chevronRight,
                         color: pal.muted,
                         size: 18,
                       ),
