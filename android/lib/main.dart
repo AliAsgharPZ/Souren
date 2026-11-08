@@ -396,20 +396,18 @@ Widget pressIcon({
   );
 }
 
-/// Like + bookmark, side by side, everywhere (round 3): outline
-/// icons only; the like count lives in a fixed-width slot that is
-/// always present, so liking a word never shifts the row layout.
+/// Like + bookmark actions, side by side everywhere: outline icons only.
+/// Personal state is stored per account; no global like totals are requested
+/// or rendered.
 class LikeBookmarkButtons extends StatelessWidget {
   final bool liked;
   final bool bookmarked;
-  final int likeCount;
   final VoidCallback onToggleLike;
   final VoidCallback onToggleBookmark;
   const LikeBookmarkButtons({
     super.key,
     required this.liked,
     required this.bookmarked,
-    this.likeCount = 0,
     required this.onToggleLike,
     required this.onToggleBookmark,
   });
@@ -582,7 +580,6 @@ class DetailSheet extends StatefulWidget {
   final ShareCardData card;
   final bool initialLiked;
   final bool initialBookmarked;
-  final int likeCount;
   final Future<void> Function() onToggleLike;
   final Future<void> Function() onToggleBookmark;
   final VoidCallback? onOpenEtymology;
@@ -595,7 +592,6 @@ class DetailSheet extends StatefulWidget {
     required this.card,
     required this.initialLiked,
     required this.initialBookmarked,
-    this.likeCount = 0,
     required this.onToggleLike,
     required this.onToggleBookmark,
     this.onOpenEtymology,
@@ -611,7 +607,6 @@ class DetailSheet extends StatefulWidget {
 class _DetailSheetState extends State<DetailSheet> {
   late bool _liked = widget.initialLiked;
   late bool _bookmarked = widget.initialBookmarked;
-  late int _count = widget.likeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -644,13 +639,8 @@ class _DetailSheetState extends State<DetailSheet> {
               LikeBookmarkButtons(
                 liked: _liked,
                 bookmarked: _bookmarked,
-                likeCount: _count,
                 onToggleLike: () async {
-                  final now = !_liked;
-                  setState(() {
-                    _liked = now;
-                    _count = now ? _count + 1 : (_count > 0 ? _count - 1 : 0);
-                  });
+                  setState(() => _liked = !_liked);
                   await widget.onToggleLike();
                 },
                 onToggleBookmark: () async {
@@ -1294,7 +1284,6 @@ class _ShellState extends State<Shell> {
   Settings settings = SettingsStore.current;
   Set<String> favorites = {};
   Set<String> liked = {};
-  Map<String, int> likeCounts = {};
   List<(String, String)> proverbs = const [];
   Categories categories = const Categories({});
   int learnedWords = 0;
@@ -1368,7 +1357,6 @@ class _ShellState extends State<Shell> {
       }
       favorites = {...favorites, ...srvFav};
       liked = {...liked, ...srvLiked};
-      likeCounts = {};
       if (learned != null) {
         learnedWords = ((learned['counts'] as Map?) ?? {}).length;
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
@@ -2107,7 +2095,6 @@ class _ShellState extends State<Shell> {
     final actions = LikeBookmarkButtons(
       liked: liked.contains(e.ar),
       bookmarked: favorites.contains(e.ar),
-      likeCount: likeCounts[e.ar] ?? 0,
       onToggleLike: () => _toggleLike(e.ar),
       onToggleBookmark: () => _toggleFav(e.ar),
     );
@@ -2169,7 +2156,6 @@ class _ShellState extends State<Shell> {
     proverbs: proverbs,
     liked: liked,
     favorites: favorites,
-    likeCounts: likeCounts,
     onToggleLike: _toggleLike,
     onToggleFav: _toggleFav,
   );
@@ -2237,7 +2223,6 @@ class _ShellState extends State<Shell> {
         card: card,
         initialLiked: liked.contains(e.ar),
         initialBookmarked: favorites.contains(e.ar),
-        likeCount: likeCounts[e.ar] ?? 0,
         onToggleLike: () => _toggleLike(e.ar),
         onToggleBookmark: () => _toggleFav(e.ar),
         etymologyWord: e.hasFa ? e.fa.first : null,
@@ -2785,7 +2770,6 @@ class _ShellState extends State<Shell> {
       await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
       await AuthService.pushProfile(favorites, liked);
     }
-    if (mounted) setState(() => likeCounts = {});
   }
 
   /// One badge tile: full-width row cell, earned = filled with a
@@ -4132,7 +4116,6 @@ class PandvazhePage extends StatefulWidget {
   final List<(String, String)> proverbs;
   final Set<String> liked;
   final Set<String> favorites;
-  final Map<String, int> likeCounts;
   final Future<void> Function(String) onToggleLike;
   final Future<void> Function(String) onToggleFav;
 
@@ -4141,7 +4124,6 @@ class PandvazhePage extends StatefulWidget {
     required this.proverbs,
     required this.liked,
     required this.favorites,
-    required this.likeCounts,
     required this.onToggleLike,
     required this.onToggleFav,
   });
