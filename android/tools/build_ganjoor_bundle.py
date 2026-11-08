@@ -62,7 +62,8 @@ def poem_text(obj: dict) -> str:
 def run_codec(command: list[str], output: Path, timeout_seconds: int) -> bool:
     print('[compress] start: ' + ' '.join(command), flush=True)
     try:
-        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, timeout=timeout_seconds)
+        with output.open('wb') as destination:
+            subprocess.run(command, check=True, stdout=destination, stderr=subprocess.DEVNULL, timeout=timeout_seconds)
         print(f'[compress] done: {output.name} ({output.stat().st_size:,} bytes)', flush=True)
         return True
     except subprocess.TimeoutExpired:
