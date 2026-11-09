@@ -241,7 +241,9 @@ object Corrector {
     }
 
     fun learningKey(from: String, left: String, right: String, candidate: String): String =
-        listOf(from, left, right, candidate).joinToString("\u001F")
+        listOf(from, left, right, candidate)
+            .map { normalizeLetters(it) }
+            .joinToString("\u001F")
 
     fun suggestionsFor(
         word: String,
