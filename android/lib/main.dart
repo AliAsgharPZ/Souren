@@ -1963,58 +1963,121 @@ class _ShellState extends State<Shell> {
       'گنجینۀ شاعران',
       'گنجینۀ کتاب‌ها',
     ];
-    return PopupMenuButton<int>(
-      tooltip: 'انتخاب گنجینه',
-      color: pal.cardC,
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(capR(34)),
-        side: BorderSide(color: pal.div),
+    const icons = <IconData>[
+      Symbols.translate_rounded,
+      Symbols.format_quote_rounded,
+      Symbols.person_rounded,
+      Symbols.menu_book_rounded,
+    ];
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        backgroundColor: MaterialStatePropertyAll(pal.cardC),
+        elevation: const MaterialStatePropertyAll(12),
+        padding: const MaterialStatePropertyAll(EdgeInsets.all(8)),
+        shape: MaterialStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: pal.div),
+          ),
+        ),
       ),
-      onSelected: (value) {
-        setState(() {
-          _homeCollection = value;
-          if (value == 2) {
-            _homePoets = _loadHomePoets();
-          } else if (value == 3) {
-            _homeBooks = GanjoorData.bookCatalog();
-          }
-        });
-      },
-      itemBuilder: (_) => [
+      menuChildren: [
         for (var i = 0; i < labels.length; i++)
-          PopupMenuItem<int>(
-            value: i,
+          MenuItemButton(
+            onPressed: () {
+              setState(() {
+                _homeCollection = i;
+                if (i == 2) {
+                  _homePoets = _loadHomePoets();
+                } else if (i == 3) {
+                  _homeBooks = GanjoorData.bookCatalog();
+                }
+              });
+            },
+            style: ButtonStyle(
+              minimumSize: const MaterialStatePropertyAll(Size(190, 48)),
+              padding: const MaterialStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 12),
+              ),
+              backgroundColor: MaterialStatePropertyAll(
+                i == _homeCollection ? pal.pillC : Colors.transparent,
+              ),
+              shape: MaterialStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(capR(46)),
+                ),
+              ),
+            ),
             child: SizedBox(
               width: 190,
-              child: Text(
-                labels[i],
+              height: 48,
+              child: Row(
                 textDirection: TextDirection.rtl,
-                textAlign: TextAlign.right,
+                children: [
+                  Icon(
+                    icons[i],
+                    size: 19,
+                    color: i == _homeCollection ? pal.sel : pal.muted,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      labels[i],
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: i == _homeCollection ? pal.ink : pal.muted,
+                        fontSize: 13.5,
+                        fontWeight: i == _homeCollection
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (i == _homeCollection) ...[
+                    const SizedBox(width: 8),
+                    Icon(Symbols.check_rounded, size: 18, color: pal.sel),
+                  ],
+                ],
               ),
             ),
           ),
       ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textDirection: TextDirection.rtl,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: pal.ink,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
+      builder: (context, controller, child) => Pressable(
+        onTap: () => controller.isOpen ? controller.close() : controller.open(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              Expanded(
+                child: Text(
+                  labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: pal.ink,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
-            Icon(Symbols.expand_more_rounded, size: 20, color: pal.muted),
-          ],
+              const SizedBox(width: 4),
+              AnimatedRotation(
+                turns: controller.isOpen ? 0.5 : 0,
+                duration: Motion.fast,
+                curve: Motion.curve,
+                child: Icon(
+                  Symbols.expand_more_rounded,
+                  size: 20,
+                  color: pal.muted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
