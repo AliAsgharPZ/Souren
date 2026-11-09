@@ -240,11 +240,17 @@ object Corrector {
         return null
     }
 
+    fun learningKey(from: String, left: String, right: String, candidate: String): String =
+        listOf(from, left, right, candidate).joinToString("\u001F")
+
     fun suggestionsFor(
         word: String,
         dictionary: Map<String, List<String>>,
         learnedCounts: Map<String, Int>,
-        vocab: List<String>
+        vocab: List<String>,
+        leftContext: String = "",
+        rightContext: String = "",
+        learnedPairs: Map<String, Int> = emptyMap()
     ): List<String> {
         if (word.isEmpty()) return emptyList()
         val out = mutableListOf<String>()
@@ -256,6 +262,12 @@ object Corrector {
             .sortedByDescending { learnedCounts[it] ?: 0 }
             .take(3)
         out.addAll(completions)
-        return out.distinct().take(4)
+        return out.distinct()
+            .withIndex()
+            .sortedWith(compareByDescending<IndexedValue<String>> {
+                learnedPairs[learningKey(word, leftContext, rightContext, it.value)] ?: 0
+            }.thenBy { it.index })
+            .map { it.value }
+            .take(4)
     }
 }
