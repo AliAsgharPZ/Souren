@@ -4531,15 +4531,11 @@ class _LexiconPageState extends State<LexiconPage> {
                           child: InkWell(
                             onTap: () => widget.onTapEntry(e),
                             child: Row(
+                              textDirection: TextDirection.rtl,
                               children: [
-                                Icon(
-                                  LucideIcons.chevronLeft,
-                                  size: 13,
-                                  color: pal.muted,
-                                ),
-                                const SizedBox(width: 8),
                                 Text(
                                   e.ar,
+                                  textDirection: TextDirection.rtl,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 15.5,
@@ -4550,6 +4546,8 @@ class _LexiconPageState extends State<LexiconPage> {
                                 Expanded(
                                   child: Text(
                                     e.fa.join('، '),
+                                    textDirection: TextDirection.rtl,
+                                    textAlign: TextAlign.left,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -4558,7 +4556,12 @@ class _LexiconPageState extends State<LexiconPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox.shrink(),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  LucideIcons.chevronLeft,
+                                  size: 13,
+                                  color: pal.muted,
+                                ),
                               ],
                             ),
                           ),
