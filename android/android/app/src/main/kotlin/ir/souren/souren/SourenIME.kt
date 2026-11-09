@@ -148,6 +148,11 @@ class SourenIME : InputMethodService() {
         shell.addView(keyArea, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
+        // Reserve a stable bottom inset so the system navigation area never
+        // overlaps the keyboard's bottom row.
+        shell.addView(View(this), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(22)
+        ))
         appliedHeight = KbData.kbHeight
         renderToolbar()
         rebuildKeyboard()
