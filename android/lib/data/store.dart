@@ -95,6 +95,7 @@ class Dictionary {
 class Settings {
   bool replaceArabic;
   bool autoCorrect;
+  bool shareLearning;
 
   /// Keyboard height: 'short' | 'normal' | 'tall'
   String kbHeight;
@@ -113,6 +114,7 @@ class Settings {
   Settings({
     this.replaceArabic = true,
     this.autoCorrect = true,
+    this.shareLearning = false,
     this.kbHeight = 'tall',
     this.theme = 'light',
     this.font = 'arad',
@@ -130,6 +132,7 @@ class Settings {
     return Settings(
       replaceArabic: j['replaceArabic'] != false,
       autoCorrect: j['autoCorrect'] != false,
+      shareLearning: j['shareLearning'] == true,
       kbHeight: (j['kbHeight'] as String?) ?? 'tall',
       theme: (j['theme'] as String?) ?? 'light',
       font: (j['font'] as String?) ?? 'arad',
@@ -141,6 +144,7 @@ class Settings {
   Future<void> save() => SharedFiles.writeJson('souren_settings.json', {
         'replaceArabic': replaceArabic,
         'autoCorrect': autoCorrect,
+        'shareLearning': shareLearning,
         'kbHeight': kbHeight,
         'theme': theme,
         'font': font,
