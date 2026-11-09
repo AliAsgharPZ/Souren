@@ -61,17 +61,104 @@ Pal pal = Pal.light;
 /// Souren's own visual language with purposeful, restrained motion:
 /// short ease-out transitions, subtle press feedback and no decorative bounce.
 class Motion {
-  static const fast = Duration(milliseconds: 220);
-  static const base = Duration(milliseconds: 380);
-  static const slow = Duration(milliseconds: 520);
-  static const curve = Cubic(0.20, 1.06, 0.32, 1.0);
+  static const fast = Duration(milliseconds: 180);
+  static const base = Duration(milliseconds: 320);
+  static const slow = Duration(milliseconds: 420);
+  static const curve = Cubic(0.22, 1.0, 0.36, 1.0);
   static const pop = Curves.easeOutBack;
-  static const staggerStep = Duration(milliseconds: 26);
+  static const staggerStep = Duration(milliseconds: 22);
 
-  /// Smooth spring-like response shared by buttons, panels and transitions.
-  static const pressDown = Duration(milliseconds: 110);
-  static const pressUp = Duration(milliseconds: 360);
-  static const spring = Cubic(0.2, 1.12, 0.32, 1.0);
+  /// Short, interrupt-friendly interaction timings inspired by Apple's
+  /// continuity-first motion guidance. Keep overshoot subtle and optional.
+  static const pressDown = Duration(milliseconds: 100);
+  static const pressUp = Duration(milliseconds: 300);
+  static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
+}
+
+/// A real, interruptible spring for the single navigation selection capsule.
+/// The six tab hit-targets never move; only this fixed-size surface travels.
+class SpringSlideIndicator extends StatefulWidget {
+  final double left;
+  final double top;
+  final double width;
+  final double height;
+  final Color color;
+
+  const SpringSlideIndicator({
+    super.key,
+    required this.left,
+    required this.top,
+    required this.width,
+    required this.height,
+    required this.color,
+  });
+
+  @override
+  State<SpringSlideIndicator> createState() => _SpringSlideIndicatorState();
+}
+
+class _SpringSlideIndicatorState extends State<SpringSlideIndicator>
+    with TickerProviderStateMixin {
+  late final AnimationController _position = AnimationController.unbounded(
+    vsync: this,
+    value: widget.left,
+  );
+  late final AnimationController _width = AnimationController.unbounded(
+    vsync: this,
+    value: widget.width,
+  );
+
+  void _springTo(AnimationController controller, double target) {
+    controller.animateWith(
+      SpringSimulation(
+        const SpringDescription(mass: 1, stiffness: 520, damping: 38),
+        controller.value,
+        target,
+        controller.velocity,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion) {
+      _position.value = widget.left;
+      _width.value = widget.width;
+      return;
+    }
+    if (oldWidget.left != widget.left) _springTo(_position, widget.left);
+    if (oldWidget.width != widget.width) _springTo(_width, widget.width);
+  }
+
+  @override
+  void dispose() {
+    _position.dispose();
+    _width.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_position, _width]),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(19),
+        ),
+      ),
+      builder: (context, child) => Positioned(
+        left: _position.value,
+        top: widget.top,
+        width: _width.value,
+        height: widget.height,
+        child: child!,
+      ),
+    );
+  }
 }
 
 PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
@@ -1796,8 +1883,8 @@ class _ShellState extends State<Shell> {
                               Expanded(
                                 child: AnimatedSwitcher(
                                   duration: Motion.slow,
-                                  switchInCurve: Motion.spring,
-                                  switchOutCurve: Motion.spring,
+                                  switchInCurve: Motion.curve,
+                                  switchOutCurve: Curves.easeInOutCubic,
                                   transitionBuilder: (child, animation) =>
                                       FadeTransition(
                                     opacity: animation,
