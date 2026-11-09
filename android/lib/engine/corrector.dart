@@ -122,8 +122,21 @@ class WordFix {
 String _splitBefore(String w, String suffix) =>
     '${w.substring(0, w.length - suffix.length)}$zwnj$suffix';
 
-WordFix correctWord(String word,
-    {Map<String, List<String>> dictionary = const {}, bool replaceArabic = true}) {
+String correctionLearningKey(
+  String from,
+  String left,
+  String right,
+  String candidate,
+) => [from, left, right, candidate].join('\u001F');
+
+WordFix correctWord(
+  String word, {
+  Map<String, List<String>> dictionary = const {},
+  bool replaceArabic = true,
+  Map<String, int> learnedPairs = const {},
+  String leftContext = '',
+  String rightContext = '',
+}) {
   var w = normalizeLetters(word);
   final suggestions = <String>[];
 
@@ -219,12 +232,24 @@ WordFix correctWord(String word,
   // first single-word equivalent wins; phrasal ones stay suggestions.
   final eq = dictionary[w] ?? dictionary[word] ?? dictionary[normalizeLetters(word)];
   if (eq != null && eq.isNotEmpty) {
-    suggestions.addAll(eq);
+    final ranked = eq.asMap().entries.toList()
+      ..sort((a, b) {
+        final scoreA = learnedPairs[correctionLearningKey(
+              word, leftContext, rightContext, a.value)] ??
+            0;
+        final scoreB = learnedPairs[correctionLearningKey(
+              word, leftContext, rightContext, b.value)] ??
+            0;
+        final byScore = scoreB.compareTo(scoreA);
+        return byScore != 0 ? byScore : a.key.compareTo(b.key);
+      });
+    suggestions.addAll(ranked.map((entry) => entry.value));
     if (replaceArabic) {
-      final preferred = eq.firstWhere(
-        (cand) => !cand.contains(' ') && !cand.contains('،'),
-        orElse: () => '',
-      );
+      final candidates = ranked
+          .where((entry) =>
+              !entry.value.contains(' ') && !entry.value.contains('،'))
+          .toList();
+      final preferred = candidates.isEmpty ? '' : candidates.first.value;
       if (preferred.isNotEmpty && preferred != w) w = preferred;
     }
   }
@@ -232,8 +257,12 @@ WordFix correctWord(String word,
 }
 
 /// Correct a full [text]: word fixes + ها-merge + ezafe + spacing.
-String correctText(String text,
-    {Map<String, List<String>> dictionary = const {}, bool replaceArabic = true}) {
+String correctText(
+  String text, {
+  Map<String, List<String>> dictionary = const {},
+  bool replaceArabic = true,
+  Map<String, int> learnedPairs = const {},
+}) {
   var t = normalizeLetters(text);
   // Contextual phrase: in a time question, «ساعت چند» means «چه زمانی».
   t = t.replaceAll(RegExp(r'ساعت\s+چند'), 'چه زمانی');
@@ -255,7 +284,50 @@ String correctText(String text,
       punct = tok[tok.length - 1] + punct;
       tok = tok.substring(0, tok.length - 1);
     }
-    final fix = correctWord(tok, dictionary: dictionary, replaceArabic: replaceArabic);
+    final leftContext = i > 0
+        ? tokens[i - 1].replaceAll(RegExp(r'[،.؟!؛:]+
+    tok = fix.fixed + punct;
+    if (out.isNotEmpty) {
+      final prev = out.last;
+      final prevBare = prev.replaceAll(hamzaAbove, '');
+      if (prev.endsWith('ه') &&
+          ezafeHeads.contains(prevBare) &&
+          tok.length >= 2) {
+        out[out.length - 1] = '$prev$hamzaAbove';
+      }
+    }
+    out.add(tok);
+  }
+  return out.join(' ');
+}
+), '')
+        : '';
+    final rightContext = i + 1 < tokens.length
+        ? tokens[i + 1].replaceAll(RegExp(r'^[،.؟!؛:]+|[،.؟!؛:]+
+    tok = fix.fixed + punct;
+    if (out.isNotEmpty) {
+      final prev = out.last;
+      final prevBare = prev.replaceAll(hamzaAbove, '');
+      if (prev.endsWith('ه') &&
+          ezafeHeads.contains(prevBare) &&
+          tok.length >= 2) {
+        out[out.length - 1] = '$prev$hamzaAbove';
+      }
+    }
+    out.add(tok);
+  }
+  return out.join(' ');
+}
+), '')
+        : '';
+    final fix = correctWord(
+      tok,
+      dictionary: dictionary,
+      replaceArabic: replaceArabic,
+      learnedPairs: learnedPairs,
+      leftContext: leftContext,
+      rightContext: rightContext,
+    );
     tok = fix.fixed + punct;
     if (out.isNotEmpty) {
       final prev = out.last;
