@@ -16,9 +16,9 @@ object KbData {
     @Volatile var kbHeight: String = "tall"
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
 
-    /** Signature of the dataset currently in memory: "lastModified|length"
-     *  of the updated file, or DatasetValidator.BUNDLED_SIG for the asset.
-     *  Null when nothing was parsed successfully yet. */
+    /** SHA-256 content signature of the updated dataset in memory, or
+     *  DatasetValidator.BUNDLED_SIG for the bundled asset. Null when
+     *  nothing has been loaded successfully. */
     @Volatile private var datasetSig: String? = null
 
     /** Loads data for a fresh input session. Cheap when nothing changed:
