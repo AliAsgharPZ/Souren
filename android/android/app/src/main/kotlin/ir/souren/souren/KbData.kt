@@ -15,40 +15,91 @@ object KbData {
     @Volatile var autoCorrect: Boolean = true
     @Volatile var kbHeight: String = "tall"
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
-    private var loaded = false
 
+    /** SHA-256 content signature of the updated dataset in memory, or
+     *  DatasetValidator.BUNDLED_SIG for the bundled asset. Null when
+     *  nothing has been loaded successfully. */
+    @Volatile private var datasetSig: String? = null
+
+    /** Loads data for a fresh input session. Cheap when nothing changed:
+     *  the dataset is only re-parsed when the updated file's signature
+     *  differs from what is in memory (owner B2 — no reload per
+     *  keystroke, no permanent cache either). */
     @Synchronized
     fun load(ctx: Context) {
-        if (loaded) return
-        loaded = true
-        // Dataset: updated file wins, else the bundled asset.
-        val jsonText: String? = try {
-            val upd = File(ctx.filesDir, "dataset_updated.json")
-            if (upd.exists()) upd.readText()
-            else ctx.assets.open("flutter_assets/assets/db/dataset.json")
-                .bufferedReader().readText()
-        } catch (e: Exception) { null }
-        if (jsonText != null) {
-            try {
-                val root = JSONObject(jsonText)
-                val arr = root.getJSONArray("entries")
-                val map = HashMap<String, List<String>>()
-                val words = ArrayList<String>()
-                for (i in 0 until arr.length()) {
-                    val e = arr.getJSONObject(i)
-                    val ar = e.getString("ar")
-                    words.add(ar)
-                    val faArr = e.optJSONArray("fa") ?: JSONArray()
-                    val fa = List(faArr.length()) { faArr.getString(it) }
-                    if (fa.isNotEmpty()) map[ar] = fa
-                    for (f in fa) words.add(f)
-                }
-                dictionary = map
-                vocab = words.distinct()
-            } catch (e: Exception) { /* keep empty; suggestions just stop */ }
-        }
+        refreshDataset(ctx, force = false)
         readSettings(ctx)
         readLearned(ctx)
+    }
+
+    /** Forces a dataset reload (the app imported/downloaded a new
+     *  dataset and wants the running keyboard to see it without an
+     *  app-process restart). */
+    @Synchronized
+    fun reload(ctx: Context) {
+        refreshDataset(ctx, force = true)
+    }
+
+    /** The only place the dataset is parsed. A source is loaded ONLY
+     *  after a successful parse; an invalid dataset_updated.json falls
+     *  back to the bundled asset. */
+    @Synchronized
+    private fun refreshDataset(ctx: Context, force: Boolean) {
+        val upd = File(ctx.filesDir, "dataset_updated.json")
+        val updatedExists = upd.exists()
+        // Read once: validation and parsing must see the same file snapshot.
+        val updatedText = if (updatedExists) {
+            try { upd.readText() } catch (_: Exception) { null }
+        } else null
+        val updatedSig = when {
+            !updatedExists -> null
+            updatedText != null -> DatasetValidator.signature(updatedText)
+            else -> "u|unreadable|${upd.lastModified()}|${upd.length()}"
+        }
+        // An identical snapshot was validated before; avoid reparsing its
+        // JSON on every new input session.
+        val updatedValid = updatedText != null && (
+            (!force && updatedSig == datasetSig) ||
+                DatasetValidator.validate(updatedText, strictFa = true) is DatasetValidator.Result.Valid
+            )
+        when (DatasetValidator.decide(updatedSig, updatedValid, datasetSig, force)) {
+            DatasetValidator.Source.KEEP -> return
+            DatasetValidator.Source.UPDATED -> {
+                val parsed = updatedText?.let { tryParse(it) }
+                if (parsed != null) {
+                    apply(parsed.first, parsed.second, updatedSig!!)
+                    return
+                }
+                // Defensive fallback if the validated snapshot cannot parse.
+                applyBundled(ctx)
+            }
+            DatasetValidator.Source.BUNDLED -> applyBundled(ctx)
+        }
+    }
+
+    private fun tryParse(text: String): Pair<Map<String, List<String>>, List<String>>? =
+        try { DatasetValidator.parse(text) } catch (e: Exception) { null }
+
+    private fun apply(map: Map<String, List<String>>, words: List<String>, sig: String) {
+        dictionary = map
+        vocab = words
+        datasetSig = sig
+    }
+
+    @Synchronized
+    private fun applyBundled(ctx: Context) {
+        try {
+            val text = ctx.assets
+                .open("flutter_assets/assets/db/dataset.json")
+                .bufferedReader().readText()
+            val parsed = tryParse(text)
+            if (parsed != null) {
+                apply(parsed.first, parsed.second, DatasetValidator.BUNDLED_SIG)
+                return
+            }
+        } catch (e: Exception) { }
+        // Nothing could be parsed — keep whatever valid data is already
+        // in memory (a working dataset is never replaced by emptiness).
     }
 
     fun readSettings(ctx: Context) {

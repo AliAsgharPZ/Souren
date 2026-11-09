@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [maintenance/v0.4.1]
   workflow_dispatch:
 jobs:
   build:
@@ -20,7 +22,15 @@ jobs:
         with:
           channel: stable
       - name: Dataset integrity (anchors)
-        run: python3 tools/build_dataset.py | head -1
+        # The output goes to a log file first so the pipeline exit
+        # status is python's, not `head`'s (the old `| head -1` could
+        # hide a failed assertion — owner B7). A failed dataset
+        # assertion must fail the workflow.
+        run: |
+          python3 tools/build_dataset.py > dataset_build.log
+          head -1 dataset_build.log
+      - name: Dataset guard (invalid anchors must fail the build)
+        run: bash tools/test_anchor_guard.sh
       - name: Pub get
         run: flutter pub get
       - name: Analyze
@@ -48,9 +58,12 @@ jobs:
           fi
       - name: Build release APK
         run: |
+          set -euo pipefail
           flutter build apk --release
-          BT=$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
-          $ANDROID_HOME/build-tools/$BT/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -3
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
+          head -3 /tmp/souren-apksigner.txt
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace

@@ -15,7 +15,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 flutter:
-  uses-material-design: false # no Material icons: Phosphor only
+  uses-material-design: false # no Material icons: Lucide only
   assets:
     - assets/db/dataset.json
     - assets/db/categories.json
@@ -28,13 +28,10 @@ flutter:
           weight: 500
         - asset: assets/fonts/arad/Arad-Bold.ttf
           weight: 700
-    # Phosphor soft icon pack (MIT) — vendored: phosphor_flutter 2.1.0
-    # cannot compile on current stable (extends now-final IconData).
-    - family: PhosphorRegular
+    # Lucide soft icon pack (ISC) — the exact subset embedded on the
+    # CUI site (https://yappologistic.github.io/CUI/), vendored with its
+    # license file. Code points live in lib/lucide.dart.
+    - family: Lucide
       fonts:
-        - asset: assets/fonts/phosphor/Phosphor-Regular.ttf
-          weight: 400
-    - family: PhosphorFill
-      fonts:
-        - asset: assets/fonts/phosphor/Phosphor-Fill.ttf
+        - asset: assets/fonts/lucide/Lucide-CUI.ttf
           weight: 400

@@ -5,7 +5,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'phosphor.dart';
+import 'lucide.dart';
 
 import 'data/store.dart';
 import 'engine/corrector.dart';
@@ -50,6 +50,46 @@ class Pal {
 }
 
 Pal pal = Pal.light;
+
+/// True when [pal] is the dark theme — a few owner rules (bookmark turns
+/// black) need theme-aware colors while everything else uses [pal].
+bool palDark = false;
+
+/// Like-active red (owner: «لایک قرمز بشه») — Souren's own warm red.
+const Color kLikeRed = Color(0xFFCC3D31);
+
+/// Capsule roundness: 90% of the maximum (fully-round = 0.5 × height),
+/// so every capsule uses radius = 0.45 × its own height.
+double capsuleRadius(double height) => height * 0.45;
+
+BorderRadius capsuleBorder(double height) =>
+    BorderRadius.circular(capsuleRadius(height));
+
+/// Height of a text button from its vertical padding (text line ≈ 20).
+double buttonHeight(double vPad) => vPad * 2 + 20;
+
+/// A capsule ButtonStyle: radius = 0.45 × height (owner A1) for every
+/// remaining Material button in the app.
+ButtonStyle capsuleBtn({
+  double vPad = 14,
+  Color? bg,
+  Color? fg,
+  Color? sideColor,
+}) {
+  return ButtonStyle(
+    backgroundColor: bg == null ? null : WidgetStatePropertyAll(bg),
+    foregroundColor: fg == null ? null : WidgetStatePropertyAll(fg),
+    side: sideColor == null
+        ? null
+        : WidgetStatePropertyAll(BorderSide(color: sideColor)),
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(vertical: 14),
+    ),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(borderRadius: capsuleBorder(buttonHeight(vPad))),
+    ),
+  );
+}
 
 /// Motion language (Claude-inspired feel, Souren's own numbers): one place
 /// for every duration/curve so entrances, toggles and transitions match.
@@ -175,43 +215,234 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Soft top+bottom scroll fade (shared by every scrollable list in the app).
-/// The gradient spans the scrollable's full rect, so with extendBody the
-/// bottom fade reaches the viewport floor and content dissolves as it
-/// slides behind the floating nav bar.
-Widget edgeFade({required Widget child}) {
-  return ShaderMask(
-    shaderCallback: (rect) => const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        Colors.transparent,
-        Colors.black,
-        Colors.black,
-        Colors.transparent,
+/// Press-and-hold feedback for EVERY tappable button/capsule/card: the
+/// surface sinks slightly (scale 0.97 + soft dim) while the finger is
+/// down and springs back with a gentle pop on release.
+class Pressable extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final double pressScale;
+  const Pressable({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.pressScale = 0.97,
+  });
+  @override
+  State<Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<Pressable> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (_down != v && mounted) setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onTapDown: (_) => _set(true),
+      onTapCancel: () => _set(false),
+      onTapUp: (_) => _set(false),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1.0, end: _down ? widget.pressScale : 1.0),
+        duration: _down ? const Duration(milliseconds: 110) : Motion.base,
+        curve: _down ? Motion.curve : Motion.pop,
+        builder: (_, v, c) => Opacity(
+          opacity: _down ? 0.88 : 1,
+          child: Transform.scale(scale: v, child: c),
+        ),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Scroll-aware edge fade (shared by every scrollable list in the app).
+///
+/// Owner rules: NO fade at the very start of a page — the top fade ramps
+/// in smoothly only after the user scrolls a bit; same for the bottom.
+/// The fade itself is much longer and smoother than before (eased
+/// multi-stop gradient, ~16% of the viewport, from the very edge of the
+/// viewport down to where the old short fade used to end).
+class ScrollEdgeFade extends StatefulWidget {
+  final Widget child;
+  const ScrollEdgeFade({super.key, required this.child});
+  @override
+  State<ScrollEdgeFade> createState() => _ScrollEdgeFadeState();
+}
+
+class _ScrollEdgeFadeState extends State<ScrollEdgeFade> {
+  double _before = 0; // pixels hidden above the viewport
+  double _after = 0; // pixels hidden below the viewport
+
+  double _strength(double hidden) {
+    // Ramp 0→1 over the first 90px of hidden content, eased (smoothstep).
+    final t = (hidden / 90).clamp(0.0, 1.0);
+    return t * t * (3 - 2 * t);
+  }
+
+  bool _onNotification(ScrollNotification n) {
+    final m = n.metrics;
+    if (m.maxScrollExtent <= 0) {
+      if (_before == 0 && _after == 0) return false;
+      setState(() {
+        _before = 0;
+        _after = 0;
+      });
+      return false;
+    }
+    final before = m.pixels.clamp(0.0, m.maxScrollExtent);
+    final after = (m.maxScrollExtent - m.pixels).clamp(0.0, double.infinity);
+    if ((before - _before).abs() > 0.5 || (after - _after).abs() > 0.5) {
+      setState(() {
+        _before = before;
+        _after = after;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: _onNotification,
+      child: ShaderMask(
+        shaderCallback: (rect) {
+          const fadeFrac = 0.16; // much longer than the old 4.5%
+          final vh = rect.height;
+          var len = (vh * fadeFrac).clamp(72.0, 170.0);
+          len = len.clamp(0.0, vh / 2 - 1);
+          final topA = _strength(_before);
+          final botA = _strength(_after);
+          final topLen = len * topA;
+          final botLen = len * botA;
+          final s1 = (topLen / vh).clamp(0.0, 0.5);
+          final s2 = (1 - botLen / vh).clamp(s1, 1.0);
+          final opaqueTop = Colors.white.withValues(alpha: 1 - topA);
+          final opaqueBot = Colors.white.withValues(alpha: 1 - botA);
+          return LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              opaqueTop, // viewport edge — no fade at rest, fades in on scroll
+              Color.lerp(opaqueTop, Colors.white, 0.62)!,
+              Color.lerp(opaqueTop, Colors.white, 0.9)!,
+              Colors.white,
+              Colors.white,
+              Color.lerp(opaqueBot, Colors.white, 0.9)!,
+              Color.lerp(opaqueBot, Colors.white, 0.62)!,
+              opaqueBot,
+            ],
+            stops: [
+              0,
+              s1 * 0.45,
+              s1 * 0.8,
+              s1,
+              s2,
+              s2 + (1 - s2) * 0.2,
+              s2 + (1 - s2) * 0.55,
+              1,
+            ],
+          ).createShader(rect);
+        },
+        blendMode: BlendMode.dstIn,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Like + bookmark, side by side everywhere (owner rule). Lucide outline
+/// icons only — never filled. Inactive: one faded color for both.
+/// Active: like turns red, bookmark turns black (ink in the dark theme
+/// so it stays visible).
+class LikeFavRow extends StatelessWidget {
+  final bool liked;
+  final bool faved;
+  final int likeCount;
+  final VoidCallback onLike;
+  final VoidCallback onFav;
+  final double iconSize;
+  const LikeFavRow({
+    super.key,
+    required this.liked,
+    required this.faved,
+    this.likeCount = 0,
+    required this.onLike,
+    required this.onFav,
+    this.iconSize = 21,
+  });
+
+  Color _bookmarkActive() => palDark ? pal.ink : const Color(0xFF141210);
+
+  @override
+  Widget build(BuildContext context) {
+    final inactive = pal.faint;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (likeCount > 0) ...[
+        AnimatedSwitcher(
+          duration: Motion.fast,
+          transitionBuilder: (child, anim) =>
+              FadeTransition(opacity: anim, child: child),
+          child: Text(
+            faNum(likeCount),
+            key: ValueKey(likeCount),
+            style: TextStyle(color: pal.muted, fontSize: 12.5),
+          ),
+        ),
+        const SizedBox(width: 4),
       ],
-      stops: [0, 0.045, 0.955, 1],
-    ).createShader(rect),
-    blendMode: BlendMode.dstIn,
-    child: child,
-  );
+      Pressable(
+        onTap: onLike,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: PopIcon(
+            active: liked,
+            child: Icon(
+              LucideIcons.heart,
+              size: iconSize,
+              color: liked ? kLikeRed : inactive,
+            ),
+          ),
+        ),
+      ),
+      Pressable(
+        onTap: onFav,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: PopIcon(
+            active: faved,
+            child: Icon(
+              LucideIcons.bookmark,
+              size: iconSize,
+              color: faved ? _bookmarkActive() : inactive,
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
 }
 
 /// Category display metadata: id -> (icon, Persian title).
 const catMeta = <String, (IconData, String)>{
-  'health': (PhosphorIconsRegular.firstAidKit, 'پزشکی و تندرستی'),
-  'work': (PhosphorIconsRegular.briefcase, 'پیشه و کار'),
-  'money': (PhosphorIconsRegular.storefront, 'پول و بازار'),
-  'edu': (PhosphorIconsRegular.graduationCap, 'آموزش و دانش'),
-  'lang': (PhosphorIconsRegular.chatsCircle, 'سخن و نوشتار'),
-  'home': (PhosphorIconsRegular.house, 'خانه و خانواده'),
-  'nature': (PhosphorIconsRegular.tree, 'طبیعت و گیتی'),
-  'faith': (PhosphorIconsRegular.flowerLotus, 'باور و آیین'),
-  'state': (PhosphorIconsRegular.bank, 'کشور و داد'),
-  'mind': (PhosphorIconsRegular.brain, 'دل و اندیشه'),
-  'time': (PhosphorIconsRegular.clock, 'زمان و سنجش'),
-  'travel': (PhosphorIconsRegular.airplaneTilt, 'سفر و جابه‌جایی'),
-  'general': (PhosphorIconsRegular.globe, 'همگانی'),
+  'health': (LucideIcons.activity, 'پزشکی و تندرستی'),
+  'work': (LucideIcons.briefcase, 'پیشه و کار'),
+  'money': (LucideIcons.wallet, 'پول و بازار'),
+  'edu': (LucideIcons.notebookPen, 'آموزش و دانش'),
+  'lang': (LucideIcons.messageSquare, 'سخن و نوشتار'),
+  'home': (LucideIcons.house, 'خانه و خانواده'),
+  'nature': (LucideIcons.compass, 'طبیعت و گیتی'),
+  'faith': (LucideIcons.moon, 'باور و آیین'),
+  'state': (LucideIcons.building2, 'کشور و داد'),
+  'mind': (LucideIcons.heart, 'دل و اندیشه'),
+  'time': (LucideIcons.clock, 'زمان و سنجش'),
+  'travel': (LucideIcons.mapPin, 'سفر و جابه‌جایی'),
+  'general': (LucideIcons.globe, 'همگانی'),
 };
 
 const catOrder = <String>[
@@ -272,6 +503,7 @@ class _SourenAppState extends State<SourenApp> {
   Widget build(BuildContext context) {
     final st = SettingsStore.current;
     pal = st.dark ? Pal.dark : Pal.light;
+    palDark = st.dark;
     return MaterialApp(
       title: 'سورن',
       debugShowCheckedModeBanner: false,
@@ -400,6 +632,8 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _load() async {
+    // Local-only data first: the app must render immediately, offline
+    // included (owner B4). Network (likes + profile) happens after.
     final d = await Dictionary.load();
     final s = await SettingsStore.ensureLoaded();
     final cats = await Categories.load();
@@ -407,15 +641,6 @@ class _ShellState extends State<Shell> {
     final lk = await SharedFiles.readJson('liked.json');
     final learned = await SharedFiles.readJson('learned.json');
     await AuthService.restore();
-    final counts = await AuthService.fetchLikeCounts();
-    Set<String> srvFav = {}, srvLiked = {};
-    if (AuthService.user != null) {
-      final prof = await AuthService.fetchProfile();
-      if (prof != null) {
-        srvFav = prof.$1;
-        srvLiked = prof.$2;
-      }
-    }
     setState(() {
       dict = d;
       settings = s;
@@ -426,15 +651,40 @@ class _ShellState extends State<Shell> {
       if (lk != null && lk['words'] is List) {
         liked = (lk['words'] as List).map((e) => e.toString()).toSet();
       }
-      favorites = {...favorites, ...srvFav};
-      liked = {...liked, ...srvLiked};
-      likeCounts = counts;
       if (learned != null) {
         learnedWords = ((learned['counts'] as Map?) ?? {}).length;
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
       }
     });
     _syncDictionary(d);
+    _fetchRemote();
+  }
+
+  /// Remote data (like counts, server profile) — fetched strictly in the
+  /// background with bounded timeouts; failures never block the app.
+  Future<void> _fetchRemote() async {
+    try {
+      final counts = await AuthService.fetchLikeCounts().timeout(
+        const Duration(seconds: 10),
+      );
+      if (mounted) setState(() => likeCounts = counts);
+    } catch (_) {
+      // offline: local counts (already rendered) keep working
+    }
+    if (AuthService.user == null) return;
+    try {
+      final prof = await AuthService.fetchProfile().timeout(
+        const Duration(seconds: 10),
+      );
+      if (prof != null && mounted) {
+        setState(() {
+          favorites = {...favorites, ...prof.$1};
+          liked = {...liked, ...prof.$2};
+        });
+      }
+    } catch (_) {
+      // offline: on-device favorites/likes keep working
+    }
   }
 
   bool _dictSyncDone = false;
@@ -474,43 +724,6 @@ class _ShellState extends State<Shell> {
     if (serverCount != null && mounted) {
       setState(() => likeCounts[word] = serverCount);
     }
-  }
-
-  Widget _likeButton(String ar) {
-    final isLiked = liked.contains(ar);
-    final count = likeCounts[ar] ?? 0;
-    // The count lives in a fixed-width slot that is always present, so
-    // liking a word never shifts the row layout.
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      SizedBox(
-        width: 26,
-        child: AnimatedSwitcher(
-          duration: Motion.fast,
-          transitionBuilder: (child, anim) =>
-              FadeTransition(opacity: anim, child: child),
-          child: count > 0
-              ? Text(
-                  faNum(count),
-                  key: ValueKey(count),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: pal.muted, fontSize: 12.5),
-                )
-              : const SizedBox.shrink(key: ValueKey('none')),
-        ),
-      ),
-      IconButton(
-        visualDensity: VisualDensity.compact,
-        icon: PopIcon(
-          active: isLiked,
-          child: Icon(
-            isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
-            size: 21,
-            color: isLiked ? pal.accent : pal.muted,
-          ),
-        ),
-        onPressed: () => _toggleLike(ar),
-      ),
-    ]);
   }
 
   void _go(int i) => setState(() => tab = i);
@@ -576,137 +789,126 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _navBar() {
-    // (outlined, filled, label) — Phosphor soft icons; selected becomes filled.
-    final items = <(IconData, IconData, String)>[
-      (PhosphorIconsRegular.house, PhosphorIconsFill.house, 'پیشگاه'),
-      (PhosphorIconsRegular.heart, PhosphorIconsFill.heart, 'پسندیده‌ها'),
-      (
-        PhosphorIconsRegular.squaresFour,
-        PhosphorIconsFill.squaresFour,
-        'بخش‌ها',
-      ),
-      (PhosphorIconsRegular.bookmark, PhosphorIconsFill.bookmark, 'نشان‌شده'),
-      (PhosphorIconsRegular.user, PhosphorIconsFill.user, 'نمایه'),
-      (PhosphorIconsRegular.gear, PhosphorIconsFill.gear, 'پیکربندی'),
+    // (icon, label) — Lucide icons from the CUI pack. Buttons are FIXED
+    // slots: they never move or resize when a tab is selected; only the
+    // sliding indicator moves (owner rules A3/A20). No glassmorphism —
+    // a fully floating solid capsule with a soft shadow (A19).
+    final items = <(IconData, String)>[
+      (LucideIcons.house, 'پیشگاه'),
+      (LucideIcons.heart, 'پسندیده‌ها'),
+      (LucideIcons.layoutDashboard, 'بخش‌ها'),
+      (LucideIcons.bookmark, 'نشان‌شده'),
+      (LucideIcons.user, 'نمایه'),
+      (LucideIcons.settings, 'پیکربندی'),
     ];
     _measureIndicator();
     final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
+    // A5: give the bar 1.5% of the viewport width, split over both sides.
+    final vw = MediaQuery.of(context).size.width;
+    final hInset = (22 - vw * 0.015 / 2).clamp(14.0, 24.0);
+    // A20: the indicator must sit with EQUAL spacing top/bottom and
+    // left/right — the inner padding is uniform (8) and the buttons
+    // match it, so the capsule has the same 8px gap all around.
+    const inner = 8.0;
+    const btnVPad = 12.0; // button height = 12*2 + 23 = 47
+    const barH = 47 + inner * 2; // 63 — same total as before
     return Container(
-      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+      margin: EdgeInsets.fromLTRB(hInset, 6, hInset, 14),
+      child: Container(
+        padding: const EdgeInsets.all(inner),
+        decoration: BoxDecoration(
+          color: pal.cardC,
+          borderRadius: capsuleBorder(barH),
+          border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+          boxShadow: [
+            BoxShadow(
+              color: pal.ink.withValues(alpha: 0.10),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
             ),
-            child: Stack(
-              key: _navStackKey,
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  left: _indLeft,
-                  top: 0,
-                  bottom: 0,
-                  width: _indWidth,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: selSoft,
-                      borderRadius: BorderRadius.circular(19),
-                    ),
-                  ),
+          ],
+        ),
+        child: Stack(
+          key: _navStackKey,
+          clipBehavior: Clip.none,
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              left: _indLeft,
+              top: 0,
+              bottom: 0,
+              width: _indWidth,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: selSoft,
+                  borderRadius: capsuleBorder(47),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      GestureDetector(
-                        key: _tabKeys[i],
-                        onTap: () => _go(i),
-                        child: AnimatedContainer(
-                          duration: Motion.base,
-                          curve: Motion.curve,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: tab == i ? 17 : 12,
-                            vertical: 14,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: AnimatedSize(
-                            duration: Motion.base,
-                            curve: Motion.curve,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AnimatedSwitcher(
-                                  duration: Motion.fast,
-                                  switchInCurve: Motion.curve,
-                                  switchOutCurve: Motion.curve,
-                                  transitionBuilder: (child, anim) =>
-                                      FadeTransition(
-                                        opacity: anim,
-                                        child: ScaleTransition(
-                                          scale: Tween<double>(
-                                            begin: 0.8,
-                                            end: 1,
-                                          ).animate(anim),
-                                          child: child,
-                                        ),
-                                      ),
-                                  child: Icon(
-                                    key: ValueKey<bool>(tab == i),
-                                    tab == i ? items[i].$2 : items[i].$1,
-                                    size: 23,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                  ),
-                                ),
-                                if (tab == i)
-                                  TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: 0, end: 1),
-                                    duration: Motion.base,
-                                    curve: Motion.curve,
-                                    builder: (_, v, c) =>
-                                        Opacity(opacity: v, child: c),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(width: 7),
-                                        Text(
-                                          items[i].$3,
-                                          style: TextStyle(
-                                            color: pal.bg,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 14.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  Pressable(
+                    key: _tabKeys[i],
+                    onTap: () => _go(i),
+                    pressScale: 0.94,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: inner,
+                        vertical: btnVPad,
+                      ),
+                      child: AnimatedSwitcher(
+                        duration: Motion.fast,
+                        switchInCurve: Motion.curve,
+                        switchOutCurve: Motion.curve,
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.8,
+                              end: 1,
+                            ).animate(anim),
+                            child: child,
                           ),
                         ),
+                        child: Icon(
+                          key: ValueKey<bool>(tab == i),
+                          items[i].$1,
+                          size: 23,
+                          color: tab == i
+                              ? pal.bg
+                              : pal.ink.withValues(alpha: .72),
+                        ),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
   // ---------- پیشگاه ----------
+  // Measured height of the buttons column — the word list on the other
+  // side must be exactly as tall (owner A2).
+  final GlobalKey _homeButtonsKey = GlobalKey();
+  double _buttonsH = 0;
+
+  void _measureButtons() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final box =
+          _homeButtonsKey.currentContext?.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) return;
+      final h = box.size.height;
+      if ((h - _buttonsH).abs() > 0.5) setState(() => _buttonsH = h);
+    });
+  }
+
   Widget _home(Dictionary d) {
     final frequent = d.entries.where((e) => e.hasFa).take(60).toList();
     final results = query.isEmpty
@@ -717,110 +919,141 @@ class _ShellState extends State<Shell> {
                     e.ar.contains(query) || e.fa.any((f) => f.contains(query)),
               )
               .toList();
+    _measureButtons();
+    // Owner A22, in order: reserved logo gap → search capsule → the two
+    // columns → an empty band the size of the nav bar (reserved for ads)
+    // → the nav bar itself (untouched). The search sits a bit lower than
+    // before and the column heights are tuned; nothing else moved.
+    const logoGap = 66.0;
+    const searchH = 58.0;
+    const gapBelowSearch = 20.0;
+    const adsReserve = 83.0; // the floating nav bar's total footprint
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 6),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
       child: Stack(
         children: [
           Column(
             children: [
-              // جای لوگو (در نسخه‌های بعد می‌آید) — اشیاء پایین‌تر شروع می‌شوند
-              const SizedBox(height: 58),
-              const SizedBox(height: 58), // جای کپسول سرچ (روی بلر شناور است)
-              const SizedBox(height: 26),
+              // جای لوگو (در نسخه‌های بعد می‌آید) — خالی، ولی رزرو شده
+              const SizedBox(height: logoGap),
+              const SizedBox(height: searchH), // جای کپسول سرچ
+              const SizedBox(height: gapBelowSearch),
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            query.isEmpty
-                                ? 'پرکاربردترین واژگان فارسی'
-                                : 'نتیجه‌های جستجو',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 17.5,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: _pairList(results, bottomPad: kNavClearance),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 124,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.only(bottom: kNavClearance),
+                child: LayoutBuilder(builder: (context, c) {
+                  // Before the buttons column is measured the list fills
+                  // the available height; afterwards it is EXACTLY the
+                  // buttons' height, capped by what fits (owner A2).
+                  final listH = _buttonsH <= 0
+                      ? c.maxHeight
+                      : _buttonsH.clamp(0.0, c.maxHeight);
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _sidePill(
-                              'گنجینهٔ واژه‌ها',
-                              () => _open(LexiconPage(dict: d, onTapEntry: _showEntry)),
-                            ),
-                            _sidePill(
-                              'درست‌نویسی',
-                              () => _open(CorrectorPage(dict: d)),
-                            ),
-                            _sidePill(
-                              'نیم‌فاصله',
-                              () => _open(const NimeFaselePage()),
-                            ),
-                            _sidePill('پندواژه', () => _open(_pandvazhePage())),
-                            _sidePill(
-                              'واژه‌های تازه',
-                              () => _open(_freshPage(d)),
-                            ),
-                            _sidePill(
-                              'ریشه‌شناسی',
-                              () => _open(EtymologyPage(dict: d)),
-                            ),
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.only(top: 12),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: pal.pillC,
-                                borderRadius: BorderRadius.circular(20),
+                            Text(
+                              query.isEmpty
+                                  ? 'پرکاربردترین واژگان فارسی'
+                                  : 'نتیجه‌های جستجو',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 17.5,
                               ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'شمار همهٔ واژه‌ها',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: pal.ink,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    faNum(d.entries.length),
-                                    style: const TextStyle(
-                                      fontSize: 23,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    '(${faNum(d.pairCount)} با برابر فارسی)',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: pal.muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              height: listH,
+                              child: _pairList(results),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 124,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            key: _homeButtonsKey,
+                            children: [
+                              _sidePill(
+                                'واژهٔ روز',
+                                () => _pushPage(_dailyPage(d)),
+                              ),
+                              _sidePill(
+                                'گنجینهٔ واژه‌ها',
+                                () => _open(
+                                  LexiconPage(dict: d, onTapEntry: _showEntry),
+                                ),
+                              ),
+                              _sidePill(
+                                'درست‌نویسی',
+                                () => _open(CorrectorPage(dict: d)),
+                              ),
+                              _sidePill(
+                                'نیم‌فاصله',
+                                () => _open(const NimeFaselePage()),
+                              ),
+                              _sidePill(
+                                'پندواژه',
+                                () => _open(_pandvazhePage()),
+                              ),
+                              _sidePill(
+                                'واژه‌های تازه',
+                                () => _open(_freshPage(d)),
+                              ),
+                              _sidePill(
+                                'ریشه‌شناسی',
+                                () => _open(EtymologyPage(dict: d)),
+                              ),
+                              Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(top: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: pal.pillC,
+                                  borderRadius: capsuleBorder(14 * 2 + 66),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'شمار همهٔ واژه‌ها',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: pal.ink,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      faNum(d.entries.length),
+                                      style: const TextStyle(
+                                        fontSize: 23,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      '(${faNum(d.pairCount)} با برابر فارسی)',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: pal.muted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ),
+              // فضای خالی اندازهٔ نویگیشن‌بار — رزرو برای تبلیغ
+              const SizedBox(height: adsReserve),
             ],
           ),
           // بلر کل صفحه هنگام فوکوس سرچ — کپسول و دکمهٔ برگشت واضح می‌مانند.
@@ -836,11 +1069,11 @@ class _ShellState extends State<Shell> {
             ),
           // کپسول سرچ (روی بلر، واضح)
           Positioned(
-            top: 58,
+            top: logoGap,
             left: 0,
             right: 0,
             child: SizedBox(
-              height: 58,
+              height: searchH,
               child: TextField(
                 controller: _searchCtl,
                 focusNode: _searchFocus,
@@ -849,15 +1082,23 @@ class _ShellState extends State<Shell> {
                   hintText: 'واژه‌ای را جستجو کنید',
                   hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
                   prefixIcon: Icon(
-                    PhosphorIconsRegular.magnifyingGlass,
+                    LucideIcons.search,
                     color: pal.muted,
-                    size: 23,
+                    size: 22,
                   ),
                   filled: true,
                   fillColor: pal.cardC,
                   contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: capsuleBorder(searchH),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: capsuleBorder(searchH),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: capsuleBorder(searchH),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -871,7 +1112,7 @@ class _ShellState extends State<Shell> {
               right: 0,
               child: IconButton(
                 icon: Icon(
-                  PhosphorIconsRegular.arrowLeft,
+                  LucideIcons.arrowLeft,
                   color: pal.ink,
                   size: 24,
                 ),
@@ -884,15 +1125,16 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _sidePill(String label, VoidCallback onTap) {
-    return GestureDetector(
+    const h = 14.0 * 2 + 20.0; // capsule height from its vertical padding
+    return Pressable(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.symmetric(vertical: 17),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: pal.pillC,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: capsuleBorder(h),
         ),
         child: Text(
           label,
@@ -903,15 +1145,16 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// Pair list with the shared top+bottom scroll fade and the unified
-  /// entrance. [bottomPad] clears the floating nav bar on tab pages.
-  Widget _pairList(List<Entry> items, {double bottomPad = 0}) {
+  /// Pair list with the shared scroll fade and the unified entrance.
+  /// [bottomPad] clears the floating nav bar on tab pages; the home page
+  /// reserves that space with its own ads band, so it passes less.
+  Widget _pairList(List<Entry> items, {double bottomPad = 8}) {
     if (items.isEmpty) {
       return Center(
         child: Text('واژه‌ای پیدا نشد', style: TextStyle(color: pal.muted)),
       );
     }
-    return edgeFade(
+    return ScrollEdgeFade(
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
         itemCount: items.length,
@@ -921,9 +1164,10 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// عربی درشت و پررنگ (سر‌واژه)، فارسی کوچک و کم‌رنگ (برابر).
+  /// Home rows (owner A12): the word itself is right-aligned, ONE
+  /// meaning left-aligned, both on a single line — never two.
   Widget _pairRow(Entry e) {
-    return InkWell(
+    return Pressable(
       onTap: () => _showEntry(e),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -940,14 +1184,24 @@ class _ShellState extends State<Shell> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                e.hasFa ? e.fa.join('، ') : 'برابر فارسی ثبت نشده',
+                e.hasFa ? e.fa.first : 'برابر فارسی ثبت نشده',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
                 style: TextStyle(
                   color: e.hasFa ? pal.muted : pal.faint,
                   fontSize: 13.5,
                 ),
               ),
             ),
-            _likeButton(e.ar),
+            const SizedBox(width: 8),
+            LikeFavRow(
+              liked: liked.contains(e.ar),
+              faved: favorites.contains(e.ar),
+              likeCount: likeCounts[e.ar] ?? 0,
+              onLike: () => _toggleLike(e.ar),
+              onFav: () => _toggleFav(e.ar),
+            ),
           ],
         ),
       ),
@@ -981,98 +1235,38 @@ class _ShellState extends State<Shell> {
   }
 
   void _showEntry(Entry e) {
+    final cat = categories.categoryOf(e.ar);
+    final info = <(String, String)>[
+      (
+        'برابر فارسی',
+        e.hasFa ? e.fa.join('، ') : 'برای این واژه هنوز برابر فارسی ثبت نشده است',
+      ),
+      if (cat != null && catMeta[cat] != null)
+        ('دسته‌بندی', catMeta[cat]!.$2),
+    ];
     showModalBottomSheet(
       context: context,
       backgroundColor: pal.bg,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    e.ar,
-                    style: const TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: PopIcon(
-                        active: liked.contains(e.ar),
-                        child: Icon(
-                          liked.contains(e.ar)
-                              ? PhosphorIconsFill.heart
-                              : PhosphorIconsRegular.heart,
-                          color: liked.contains(e.ar) ? pal.accent : pal.ink,
-                        ),
-                      ),
-                      onPressed: () {
-                        _toggleLike(e.ar);
-                        Navigator.pop(context);
-                        _showEntry(e);
-                      },
-                    ),
-                    IconButton(
-                      icon: PopIcon(
-                        active: favorites.contains(e.ar),
-                        child: Icon(
-                          favorites.contains(e.ar)
-                              ? PhosphorIconsFill.bookmark
-                              : PhosphorIconsRegular.bookmark,
-                          color: pal.ink,
-                        ),
-                      ),
-                      onPressed: () {
-                        _toggleFav(e.ar);
-                        Navigator.pop(context);
-                        _showEntry(e);
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                e.hasFa
-                    ? 'برابر فارسی: ${e.fa.join('، ')}'
-                    : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
-                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: pal.sel,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () {
-                  Clipboard.setData(
-                    ClipboardData(text: e.hasFa ? e.fa.first : e.ar),
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(const SnackBar(content: Text('کپی شد')));
-                },
-                child: const Text('کپی برابر فارسی'),
-              ),
-            ),
-          ],
-        ),
+      builder: (_) => EntrySheet(
+        title: e.ar,
+        infoRows: info,
+        shareText: [
+          e.ar,
+          if (e.hasFa) e.fa.join('، '),
+          if (cat != null && catMeta[cat] != null) catMeta[cat]!.$2,
+          'سورن — واژه‌نامهٔ عربی به فارسی',
+        ].join('\n'),
+        copyText: e.hasFa ? e.fa.first : e.ar,
+        copyLabel: 'کپی برابر فارسی',
+        liked: liked.contains(e.ar),
+        faved: favorites.contains(e.ar),
+        likeCount: likeCounts[e.ar] ?? 0,
+        onLike: () => _toggleLike(e.ar),
+        onFav: () => _toggleFav(e.ar),
       ),
     );
   }
@@ -1119,53 +1313,51 @@ class _ShellState extends State<Shell> {
 
   // ---------- بخش‌ها (همهٔ قابلیت‌ها) ----------
   Widget _sectionsPage(Dictionary d) {
+    // Owner A15: buttons that live in the navigation bar (پسندیده‌ها،
+    // نشان‌شده، نمایهٔ کاربری، پیکربندی) are NOT duplicated here.
     final tiles = <(IconData, String, VoidCallback)>[
       (
-        PhosphorIconsRegular.bookOpen,
+        LucideIcons.box,
         'گنجینهٔ واژه‌ها',
         () => _open(LexiconPage(dict: d, onTapEntry: _showEntry)),
       ),
       (
-        PhosphorIconsRegular.textAa,
+        LucideIcons.type,
         'درست‌نویسی',
         () => _open(CorrectorPage(dict: d)),
       ),
       (
-        PhosphorIconsRegular.textH,
+        LucideIcons.minus,
         'نیم‌فاصله',
         () => _open(const NimeFaselePage()),
       ),
-      (PhosphorIconsRegular.quotes, 'پندواژه', () => _open(_pandvazhePage())),
+      (LucideIcons.history, 'پندواژه', () => _open(_pandvazhePage())),
       (
-        PhosphorIconsRegular.treeStructure,
+        LucideIcons.gitBranch,
         'ریشه‌شناسی',
         () => _open(EtymologyPage(dict: d)),
       ),
       (
-        PhosphorIconsRegular.sparkle,
+        LucideIcons.sparkles,
         'واژه‌های تازه',
         () => _open(_freshPage(d)),
       ),
-      (PhosphorIconsRegular.heart, 'پسندیده‌ها', () => _go(1)),
-      (PhosphorIconsRegular.bookmark, 'نشان‌شده', () => _go(3)),
-      (PhosphorIconsRegular.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
+      (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
       (
-        PhosphorIconsRegular.graduationCap,
+        LucideIcons.notebookPen,
         'یادگیری من',
         () => _pushPage(_learningPage()),
       ),
-      (PhosphorIconsRegular.user, 'نمایهٔ کاربری', () => _go(4)),
       (
-        PhosphorIconsRegular.keyboard,
+        LucideIcons.keyboard,
         'کیبورد سورن',
         () => _open(const KeyboardGuidePage()),
       ),
-      (PhosphorIconsRegular.arrowClockwise, 'به‌روزرسانی پایگاه', () => _go(5)),
-      (PhosphorIconsRegular.gear, 'پیکربندی', () => _go(5)),
+      (LucideIcons.refreshCw, 'به‌روزرسانی پایگاه', () => _go(5)),
     ];
     return _pageShell(
       'بخش‌ها',
-      edgeFade(
+      ScrollEdgeFade(
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
@@ -1173,56 +1365,63 @@ class _ShellState extends State<Shell> {
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
                 child: Enter(
                   index: 0,
-                  child: GestureDetector(
-                    onTap: () => _pushPage(_categoriesPage(d)),
-                    child: Container(
-                      height: 98,
-                      decoration: BoxDecoration(
-                        color: pal.pillC,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
-                      child: Row(
-                        children: [
-                          Icon(
-                            PhosphorIconsRegular.gridFour,
-                            size: 36,
-                            color: pal.ink,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'دسته‌بندی‌ها',
-                                  style: TextStyle(
-                                    fontSize: 17.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: pal.ink,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  'واژه‌ها بر پایهٔ زمینه و پیشه — ${faNum(catOrder.length)} دسته',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: pal.muted,
-                                  ),
-                                ),
-                              ],
+                  child: LayoutBuilder(builder: (context, c) {
+                    // Owner A4: the categories card is EXACTLY as tall as
+                    // one grid tile — the grid below uses the same width,
+                    // spacing and aspect ratio, so compute its height.
+                    final tileW = (c.maxWidth - 14) / 2;
+                    final tileH = tileW / 1.25;
+                    return Pressable(
+                      onTap: () => _pushPage(_categoriesPage(d)),
+                      child: Container(
+                        height: tileH,
+                        decoration: BoxDecoration(
+                          color: pal.pillC,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        child: Row(
+                          children: [
+                            Icon(
+                              LucideIcons.grid3x3,
+                              size: 36,
+                              color: pal.ink,
                             ),
-                          ),
-                          Icon(
-                            PhosphorIconsRegular.caretLeft,
-                            size: 17,
-                            color: pal.muted,
-                          ),
-                        ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'دسته‌بندی‌ها',
+                                    style: TextStyle(
+                                      fontSize: 17.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: pal.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    'واژه‌ها بر پایهٔ زمینه و پیشه — ${faNum(catOrder.length)} دسته',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      color: pal.muted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              LucideIcons.chevronLeft,
+                              size: 17,
+                              color: pal.muted,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 ),
               ),
             ),
@@ -1237,7 +1436,7 @@ class _ShellState extends State<Shell> {
                   for (var i = 0; i < tiles.length; i++)
                     Enter(
                       index: i + 1,
-                      child: GestureDetector(
+                      child: Pressable(
                         onTap: tiles[i].$3,
                         child: Container(
                           decoration: BoxDecoration(
@@ -1271,7 +1470,7 @@ class _ShellState extends State<Shell> {
   Widget _categoriesPage(Dictionary d) {
     return _pageShell(
       'دسته‌بندی‌ها',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 24),
           children: [
@@ -1371,9 +1570,7 @@ class _ShellState extends State<Shell> {
               ),
               const SizedBox(height: 22),
               OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: pal.div),
-                ),
+                style: capsuleBtn(sideColor: pal.div),
                 onPressed: () => _showEntry(e),
                 child: const Text('دیدن واژه'),
               ),
@@ -1408,7 +1605,7 @@ class _ShellState extends State<Shell> {
           final history = (j['history'] as List?) ?? [];
           final top = counts.entries.toList()
             ..sort((a, b) => (b.value as num).compareTo(a.value as num));
-          return edgeFade(
+          return ScrollEdgeFade(
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
@@ -1437,9 +1634,7 @@ class _ShellState extends State<Shell> {
                   ),
                 const SizedBox(height: 18),
                 OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: pal.div),
-                  ),
+                  style: capsuleBtn(sideColor: pal.div),
                   onPressed: () async {
                     final f = await SharedFiles.file('learned.json');
                     if (await f.exists()) await f.delete();
@@ -1458,32 +1653,32 @@ class _ShellState extends State<Shell> {
   // ---------- نمایهٔ کاربری ----------
   static const _badgeMeta = <String, (IconData, String, String)>{
     'member': (
-      PhosphorIconsRegular.sealCheck,
+      LucideIcons.badgeCheck,
       'عضو سورن',
       'با نمایه وارد شده‌اید',
     ),
     'firstBookmark': (
-      PhosphorIconsRegular.bookmark,
+      LucideIcons.bookmark,
       'نخستین نشان',
       'یک واژه نشان کنید',
     ),
     'liker': (
-      PhosphorIconsRegular.heart,
+      LucideIcons.heart,
       'دل‌باختهٔ واژه',
       '۱۰ واژه را بپسندید',
     ),
     'keyboardStudent': (
-      PhosphorIconsRegular.keyboard,
+      LucideIcons.keyboard,
       'شاگرد کیبورد',
       '۲۰ اصلاح کیبورد را بپذیرید',
     ),
     'hundred': (
-      PhosphorIconsRegular.star,
+      LucideIcons.star,
       'باشگاه صدتایی‌ها',
       'به ۱۰۰ امتیاز برسید',
     ),
     'collector': (
-      PhosphorIconsRegular.books,
+      LucideIcons.layers,
       'گنجینه‌دار',
       '۲۵ واژه نشان کنید',
     ),
@@ -1544,7 +1739,7 @@ class _ShellState extends State<Shell> {
         : (score - levelStart) / (next - levelStart);
     return _pageShell(
       'نمایهٔ کاربری',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 24 + kNavClearance),
           children: [
@@ -1565,7 +1760,7 @@ class _ShellState extends State<Shell> {
                           ),
                         )
                       : Icon(
-                          PhosphorIconsRegular.user,
+                          LucideIcons.user,
                           color: pal.bg,
                           size: 32,
                         ),
@@ -1674,64 +1869,31 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final id in badgeIds)
-                  Builder(
-                    builder: (_) {
-                      final earned = badgeEarned(
-                        id,
-                        loggedIn: user != null,
-                        favorites: favorites.length,
-                        likes: liked.length,
-                        corrections: learnedCorrections,
-                        score: score,
-                      );
-                      final meta = _badgeMeta[id]!;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: earned ? pal.sel : pal.pillC,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              meta.$1,
-                              size: 18,
-                              color: earned ? pal.bg : pal.muted,
-                            ),
-                            const SizedBox(width: 7),
-                            Text(
-                              meta.$2,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                color: earned ? pal.bg : pal.muted,
-                                fontWeight: earned
-                                    ? FontWeight.w700
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            for (final id in badgeIds)
+            // Owner A17: badges occupy the FULL width (two per line), no
+            // guide list underneath — tapping a badge shows its
+            // description as a notification from the top of the screen.
+            for (var r = 0; r < badgeIds.length; r += 2)
               Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  '• ${_badgeMeta[id]!.$2}: ${_badgeMeta[id]!.$3}',
-                  style: TextStyle(fontSize: 12.5, color: pal.muted),
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    for (var c = 0; c < 2; c++)
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: c == 0 ? 0 : 5,
+                            right: c == 0 ? 5 : 0,
+                          ),
+                          child: r + c < badgeIds.length
+                              ? _badgeCapsule(
+                                  badgeIds[r + c],
+                                  user != null,
+                                  score,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             const SizedBox(height: 24),
@@ -1762,7 +1924,7 @@ class _ShellState extends State<Shell> {
                     color: pal.pillC,
                     borderRadius: BorderRadius.circular(22)),
                 child: Row(children: [
-                  Icon(PhosphorIconsRegular.lock, color: pal.muted, size: 22),
+                  Icon(LucideIcons.lock, color: pal.muted, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1792,10 +1954,7 @@ class _ShellState extends State<Shell> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: pal.div),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
+                  style: capsuleBtn(sideColor: pal.div),
                   onPressed: () async {
                     await AuthService.pushProfile(favorites, liked);
                     await _syncAfterLogin();
@@ -1812,11 +1971,8 @@ class _ShellState extends State<Shell> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: pal.accent,
-                    side: BorderSide(color: pal.div),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
+                  style: capsuleBtn(
+                    sideColor: pal.div, fg: pal.accent),
                   onPressed: () async {
                     await AuthService.logout();
                     if (mounted) setState(() {});
@@ -1827,10 +1983,58 @@ class _ShellState extends State<Shell> {
             ],
             const SizedBox(height: 10),
             ListTile(
-              leading: Icon(PhosphorIconsRegular.graduationCap, color: pal.ink),
+              leading: Icon(LucideIcons.notebookPen, color: pal.ink),
               title: const Text('آموخته‌های کیبورد'),
               subtitle: const Text('آنچه کیبورد سورن از شما آموخته است'),
               onTap: () => _pushPage(_learningPage()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// One full-width badge capsule; a tap raises its description from the
+  /// top of the screen like a notification (owner A17).
+  Widget _badgeCapsule(String id, bool loggedIn, int score) {
+    final earned = badgeEarned(
+      id,
+      loggedIn: loggedIn,
+      favorites: favorites.length,
+      likes: liked.length,
+      corrections: learnedCorrections,
+      score: score,
+    );
+    final meta = _badgeMeta[id]!;
+    const h = 10.0 * 2 + 20.0;
+    return Pressable(
+      onTap: () => showBadgeToast(context, meta.$1, meta.$2, meta.$3),
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: earned ? pal.sel : pal.pillC,
+          borderRadius: capsuleBorder(h),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              meta.$1,
+              size: 17,
+              color: earned ? pal.bg : pal.muted,
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                meta.$2,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: earned ? pal.bg : pal.muted,
+                  fontWeight: earned ? FontWeight.w700 : FontWeight.w400,
+                ),
+              ),
             ),
           ],
         ),
@@ -1859,37 +2063,59 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _authButtons() {
-    return Column(
+    // Owner A18: creating a profile and logging in sit on ONE line.
+    return Row(
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: pal.sel,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            onPressed: () => setState(() {
+        Expanded(
+          child: Pressable(
+            onTap: () => setState(() {
               showAuthForm = true;
               authRegister = false;
               authError = null;
             }),
-            child: const Text('ورود به نمایه'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: pal.sel,
+                borderRadius: capsuleBorder(buttonHeight(14)),
+              ),
+              child: Text(
+                'ورود به نمایه',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: pal.bg,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 11),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: pal.div),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            onPressed: () => setState(() {
+        const SizedBox(width: 11),
+        Expanded(
+          child: Pressable(
+            onTap: () => setState(() {
               showAuthForm = true;
               authRegister = true;
               authError = null;
             }),
-            child: const Text('ساخت نمایهٔ تازه'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: pal.pillC,
+                borderRadius: capsuleBorder(buttonHeight(14)),
+                border: Border.all(color: pal.div),
+              ),
+              child: Text(
+                'ساخت نمایهٔ تازه',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: pal.ink,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -1956,10 +2182,7 @@ class _ShellState extends State<Shell> {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: pal.sel,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
+              style: capsuleBtn(bg: pal.sel, vPad: 15),
               onPressed: authBusy ? null : _authSubmit,
               child: authBusy
                   ? const SizedBox(
@@ -1993,23 +2216,25 @@ class _ShellState extends State<Shell> {
 
   /// Custom capsule segmented control (replaces Material SegmentedButton):
   /// one pill container, the selected option is a taller, less-round
-  /// capsule of its own.
+  /// capsule of its own. Radius = 0.45 × height (owner A1).
   Widget _capsuleGroup<T>({
     required List<(T, String)> options,
     required T value,
     required ValueChanged<T> onChanged,
   }) {
+    const innerH = 14.0 * 2 + 20.0;
+    const outerH = innerH + 8;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: capsuleBorder(outerH),
       ),
       child: Row(
         children: [
           for (final o in options)
             Expanded(
-              child: GestureDetector(
+              child: Pressable(
                 onTap: () => onChanged(o.$1),
                 child: AnimatedContainer(
                   duration: Motion.base,
@@ -2017,7 +2242,7 @@ class _ShellState extends State<Shell> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
                     color: value == o.$1 ? pal.sel : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: capsuleBorder(innerH),
                   ),
                   child: Text(
                     o.$2,
@@ -2086,7 +2311,7 @@ class _ShellState extends State<Shell> {
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 color: value ? pal.sel : pal.div,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: capsuleBorder(32),
               ),
               child: AnimatedAlign(
                 duration: Motion.base,
@@ -2114,7 +2339,7 @@ class _ShellState extends State<Shell> {
   Widget _settingsPage(Dictionary d) {
     return _pageShell(
       'پیکربندی',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 22 + kNavClearance),
           children: [
@@ -2246,19 +2471,19 @@ class _ShellState extends State<Shell> {
             ),
             const Divider(height: 32),
             ListTile(
-              leading: const Icon(PhosphorIconsRegular.keyboard),
+              leading: const Icon(LucideIcons.keyboard),
               title: const Text('فعال‌کردن کیبورد سورن'),
               subtitle: const Text('تنظیمات کیبورد اندروید باز می‌شود'),
               onTap: () => SharedFiles.openInputSettings(),
             ),
             ListTile(
-              leading: const Icon(PhosphorIconsRegular.arrowsLeftRight),
+              leading: const Icon(LucideIcons.keyRound),
               title: const Text('برگزیدن کیبورد سورن به‌عنوان کیبورد کنونی'),
               onTap: () => SharedFiles.showKeyboardPicker(),
             ),
             const Divider(height: 32),
             ListTile(
-              leading: const Icon(PhosphorIconsRegular.arrowClockwise),
+              leading: const Icon(LucideIcons.refreshCw),
               title: const Text('به‌روزرسانی پایگاه واژه‌ها'),
               subtitle: Text(
                 'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — فایل JSON یا CSV برگزینید',
@@ -2266,7 +2491,7 @@ class _ShellState extends State<Shell> {
               onTap: () => _importDb(),
             ),
             ListTile(
-              leading: const Icon(PhosphorIconsRegular.cloudArrowDown),
+              leading: const Icon(LucideIcons.cloud),
               title: const Text('به‌روزرسانی آنلاین از سرور'),
               subtitle: Text(
                 'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — با اینترنت، تازه‌ترین پایگاه از سرور گرفته می‌شود؛ آفلاین، آرشیو روی گوشی به کار می‌رود',
@@ -2280,7 +2505,7 @@ class _ShellState extends State<Shell> {
               onTap: dbSyncing ? null : () => _syncDbNow(d),
             ),
             ListTile(
-              leading: const Icon(PhosphorIconsRegular.export),
+              leading: const Icon(LucideIcons.upload),
               title: const Text('خروجی از پایگاه واژه‌ها'),
               subtitle: const Text(
                 'JSON پایگاه در حافظهٔ برنامه ذخیره و مسیرش نشان داده می‌شود',
@@ -2326,27 +2551,23 @@ class _ShellState extends State<Shell> {
       for (final e in (dict?.entries ?? const <Entry>[])) e.ar,
     };
     try {
-      Map<String, dynamic> data;
-      if (content.trimLeft().startsWith('{')) {
-        data = jsonDecode(content) as Map<String, dynamic>;
-      } else {
-        final entries = <Map<String, dynamic>>[];
-        for (final line in const LineSplitter().convert(content)) {
-          final parts = line.split(RegExp(r'[,;\t]'));
-          if (parts.length >= 2 && parts[0].trim().isNotEmpty) {
-            entries.add({
-              'ar': parts[0].trim(),
-              'fa': parts
-                  .sublist(1)
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList(),
-            });
-          }
+      final isJson = content.trimLeft().startsWith('{');
+      // Strict validation BEFORE anything is written: the existing
+      // working dictionary is never overwritten by a bad file (B6).
+      final check = validateDatasetText(content);
+      if (!check.ok || check.data == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(check.error ?? 'این فایل خوانا نیست')),
+          );
         }
-        data = {'version': (dict?.version ?? 1) + 1, 'entries': entries};
+        return;
       }
-      await SharedFiles.writeJson('dataset_updated.json', data);
+      final data = Map<String, dynamic>.of(check.data!);
+      if (!isJson) {
+        data['version'] = (dict?.version ?? 1) + 1;
+      }
+      await SharedFiles.writeJsonAtomic('dataset_updated.json', data);
       await _load();
       final freshArs = <String>[];
       final seen = <String>{};
@@ -2361,15 +2582,17 @@ class _ShellState extends State<Shell> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('پایگاه واژه‌ها به‌روز شد')),
+          SnackBar(
+            content: Text(
+              'پایگاه واژه‌ها به‌روز شد — ${faNum((data['entries'] as List).length)} مدخل',
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('این فایل خوانا نیست؛ JSON یا CSV درست برگزینید'),
-          ),
+          SnackBar(content: Text('این فایل خوانا نیست: $e')),
         );
       }
     }
@@ -2568,7 +2791,7 @@ class _LexiconPageState extends State<LexiconPage> {
           }),
         ),
         Expanded(
-          child: edgeFade(
+          child: ScrollEdgeFade(
             child: ListView.builder(
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(6, 4, 18, 24),
@@ -2612,7 +2835,7 @@ class _LexiconPageState extends State<LexiconPage> {
                                 style: TextStyle(
                                     color: pal.muted, fontSize: 13.5)),
                           ),
-                          Icon(PhosphorIconsRegular.caretLeft,
+                          Icon(LucideIcons.chevronLeft,
                               size: 13, color: pal.muted),
                         ]),
                       ),
@@ -2657,7 +2880,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
   Widget build(BuildContext context) {
     return subScaffold(
       'درست‌نویسی',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -2710,10 +2933,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
                       children: [
                         const SizedBox(height: 14),
                         FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: pal.sel,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
+                          style: capsuleBtn(bg: pal.sel),
                           onPressed: () =>
                               Clipboard.setData(ClipboardData(text: _out)),
                           child: const Text('کپی متن درست‌شده'),
@@ -2766,7 +2986,7 @@ class NimeFaselePage extends StatelessWidget {
     ];
     return subScaffold(
       'نیم‌فاصله',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -2901,97 +3121,43 @@ class _PandvazhePageState extends State<PandvazhePage> {
     widget.onToggleFav(key);
   }
 
-  Widget _likeButton(String key) {
-    final isLiked = _liked.contains(key);
-    final count = _counts[key] ?? 0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (count > 0)
-          Text(
-            faNum(count),
-            style: TextStyle(color: pal.muted, fontSize: 12.5),
-          ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          icon: PopIcon(
-            active: isLiked,
-            child: Icon(
-              isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
-              size: 21,
-              color: isLiked ? pal.accent : pal.muted,
-            ),
-          ),
-          onPressed: () => _toggleLike(key),
-        ),
-      ],
+  /// Like + bookmark side by side (owner A11) — same widget as the word
+  /// rows: outline icons, one faded inactive color, red when liked.
+  Widget _likeFavRow(String key) {
+    return LikeFavRow(
+      liked: _liked.contains(key),
+      faved: _faved.contains(key),
+      likeCount: _counts[key] ?? 0,
+      onLike: () => _toggleLike(key),
+      onFav: () => _toggleFav(key),
     );
   }
 
-  Widget _favButton(String key) {
-    final isFav = _faved.contains(key);
-    return IconButton(
-      visualDensity: VisualDensity.compact,
-      icon: PopIcon(
-        active: isFav,
-        child: Icon(
-          isFav ? PhosphorIconsFill.bookmark : PhosphorIconsRegular.bookmark,
-          size: 21,
-          color: pal.ink,
-        ),
-      ),
-      onPressed: () => _toggleFav(key),
-    );
-  }
-
+  /// The proverb popup is EXACTLY the word card (owner A9): same sheet,
+  /// same size, same options — one shared widget for both.
   void _proverbSheet(BuildContext context, String title, String meaning) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: pal.cardC,
+      backgroundColor: pal.bg,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(26, 20, 26, 30),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                  color: pal.muted.withValues(alpha: .35),
-                  borderRadius: BorderRadius.circular(3))),
-          const SizedBox(height: 20),
-          Icon(PhosphorIconsRegular.quotes, size: 30, color: pal.accent),
-          const SizedBox(height: 12),
-          Text(title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 18.5,
-                  fontWeight: FontWeight.w800,
-                  color: pal.ink,
-                  height: 1.8)),
-          const SizedBox(height: 10),
-          Text(meaning,
-              textAlign: TextAlign.center,
-              style:
-                  TextStyle(color: pal.muted, height: 1.8, fontSize: 14.5)),
-          const SizedBox(height: 18),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-                foregroundColor: pal.ink,
-                side: BorderSide(color: pal.ink.withValues(alpha: .25)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16))),
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: title));
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('در حافظه کپی شد')));
-              }
-            },
-            icon: const Icon(PhosphorIconsRegular.copy, size: 17),
-            label: const Text('کپی'),
-          ),
-        ]),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (_) => EntrySheet(
+        title: title,
+        infoRows: [('معنی', meaning)],
+        shareText: [
+          title,
+          meaning,
+          'سورن — پندواژه‌های فارسی',
+        ].join('\n'),
+        copyText: title,
+        copyLabel: 'کپی پندواژه',
+        liked: _liked.contains(title),
+        faved: _faved.contains(title),
+        likeCount: _counts[title] ?? 0,
+        onLike: () => _toggleLike(title),
+        onFav: () => _toggleFav(title),
       ),
     );
   }
@@ -3000,7 +3166,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
   Widget build(BuildContext context) {
     return subScaffold(
       'پندواژه — ضرب‌المثل‌های فارسی',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
           children: [
@@ -3009,7 +3175,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
                 index: i,
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  child: GestureDetector(
+                  child: Pressable(
                     onTap: () => _proverbSheet(
                       context,
                       PandvazhePage.proverbs[i].$1,
@@ -3042,8 +3208,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
                                       ),
                                     ),
                                   ),
-                                  _likeButton(PandvazhePage.proverbs[i].$1),
-                                  _favButton(PandvazhePage.proverbs[i].$1),
+                                  _likeFavRow(PandvazhePage.proverbs[i].$1),
                                 ],
                               ),
                               const SizedBox(height: 10),
@@ -3141,18 +3306,18 @@ class _FreshPageState extends State<FreshPage> {
           children: [
             SizedBox(
               width: double.infinity,
-              child: GestureDetector(
+              child: Pressable(
                 onTap: widget.onWordOfDay,
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 17),
                   decoration: BoxDecoration(
                     color: pal.pillC,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: capsuleBorder(17 * 2 + 20),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(PhosphorIconsRegular.star, size: 20, color: pal.ink),
+                      Icon(LucideIcons.star, size: 20, color: pal.ink),
                       const SizedBox(width: 9),
                       Text(
                         'واژهٔ روز',
@@ -3178,7 +3343,7 @@ class _FreshPageState extends State<FreshPage> {
                         ),
                       ),
                     )
-                  : edgeFade(
+                  : ScrollEdgeFade(
                       child: ListView.separated(
                         padding: const EdgeInsets.only(top: 6, bottom: 24),
                         itemCount: fresh.length + 1,
@@ -3338,7 +3503,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
               decoration: InputDecoration(
                 hintText: 'واژه‌ای بنویسید تا ریشه‌اش را ببینید',
                 prefixIcon: Icon(
-                  PhosphorIconsRegular.magnifyingGlass,
+                  LucideIcons.search,
                   color: pal.muted,
                   size: 23,
                 ),
@@ -3388,7 +3553,7 @@ class _EtymologyPageState extends State<EtymologyPage> {
                         style: TextStyle(color: pal.muted, height: 1.9),
                       ),
                     )
-                  : edgeFade(
+                  : ScrollEdgeFade(
                       child: ListView.separated(
                         padding: const EdgeInsets.only(top: 6, bottom: 24),
                         itemCount: _suggestions.length,
@@ -3451,7 +3616,7 @@ class KeyboardGuidePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return subScaffold(
       'کیبورد سورن',
-      edgeFade(
+      ScrollEdgeFade(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
@@ -3475,20 +3640,603 @@ class KeyboardGuidePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: pal.sel,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
+              style: capsuleBtn(bg: pal.sel),
               onPressed: () => SharedFiles.openInputSettings(),
               child: const Text('بازکردن تنظیمات کیبورد اندروید'),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              style: OutlinedButton.styleFrom(side: BorderSide(color: pal.div)),
+              style: capsuleBtn(sideColor: pal.div),
               onPressed: () => SharedFiles.showKeyboardPicker(),
               child: const Text('برگزیدن کیبورد کنونی'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ================= کارت واژه / پندواژه (یکسان) =================
+
+/// THE one popup card for words AND proverbs (owner A9: the proverb card
+/// must be exactly like the word card — same size, shape, options).
+/// Like/bookmark sit side by side (A11) and toggling them updates this
+/// card in place — no other card ever opens (A8 bug fix).
+class EntrySheet extends StatefulWidget {
+  final String title;
+  final List<(String, String)> infoRows;
+  final String shareText;
+  final String copyText;
+  final String copyLabel;
+  final bool liked;
+  final bool faved;
+  final int likeCount;
+  final VoidCallback onLike;
+  final VoidCallback onFav;
+  const EntrySheet({
+    super.key,
+    required this.title,
+    required this.infoRows,
+    required this.shareText,
+    required this.copyText,
+    this.copyLabel = 'کپی',
+    required this.liked,
+    required this.faved,
+    this.likeCount = 0,
+    required this.onLike,
+    required this.onFav,
+  });
+  @override
+  State<EntrySheet> createState() => _EntrySheetState();
+}
+
+class _EntrySheetState extends State<EntrySheet> {
+  late bool liked = widget.liked;
+  late bool faved = widget.faved;
+
+  @override
+  Widget build(BuildContext context) {
+    // Words keep the exact shape the word card always had: same padding,
+    // same top radius (26), same title row — proverbs inherit all of it.
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(26, 22, 26, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                LikeFavRow(
+                  liked: liked,
+                  faved: faved,
+                  likeCount: widget.likeCount,
+                  onLike: () {
+                    setState(() => liked = !liked);
+                    widget.onLike();
+                  },
+                  onFav: () {
+                    setState(() => faved = !faved);
+                    widget.onFav();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            for (var i = 0; i < widget.infoRows.length; i++) ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${widget.infoRows[i].$1}: ${widget.infoRows[i].$2}',
+                  style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+                ),
+              ),
+              if (i != widget.infoRows.length - 1) const SizedBox(height: 8),
+            ],
+            const SizedBox(height: 16),
+            Pressable(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: pal.bg,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                  ),
+                  builder: (_) => ShareSheet(
+                    title: widget.title,
+                    shareText: widget.shareText,
+                  ),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  color: pal.pillC,
+                  borderRadius: capsuleBorder(buttonHeight(13)),
+                  border: Border.all(color: pal.div),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.share2, size: 18, color: pal.ink),
+                    const SizedBox(width: 9),
+                    Text(
+                      'اشتراک‌گذاری',
+                      style: TextStyle(fontSize: 14.5, color: pal.ink),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 11),
+            Pressable(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: widget.copyText));
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(const SnackBar(content: Text('کپی شد')));
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: pal.sel,
+                  borderRadius: capsuleBorder(buttonHeight(14)),
+                ),
+                child: Text(
+                  widget.copyLabel,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: pal.bg,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ================= اشتراک‌گذاری (متن / عکس / متن و عکس) =================
+
+/// Share options (owner A10): pick the format — text, image, or text and
+/// image — and what to do with it: share it, or keep it on the phone
+/// (image saved to the gallery, text copied). The generated image
+/// carries ALL the information the app has about the entry.
+class ShareSheet extends StatefulWidget {
+  final String title;
+  final String shareText;
+  const ShareSheet({super.key, required this.title, required this.shareText});
+  @override
+  State<ShareSheet> createState() => _ShareSheetState();
+}
+
+class _ShareSheetState extends State<ShareSheet> {
+  String _format = 'text'; // text | image | both
+  bool _busy = false;
+
+  Future<Uint8List?> _renderImage() async {
+    try {
+      return await renderEntryImage(
+        title: widget.title,
+        body: widget.shareText,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _run(String action) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      final wantsImage = _format != 'text';
+      final Uint8List? img = wantsImage ? await _renderImage() : null;
+      if (wantsImage && img == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('ساخت عکس ممکن نشد')),
+        );
+        return;
+      }
+      switch ((action, _format)) {
+        case ('share', 'text'):
+          await SharePlatform.shareText(widget.shareText);
+        case ('share', 'image'):
+          await SharePlatform.shareImage(img!);
+        case ('share', 'both'):
+          await SharePlatform.shareImage(img!, text: widget.shareText);
+        case ('save', 'text'):
+          await Clipboard.setData(ClipboardData(text: widget.shareText));
+          messenger.showSnackBar(
+            const SnackBar(content: Text('متن کپی شد')),
+          );
+        case ('save', _):
+          final path = await SharePlatform.saveImage(img!);
+          messenger.showSnackBar(SnackBar(
+            content: Text(path == null ? 'ذخیره نشد' : 'در حافظه ذخیره شد'),
+          ));
+        case ('copy', 'image'):
+          final ok = await SharePlatform.copyImage(img!);
+          messenger.showSnackBar(SnackBar(
+            content: Text(ok ? 'عکس کپی شد' : 'کپی عکس ممکن نشد'),
+          ));
+        case ('copy', _):
+          await Clipboard.setData(ClipboardData(text: widget.shareText));
+          messenger.showSnackBar(const SnackBar(content: Text('کپی شد')));
+      }
+      if (action != 'share') navigator.pop();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(26, 22, 26, 30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'اشتراک‌گذاری «${widget.title}»',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 16),
+            _capsulePicker(),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _actionButton('share', 'اشتراک‌گذاری', LucideIcons.share2),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _actionButton('save', 'ذخیره در گوشی', LucideIcons.save),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _actionButton('copy', 'کپی', LucideIcons.copy),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'عکس شامل همهٔ اطلاعات واژه است و در «Souren» حافظه ذخیره می‌شود.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: pal.muted, fontSize: 12, height: 1.7),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _capsulePicker() {
+    const h = 46.0;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: pal.cardC,
+        borderRadius: capsuleBorder(h),
+      ),
+      child: Row(
+        children: [
+          for (final (id, label) in const [
+            ('text', 'متن'),
+            ('image', 'عکس'),
+            ('both', 'متن و عکس'),
+          ])
+            Expanded(
+              child: Pressable(
+                onTap: () => setState(() => _format = id),
+                child: AnimatedContainer(
+                  duration: Motion.base,
+                  curve: Motion.curve,
+                  height: h - 8,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _format == id ? pal.sel : Colors.transparent,
+                    borderRadius: capsuleBorder(h - 8),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: _format == id ? pal.bg : pal.ink,
+                      fontWeight: _format == id
+                          ? FontWeight.w700
+                          : FontWeight.w400,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(String id, String label, IconData icon) {
+    return Pressable(
+      onTap: _busy ? null : () => _run(id),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: pal.pillC,
+          borderRadius: capsuleBorder(buttonHeight(12)),
+          border: Border.all(color: pal.div),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 19, color: pal.ink),
+            const SizedBox(height: 5),
+            Text(label, style: TextStyle(fontSize: 11.5, color: pal.ink)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Renders the shareable portrait card (1080x1350) for a word or a
+/// proverb with every piece of information the app has: the entry
+/// itself, all its rows, and the Souren signature. Painted offscreen —
+/// no widget tree, no packages.
+Future<Uint8List?> renderEntryImage({
+  required String title,
+  required String body,
+}) async {
+  const w = 1080.0;
+  const h = 1350.0;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  canvas.drawRect(Offset.zero & const Size(w, h), Paint()..color = pal.bg);
+  const margin = 72.0;
+  const cardRect = Rect.fromLTWH(margin, margin, w - margin * 2, h - margin * 2);
+  final cardRRect = RRect.fromRectAndRadius(
+    cardRect,
+    const Radius.circular(56),
+  );
+  canvas.drawRRect(cardRRect, Paint()..color = pal.cardC);
+
+  Future<void> paintText(
+    String text,
+    double x,
+    double y,
+    double maxWidth, {
+    required double size,
+    required Color color,
+    FontWeight weight = FontWeight.w400,
+    TextAlign align = TextAlign.right,
+  }) async {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'Arad',
+          fontSize: size,
+          color: color,
+          fontWeight: weight,
+          height: 1.7,
+        ),
+      ),
+      textAlign: align,
+      textDirection: TextDirection.rtl,
+    )..layout(maxWidth: maxWidth);
+    tp.paint(canvas, Offset(x, y));
+    return;
+  }
+
+  const pad = 56.0;
+  var y = cardRect.top + pad + 36;
+  await paintText(
+    title,
+    cardRect.left + pad,
+    y,
+    cardRect.width - pad * 2,
+    size: 92,
+    color: pal.ink,
+    weight: FontWeight.w700,
+  );
+  y += 150;
+  canvas.drawLine(
+    Offset(cardRect.left + pad, y),
+    Offset(cardRect.right - pad, y),
+    Paint()
+      ..color = pal.div
+      ..strokeWidth = 3,
+  );
+  y += 44;
+  final bodyLines = body.split('\n');
+  for (final line in bodyLines) {
+    if (line.trim().isEmpty) continue;
+    await paintText(
+      line,
+      cardRect.left + pad,
+      y,
+      cardRect.width - pad * 2,
+      size: 44,
+      color: line == bodyLines.last ? pal.faint : pal.muted,
+    );
+    y += 78;
+    if (y > cardRect.bottom - 190) break;
+  }
+  await paintText(
+    'سورن',
+    cardRect.left + pad,
+    cardRect.bottom - pad - 96,
+    cardRect.width - pad * 2,
+    size: 40,
+    color: pal.ink,
+    weight: FontWeight.w700,
+    align: TextAlign.center,
+  );
+  await paintText(
+    'واژه‌نامهٔ عربی به فارسی',
+    cardRect.left + pad,
+    cardRect.bottom - pad - 40,
+    cardRect.width - pad * 2,
+    size: 30,
+    color: pal.muted,
+    align: TextAlign.center,
+  );
+
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(w.toInt(), h.toInt());
+  final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+  return bytes?.buffer.asUint8List();
+}
+
+// ================= اعلان بج از بالای صفحه =================
+
+/// Top notification (owner A17): tapping a badge slides a toast down
+/// from the very top of the screen with the badge description.
+void showBadgeToast(
+  BuildContext context,
+  IconData icon,
+  String title,
+  String description,
+) {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (_) => _BadgeToast(
+      icon: icon,
+      title: title,
+      description: description,
+      onDismiss: () => entry.remove(),
+    ),
+  );
+  overlay.insert(entry);
+}
+
+class _BadgeToast extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onDismiss;
+  const _BadgeToast({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onDismiss,
+  });
+  @override
+  State<_BadgeToast> createState() => _BadgeToastState();
+}
+
+class _BadgeToastState extends State<_BadgeToast>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: Motion.base,
+    reverseDuration: const Duration(milliseconds: 220),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.forward();
+    Future.delayed(const Duration(milliseconds: 2600), _dismiss);
+  }
+
+  Future<void> _dismiss() async {
+    if (!mounted) return;
+    await _ctrl.reverse();
+    if (mounted) widget.onDismiss();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(parent: _ctrl, curve: Motion.curve);
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      left: 18,
+      right: 18,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, -1.4),
+          end: Offset.zero,
+        ).animate(curved),
+        child: FadeTransition(
+          opacity: curved,
+          child: GestureDetector(
+            onTap: _dismiss,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                decoration: BoxDecoration(
+                  color: pal.sel,
+                  borderRadius: capsuleBorder(78),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 22,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(widget.icon, color: pal.bg, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: TextStyle(
+                              color: pal.bg,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.description,
+                            style: TextStyle(
+                              color: pal.bg.withValues(alpha: 0.85),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
