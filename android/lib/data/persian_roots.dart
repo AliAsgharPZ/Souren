@@ -57,12 +57,16 @@ class PersianRoots {
         sources.putIfAbsent(word, () => <String>{}).add(entry.ar);
       }
     }
+    // Only show a derived form when its proposed base is independently
+    // present in the dictionary corpus. Never display an unchanged word
+    // as if it had a meaningful root.
     final rows = sources.entries
         .map((e) => PersianLexeme(
               word: e.key,
               base: baseOf(e.key),
               sourceEntries: Set.unmodifiable(e.value),
             ))
+        .where((row) => row.base != row.word && sources.containsKey(row.base))
         .toList()
       ..sort((a, b) => a.word.compareTo(b.word));
     return rows;
