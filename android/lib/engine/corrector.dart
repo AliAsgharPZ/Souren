@@ -267,7 +267,9 @@ String correctText(
   // Contextual phrase: in a time question, «ساعت چند» means «چه زمانی».
   t = t.replaceAll(RegExp(r'ساعت\s+چند'), 'چه زمانی');
   t = t.replaceAllMapped(
-      RegExp(r'\s+([،.؟!؛:])'), (m) => m.group(1)!);
+    RegExp(r'\s+([،.؟!؛:])'),
+    (m) => m.group(1)!,
+  );
   final tokens = t.split(' ');
   final out = <String>[];
   for (var i = 0; i < tokens.length; i++) {
@@ -277,48 +279,19 @@ String correctText(
       out[out.length - 1] = '${out.last}$zwnj$tok';
       continue;
     }
-    // Trailing punctuation must not block the dictionary/rules lookup:
-    // «اتفاق،» previously matched nothing and was left unreplaced.
+
+    // Keep punctuation outside the dictionary lookup.
     var punct = '';
     while (tok.length > 1 && '،.؟!؛:'.contains(tok[tok.length - 1])) {
       punct = tok[tok.length - 1] + punct;
       tok = tok.substring(0, tok.length - 1);
     }
+
     final leftContext = i > 0
-        ? tokens[i - 1].replaceAll(RegExp(r'[،.؟!؛:]+
-    tok = fix.fixed + punct;
-    if (out.isNotEmpty) {
-      final prev = out.last;
-      final prevBare = prev.replaceAll(hamzaAbove, '');
-      if (prev.endsWith('ه') &&
-          ezafeHeads.contains(prevBare) &&
-          tok.length >= 2) {
-        out[out.length - 1] = '$prev$hamzaAbove';
-      }
-    }
-    out.add(tok);
-  }
-  return out.join(' ');
-}
-), '')
+        ? tokens[i - 1].replaceAll(RegExp(r'[،.؟!؛:]+$'), '')
         : '';
     final rightContext = i + 1 < tokens.length
-        ? tokens[i + 1].replaceAll(RegExp(r'^[،.؟!؛:]+|[،.؟!؛:]+
-    tok = fix.fixed + punct;
-    if (out.isNotEmpty) {
-      final prev = out.last;
-      final prevBare = prev.replaceAll(hamzaAbove, '');
-      if (prev.endsWith('ه') &&
-          ezafeHeads.contains(prevBare) &&
-          tok.length >= 2) {
-        out[out.length - 1] = '$prev$hamzaAbove';
-      }
-    }
-    out.add(tok);
-  }
-  return out.join(' ');
-}
-), '')
+        ? tokens[i + 1].replaceAll(RegExp(r'^[،.؟!؛:]+|[،.؟!؛:]+$'), '')
         : '';
     final fix = correctWord(
       tok,
@@ -329,6 +302,7 @@ String correctText(
       rightContext: rightContext,
     );
     tok = fix.fixed + punct;
+
     if (out.isNotEmpty) {
       final prev = out.last;
       final prevBare = prev.replaceAll(hamzaAbove, '');
