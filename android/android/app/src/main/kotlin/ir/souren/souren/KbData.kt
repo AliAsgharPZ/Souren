@@ -46,25 +46,36 @@ object KbData {
     @Synchronized
     private fun refreshDataset(ctx: Context, force: Boolean) {
         val upd = File(ctx.filesDir, "dataset_updated.json")
-        val updSig = if (upd.exists()) "u|${upd.lastModified()}|${upd.length()}" else null
-        when (DatasetValidator.decide(updSig, upd.exists() && isValid(upd.readText()), datasetSig, force)) {
+        val updatedExists = upd.exists()
+        // Read once: validation and parsing must see the same file snapshot.
+        val updatedText = if (updatedExists) {
+            try { upd.readText() } catch (_: Exception) { null }
+        } else null
+        val updatedSig = when {
+            !updatedExists -> null
+            updatedText != null -> DatasetValidator.signature(updatedText)
+            else -> "u|unreadable|${upd.lastModified()}|${upd.length()}"
+        }
+        // An identical snapshot was validated before; avoid reparsing its
+        // JSON on every new input session.
+        val updatedValid = updatedText != null && (
+            (!force && updatedSig == datasetSig) ||
+                DatasetValidator.validate(updatedText, strictFa = true) is DatasetValidator.Result.Valid
+            )
+        when (DatasetValidator.decide(updatedSig, updatedValid, datasetSig, force)) {
             DatasetValidator.Source.KEEP -> return
             DatasetValidator.Source.UPDATED -> {
-                val text = upd.readText()
-                val parsed = tryParse(text)
+                val parsed = updatedText?.let { tryParse(it) }
                 if (parsed != null) {
-                    apply(parsed.first, parsed.second, updSig!!)
+                    apply(parsed.first, parsed.second, updatedSig!!)
                     return
                 }
-                // Raced between validate and parse: fall back below.
+                // Defensive fallback if the validated snapshot cannot parse.
                 applyBundled(ctx)
             }
             DatasetValidator.Source.BUNDLED -> applyBundled(ctx)
         }
     }
-
-    private fun isValid(text: String): Boolean =
-        DatasetValidator.validate(text) is DatasetValidator.Result.Valid
 
     private fun tryParse(text: String): Pair<Map<String, List<String>>, List<String>>? =
         try { DatasetValidator.parse(text) } catch (e: Exception) { null }
