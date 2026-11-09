@@ -93,6 +93,18 @@ class CorrectorTest {
         assertEquals("بیان", Corrector.correctWord("بیان").fixed)
     }
 
+    @Test fun contextualLearningRanksTheUserPreferredMeaning() {
+        val dictionary = mapOf("ساعت" to listOf("زمان‌سنج", "گاه"))
+        val key = Corrector.learningKey("ساعت", "چه", "", "گاه")
+        val suggestions = Corrector.suggestionsFor(
+            "ساعت", dictionary, emptyMap(), emptyList(),
+            leftContext = "چه",
+            rightContext = "",
+            learnedPairs = mapOf(key to 5)
+        )
+        assertEquals("گاه", suggestions.first())
+    }
+
     @Test fun punctuationDoesNotBlockReplacement() {
         val d2 = mapOf("اتفاق" to listOf("رویداد", "پیشامد"))
         assertEquals(6 to "رویداد،",
