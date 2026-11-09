@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:souren/data/store.dart';
-import 'package:souren/lucide.dart';
 import 'package:souren/main.dart';
 import 'package:souren/share.dart';
 
