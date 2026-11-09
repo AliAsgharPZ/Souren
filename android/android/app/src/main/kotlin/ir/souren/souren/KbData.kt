@@ -19,6 +19,8 @@ object KbData {
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
     @Volatile var learnedPairs: MutableMap<String, Int> = mutableMapOf()
     @Volatile var shareLearning: Boolean = false
+    @Volatile var kbMode: String = "standard"
+    @Volatile var kbSide: String = "right"
     @Volatile private var syncingLearning = false
     @Volatile private var syncingModel = false
     @Volatile private var lastModelAttemptAt = 0L
@@ -68,7 +70,24 @@ object KbData {
                 kbHeight = j.optString("kbHeight", "tall")
                 shareLearning = j.optBoolean("shareLearning", false)
             }
+            val keyboardFile = File(ctx.filesDir, "souren_keyboard.json")
+            if (keyboardFile.exists()) {
+                val keyboard = JSONObject(keyboardFile.readText())
+                kbMode = keyboard.optString("mode", "standard")
+                kbSide = keyboard.optString("side", "right")
+            }
         } catch (e: Exception) { }
+    }
+
+    @Synchronized
+    fun setKeyboardMode(ctx: Context, mode: String, side: String = kbSide) {
+        kbMode = if (mode in setOf("standard", "one-handed", "floating")) mode else "standard"
+        kbSide = if (side == "left") "left" else "right"
+        try {
+            File(ctx.filesDir, "souren_keyboard.json").writeText(
+                JSONObject().put("mode", kbMode).put("side", kbSide).toString()
+            )
+        } catch (_: Exception) { }
     }
 
     @Synchronized
