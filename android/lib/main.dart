@@ -4528,7 +4528,8 @@ class _LexiconPageState extends State<LexiconPage> {
                     child: Column(
                       children: [
                         Expanded(
-                          child: InkWell(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () => widget.onTapEntry(e),
                             child: Row(
                               textDirection: TextDirection.rtl,
