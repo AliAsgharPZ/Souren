@@ -68,7 +68,16 @@ object KbData {
                 replaceArabic = j.optBoolean("replaceArabic", true)
                 autoCorrect = j.optBoolean("autoCorrect", true)
                 kbHeight = j.optString("kbHeight", "tall")
+                val wasSharing = shareLearning
                 shareLearning = j.optBoolean("shareLearning", false)
+                if (wasSharing && !shareLearning) {
+                    val learnedFile = File(ctx.filesDir, "learned.json")
+                    if (learnedFile.exists()) {
+                        val learned = JSONObject(learnedFile.readText())
+                        learned.put("pending", JSONArray())
+                        learnedFile.writeText(learned.toString())
+                    }
+                }
             }
             val keyboardFile = File(ctx.filesDir, "souren_keyboard.json")
             if (keyboardFile.exists()) {
