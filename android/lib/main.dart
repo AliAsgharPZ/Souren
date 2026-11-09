@@ -190,7 +190,12 @@ class _AnimatedValueState extends State<AnimatedValue>
 /// its first rows at full strength.
 class ScrollFade extends StatefulWidget {
   final Widget child;
-  const ScrollFade({super.key, required this.child});
+  final bool alwaysVisible;
+  const ScrollFade({
+    super.key,
+    required this.child,
+    this.alwaysVisible = false,
+  });
   @override
   State<ScrollFade> createState() => _ScrollFadeState();
 }
@@ -227,19 +232,23 @@ class _ScrollFadeState extends State<ScrollFade> {
         return false;
       },
       child: ShaderMask(
-        shaderCallback: (rect) => LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(0, 0, 0, 1 - _top),
-            Color.fromRGBO(0, 0, 0, 1 - _top * 0.55),
-            Colors.black,
-            Colors.black,
-            Color.fromRGBO(0, 0, 0, 1 - _bottom * 0.55),
-            Color.fromRGBO(0, 0, 0, 1 - _bottom),
-          ],
-          stops: const [0, 0.10, 0.22, 0.78, 0.90, 1],
-        ).createShader(rect),
+        shaderCallback: (rect) {
+          final top = widget.alwaysVisible ? 0.38 : _top;
+          final bottom = widget.alwaysVisible ? 0.38 : _bottom;
+          return LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.fromRGBO(0, 0, 0, 1 - top),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.55),
+              Colors.black,
+              Colors.black,
+              Color.fromRGBO(0, 0, 0, 1 - bottom * 0.55),
+              Color.fromRGBO(0, 0, 0, 1 - bottom),
+            ],
+            stops: const [0, 0.10, 0.22, 0.78, 0.90, 1],
+          ).createShader(rect);
+        },
         blendMode: BlendMode.dstIn,
         child: widget.child,
       ),
@@ -249,7 +258,10 @@ class _ScrollFadeState extends State<ScrollFade> {
 
 /// The name every scrollable in the app already wraps in; the
 /// implementation is now the scroll-aware ScrollFade.
-Widget edgeFade({required Widget child}) => ScrollFade(child: child);
+Widget edgeFade({
+  required Widget child,
+  bool alwaysVisible = false,
+}) => ScrollFade(child: child, alwaysVisible: alwaysVisible);
 
 /// Apple-like press feedback for every custom button: the control
 /// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
@@ -1855,7 +1867,7 @@ class _ShellState extends State<Shell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const logoGap = 72.0;
+        const logoGap = 116.0;
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
         return Padding(
@@ -1905,86 +1917,61 @@ class _ShellState extends State<Shell> {
                               child: AnimatedOpacity(
                                 opacity: _searchFocused ? 0 : 1,
                                 duration: Motion.fast,
-                                child: LayoutBuilder(
-                                  builder: (context, sideConstraints) {
-                                    final metricHeight =
-                                        sideConstraints.maxHeight < 450
-                                        ? sideConstraints.maxHeight * .27
-                                        : 118.0;
-                                    return Column(
+                                child: edgeFade(
+                                  child: SingleChildScrollView(
+                                    child: Column(
                                       children: [
-                                        Expanded(
-                                          child: _sidePill(
-                                            'گنجینۀ واژه‌ها',
-                                            () => _open(
-                                              LexiconPage(
-                                                dict: d,
-                                                onTapEntry: _showEntry,
-                                              ),
-                                            ),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'درست‌نویسی',
-                                            () => _open(CorrectorPage(dict: d)),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'پندواژه',
-                                            () => _open(_pandvazhePage(d)),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'واژه‌های تازه',
-                                            () => _open(_freshPage(d)),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'واژهٔ روز',
-                                            () => _pushPage(_dailyPage(d)),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'کتابخانهٔ شعر',
-                                            () => _open(_ganjoorPage(d)),
-                                            compact: true,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: _sidePill(
-                                            'ریشه‌شناسی',
-                                            () => _open(EtymologyPage(
+                                        _sidePill(
+                                          'گنجینهٔ واژه‌ها',
+                                          () => _open(
+                                            LexiconPage(
                                               dict: d,
-                                              liked: liked,
-                                              favorites: favorites,
-                                              onToggleLike: _toggleLike,
-                                              onToggleBookmark: _toggleFav,
-                                            )),
-                                            compact: true,
+                                              onTapEntry: _showEntry,
+                                            ),
                                           ),
+                                        ),
+                                        _sidePill(
+                                          'درست‌نویسی',
+                                          () => _open(CorrectorPage(dict: d)),
+                                        ),
+                                        _sidePill(
+                                          'پندواژه',
+                                          () => _open(_pandvazhePage(d)),
+                                        ),
+                                        _sidePill(
+                                          'واژه‌های تازه',
+                                          () => _open(_freshPage(d)),
+                                        ),
+                                        _sidePill(
+                                          'واژهٔ روز',
+                                          () => _pushPage(_dailyPage(d)),
+                                        ),
+                                        _sidePill(
+                                          'کتابخانهٔ شعر',
+                                          () => _open(_ganjoorPage(d)),
+                                        ),
+                                        _sidePill(
+                                          'ریشه‌شناسی',
+                                          () => _open(EtymologyPage(
+                                            dict: d,
+                                            liked: liked,
+                                            favorites: favorites,
+                                            onToggleLike: _toggleLike,
+                                            onToggleBookmark: _toggleFav,
+                                          )),
                                         ),
                                         const SizedBox(height: 4),
                                         SizedBox(
-                                          height: metricHeight,
+                                          height: 118,
                                           child: _homeMetrics(d),
                                         ),
                                       ],
-                                    );
-                                  },
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -1998,7 +1985,7 @@ class _ShellState extends State<Shell> {
                 height: logoGap,
                 child: Center(
                   child: SourenLogo(
-                    width: 140,
+                    width: 112,
                     animate: false,
                     color: pal.sel,
                   ),
@@ -2283,7 +2270,12 @@ class _ShellState extends State<Shell> {
 
   Widget _homeCollectionView(Dictionary d, List<Entry> wordResults) {
     if (_homeCollection == 0) {
-      return _pairList(wordResults, bottomPad: 0, singleLine: true);
+      return _pairList(
+        wordResults,
+        bottomPad: 0,
+        singleLine: true,
+        alwaysFade: true,
+      );
     }
     if (_homeCollection == 1) {
       final rows = proverbs.where((item) =>
@@ -2431,8 +2423,13 @@ class _ShellState extends State<Shell> {
           final stats = snapshot.data ?? const <String, int>{};
           final values = <(String, int)>[
             ('واژه', d.entries.length),
+            ('برابر', d.pairCount),
+            ('پندواژه', proverbs.length),
+            ('شاعر', stats['poets'] ?? 0),
             ('کتاب', stats['books'] ?? 0),
             ('شعر', stats['poems'] ?? 0),
+            ('ریشه', PersianRoots.index(d).length),
+            ('دسته', catOrder.length),
           ];
           final selected = _metricIndex % values.length;
           final item = values[selected];
@@ -2458,7 +2455,6 @@ class _ShellState extends State<Shell> {
                 decoration: BoxDecoration(
                   color: pal.cardC,
                   borderRadius: BorderRadius.circular(capR(68)),
-                  border: Border.all(color: pal.div.withValues(alpha: .65)),
                 ),
                 child: Column(
                   children: [
@@ -2486,49 +2482,48 @@ class _ShellState extends State<Shell> {
                     ),
                     Expanded(
                       flex: 1,
-                      child: Row(
-                        textDirection: TextDirection.rtl,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.$1,
-                              textAlign: TextAlign.right,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: pal.muted,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
+                      child: Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          textDirection: TextDirection.rtl,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                item.$1,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: pal.muted,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (var i = 0; i < values.length; i++)
-                                    AnimatedContainer(
-                                      duration: Motion.base,
-                                      curve: Motion.spring,
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 2,
-                                      ),
-                                      width: i == selected ? 11 : 4,
-                                      height: 4,
-                                      decoration: BoxDecoration(
-                                        color: i == selected
-                                            ? pal.sel
-                                            : pal.faint.withValues(alpha: .55),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
+                            const SizedBox(width: 7),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (var i = 0; i < values.length; i++)
+                                  AnimatedContainer(
+                                    duration: Motion.base,
+                                    curve: Motion.spring,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 1.5,
                                     ),
-                                ],
-                              ),
+                                    width: i == selected ? 8 : 3,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: i == selected
+                                          ? pal.sel
+                                          : pal.faint.withValues(alpha: .55),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -2577,6 +2572,7 @@ class _ShellState extends State<Shell> {
     List<Entry> items, {
     double bottomPad = 0,
     bool singleLine = false,
+    bool alwaysFade = false,
   }) {
     if (items.isEmpty) {
       return Center(
@@ -2584,6 +2580,7 @@ class _ShellState extends State<Shell> {
       );
     }
     return edgeFade(
+      alwaysVisible: alwaysFade,
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
         itemCount: items.length,
@@ -5757,10 +5754,14 @@ class GanjoorData {
     var poets = 0, books = 0, poems = 0;
     try {
       final manifest = await json('manifest.json');
-      poets = rows(manifest['Poets']).length;
-      poems = (manifest['PoemCount'] as num?)?.toInt() ??
+      poets = (manifest['PoetsCount'] as num?)?.toInt() ??
+          rows(manifest['Poets']).length;
+      poems = (manifest['PoemsCount'] as num?)?.toInt() ??
+          (manifest['poemsCount'] as num?)?.toInt() ??
+          (manifest['PoemCount'] as num?)?.toInt() ??
           (manifest['poemCount'] as num?)?.toInt() ??
-          (manifest['TotalPoems'] as num?)?.toInt() ?? 0;
+          (manifest['TotalPoems'] as num?)?.toInt() ??
+          (manifest['totalPoems'] as num?)?.toInt() ?? 0;
     } catch (_) {}
     try { books = (await bookCatalog()).length; } catch (_) {}
     return {'poets': poets, 'books': books, 'poems': poems};
