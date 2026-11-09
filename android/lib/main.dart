@@ -991,7 +991,7 @@ class ShareCardImage extends StatelessWidget {
           Row(
             textDirection: TextDirection.rtl,
             children: [
-              SourenLogo(width: 34, animate: false),
+              const SourenLogo(width: 34, animate: false),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
