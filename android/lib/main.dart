@@ -3888,6 +3888,15 @@ class _ShellState extends State<Shell> {
                 await SettingsStore.update(settings);
               },
             ),
+            _toggleRow(
+              title: 'کمک به بهبود هوشمند سورن',
+              subtitle: 'فقط واژه، معادل انتخاب‌شده و یک واژهٔ مجاور به‌صورت ناشناس ارسال می‌شود؛ متن کامل و اطلاعات حساب ارسال نمی‌شوند. این گزینه پیش‌فرض خاموش است.',
+              value: settings.shareLearning,
+              onChanged: (v) async {
+                setState(() => settings.shareLearning = v);
+                await SettingsStore.update(settings);
+              },
+            ),
             const Divider(height: 32),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
