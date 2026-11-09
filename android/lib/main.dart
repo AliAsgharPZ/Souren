@@ -404,6 +404,27 @@ class LikeBookmarkButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void runToggle({
+      required bool wasActive,
+      required String message,
+      required VoidCallback action,
+    }) {
+      action();
+      if (!wasActive) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 10),
+          content: Text(message),
+          action: SnackBarAction(
+            label: 'واگردانی',
+            onPressed: action,
+          ),
+        ),
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -411,13 +432,21 @@ class LikeBookmarkButtons extends StatelessWidget {
           active: liked,
           icon: Symbols.favorite_rounded,
           activeColor: pal.accent,
-          onTap: onToggleLike,
+          onTap: () => runToggle(
+            wasActive: liked,
+            message: 'از پسندیده‌ها حذف شد',
+            action: onToggleLike,
+          ),
         ),
         pressIcon(
           active: bookmarked,
           icon: Symbols.bookmark_rounded,
           activeColor: pal.ink,
-          onTap: onToggleBookmark,
+          onTap: () => runToggle(
+            wasActive: bookmarked,
+            message: 'از نشان‌شده‌ها حذف شد',
+            action: onToggleBookmark,
+          ),
         ),
       ],
     );
