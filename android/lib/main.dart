@@ -3378,8 +3378,8 @@ class _ShellState extends State<Shell> {
           'سطح قبلی: ${previousLevel.$2}، ${faNum(previousLevel.$1)} امتیاز',
         if (followingLevel != null)
           'سطح بعدی: ${followingLevel.$2}، ${faNum(followingLevel.$1)} امتیاز',
-        'واژه‌های نشان‌شده: ${faNum(favorites.length)}',
-        'واژه‌های پسندیده: ${faNum(liked.length)}',
+        'موارد نشان‌شده: ${faNum(favorites.length)}',
+        'موارد پسندیده: ${faNum(liked.length)}',
         'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
         'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
       ],
