@@ -73,7 +73,7 @@ jobs:
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name=0.4.6.1 --build-number=13
 
       - name: Verify APK signature and version
         run: |
