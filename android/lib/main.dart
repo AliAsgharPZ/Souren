@@ -1369,7 +1369,13 @@ class _SourenAppState extends State<SourenApp> {
 class SourenLogo extends StatefulWidget {
   final double width;
   final bool animate;
-  const SourenLogo({super.key, required this.width, this.animate = true});
+  final Color? color;
+  const SourenLogo({
+    super.key,
+    required this.width,
+    this.animate = true,
+    this.color,
+  });
 
   @override
   State<SourenLogo> createState() => _SourenLogoState();
@@ -1409,7 +1415,7 @@ class _SourenLogoState extends State<SourenLogo>
             progress: widget.animate
                 ? Curves.easeInOutCubic.transform(_controller.value)
                 : 1.0,
-            color: pal.ink,
+            color: widget.color ?? pal.ink,
           ),
         ),
       ),
@@ -1704,6 +1710,77 @@ class _ShellState extends State<Shell> {
       (Symbols.person_rounded, 'نمایه'),
       (Symbols.settings_rounded, 'پیکربندی'),
     ];
+
+    Widget navItem(int i) => GestureDetector(
+      key: _tabKeys[i],
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _go(i),
+      child: AnimatedContainer(
+        duration: Motion.base,
+        curve: Motion.curve,
+        padding: EdgeInsets.symmetric(
+          horizontal: tab == i ? 17 : 12,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: AnimatedSize(
+          duration: Motion.base,
+          curve: Motion.curve,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedSwitcher(
+                duration: Motion.fast,
+                switchInCurve: Motion.curve,
+                switchOutCurve: Motion.curve,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.8, end: 1).animate(anim),
+                    child: child,
+                  ),
+                ),
+                child: Icon(
+                  key: ValueKey<bool>(tab == i),
+                  items[i].$1,
+                  size: 23,
+                  fill: tab == i ? 1 : 0,
+                  weight: tab == i ? 600 : 400,
+                  color: tab == i
+                      ? pal.bg
+                      : pal.ink.withValues(alpha: .72),
+                ),
+              ),
+              if (tab == i)
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Motion.base,
+                  curve: Motion.curve,
+                  builder: (_, v, c) => Opacity(opacity: v, child: c),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 7),
+                      Text(
+                        items[i].$2,
+                        style: TextStyle(
+                          color: pal.bg,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
     _measureIndicator();
     final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
@@ -1725,92 +1802,36 @@ class _ShellState extends State<Shell> {
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
                 left: _indLeft,
-                top: 1,
-                bottom: 1,
+                top: 0,
+                bottom: 0,
                 width: _indWidth,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(19),
-                  child: ColoredBox(color: selSoft),
+                child: Center(
+                  child: SizedBox(
+                    height: 44,
+                    width: double.infinity,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(19),
+                      child: ColoredBox(color: selSoft),
+                    ),
+                  ),
                 ),
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  for (var i = 0; i < items.length; i++)
-                    GestureDetector(
-                      key: _tabKeys[i],
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _go(i),
-                      child: AnimatedContainer(
-                        duration: Motion.base,
-                        curve: Motion.curve,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: tab == i ? 17 : 12,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: AnimatedSize(
-                          duration: Motion.base,
-                          curve: Motion.curve,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: Motion.fast,
-                                switchInCurve: Motion.curve,
-                                switchOutCurve: Motion.curve,
-                                transitionBuilder: (child, anim) =>
-                                    FadeTransition(
-                                      opacity: anim,
-                                      child: ScaleTransition(
-                                        scale: Tween<double>(
-                                          begin: 0.8,
-                                          end: 1,
-                                        ).animate(anim),
-                                        child: child,
-                                      ),
-                                    ),
-                                child: Icon(
-                                  key: ValueKey<bool>(tab == i),
-                                  items[i].$1,
-                                  size: 23,
-                                  fill: tab == i ? 1 : 0,
-                                  weight: tab == i ? 600 : 400,
-                                  color: tab == i
-                                      ? pal.bg
-                                      : pal.ink.withValues(alpha: .72),
-                                ),
-                              ),
-                              if (tab == i)
-                                TweenAnimationBuilder<double>(
-                                  tween: Tween(begin: 0, end: 1),
-                                  duration: Motion.base,
-                                  curve: Motion.curve,
-                                  builder: (_, v, c) =>
-                                      Opacity(opacity: v, child: c),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(width: 7),
-                                      Text(
-                                        items[i].$2,
-                                        style: TextStyle(
-                                          color: pal.bg,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
+                  // Edge actions stay anchored; only the middle four redistribute.
+                  navItem(0),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        navItem(1),
+                        navItem(2),
+                        navItem(3),
+                        navItem(4),
+                      ],
                     ),
+                  ),
+                  navItem(5),
                 ],
               ),
             ],
@@ -1834,9 +1855,6 @@ class _ShellState extends State<Shell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Keep the logo and ad reserves, but let the content row consume
-        // every remaining pixel. The search capsule moves down by one
-        // capsule-height without constraining the page itself.
         const logoGap = 72.0;
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
@@ -1851,104 +1869,140 @@ class _ShellState extends State<Shell> {
                   const SizedBox(height: searchH),
                   const SizedBox(height: gapAfterSearch),
                   Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _homeCollectionHeader(),
-                              const SizedBox(height: 6),
-                              Expanded(
-                                child: KeyedSubtree(
-                                  key: ValueKey(
-                                    'home-$_homeCollection-$_searchFocused',
+                    child: Padding(
+                      // End the home viewport above the floating nav bar.
+                      padding: const EdgeInsets.only(bottom: kNavClearance),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _homeCollectionHeader(),
+                                const SizedBox(height: 6),
+                                Expanded(
+                                  child: KeyedSubtree(
+                                    key: ValueKey(
+                                      'home-$_homeCollection-$_searchFocused',
+                                    ),
+                                    child: _homeCollectionView(d, results),
                                   ),
-                                  child: _homeCollectionView(d, results),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        AnimatedContainer(
-                          duration: Motion.slow,
-                          curve: Motion.spring,
-                          width: _searchFocused ? 0 : 16,
-                        ),
-                        AnimatedContainer(
-                          duration: Motion.slow,
-                          curve: Motion.spring,
-                          width: _searchFocused ? 0 : 124,
-                          child: ClipRect(
-                            child: AnimatedOpacity(
-                              opacity: _searchFocused ? 0 : 1,
-                              duration: Motion.fast,
-                              child: edgeFade(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.only(
-                                    bottom: kNavClearance,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                    _sidePill(
-                                      'گنجینهٔ واژه‌ها',
-                                      () => _open(
-                                        LexiconPage(
-                                          dict: d,
-                                          onTapEntry: _showEntry,
+                          AnimatedContainer(
+                            duration: Motion.slow,
+                            curve: Motion.spring,
+                            width: _searchFocused ? 0 : 16,
+                          ),
+                          AnimatedContainer(
+                            duration: Motion.slow,
+                            curve: Motion.spring,
+                            width: _searchFocused ? 0 : 124,
+                            child: ClipRect(
+                              child: AnimatedOpacity(
+                                opacity: _searchFocused ? 0 : 1,
+                                duration: Motion.fast,
+                                child: LayoutBuilder(
+                                  builder: (context, sideConstraints) {
+                                    final metricHeight =
+                                        sideConstraints.maxHeight < 450
+                                        ? sideConstraints.maxHeight * .27
+                                        : 118.0;
+                                    return Column(
+                                      children: [
+                                        Expanded(
+                                          child: _sidePill(
+                                            'گنجینۀ واژه‌ها',
+                                            () => _open(
+                                              LexiconPage(
+                                                dict: d,
+                                                onTapEntry: _showEntry,
+                                              ),
+                                            ),
+                                            compact: true,
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                    _sidePill(
-                                      'درست‌نویسی',
-                                      () => _open(CorrectorPage(dict: d)),
-                                    ),
-                                    _sidePill(
-                                      'پندواژه',
-                                      () => _open(_pandvazhePage(d)),
-                                    ),
-                                    _sidePill(
-                                      'واژه‌های تازه',
-                                      () => _open(_freshPage(d)),
-                                    ),
-                                    _sidePill(
-                                      'واژهٔ روز',
-                                      () => _pushPage(_dailyPage(d)),
-                                    ),
-                                    _sidePill(
-                                      'کتابخانهٔ شعر',
-                                      () => _open(_ganjoorPage(d)),
-                                    ),
-                                    _sidePill(
-                                      'ریشه‌شناسی',
-                                      () => _open(EtymologyPage(
-                                        dict: d,
-                                        liked: liked,
-                                        favorites: favorites,
-                                        onToggleLike: _toggleLike,
-                                        onToggleBookmark: _toggleFav,
-                                      )),
-                                    ),
-                                      const SizedBox(height: 4),
-                                      _homeMetrics(d),
-                                    ],
-                                  ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'درست‌نویسی',
+                                            () => _open(CorrectorPage(dict: d)),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'پندواژه',
+                                            () => _open(_pandvazhePage(d)),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'واژه‌های تازه',
+                                            () => _open(_freshPage(d)),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'واژهٔ روز',
+                                            () => _pushPage(_dailyPage(d)),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'کتابخانهٔ شعر',
+                                            () => _open(_ganjoorPage(d)),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: _sidePill(
+                                            'ریشه‌شناسی',
+                                            () => _open(EtymologyPage(
+                                              dict: d,
+                                              liked: liked,
+                                              favorites: favorites,
+                                              onToggleLike: _toggleLike,
+                                              onToggleBookmark: _toggleFav,
+                                            )),
+                                            compact: true,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        SizedBox(
+                                          height: metricHeight,
+                                          child: _homeMetrics(d),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
-              const Positioned(
-                top: 30,
+              Positioned(
+                top: 0,
                 left: 0,
                 right: 0,
-                child: Center(child: SourenLogo(width: 140)),
+                height: logoGap,
+                child: Center(
+                  child: SourenLogo(
+                    width: 140,
+                    animate: false,
+                    color: pal.sel,
+                  ),
+                ),
               ),
               Positioned(
                 top: logoGap + searchH,
@@ -2371,7 +2425,6 @@ class _ShellState extends State<Shell> {
   Widget _homeMetrics(Dictionary d) {
     return SizedBox(
       width: 124,
-      height: 118,
       child: FutureBuilder<Map<String, int>>(
         future: GanjoorData.stats(),
         builder: (context, snapshot) {
@@ -2384,7 +2437,8 @@ class _ShellState extends State<Shell> {
           final selected = _metricIndex % values.length;
           final item = values[selected];
           void step(int delta) => setState(() {
-            _metricIndex = (_metricIndex + delta + values.length) % values.length;
+            _metricIndex =
+                (_metricIndex + delta + values.length) % values.length;
           });
           return Pressable(
             onTap: () => step(1),
@@ -2392,72 +2446,90 @@ class _ShellState extends State<Shell> {
               onHorizontalDragEnd: (details) {
                 final velocity = details.primaryVelocity ?? 0;
                 if (velocity.abs() < 80) return;
-                // In RTL, a left swipe advances toward the previous item.
                 step(velocity < 0 ? 1 : -1);
               },
-              child: AnimatedContainer(
-                duration: Motion.base,
-                curve: Motion.spring,
-                height: 118,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: pal.cardC,
                   borderRadius: BorderRadius.circular(capR(68)),
                   border: Border.all(color: pal.div.withValues(alpha: .65)),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AnimatedSwitcher(
-                      duration: Motion.fast,
-                      child: Text(
-                        faNum(item.$2),
-                        key: ValueKey(item.$2),
-                        textDirection: TextDirection.ltr,
-                        style: TextStyle(
-                          color: pal.ink,
-                          fontSize: 27,
-                          fontWeight: FontWeight.w800,
-                          height: 1.05,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.$1,
-                            textAlign: TextAlign.right,
-                            maxLines: 1,
-                            style: TextStyle(
-                              color: pal.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                    Expanded(
+                      flex: 3,
+                      child: Center(
+                        child: AnimatedSwitcher(
+                          duration: Motion.fast,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              faNum(item.$2),
+                              key: ValueKey(item.$2),
+                              textDirection: TextDirection.ltr,
+                              style: TextStyle(
+                                color: pal.ink,
+                                fontSize: 27,
+                                fontWeight: FontWeight.w800,
+                                height: 1.05,
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 7),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (var i = 0; i < values.length; i++)
-                              AnimatedContainer(
-                                duration: Motion.base,
-                                curve: Motion.spring,
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
-                                width: i == selected ? 11 : 4,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: i == selected
-                                      ? pal.sel
-                                      : pal.faint.withValues(alpha: .55),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        textDirection: TextDirection.rtl,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.$1,
+                              textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: pal.muted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                               ),
-                          ],
-                        ),
-                      ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var i = 0; i < values.length; i++)
+                                    AnimatedContainer(
+                                      duration: Motion.base,
+                                      curve: Motion.spring,
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                      ),
+                                      width: i == selected ? 11 : 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: i == selected
+                                            ? pal.sel
+                                            : pal.faint.withValues(alpha: .55),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -2469,13 +2541,18 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  Widget _sidePill(String label, VoidCallback onTap) {
+  Widget _sidePill(
+    String label,
+    VoidCallback onTap, {
+    bool compact = false,
+  }) {
     return Pressable(
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 11),
-        padding: const EdgeInsets.symmetric(vertical: 17),
+        alignment: Alignment.center,
+        margin: EdgeInsets.only(bottom: compact ? 0 : 11),
+        padding: EdgeInsets.symmetric(vertical: compact ? 6 : 17),
         decoration: BoxDecoration(
           color: pal.pillC,
           borderRadius: BorderRadius.circular(capR(54)),
