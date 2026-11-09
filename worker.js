@@ -341,6 +341,34 @@ async function handleLearning(request, env) {
     return json(request, { accepted });
 }
 
+async function handleLearningModel(request, env) {
+    const cacheKey = new Request(new URL('/api/learning/model', request.url).toString());
+    const cached = await caches.default.match(cacheKey);
+    if (cached) return cached;
+
+    const listed = await env.USERS.list({ prefix: 'learning:v1:', limit: 1000 });
+    const pairs = [];
+    for (const item of listed.keys) {
+        const record = await env.USERS.get(item.name, 'json');
+        if (!record || Number(record.count) < 3) continue;
+        pairs.push({
+            from: record.from,
+            left: record.left || '',
+            right: record.right || '',
+            to: record.to,
+            count: Number(record.count),
+        });
+    }
+    pairs.sort((a, b) => b.count - a.count);
+    const response = json(request, {
+        version: 1,
+        pairs: pairs.slice(0, 500),
+    });
+    response.headers.set('Cache-Control', 'public, max-age=600');
+    await caches.default.put(cacheKey, response.clone());
+    return response;
+}
+
 // ---------- Router ----------
 export default {
     async fetch(request, env) {
@@ -369,6 +397,8 @@ export default {
                 ? handleLike(request, env) : methodNotAllowed();
             case '/api/learning': return request.method === 'POST'
                 ? handleLearning(request, env) : methodNotAllowed();
+            case '/api/learning/model': return request.method === 'GET'
+                ? handleLearningModel(request, env) : methodNotAllowed();
             case '/api/health': return request.method === 'GET'
                 ? json(request, {
                     service: 'souren-worker',
