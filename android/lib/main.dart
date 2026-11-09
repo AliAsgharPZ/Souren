@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -394,7 +395,7 @@ Widget pressIcon({
       padding: const EdgeInsets.all(8),
       child: PopIcon(
         active: active,
-        child: Icon(icon, size: 21, color: active ? activeColor : inactive),
+        child: Icon(icon, size: 21, color: active ? activeColor : inactive, fill: active ? 1 : 0, weight: active ? 600 : 400),
       ),
     ),
   );
@@ -423,13 +424,13 @@ class LikeBookmarkButtons extends StatelessWidget {
       children: [
         pressIcon(
           active: liked,
-          icon: LucideIcons.heart,
+          icon: Symbols.favorite_rounded,
           activeColor: pal.accent,
           onTap: onToggleLike,
         ),
         pressIcon(
           active: bookmarked,
-          icon: LucideIcons.bookmark,
+          icon: Symbols.bookmark_rounded,
           activeColor: pal.ink,
           onTap: onToggleBookmark,
         ),
@@ -1655,12 +1656,12 @@ class _ShellState extends State<Shell> {
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
     final items = <(IconData, String)>[
-      (LucideIcons.house, 'پیشگاه'),
-      (LucideIcons.heart, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, 'نمایه'),
-      (LucideIcons.settings, 'پیکربندی'),
+      (Symbols.home_rounded, 'پیشگاه'),
+      (Symbols.favorite_rounded, 'پسندیده‌ها'),
+      (Symbols.grid_view_rounded, 'بخش‌ها'),
+      (Symbols.bookmark_rounded, 'نشان‌شده'),
+      (Symbols.person_rounded, 'نمایه'),
+      (Symbols.settings_rounded, 'پیکربندی'),
     ];
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 6, 20, 14),
@@ -1715,6 +1716,8 @@ class _ShellState extends State<Shell> {
                                   child: Icon(
                                     items[i].$1,
                                     size: 22,
+                                    fill: tab == i ? 1 : 0,
+                                    weight: tab == i ? 600 : 400,
                                     color: tab == i
                                         ? pal.bg
                                         : pal.ink.withValues(alpha: .72),
