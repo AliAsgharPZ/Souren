@@ -1,13 +1,13 @@
-name: Release Souren v0.4.6.2
+name: Release Souren v0.4.6.3
 
 concurrency:
-  group: souren-v0.4.6.2-release
+  group: souren-v0.4.6.3-release
   cancel-in-progress: true
 
 on:
   push:
     branches:
-      - release/v0.4.6.1
+      - release/v0.4.6.3
   workflow_dispatch:
 
 permissions:
@@ -73,7 +73,7 @@ jobs:
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
 
       - name: Build release APK
-        run: flutter build apk --release --build-name=0.4.6.2 --build-number=14
+        run: flutter build apk --release --build-name=0.4.6.3 --build-number=15
 
       - name: Verify APK signature and version
         run: |
@@ -84,16 +84,16 @@ jobs:
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
           grep -q "Signer" "$RUNNER_TEMP/apk-cert.txt"
           "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
-          grep -F "package: name='ir.souren.souren' versionCode='14' versionName='0.4.6.2'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
+          grep -F "package: name='ir.souren.souren' versionCode='15' versionName='0.4.6.3'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
 
       - name: Prepare release asset
         run: |
           mkdir -p ../release-assets
-          cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.2.apk
+          cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.3.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Souren-v0.4.6.2-APK
+          name: Souren-v0.4.6.3-APK
           path: release-assets/Souren-v0.4.6.2.apk
 
   publish:
@@ -103,7 +103,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release/v0.4.6.1
+          ref: release/v0.4.6.3
           fetch-depth: 0
 
       - uses: actions/download-artifact@v4
@@ -114,24 +114,20 @@ jobs:
       - name: Create tag and publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.4.6.2
-          target_commitish: release/v0.4.6.1
-          name: Souren v0.4.6.2
+          tag_name: v0.4.6.3
+          target_commitish: release/v0.4.6.3
+          name: Souren v0.4.6.3
           draft: false
           prerelease: false
           generate_release_notes: false
           overwrite_files: true
           body: |
-            ## Souren v0.4.6.2
+            ## Souren v0.4.6.3
 
-            - Fixed navigation placement: only Home and Settings remain fixed at the ends; the four middle destinations distribute between them.
-            - Centered the selected navigation capsule and corrected its vertical bounds.
-            - Reworked the home screen layout: the word feed stays above the navigation bar, side controls remain fixed, and the logo and metrics card use the corrected layout.
-            - Restored the original v0.4.1 expanding navigation-bar structure and tab behavior. Only the moving indicator's measured bounds and one-pixel inset were corrected to remove its lower-edge protrusion; the surface remains solid.
-            - Refined the original Souren logo placement and scale without changing its artwork.
-            - Updated the home feed, search, word/proverb details, favorites, bookmarks, profile, etymology, Ganjoor library and Persian keyboard.
-            - Added contextual correction preferences with local learning and optional anonymous aggregate sharing.
-            - Ganjoor remains online-first with API fallback; offline content-pack delivery is handled separately after full-pack verification.
+            - Restored the previous Home left-side button layout and spacing, including the poetry library entry.
+            - Kept the current animated Home counter, expanded it to eight reliable content totals, and corrected Ganjoor's poem-count manifest field (PoemsCount).
+            - Centered and tightened the counter title/slider indicator, removed its outline, and refined the logo size and vertical placement.
+            - Kept the Home word-feed top and bottom scroll fades permanently visible.
 
             Built after dataset integrity checks, Flutter analysis, Dart/widget tests,
             Kotlin IME unit tests, production APK signing and package-version verification.
