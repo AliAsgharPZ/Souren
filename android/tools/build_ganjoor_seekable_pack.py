@@ -81,7 +81,8 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
             raw_stream.flush()
             raw_stream.close()
             compressed_offset = pack_path.stat().st_size if pack_path.exists() else 0
-            command = [zstd, "-q", "-22", "--ultra", f"--long={long_bits}",
+            # Level 19 keeps the pack highly compressed without the extreme build cost of --ultra.
+            command = [zstd, "-q", "-19", f"--long={long_bits}",
                        "-T0", "-c", str(raw_path)]
             with pack_path.open("ab") as destination:
                 subprocess.run(command, check=True, stdout=destination)
