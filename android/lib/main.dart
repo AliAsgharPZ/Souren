@@ -604,6 +604,7 @@ class DetailSheet extends StatefulWidget {
   final VoidCallback? onOpenEtymology;
   final String? etymologyWord;
   final List<String> relatedPersianWords;
+  final String? relatedPoemTitle;
   final List<Entry> relatedEntries;
   final void Function(Entry)? onOpenRelatedEntry;
   final List<String> copyableLines;
@@ -618,6 +619,7 @@ class DetailSheet extends StatefulWidget {
     this.onOpenEtymology,
     this.etymologyWord,
     this.relatedPersianWords = const [],
+    this.relatedPoemTitle,
     this.relatedEntries = const [],
     this.onOpenRelatedEntry,
     this.copyableLines = const [],
@@ -881,11 +883,13 @@ class _DetailSheetState extends State<DetailSheet> {
               ),
             ],
           ),
-          if (widget.etymologyWord != null) ...[
+          if (widget.etymologyWord != null)
             _RootInfoCard(word: widget.etymologyWord!),
-            _PoemUsageCard(words: widget.relatedPersianWords.isNotEmpty
-                ? widget.relatedPersianWords : [widget.etymologyWord!]),
-          ],
+          if (widget.relatedPersianWords.isNotEmpty)
+            _PoemUsageCard(
+              words: widget.relatedPersianWords,
+              title: widget.relatedPoemTitle ?? 'شعرهایی که این واژه در آن‌ها آمده',
+            ),
           if (widget.onOpenEtymology != null) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -1885,7 +1889,7 @@ class _ShellState extends State<Shell> {
                                     ),
                                     _sidePill(
                                       'پندواژه',
-                                      () => _open(_pandvazhePage()),
+                                      () => _open(_pandvazhePage(d)),
                                     ),
                                     _sidePill(
                                       'واژه‌های تازه',
@@ -2508,8 +2512,10 @@ class _ShellState extends State<Shell> {
   }
 
   /// Proverb page wired to the shell's like/favorite storage.
-  Widget _pandvazhePage() => PandvazhePage(
+  Widget _pandvazhePage(Dictionary d) => PandvazhePage(
     proverbs: proverbs,
+    dict: d,
+    onOpenEntry: _showEntry,
     liked: liked,
     favorites: favorites,
     onToggleLike: _toggleLike,
@@ -4770,6 +4776,8 @@ class NimeFaselePage extends StatelessWidget {
 // ================= پندواژه (ضرب‌المثل‌ها) =================
 class PandvazhePage extends StatefulWidget {
   final List<(String, String)> proverbs;
+  final Dictionary dict;
+  final ValueChanged<Entry> onOpenEntry;
   final Set<String> liked;
   final Set<String> favorites;
   final Future<void> Function(String) onToggleLike;
@@ -4778,6 +4786,8 @@ class PandvazhePage extends StatefulWidget {
   const PandvazhePage({
     super.key,
     required this.proverbs,
+    required this.dict,
+    required this.onOpenEntry,
     required this.liked,
     required this.favorites,
     required this.onToggleLike,
@@ -4834,6 +4844,21 @@ class _PandvazhePageState extends State<PandvazhePage> {
       lines: [meaning],
       caption: 'ضرب‌المثل فارسی',
     );
+    final tokens = normalizeLetters('$title $meaning')
+        .split(RegExp(r'[\\s،,.؟!؛:()«»]+'))
+        .where((word) => word.length > 1)
+        .toSet();
+    final relatedEntries = widget.dict.entries.where((entry) {
+      final terms = <String>[entry.ar, ...entry.fa]
+          .expand((term) => normalizeLetters(term)
+              .split(RegExp(r'[\\s،,.؟!؛:()«»]+')));
+      return terms.any(tokens.contains);
+    }).take(8).toList();
+    final relatedWords = relatedEntries
+        .expand((entry) => entry.fa)
+        .where((word) => word.trim().isNotEmpty)
+        .take(2)
+        .toList();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -4849,10 +4874,17 @@ class _PandvazhePageState extends State<PandvazhePage> {
         child: SingleChildScrollView(
           child: DetailSheet(
             card: card,
-        initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
-        initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
-        onToggleLike: () async => _toggleLike(title),
+            initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
+            initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
+            onToggleLike: () async => _toggleLike(title),
             onToggleBookmark: () async => _toggleFav(title),
+            relatedEntries: relatedEntries,
+            relatedPersianWords: [title, ...relatedWords],
+            relatedPoemTitle: 'شعرهای مرتبط با این پندواژه',
+            onOpenRelatedEntry: (entry) {
+              Navigator.of(sheetContext).pop();
+              widget.onOpenEntry(entry);
+            },
           ),
         ),
       ),
@@ -4892,13 +4924,16 @@ class _PandvazhePageState extends State<PandvazhePage> {
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Row(
+                                textDirection: TextDirection.rtl,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       widget.proverbs[i].$1,
+                                      textAlign: TextAlign.right,
+                                      textDirection: TextDirection.rtl,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 19,
@@ -4911,6 +4946,8 @@ class _PandvazhePageState extends State<PandvazhePage> {
                               const SizedBox(height: 10),
                               Text(
                                 widget.proverbs[i].$2,
+                                textAlign: TextAlign.right,
+                                textDirection: TextDirection.rtl,
                                 style: const TextStyle(
                                   color: Color(0xFF5C5546),
                                   height: 1.9,
@@ -5476,7 +5513,11 @@ class GanjoorData {
 
 class _PoemUsageCard extends StatelessWidget {
   final List<String> words;
-  const _PoemUsageCard({required this.words});
+  final String title;
+  const _PoemUsageCard({
+    required this.words,
+    this.title = 'شعرهایی که این واژه در آن‌ها آمده',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -5499,7 +5540,7 @@ class _PoemUsageCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('شعرهایی که این واژه در آن‌ها آمده',
+              Text(title,
                   textAlign: TextAlign.right,
                   style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700,
                       fontSize: 13.5)),
