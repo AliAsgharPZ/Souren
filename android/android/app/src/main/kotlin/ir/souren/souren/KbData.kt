@@ -275,8 +275,9 @@ object KbData {
                     )
                     val count = row.optInt("count").coerceAtLeast(0)
                     if (count == 0) continue
-                    shared.put(key, count)
-                    sharedMap[key] = count
+                    val combinedCount = (sharedMap[key] ?: 0) + count
+                    shared.put(key, combinedCount)
+                    sharedMap[key] = combinedCount
                 }
                 synchronized(this) {
                     val file = File(ctx.filesDir, "learned.json")
