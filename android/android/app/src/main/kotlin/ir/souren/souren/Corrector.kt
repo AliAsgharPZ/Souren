@@ -186,12 +186,10 @@ object Corrector {
                 // First single-word equivalent wins (the old rule needed
                 // exactly one equivalent, so multi-equivalent words like
                 // اتفاق never got replaced at all).
-                for (cand in eq) {
-                    if (!cand.contains(' ') && !cand.contains('،') && cand != w) {
-                        w = cand
-                        break
-                    }
+                val preferred = eq.firstOrNull {
+                    !it.contains(' ') && !it.contains('،')
                 }
+                if (preferred != null && preferred != w) w = preferred
             }
         }
         return WordFix(w, suggestions)
@@ -222,6 +220,10 @@ object Corrector {
             if (prev.isNotEmpty()) {
                 return (last.length + 1) to (ZWNJ + last)
             }
+        }
+
+        if (words.size >= 2 && words[words.size - 2] == "ساعت" && last == "چند") {
+            return (words[words.size - 2].length + 1 + rawLast.length) to ("چه زمانی" + punct)
         }
 
         val fix = correctWord(last, dictionary, replaceArabic)
