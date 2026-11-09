@@ -6196,6 +6196,16 @@ class GanjoorNodePage extends StatefulWidget {
 
 class _GanjoorNodePageState extends State<GanjoorNodePage> {
   late Future<Map<String, dynamic>> _future = _load();
+  bool _bookLiked = false;
+  bool _bookmarked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final key = 'book:${widget.path}';
+    _bookLiked = widget.liked?.contains(key) ?? false;
+    _bookmarked = widget.favorites?.contains(key) ?? false;
+  }
 
   Future<Map<String, dynamic>> _load() =>
       GanjoorData.json('poets/${widget.path}/_cat.json');
@@ -6290,10 +6300,16 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                     if (widget.depth == 1) ...[
                       const SizedBox(width: 8),
                       LikeBookmarkButtons(
-                        liked: widget.liked?.contains('book:${widget.path}') ?? false,
-                        bookmarked: widget.favorites?.contains('book:${widget.path}') ?? false,
-                        onToggleLike: () => widget.onToggleLike?.call('book:${widget.path}'),
-                        onToggleBookmark: () => widget.onToggleBookmark?.call('book:${widget.path}'),
+                        liked: _bookLiked,
+                        bookmarked: _bookmarked,
+                        onToggleLike: () async {
+                          setState(() => _bookLiked = !_bookLiked);
+                          await widget.onToggleLike?.call('book:${widget.path}');
+                        },
+                        onToggleBookmark: () async {
+                          setState(() => _bookmarked = !_bookmarked);
+                          await widget.onToggleBookmark?.call('book:${widget.path}');
+                        },
                       ),
                     ],
                   ],
