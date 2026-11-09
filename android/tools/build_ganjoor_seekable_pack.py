@@ -57,7 +57,8 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
 
     output.mkdir(parents=True, exist_ok=True)
     pack_path = output / "souren-ganjoor-pack.bin"
-    index_path = output / "souren-ganjoor-index.json"
+    index_json_path = output / "souren-ganjoor-index.json"
+    index_path = output / "souren-ganjoor-index.json.zst"
     pack_path.unlink(missing_ok=True)
 
     max_chunk_bytes = chunk_mib * 1024 * 1024
@@ -138,8 +139,13 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
         "chunks": chunks,
         "files": index_files,
     }
-    write_json(index_path, index)
+    write_json(index_json_path, index)
+    subprocess.run(
+        [zstd, "-q", "-19", "-T0", "-f", str(index_json_path), "-o", str(index_path)],
+        check=True,
+    )
     index_bytes = index_path.stat().st_size
+    index_json_path.unlink()
     total_bytes = pack_bytes + index_bytes
     if total_bytes > max_total_mib * 1024 * 1024:
         raise RuntimeError(
@@ -184,6 +190,7 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
         "max_stored_mib": max_total_mib,
         "all_frames_round_trip_verified": True,
         "all_source_ranges_sha256_verified": True,
+        "index_zstandard_compressed": True,
     }
     write_json(output / "pack-report.json", report)
     print(json.dumps(report, ensure_ascii=False, indent=2))
