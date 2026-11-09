@@ -203,6 +203,20 @@ class DatasetValidatorTest {
         )
     }
 
+    @Test fun reloadDecision_removedUpdateFallsBackToBundled() {
+        assertEquals(
+            DatasetValidator.Source.BUNDLED,
+            DatasetValidator.decide(null, false, "u|sha256|old", false)
+        )
+    }
+
+    @Test fun contentSignatureDetectsSameLengthReplacement() {
+        val first = DatasetValidator.signature("""{"entries":[{"ar":"آب"}]}""")
+        val second = DatasetValidator.signature("""{"entries":[{"ar":"نان"}]}""")
+        assertEquals(first.length, second.length)
+        assertFalse(first == second)
+    }
+
     @Test fun reloadDecision_forceReloads() {
         assertEquals(
             DatasetValidator.Source.UPDATED,
