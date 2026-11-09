@@ -1826,29 +1826,11 @@ class _ShellState extends State<Shell> {
                               _homeCollectionHeader(),
                               const SizedBox(height: 6),
                               Expanded(
-                                child: AnimatedSwitcher(
-                                  duration: Motion.slow,
-                                  switchInCurve: Motion.curve,
-                                  switchOutCurve: Curves.easeInOutCubic,
-                                  transitionBuilder: (child, animation) =>
-                                      FadeTransition(
-                                    opacity: animation,
-                                    child: SizeTransition(
-                                      sizeFactor: animation,
-                                      axis: Axis.horizontal,
-                                      child: ScaleTransition(
-                                        scale: Tween<double>(begin: 0.985, end: 1)
-                                            .animate(animation),
-                                        child: child,
-                                      ),
-                                    ),
+                                child: KeyedSubtree(
+                                  key: ValueKey(
+                                    'home-$_homeCollection-$_searchFocused',
                                   ),
-                                  child: KeyedSubtree(
-                                    key: ValueKey(
-                                      'home-$_homeCollection-$_searchFocused',
-                                    ),
-                                    child: _homeCollectionView(d, results),
-                                  ),
+                                  child: _homeCollectionView(d, results),
                                 ),
                               ),
                             ],
