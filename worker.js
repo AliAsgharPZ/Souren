@@ -314,7 +314,7 @@ async function handleLearning(request, env) {
     let accepted = 0;
     for (const sample of samples) {
         const clean = (value, max) => typeof value === 'string'
-            ? value.trim().replace(/[\\r\\n\\t]/g, ' ').slice(0, max)
+            ? value.trim().replace(/[\r\n\t]/g, ' ').slice(0, max)
             : '';
         const from = clean(sample.from, 48);
         const to = clean(sample.to, 64);
@@ -324,7 +324,7 @@ async function handleLearning(request, env) {
 
         // Store only adjacent tokens and the user's selected equivalent.
         // No full sentence, account identifier, clipboard or IP address is kept.
-        const canonical = [from, left, right, to].join('\\u001f');
+        const canonical = [from, left, right, to].join('|');
         const digest = await crypto.subtle.digest(
             'SHA-256', new TextEncoder().encode(canonical));
         const hash = [...new Uint8Array(digest)]
