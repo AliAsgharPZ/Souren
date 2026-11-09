@@ -2,6 +2,7 @@ package ir.souren.souren
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
 
 /** Dataset validation + reload decisions shared by the dictionary app
  *  and the keyboard (owner B2/B6).
@@ -86,6 +87,15 @@ object DatasetValidator {
 
     enum class Source { KEEP, UPDATED, BUNDLED }
 
+    /** Stable content signature for dataset_updated.json. Unlike
+     *  mtime+length it detects same-size replacements and timestamp collisions. */
+    fun signature(text: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(text.toByteArray(Charsets.UTF_8))
+        val hex = digest.joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        return "u|sha256|$hex"
+    }
+
     /** The signature KbData assigns when the bundled asset is in memory. */
     const val BUNDLED_SIG = "bundled"
 
@@ -110,8 +120,10 @@ object DatasetValidator {
     ): Source {
         // Nothing on disk: the bundled asset is the only source.
         if (updatedSig == null) {
-            return if (loadedSig == null || force) Source.BUNDLED
-            else Source.KEEP
+            // If an updated file was removed, stop serving its old in-memory
+            // copy and return to the bundled dataset.
+            return if (!force && loadedSig == BUNDLED_SIG) Source.KEEP
+            else Source.BUNDLED
         }
         // A valid updated file becomes active only when it is new
         // (signature changed) or a reload was explicitly requested.
