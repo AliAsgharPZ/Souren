@@ -1,13 +1,13 @@
-name: Release Souren v0.4.6.1.1
+name: Release Souren v0.4.6.1
 
 concurrency:
-  group: souren-v0.4.6.1.1-release
+  group: souren-v0.4.6.1-release
   cancel-in-progress: true
 
 on:
   push:
     branches:
-      - release/v0.4.6.1.1
+      - release/v0.4.6.1
   workflow_dispatch:
 
 permissions:
@@ -84,17 +84,17 @@ jobs:
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
           grep -q "Signer" "$RUNNER_TEMP/apk-cert.txt"
           "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
-          grep -F "package: name='ir.souren.souren' versionCode='12' versionName='0.4.6.1'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
+          grep -F "package: name='ir.souren.souren' versionCode='13' versionName='0.4.6.1'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
 
       - name: Prepare release asset
         run: |
           mkdir -p ../release-assets
-          cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.1.1.apk
+          cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.1.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Souren-v0.4.6.1.1-APK
-          path: release-assets/Souren-v0.4.6.1.1.apk
+          name: Souren-v0.4.6.1-APK
+          path: release-assets/Souren-v0.4.6.1.apk
 
   publish:
     name: Publish GitHub release
@@ -103,26 +103,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: release/v0.4.6.1.1
+          ref: release/v0.4.6.1
           fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
-          name: Souren-v0.4.6.1.1-APK
+          name: Souren-v0.4.6.1-APK
           path: release-assets
 
       - name: Create tag and publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.4.6.1.1
-          target_commitish: release/v0.4.6.1.1
-          name: Souren v0.4.6.1.1
+          tag_name: v0.4.6.1
+          target_commitish: release/v0.4.6.1
+          name: Souren v0.4.6.1
           draft: false
           prerelease: false
           generate_release_notes: false
           overwrite_files: true
           body: |
-            ## Souren v0.4.6.1.1
+            ## Souren v0.4.6.1
 
             - Restored the original v0.4.1 expanding navigation-bar structure and tab behavior. Only the moving indicator's measured bounds and one-pixel inset were corrected to remove its lower-edge protrusion; the surface remains solid.
             - Refined the original Souren logo placement and scale without changing its artwork.
@@ -132,5 +132,5 @@ jobs:
 
             Built after dataset integrity checks, Flutter analysis, Dart/widget tests,
             Kotlin IME unit tests, production APK signing and package-version verification.
-          files: release-assets/Souren-v0.4.6.1.1.apk
+          files: release-assets/Souren-v0.4.6.1.apk
           fail_on_unmatched_files: true
