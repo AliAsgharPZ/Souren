@@ -20,15 +20,23 @@ object CursorMath {
      *  selection end, moving backward from the selection start, so a
      *  selection is collapsed the way Samsung's trackpad does. */
     fun newSelection(
+        startOffset: Int,
         selStart: Int,
         selEnd: Int,
-        textLength: Int,
+        extractedTextLength: Int,
         delta: Int
     ): Int {
-        val len = textLength.coerceAtLeast(0)
-        val s = if (selStart < 0) 0 else selStart.coerceIn(0, len)
-        val e = if (selEnd < 0) 0 else selEnd.coerceIn(0, len)
+        // ExtractedText selectionStart/End are RELATIVE to its extracted
+        // window. setSelection(), however, requires an ABSOLUTE editor
+        // offset. Translate through startOffset before clamping/moving.
+        val windowStart = startOffset.coerceAtLeast(0)
+        val windowEnd = (windowStart.toLong() + extractedTextLength.coerceAtLeast(0))
+            .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        val s = if (selStart < 0) windowStart
+            else (windowStart.toLong() + selStart).coerceIn(windowStart.toLong(), windowEnd.toLong()).toInt()
+        val e = if (selEnd < 0) windowStart
+            else (windowStart.toLong() + selEnd).coerceIn(windowStart.toLong(), windowEnd.toLong()).toInt()
         val base = if (delta >= 0) maxOf(s, e) else minOf(s, e)
-        return (base + delta).coerceIn(0, len)
+        return (base.toLong() + delta).coerceIn(windowStart.toLong(), windowEnd.toLong()).toInt()
     }
 }
