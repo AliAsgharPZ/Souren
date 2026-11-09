@@ -3852,7 +3852,7 @@ class _ShellState extends State<Shell> {
                   height: 26,
                   decoration: BoxDecoration(
                     color: pal.bg,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(capR(26)),
                   ),
                 ),
               ),
