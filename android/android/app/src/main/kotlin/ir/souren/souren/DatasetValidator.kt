@@ -101,8 +101,8 @@ object DatasetValidator {
 
     /** Which dataset the keyboard should load now.
      *
-     *  [updatedSig]   signature (lastModified|length) of the updated
-     *                 file on disk, or null when it does not exist
+     *  [updatedSig]   SHA-256 content signature of the updated file,
+     *                 or null when it does not exist
      *  [updatedValid] whether that file passed [validate]
      *  [loadedSig]    signature of the dataset currently in memory
      *                 (BUNDLED_SIG when the asset was loaded), or null
