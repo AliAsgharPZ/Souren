@@ -8,14 +8,14 @@ package ir.souren.souren
  *  expects ABSOLUTE editor offsets — so the cursor jumped whenever the
  *  caret was beyond the 200-character window.
  *
- *  The IME now reads the absolute selection from ExtractedText and lets
- *  this pure function compute the new absolute offset, so cursor
- *  movement is correct near the beginning, past character 200/500, at
- *  the end of long documents, and with a selection active.
+ *  The IME reads ExtractedText's window start plus its window-relative
+ *  selection bounds, then this pure function returns an absolute editor
+ *  offset. Movement therefore remains correct for partial extracts and
+ *  long documents, including selections.
  */
 object CursorMath {
     /** Absolute caret offset after moving by [delta] characters.
-     *  [selStart]/[selEnd] are the editor's absolute selection bounds
+     *  [selStart]/[selEnd] are relative to the extracted window
      *  (either may be -1 when unknown). Moving forward starts from the
      *  selection end, moving backward from the selection start, so a
      *  selection is collapsed the way Samsung's trackpad does. */
