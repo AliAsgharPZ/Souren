@@ -1879,7 +1879,7 @@ class _ShellState extends State<Shell> {
             children: [
               Column(
                 children: [
-                  SizedBox(height: contentTop),
+                  const SizedBox(height: contentTop),
                   Expanded(
                     child: Padding(
                       // End the home viewport above the floating nav bar.
