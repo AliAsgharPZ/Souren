@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [maintenance/v0.4.1]
   workflow_dispatch:
 jobs:
   build:
@@ -56,9 +58,12 @@ jobs:
           fi
       - name: Build release APK
         run: |
+          set -euo pipefail
           flutter build apk --release
-          BT=$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
-          $ANDROID_HOME/build-tools/$BT/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -3
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
+          head -3 /tmp/souren-apksigner.txt
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
