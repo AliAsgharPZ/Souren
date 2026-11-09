@@ -148,24 +148,6 @@ class FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-/// Scale pop for toggle icons (like / bookmark): replays on [active] change.
-class PopIcon extends StatelessWidget {
-  final bool active;
-  final Widget child;
-  const PopIcon({super.key, required this.active, required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(active),
-      tween: Tween(begin: 0.6, end: 1),
-      duration: Motion.fast,
-      curve: Motion.pop,
-      builder: (_, v, c) => Transform.scale(scale: v, child: c),
-      child: child,
-    );
-  }
-}
-
 /// A double that animates smoothly from its previous value (profile
 /// progress bar, score count-up) instead of jumping on every rebuild.
 class AnimatedValue extends StatefulWidget {
@@ -393,9 +375,12 @@ Widget pressIcon({
     onTap: onTap,
     child: Padding(
       padding: const EdgeInsets.all(8),
-      child: PopIcon(
-        active: active,
-        child: Icon(icon, size: 21, color: active ? activeColor : inactive, fill: active ? 1 : 0, weight: active ? 600 : 400),
+      child: Icon(
+        icon,
+        size: 21,
+        color: active ? activeColor : inactive,
+        fill: active ? 1 : 0,
+        weight: active ? 600 : 400,
       ),
     ),
   );
