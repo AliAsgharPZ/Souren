@@ -171,7 +171,9 @@ object KbData {
                 val pending = root.optJSONArray("pending") ?: JSONArray()
                 if (pending.length() == 0) return@Thread
                 val batch = JSONArray()
-                for (i in 0 until pending.length()) batch.put(pending.getJSONObject(i))
+                for (i in 0 until minOf(pending.length(), 20)) {
+                    batch.put(pending.getJSONObject(i))
+                }
                 val payload = JSONObject().put("samples", batch)
                 val connection = (URL("https://souren.aliasgharpanahizare.workers.dev/api/learning")
                     .openConnection() as HttpURLConnection).apply {
