@@ -2108,7 +2108,7 @@ class _ShellState extends State<Shell> {
                   textAlign: TextAlign.right,
                   style: TextStyle(color: pal.muted, fontSize: 11.5),
                 ),
-                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                trailing: Icon(LucideIcons.chevronLeft, size: 17, color: pal.muted),
                 onTap: full.isEmpty
                     ? null
                     : () => _open(GanjoorNodePage(
@@ -2217,7 +2217,7 @@ class _ShellState extends State<Shell> {
                     style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
                 subtitle: Text(poet, textAlign: TextAlign.right,
                     style: TextStyle(color: pal.muted, fontSize: 11.5)),
-                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                trailing: Icon(LucideIcons.chevronLeft, size: 17, color: pal.muted),
                 onTap: full.isEmpty ? null : () => _open(GanjoorPoemPage(
                   title: title,
                   path: 'poets/$full.json',
@@ -2870,7 +2870,7 @@ class _ShellState extends State<Shell> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: pal.muted, fontSize: 11.5, height: 1.6),
           ),
-          trailing: Icon(LucideIcons.chevronRight, color: pal.muted, size: 17),
+          trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
           onTap: () => _open(GanjoorPoemPage(
             title: poemTitle,
             path: path,
@@ -4532,7 +4532,7 @@ class _LexiconPageState extends State<LexiconPage> {
                             child: Row(
                               children: [
                                 Icon(
-                                  LucideIcons.chevronRight,
+                                  LucideIcons.chevronLeft,
                                   size: 13,
                                   color: pal.muted,
                                 ),
@@ -5563,7 +5563,7 @@ class _PoemUsageCard extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(color: pal.muted, fontSize: 11),
                   ),
-                  trailing: Icon(LucideIcons.chevronRight,
+                  trailing: Icon(LucideIcons.chevronLeft,
                       size: 16, color: pal.muted),
                   onTap: () {
                     final full = (poem['FullUrl'] ?? poem['fullUrl'] ?? '')
@@ -5734,7 +5734,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                 ],
               ),
             ),
-            Icon(LucideIcons.chevronRight, color: pal.muted, size: 16),
+            Icon(LucideIcons.chevronLeft, color: pal.muted, size: 16),
           ],
         ),
       ),
@@ -5857,32 +5857,24 @@ class _GanjoorPageState extends State<GanjoorPage> {
                   children: [
                     for (var i = 0; i < 2; i++)
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 3),
-                          child: Pressable(
-                            onTap: () => setState(() => _filter = i),
-                            child: AnimatedContainer(
-                              duration: Motion.base,
-                              curve: Motion.spring,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: _filter == i ? pal.pillC : Colors.transparent,
-                                borderRadius: BorderRadius.circular(capR(42)),
-                                border: Border.all(
-                                  color: _filter == i ? pal.div : Colors.transparent,
-                                ),
+                        child: Pressable(
+                          onTap: () => setState(() => _filter = i),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            child: AnimatedDefaultTextStyle(
+                              duration: Motion.fast,
+                              curve: Curves.easeOut,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _filter == i
+                                    ? pal.ink
+                                    : pal.muted.withValues(alpha: 0.62),
+                                fontSize: 12,
+                                fontWeight: _filter == i
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
                               ),
-                              child: Text(
-                                ['شاعران', 'کتاب‌ها'][i],
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: _filter == i ? pal.sel : pal.muted,
-                                  fontSize: 12,
-                                  fontWeight: _filter == i
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                ),
-                              ),
+                              child: Text(['شاعران', 'کتاب‌ها'][i]),
                             ),
                           ),
                         ),
@@ -6240,7 +6232,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                               style: TextStyle(color: pal.ink),
                             ),
                             trailing: Icon(
-                              LucideIcons.chevronRight,
+                              LucideIcons.chevronLeft,
                               color: pal.muted,
                               size: 18,
                             ),
@@ -6261,7 +6253,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                               style: TextStyle(color: pal.ink),
                             ),
                             trailing: Icon(
-                              LucideIcons.chevronRight,
+                              LucideIcons.chevronLeft,
                               color: pal.muted,
                               size: 18,
                             ),
