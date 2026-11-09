@@ -5178,7 +5178,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
     String? error;
     await showDialog<void>(
       context: context,
-      barrierDismissible: !downloading,
+      barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
           backgroundColor: pal.cardC,
