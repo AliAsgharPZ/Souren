@@ -1,4 +1,5 @@
 name: Release Souren v0.4.6.5
+# CI release workflow for build 17.
 
 concurrency:
   group: souren-v0.4.6.5-release
