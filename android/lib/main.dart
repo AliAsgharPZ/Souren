@@ -74,92 +74,6 @@ class Motion {
   static const spring = Cubic(0.2, 1.12, 0.32, 1.0);
 }
 
-/// A real, interruptible spring for the single navigation selection capsule.
-/// The six tab hit-targets never move; only this fixed-size surface travels.
-class SpringSlideIndicator extends StatefulWidget {
-  final double left;
-  final double top;
-  final double width;
-  final double height;
-  final Color color;
-
-  const SpringSlideIndicator({
-    super.key,
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.height,
-    required this.color,
-  });
-
-  @override
-  State<SpringSlideIndicator> createState() => _SpringSlideIndicatorState();
-}
-
-class _SpringSlideIndicatorState extends State<SpringSlideIndicator>
-    with TickerProviderStateMixin {
-  late final AnimationController _position = AnimationController.unbounded(
-    vsync: this,
-    value: widget.left,
-  );
-  late final AnimationController _width = AnimationController.unbounded(
-    vsync: this,
-    value: widget.width,
-  );
-
-  void _springTo(AnimationController controller, double target) {
-    controller.animateWith(
-      SpringSimulation(
-        const SpringDescription(mass: 1, stiffness: 520, damping: 38),
-        controller.value,
-        target,
-        controller.velocity,
-      ),
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduceMotion) {
-      _position.value = widget.left;
-      _width.value = widget.width;
-      return;
-    }
-    if (oldWidget.left != widget.left) _springTo(_position, widget.left);
-    if (oldWidget.width != widget.width) _springTo(_width, widget.width);
-  }
-
-  @override
-  void dispose() {
-    _position.dispose();
-    _width.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_position, _width]),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: widget.color,
-          borderRadius: BorderRadius.circular(19),
-        ),
-      ),
-      builder: (context, child) => Positioned(
-        left: _position.value,
-        top: widget.top,
-        width: _width.value,
-        height: widget.height,
-        child: child!,
-      ),
-    );
-  }
-}
-
 PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
   transitionDuration: Motion.slow,
   reverseTransitionDuration: Motion.base,
@@ -1448,7 +1362,7 @@ class _SourenAppState extends State<SourenApp> {
   }
 }
 
-/// The official Souren mark, drawn progressively from its original SVG paths.
+/// The complete official Souren wordmark, revealed as a filled silhouette.
 class SourenLogo extends StatefulWidget {
   final double width;
   const SourenLogo({super.key, required this.width});
@@ -1461,7 +1375,7 @@ class _SourenLogoState extends State<SourenLogo>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1900),
+    duration: const Duration(milliseconds: 1500),
   )..forward();
 
   @override
@@ -1472,7 +1386,8 @@ class _SourenLogoState extends State<SourenLogo>
 
   @override
   Widget build(BuildContext context) {
-    final height = widget.width * 264.51 / 120.21;
+    const ratio = 980.05 / 291.68;
+    final height = widget.width / ratio;
     return SizedBox(
       width: widget.width,
       height: height,
@@ -1494,28 +1409,40 @@ class _SourenLogoPainter extends CustomPainter {
   final Color color;
   _SourenLogoPainter({required this.progress, required this.color});
 
-  // Only the third Persian letter «ر» from the supplied original SVG.
-  static final Path _letter = parseSvgPathData(
-    'M268.56 290.86v-48c28.17 0 57.32-9.87 72.19-15.76l.02-200.75h48v200.74c0 19.82-11.91 37.34-30.35 44.64-22.05 8.73-55.53 19.13-89.85 19.13Z',
-  );
+  static const Size _viewBox = Size(980.05, 291.68);
+  static final List<Path> _paths = [
+    parseSvgPathData(
+      'M932.05,27.17v96.3c0,13.24-10.77,24-24,24h-11.67c-13.23,0-24-10.76-24-24V51.22h-48v72.25c0,13.24-10.76,24-24,24h-12.79c-13.24,0-24-10.76-24-24V36.44h-48v72.99c-23.25,12.09-83.09,38.04-168.41,38.04h-.05V57.91c0-14.89-6.73-28.68-18.46-37.84-11.73-9.16-26.74-12.34-41.19-8.73l-29.94,7.49c-32.16,8.03-54.62,36.8-54.62,69.94v58.7c0,26.47,21.53,48,48,48h48.21v31.71c-.16.33-.44.73-.68,1-15.06,5.91-43.77,15.5-71.53,15.5v48c34.33,0,67.81-10.41,89.85-19.13,17.59-6.96,30.36-25.74,30.36-44.64v-32.44h.05c82.82,0,144.23-21.58,177.52-36.98,12.32,22.04,35.89,36.98,62.89,36.98h12.79c18.42,0,35.25-6.95,48-18.38,12.75,11.43,29.58,18.38,48,18.38h11.67c39.7,0,72-32.3,72-72V27.17h-48ZM499.13,147.47h-48.21v-58.7c0-11.08,7.51-20.69,18.26-23.38l29.95-7.48v89.56Z',
+    ),
+    parseSvgPathData(
+      'M268.56,290.86v-48c28.17,0,57.32-9.87,72.19-15.76l.02-200.75h48v200.74c0,19.82-11.91,37.34-30.35,44.64-22.05,8.73-55.53,19.13-89.85,19.13Z',
+    ),
+    parseSvgPathData(
+      'M144.26,290.86h-24.05c-21.45,0-45.04-4.06-70.11-12.08C20.13,269.21,0,241.64,0,210.19V51.22h48v158.98c0,10.48,6.71,19.67,16.71,22.87,20.06,6.41,39.25,9.8,55.5,9.8h24.05c16.25,0,35.44-3.39,55.5-9.8,9.99-3.19,16.71-12.38,16.71-22.87V26.35h48v183.85c0,31.45-20.13,59.01-50.09,68.59-25.07,8.01-48.66,12.08-70.11,12.08Z',
+    ),
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
-    canvas.scale(size.width / 120.21, size.height / 264.51);
-    canvas.translate(-268.56, -26.35);
+    canvas.scale(size.width / _viewBox.width, size.height / _viewBox.height);
     final reveal = progress.clamp(0.0, 1.0);
     canvas.clipRect(Rect.fromLTWH(
-      268.56 + 120.21 * (1 - reveal),
-      26.35,
-      120.21 * reveal,
-      264.51,
+      _viewBox.width * (1 - reveal),
+      0,
+      _viewBox.width * reveal,
+      _viewBox.height,
     ));
-    canvas.drawPath(
-      _letter,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill,
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    for (final path in _paths) {
+      canvas.drawPath(path, paint);
+    }
+    canvas.drawRect(
+      const Rect.fromLTWH(108.18, 0, 48.1, 48.1),
+      paint,
     );
     canvas.restore();
   }
@@ -1566,30 +1493,6 @@ class _ShellState extends State<Shell> {
   int learnedWords = 0;
   int learnedCorrections = 0;
   int tab = 0;
-  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
-  final GlobalKey _navStackKey = GlobalKey();
-  double _indLeft = 0;
-  double _indWidth = 0;
-
-  void _measureIndicator() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final stackBox =
-          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
-      final tabBox =
-          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
-      if (stackBox == null || tabBox == null) return;
-      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
-      if ((pos.dx - _indLeft).abs() > .5 ||
-          (tabBox.size.width - _indWidth).abs() > .5) {
-        setState(() {
-          _indLeft = pos.dx;
-          _indWidth = tabBox.size.width;
-        });
-      }
-    });
-  }
-
   String query = '';
   int _homeCollection = 0; // words, proverbs, poets, books
   Future<List<Map<String, dynamic>>>? _homePoets;
@@ -1750,117 +1653,102 @@ class _ShellState extends State<Shell> {
   /// between tabs. Only the surface changed from glass to a solid color.
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
-    // The first and last actions stay anchored at the edges. The selected
-    // middle item expands; the other middle items reflow around it.
-    final items = <(IconData, IconData, String)>[
-      (LucideIcons.house, Icons.home_filled, 'پیشگاه'),
-      (LucideIcons.heart, Icons.favorite, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, Icons.dashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, Icons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, Icons.person, 'نمایه'),
-      (LucideIcons.settings, Icons.settings, 'پیکربندی'),
+    final items = <(IconData, String)>[
+      (LucideIcons.house, 'پیشگاه'),
+      (LucideIcons.heart, 'پسندیده‌ها'),
+      (LucideIcons.layoutDashboard, 'بخش‌ها'),
+      (LucideIcons.bookmark, 'نشان‌شده'),
+      (LucideIcons.user, 'نمایه'),
+      (LucideIcons.settings, 'پیکربندی'),
     ];
-    _measureIndicator();
-    final selectedColor = Color.lerp(pal.sel, pal.bg, 0.38)!;
-
     return Container(
-      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: pal.cardC,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: pal.div.withValues(alpha: 0.6)),
-        ),
-        child: Stack(
-          key: _navStackKey,
-          children: [
-            SpringSlideIndicator(
-              left: _indLeft,
-              top: 0,
-              width: _indWidth,
-              height: 52,
-              color: selectedColor,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  GestureDetector(
-                    key: _tabKeys[i],
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _go(i),
-                    child: AnimatedContainer(
-                      duration: Motion.base,
-                      curve: Motion.curve,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tab == i ? 17 : 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: AnimatedSize(
-                        duration: Motion.base,
-                        curve: Motion.curve,
-                        alignment: AlignmentDirectional.center,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: Motion.fast,
-                              switchInCurve: Motion.curve,
-                              switchOutCurve: Motion.curve,
-                              transitionBuilder: (child, anim) =>
-                                  FadeTransition(
-                                opacity: anim,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(begin: .8, end: 1)
-                                      .animate(anim),
-                                  child: child,
-                                ),
-                              ),
-                              child: Icon(
-                                key: ValueKey<bool>(tab == i),
-                                tab == i ? items[i].$2 : items[i].$1,
-                                size: 23,
-                                color: tab == i
-                                    ? pal.bg
-                                    : pal.ink.withValues(alpha: .72),
-                              ),
-                            ),
-                            if (tab == i)
-                              TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
-                                duration: Motion.base,
-                                curve: Motion.curve,
-                                builder: (_, value, child) =>
-                                    Opacity(opacity: value, child: child),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const SizedBox(width: 7),
-                                    Text(
-                                      items[i].$3,
-                                      style: TextStyle(
-                                        color: pal.bg,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+      margin: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const pill = 42.0;
+          const contentH = 58.0;
+          final slotW = (constraints.maxWidth - 16) / 6;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: pal.cardC,
+              borderRadius: BorderRadius.circular(capR(70)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
-          ],
-        ),
+            child: Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 320),
+                  curve: Motion.curve,
+                  left: tab * slotW + (slotW - pill) / 2,
+                  top: 0,
+                  width: pill,
+                  height: pill,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color.lerp(pal.sel, pal.bg, 0.38)!,
+                      borderRadius: BorderRadius.circular(capR(pill)),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: Pressable(
+                          onTap: () => _go(i),
+                          child: SizedBox(
+                            height: contentH,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: pill,
+                                  height: pill,
+                                  child: Icon(
+                                    items[i].$1,
+                                    size: 22,
+                                    color: tab == i
+                                        ? pal.bg
+                                        : pal.ink.withValues(alpha: .72),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                SizedBox(
+                                  height: 13,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: AnimatedOpacity(
+                                      opacity: tab == i ? 1 : 0,
+                                      duration: Motion.fast,
+                                      child: Text(
+                                        items[i].$2,
+                                        style: TextStyle(
+                                          color: pal.sel,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -2003,10 +1891,10 @@ class _ShellState extends State<Shell> {
                 ],
               ),
               const Positioned(
-                top: 18,
+                top: 12,
                 left: 0,
                 right: 0,
-                child: Center(child: SourenLogo(width: 54)),
+                child: Center(child: SourenLogo(width: 150)),
               ),
               Positioned(
                 top: logoGap + searchH,
