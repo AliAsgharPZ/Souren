@@ -1932,7 +1932,7 @@ class _ShellState extends State<Shell> {
                 ],
               ),
               const Positioned(
-                top: 12,
+                top: 24,
                 left: 0,
                 right: 0,
                 child: Center(child: SourenLogo(width: 150)),
