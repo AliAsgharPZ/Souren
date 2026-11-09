@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ColorDrawable
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
@@ -54,6 +55,8 @@ class SourenIME : InputMethodService() {
     private var topArea: LinearLayout? = null
     private var keyArea: LinearLayout? = null
     private var root: FrameLayout? = null
+    private var shellView: LinearLayout? = null
+    private var dragHandle: View? = null
     private var popup: PopupWindow? = null
     private var popupCells = mutableListOf<TextView>()
     private var popupValues = emptyList<String>()
@@ -61,6 +64,8 @@ class SourenIME : InputMethodService() {
     private val handler = Handler(Looper.getMainLooper())
     private var repeatDelete: Runnable? = null
     private var lastSuggestionWord = ""
+    private var dragStartX = 0f
+    private var dragStartTranslationX = 0f
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).roundToInt()
@@ -78,6 +83,66 @@ class SourenIME : InputMethodService() {
     private val ink get() = color("#20252D", "#F5F6F8")
     private val mutedInk get() = color("#737C89", "#B8C0CB")
     private val accent get() = color("#7FA5D8", "#8AB4F8")
+
+    private fun applyKeyboardMode() {
+        val frame = root ?: return
+        val shell = shellView ?: return
+        val screenWidth = resources.displayMetrics.widthPixels
+        val params = (shell.layoutParams as? FrameLayout.LayoutParams)
+            ?: FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        params.width = when (KbData.kbMode) {
+            "one-handed" -> (screenWidth * 0.78f).toInt()
+            "floating" -> (screenWidth * 0.84f).toInt()
+            else -> ViewGroup.LayoutParams.MATCH_PARENT
+        }
+        params.gravity = when (KbData.kbMode) {
+            "one-handed" -> Gravity.BOTTOM or
+                if (KbData.kbSide == "left") Gravity.LEFT else Gravity.RIGHT
+            "floating" -> Gravity.CENTER
+            else -> Gravity.BOTTOM
+        }
+        shell.layoutParams = params
+        shell.translationX = 0f
+        shell.background = if (KbData.kbMode == "floating") {
+            rounded(surface, 20, 1)
+        } else {
+            ColorDrawable(surface)
+        }
+        shell.elevation = if (KbData.kbMode == "floating") dp(10).toFloat() else 0f
+        dragHandle?.visibility =
+            if (KbData.kbMode == "floating") View.VISIBLE else View.GONE
+        frame.setBackgroundColor(
+            if (KbData.kbMode == "standard") surface else Color.TRANSPARENT
+        )
+    }
+
+    private fun showKeyboardModeMenu(anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        menu.menu.add("استاندارد").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "standard")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("یک‌دستی، سمت راست").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "one-handed", "right")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("یک‌دستی، سمت چپ").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "one-handed", "left")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("شناور").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "floating")
+            applyKeyboardMode()
+            true
+        }
+        menu.show()
+    }
 
     private fun keyHeight(): Int = when (KbData.kbHeight) {
         "short" -> dp(41)
@@ -97,6 +162,7 @@ class SourenIME : InputMethodService() {
         super.onStartInputView(info, restarting)
         KbData.readSettings(this)
         KbData.readLearned(this)
+        applyKeyboardMode()
         if (KbData.kbHeight != appliedHeight) {
             appliedHeight = KbData.kbHeight
             rebuildKeyboard()
@@ -125,9 +191,39 @@ class SourenIME : InputMethodService() {
             setBackgroundColor(surface)
             setPadding(dp(4), dp(2), dp(4), dp(8))
         }
+        shellView = shell
+        dragHandle = View(this).apply {
+            background = rounded(mutedInk, 20, 0)
+            visibility = View.GONE
+            setOnTouchListener { _, event ->
+                if (KbData.kbMode != "floating") return@setOnTouchListener false
+                val content = shellView ?: return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        dragStartX = event.rawX
+                        dragStartTranslationX = content.translationX
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val max = ((frame.width - content.width) / 2f).coerceAtLeast(0f)
+                        content.translationX = (dragStartTranslationX + event.rawX - dragStartX)
+                            .coerceIn(-max, max)
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> true
+                    else -> false
+                }
+            }
+        }
+        shell.addView(dragHandle, LinearLayout.LayoutParams(dp(34), dp(4)).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            topMargin = dp(5)
+            bottomMargin = dp(4)
+        })
         frame.addView(shell, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM
         ))
 
         topArea = LinearLayout(this).apply {
@@ -156,6 +252,7 @@ class SourenIME : InputMethodService() {
         appliedHeight = KbData.kbHeight
         renderToolbar()
         rebuildKeyboard()
+        applyKeyboardMode()
         return frame
     }
 
@@ -192,11 +289,9 @@ class SourenIME : InputMethodService() {
     private fun renderToolbar() {
         val bar = topArea ?: return
         bar.removeAllViews()
-        bar.addView(toolbarButton(R.drawable.ic_more, "بیشتر") {
-            lastLanguage = page
-            page = Page.SYMBOLS
-            rebuildKeyboard()
-        })
+        val modeButton = toolbarButton(R.drawable.ic_more, "حالت صفحه‌کلید") { }
+        modeButton.setOnClickListener { showKeyboardModeMenu(modeButton) }
+        bar.addView(modeButton)
         addSpacer(bar)
         bar.addView(toolbarButton(R.drawable.ic_clipboard, "کلیپ‌بورد") {
             lastLanguage = page
