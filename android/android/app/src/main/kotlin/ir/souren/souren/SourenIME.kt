@@ -264,8 +264,15 @@ class SourenIME : InputMethodService() {
         }
         if (word == lastSuggestionWord) return
         lastSuggestionWord = word
+        val (leftContext, rightContext) = contextAroundCurrentWord()
         val suggestions = Corrector.suggestionsFor(
-            word, KbData.dictionary, KbData.learnedCounts, KbData.vocab
+            word,
+            KbData.dictionary,
+            KbData.learnedCounts,
+            KbData.vocab,
+            leftContext,
+            rightContext,
+            KbData.learnedPairs
         )
         if (suggestions.isEmpty()) renderToolbar()
         else renderSuggestions(word, suggestions)
@@ -275,9 +282,10 @@ class SourenIME : InputMethodService() {
         val ic = currentInputConnection ?: return
         val old = currentWord()
         if (old.isEmpty()) return
+        val (leftContext, rightContext) = contextAroundCurrentWord()
         ic.deleteSurroundingText(old.length, 0)
         ic.commitText(value, 1)
-        KbData.recordLearned(this, old, value)
+        KbData.recordLearned(this, old, value, leftContext, rightContext)
         lastSuggestionWord = ""
         refreshSuggestions()
     }
@@ -823,6 +831,20 @@ class SourenIME : InputMethodService() {
         val separators = charArrayOf(' ', '\n', '،', ',', '.', '؟', '!', '؛', ':', '(', ')', '«', '»')
         val index = before.lastIndexOfAny(separators)
         return if (index < 0) before else before.substring(index + 1)
+    }
+
+    /** Capture only the adjacent tokens used by the on-device ranking model. */
+    private fun contextAroundCurrentWord(): Pair<String, String> {
+        val ic = currentInputConnection ?: return "" to ""
+        val before = ic.getTextBeforeCursor(128, 0)?.toString().orEmpty()
+        val after = ic.getTextAfterCursor(64, 0)?.toString().orEmpty()
+        val word = currentWord()
+        val leftText = if (word.isNotEmpty() && before.endsWith(word))
+            before.dropLast(word.length) else before
+        val separators = Regex("[\\s،,.؟!؛:()«»]+")
+        val left = leftText.trimEnd().split(separators).lastOrNull().orEmpty()
+        val right = after.trimStart().split(separators).firstOrNull().orEmpty()
+        return left to right
     }
 
     private fun onSpace() {
