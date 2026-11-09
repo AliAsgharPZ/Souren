@@ -84,6 +84,9 @@ class SourenIME : InputMethodService() {
 
     override fun onWindowShown() {
         super.onWindowShown()
+        // Settings can be changed by the app while this IME service stays
+        // alive. Re-read the shared file when its window is shown again.
+        KbData.readSettings(this)
         applySettingsIfNeeded()
     }
 
@@ -1206,6 +1209,7 @@ class SourenIME : InputMethodService() {
         } catch (e: Exception) { null }
         if (extracted?.text != null) {
             val target = CursorMath.newSelection(
+                extracted.startOffset,
                 extracted.selectionStart,
                 extracted.selectionEnd,
                 extracted.text.length,
