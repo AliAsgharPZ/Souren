@@ -1593,6 +1593,7 @@ class _ShellState extends State<Shell> {
   String query = '';
   int _homeCollection = 0; // words, proverbs, poets, books
   Future<List<Map<String, dynamic>>>? _homePoets;
+  Future<List<Map<String, dynamic>>>? _homePoems;
   Future<List<Map<String, dynamic>>>? _homeBooks;
   int _metricIndex = 0;
   int _likedFilter = 0; // all, words, proverbs, poems
@@ -2319,6 +2320,7 @@ class _ShellState extends State<Shell> {
         focusNode: _searchFocus,
         onChanged: (v) => setState(() {
           query = v.trim();
+          _homePoems = null;
         }),
         decoration: InputDecoration(
           hintText: const [
