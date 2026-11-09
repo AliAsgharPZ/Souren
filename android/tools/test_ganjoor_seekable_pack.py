@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,7 +35,11 @@ class SeekablePackTests(unittest.TestCase):
             self.assertTrue(report["all_frames_round_trip_verified"])
             self.assertTrue(report["all_source_ranges_sha256_verified"])
 
-            index = json.loads((output / "souren-ganjoor-index.json").read_text("utf-8"))
+            decoded_index = subprocess.run(
+                ["zstd", "-q", "-d", "-c", str(output / "souren-ganjoor-index.json.zst")],
+                check=True, capture_output=True,
+            ).stdout
+            index = json.loads(decoded_index.decode("utf-8"))
             self.assertIn("poets/test-poet/3.json", index["files"])
             self.assertIn("catalog/books.json", index["files"])
             self.assertEqual(index["format"], 1)
