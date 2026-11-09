@@ -2934,7 +2934,7 @@ class _ShellState extends State<Shell> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: pal.muted, fontSize: 11.5, height: 1.6),
           ),
-          trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
+          trailing: Icon(LucideIcons.chevronRight, color: pal.muted, size: 17),
           onTap: () => _open(GanjoorPoemPage(
             title: poemTitle,
             path: path,
@@ -5312,15 +5312,6 @@ class _EtymologyPageState extends State<EtymologyPage> {
                         ),
                       ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(
-                  'این بخش واژه‌های فارسیِ ثبت‌شده در برابرهای دیکشنری را بررسی می‌کند؛ دادهٔ ریشه‌های عربی در آن استفاده نمی‌شود.',
-                  textAlign: TextAlign.right,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(color: pal.faint, fontSize: 10.5, height: 1.6),
-                ),
-              ),
             ],
           ),
         ),
@@ -6184,7 +6175,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                               style: TextStyle(color: pal.ink),
                             ),
                             trailing: Icon(
-                              LucideIcons.chevronLeft,
+                              LucideIcons.chevronRight,
                               color: pal.muted,
                               size: 18,
                             ),
@@ -6205,7 +6196,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
                               style: TextStyle(color: pal.ink),
                             ),
                             trailing: Icon(
-                              LucideIcons.chevronLeft,
+                              LucideIcons.chevronRight,
                               color: pal.muted,
                               size: 18,
                             ),
@@ -6306,77 +6297,51 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
       meaning: summary == null || summary.isEmpty ? null : summary,
       caption: 'بیت ${faNum(index + 1)} · گنجور',
     );
-    Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        opaque: false,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: .34),
-        barrierLabel: 'بیت شعر',
-        transitionDuration: Motion.slow,
-        reverseTransitionDuration: Motion.base,
-        pageBuilder: (dialogContext, _, __) => Center(
-          child: Hero(
-            tag: key,
-            child: Material(
-              color: pal.bg,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 560,
-                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .92,
-                ),
-                child: SingleChildScrollView(
-                  child: DetailSheet(
-                    card: card,
-                    initialLiked: widget.liked?.contains(key) ?? false,
-                    initialBookmarked: widget.favorites?.contains(key) ?? false,
-                    onToggleLike: () async {
-                      final callback = widget.onToggleLike;
-                      if (callback != null) {
-                        await callback(key);
-                      } else {
-                        await _toggleLocalContent('liked.json', key);
-                      }
-                    },
-                    onToggleBookmark: () async {
-                      final callback = widget.onToggleBookmark;
-                      if (callback != null) {
-                        await callback(key);
-                      } else {
-                        await _toggleLocalContent('favorites.json', key);
-                      }
-                    },
-                    relatedEntries: related,
-                    copyableLines: lines,
-                    onOpenRelatedEntry: widget.onOpenEntry == null
-                        ? null
-                        : (entry) {
-                            Navigator.of(dialogContext).pop();
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              widget.onOpenEntry?.call(entry);
-                            });
-                          },
-                  ),
-                ),
-              ),
-            ),
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
+            initialLiked: widget.liked?.contains(key) ?? false,
+            initialBookmarked: widget.favorites?.contains(key) ?? false,
+            onToggleLike: () async {
+              final callback = widget.onToggleLike;
+              if (callback != null) {
+                await callback(key);
+              } else {
+                await _toggleLocalContent('liked.json', key);
+              }
+            },
+            onToggleBookmark: () async {
+              final callback = widget.onToggleBookmark;
+              if (callback != null) {
+                await callback(key);
+              } else {
+                await _toggleLocalContent('favorites.json', key);
+              }
+            },
+            relatedEntries: related,
+            copyableLines: lines,
+            onOpenRelatedEntry: widget.onOpenEntry == null
+                ? null
+                : (entry) {
+                    Navigator.of(sheetContext).pop();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      widget.onOpenEntry?.call(entry);
+                    });
+                  },
           ),
         ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Motion.curve,
-            reverseCurve: Curves.easeInOutCubic,
-          );
-          return FadeTransition(
-            opacity: curved,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: .94, end: 1).animate(curved),
-              child: child,
-            ),
-          );
-        },
       ),
     );
   }
