@@ -19,6 +19,18 @@ class CorrectorTest {
         assertEquals("۱۲۳۴۵۶۷۸۹۰", Corrector.normalizeLetters("١٢٣٤٥٦٧٨٩٠"))
     }
 
+    @Test fun contextualTimeQuestion() {
+        assertEquals(8 to "چه زمانی", Corrector.fixBeforeSeparator("ساعت چند", emptyMap(), true))
+        assertEquals("چه زمانی؟", Corrector.fixBeforeSeparator("ساعت چند؟", emptyMap(), true)?.second)
+    }
+
+    @Test fun sourceEquivalentKeepsPriority() {
+        val d = mapOf("حرکت" to listOf("حرکت", "جنبش"))
+        val fix = Corrector.correctWord("حرکت", d)
+        assertEquals("حرکت", fix.fixed)
+        assertEquals(listOf("حرکت", "جنبش"), fix.suggestions)
+    }
+
     @Test fun ownerExamples() {
         assertEquals("می‌خوام", Corrector.correctWord("میخام").fixed)
         assertEquals("می‌خوام", Corrector.correctWord("میخوام").fixed)
