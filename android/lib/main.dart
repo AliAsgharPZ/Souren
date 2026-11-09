@@ -2942,7 +2942,7 @@ class _ShellState extends State<Shell> {
       ),
       (LucideIcons.type, 'درست‌نویسی', () => _open(CorrectorPage(dict: d))),
       (LucideIcons.alignLeft, 'نیم‌فاصله', () => _open(const NimeFaselePage())),
-      (LucideIcons.fileText, 'پندواژه', () => _open(_pandvazhePage())),
+      (LucideIcons.fileText, 'پندواژه', () => _open(_pandvazhePage(d))),
       (
         LucideIcons.gitBranch,
         'ریشه‌شناسی',
@@ -4845,7 +4845,7 @@ class _PandvazhePageState extends State<PandvazhePage> {
       caption: 'ضرب‌المثل فارسی',
     );
     final tokens = normalizeLetters('$title $meaning')
-        .split(RegExp(r'[\\s،,.؟!؛:()«»]+'))
+        .split(RegExp(r'[\s،,.؟!؛:()«»]+'))
         .where((word) => word.length > 1)
         .toSet();
     final relatedEntries = widget.dict.entries.where((entry) {
