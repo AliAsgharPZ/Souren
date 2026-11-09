@@ -35,6 +35,12 @@ void main() {
     test('leading and trailing whitespace survive', () {
       expect(correctText('  کتابها  '), '  کتاب‌ها  ');
     });
+    test('whitespace before punctuation is preserved verbatim', () {
+      expect(correctText('سلام ،'), 'سلام ،');
+      expect(correctText('سلام\t،'), 'سلام\t،');
+      expect(correctText('سلام \n،'), 'سلام \n،');
+      expect(correctText('سوال\t،', dictionary: dict), 'پرسش\t،');
+    });
   });
 
   group('quotes and parentheses', () {
