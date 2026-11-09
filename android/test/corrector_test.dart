@@ -14,6 +14,18 @@ void main() {
     'احترام': ['گرامیداشت', 'ارج'],
     'ابتدا': ['آغاز'],
   };
+  test('context resolves the time-question phrase', () {
+    expect(correctText('ساعت چند'), 'چه زمانی');
+    expect(correctText('ساعت چند؟'), 'چه زمانی؟');
+  });
+
+  test('a source-equivalent stays preferred while alternatives remain available', () {
+    const d = {'حرکت': ['حرکت', 'جنبش']};
+    final fix = correctWord('حرکت', dictionary: d);
+    expect(fix.fixed, 'حرکت');
+    expect(fix.suggestions, ['حرکت', 'جنبش']);
+  });
+
   group('owner examples', () {
     test('میخام/میخوام → می‌خوام', () {
       expect(correctWord('میخام').fixed, 'می‌خوام');
