@@ -85,6 +85,9 @@ class GanjoorPack {
       final indexTemp = File('${indexFile.path}.download');
       if (await packTemp.exists()) await packTemp.delete();
       if (await indexTemp.exists()) await indexTemp.delete();
+      // Keep peak persistent storage below one pack: an update replaces the
+      // old archive before the new one is streamed to its temporary path.
+      if (await packFile.exists()) await packFile.delete();
 
       final packRequest = await client.getUrl(Uri.parse(_packUrl));
       final packResponse = await packRequest.close().timeout(
@@ -97,12 +100,17 @@ class GanjoorPack {
           ? packResponse.contentLength
           : expectedBytes;
       var received = 0;
+      var lastProgressReport = 0;
       final sink = packTemp.openWrite();
       try {
         await for (final part in packResponse) {
           sink.add(part);
           received += part.length;
-          onProgress?.call(received, total);
+          if (received - lastProgressReport >= 512 * 1024 ||
+              received == total) {
+            onProgress?.call(received, total);
+            lastProgressReport = received;
+          }
         }
         await sink.flush();
       } finally {
@@ -120,6 +128,17 @@ class GanjoorPack {
       _index = index;
       _cachedChunkId = null;
       _cachedChunk = null;
+      // Remove legacy per-poem/API JSON caches; the pack is now the canonical
+      // local source and retaining expanded copies would waste device storage.
+      final directory = Directory(await SharedFiles.dir());
+      if (await directory.exists()) {
+        await for (final entity in directory.list(followLinks: false)) {
+          if (entity is File &&
+              entity.path.split(Platform.pathSeparator).last.startsWith('ganjoor_')) {
+            await entity.delete();
+          }
+        }
+      }
     } catch (_) {
       rethrow;
     } finally {
