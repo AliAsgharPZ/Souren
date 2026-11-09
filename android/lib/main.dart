@@ -76,32 +76,11 @@ class Motion {
   static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
 }
 
-PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
-  transitionDuration: Motion.slow,
-  reverseTransitionDuration: Motion.base,
-  pageBuilder: (_, __, ___) => page,
-  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    if (MediaQuery.of(context).disableAnimations) return child;
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Motion.curve,
-      reverseCurve: Curves.easeInOutCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.028),
-          end: Offset.zero,
-        ).animate(curved),
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.975, end: 1.0).animate(curved),
-          child: child,
-        ),
-      ),
-    );
-  },
-);
+/// Keep pushed pages on the known-good v0.4.1.1 route behavior.
+/// The app theme supplies the same restrained page transition; do not add
+/// a second custom fade/slide/scale layer here.
+PageRoute<T> _softRoute<T>(Widget page) =>
+    MaterialPageRoute<T>(builder: (_) => page);
 
 /// Capsule roundness (round 3): 90% of the maximum — the radius is
 /// 45% of the capsule's height, so a capsule is almost a pill but
