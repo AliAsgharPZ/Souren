@@ -2053,7 +2053,7 @@ class _ShellState extends State<Shell> {
       children: [
         Expanded(
           child: Text(
-            labels[_homeCollection.clamp(0, labels.length - 1)],
+            labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textDirection: TextDirection.rtl,
@@ -2323,7 +2323,7 @@ class _ShellState extends State<Shell> {
             'پندواژه‌ای را جستجو کنید',
             'نام شاعری را جستجو کنید',
             'نام کتابی را جستجو کنید',
-          ][_homeCollection.clamp(0, 3)],
+          ][ _homeCollection.clamp(0, 3).toInt()],
           hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
           prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 23),
           filled: true,
