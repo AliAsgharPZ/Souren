@@ -57,8 +57,8 @@ class Pal {
 
 Pal pal = Pal.light;
 
-/// Motion language (Claude-inspired feel, Souren's own numbers): one place
-/// for every duration/curve so entrances, toggles and transitions match.
+/// Souren motion tokens: concise, purposeful and driven by direct
+/// manipulation. Keep timings consistent; avoid decorative movement.
 /// Souren's own visual language with purposeful, restrained motion:
 /// short ease-out transitions, subtle press feedback and no decorative bounce.
 class Motion {
