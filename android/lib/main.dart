@@ -1532,9 +1532,10 @@ class _ShellState extends State<Shell> {
   Future<List<Map<String, dynamic>>>? _homePoets;
   Future<List<Map<String, dynamic>>>? _homePoems;
   Future<List<Map<String, dynamic>>>? _homeBooks;
+  Future<List<Map<String, dynamic>>>? _savedBookCatalog;
   int _metricIndex = 0;
-  int _likedFilter = 0; // all, words, proverbs, poems
-  int _favoritesFilter = 0; // all, words, proverbs, poems
+  int _likedFilter = 0; // words, proverbs, poems, books, roots
+  int _favoritesFilter = 0; // words, proverbs, poems, books, roots
 
   // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
@@ -2113,6 +2114,7 @@ class _ShellState extends State<Shell> {
                     : () => _open(GanjoorNodePage(
                           title: title,
                           path: full,
+                          depth: poets ? 0 : 1,
                           dictionary: dict,
                           liked: liked,
                           favorites: favorites,
@@ -2640,7 +2642,7 @@ class _ShellState extends State<Shell> {
     required int selected,
     required ValueChanged<int> onChanged,
   }) {
-    const labels = ['واژه', 'پندواژه', 'شعر', 'ریشه‌شناسی'];
+    const labels = ['واژه', 'پندواژه', 'شعر', 'کتاب', 'ریشه‌شناسی'];
     return Row(
       children: [
         for (var i = 0; i < labels.length; i++)
@@ -2679,13 +2681,16 @@ class _ShellState extends State<Shell> {
       liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
     final savedPoems = liked.where((key) => key.startsWith('poem:')).toList();
+    final savedBooks = liked.where((key) => key.startsWith('book:')).toList();
     final wordsVisible = _likedFilter == 0;
     final proverbsVisible = _likedFilter == 1;
     final poemsVisible = _likedFilter == 2;
-    final rootsVisible = _likedFilter == 3;
+    final booksVisible = _likedFilter == 3;
+    final rootsVisible = _likedFilter == 4;
     final isEmpty = (!wordsVisible || mine.isEmpty) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
         (!poemsVisible || savedPoems.isEmpty) &&
+        (!booksVisible || savedBooks.isEmpty) &&
         (!rootsVisible || savedRoots.isEmpty);
 
     return _pageShell(
@@ -2720,6 +2725,8 @@ class _ShellState extends State<Shell> {
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
                             for (final poem in savedPoems) _savedPoemRow(poem, d),
+                          if (booksVisible)
+                            for (final book in savedBooks) _savedBookRow(book, d),
                         ],
                       ),
                     ),
@@ -2740,13 +2747,16 @@ class _ShellState extends State<Shell> {
       favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
     final savedPoems = favorites.where((key) => key.startsWith('poem:')).toList();
+    final savedBooks = favorites.where((key) => key.startsWith('book:')).toList();
     final wordsVisible = _favoritesFilter == 0;
     final proverbsVisible = _favoritesFilter == 1;
     final poemsVisible = _favoritesFilter == 2;
-    final rootsVisible = _favoritesFilter == 3;
+    final booksVisible = _favoritesFilter == 3;
+    final rootsVisible = _favoritesFilter == 4;
     final isEmpty = (!wordsVisible || favs.isEmpty) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
         (!poemsVisible || savedPoems.isEmpty) &&
+        (!booksVisible || savedBooks.isEmpty) &&
         (!rootsVisible || savedRoots.isEmpty);
 
     return _pageShell(
@@ -2781,6 +2791,8 @@ class _ShellState extends State<Shell> {
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
                             for (final poem in savedPoems) _savedPoemRow(poem, d),
+                          if (booksVisible)
+                            for (final book in savedBooks) _savedBookRow(book, d),
                         ],
                       ),
                     ),
@@ -2809,6 +2821,62 @@ class _ShellState extends State<Shell> {
       ),
       trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
       onTap: () => _showRootPopup(row.word),
+    );
+  }
+
+  Widget _savedBookRow(String key, Dictionary dictionary) {
+    final path = key.substring('book:'.length);
+    final future = _savedBookCatalog ??= GanjoorData.bookCatalog();
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snapshot) {
+        Map<String, dynamic>? row;
+        for (final item in snapshot.data ?? const <Map<String, dynamic>>[]) {
+          final full = (item['FullUrl'] ?? item['fullUrl'] ?? '')
+              .toString()
+              .replaceFirst(RegExp(r'^/'), '');
+          if (full == path) {
+            row = item;
+            break;
+          }
+        }
+        final title = (row?['Title'] ?? row?['title'] ?? row?['Name'] ??
+                row?['name'] ?? path.split('/').last)
+            .toString();
+        final poet = (row?['PoetName'] ?? row?['PoetNickname'] ??
+                row?['poetName'] ?? '')
+            .toString();
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+          leading: Icon(LucideIcons.notebookPen, color: pal.sel),
+          title: Text(
+            title,
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+          ),
+          subtitle: poet.isEmpty
+              ? null
+              : Text(
+                  poet,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: pal.muted, fontSize: 11.5),
+                ),
+          trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
+          onTap: () => _open(GanjoorNodePage(
+            title: title,
+            path: path,
+            depth: 1,
+            dictionary: dictionary,
+            liked: liked,
+            favorites: favorites,
+            onToggleLike: _toggleLike,
+            onToggleBookmark: _toggleFav,
+            onOpenEntry: _showEntry,
+          )),
+        );
+      },
     );
   }
 
@@ -6102,6 +6170,7 @@ Widget _ganjoorBreadcrumb(
 class GanjoorNodePage extends StatefulWidget {
   final String title;
   final String path;
+  final int depth;
   final Dictionary? dictionary;
   final Set<String>? liked;
   final Set<String>? favorites;
@@ -6113,6 +6182,7 @@ class GanjoorNodePage extends StatefulWidget {
     super.key,
     required this.title,
     required this.path,
+    this.depth = 0,
     this.dictionary,
     this.liked,
     this.favorites,
@@ -6138,6 +6208,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
         GanjoorNodePage(
           title: category['Title']?.toString() ?? 'مجموعه',
           path: path.replaceFirst(RegExp(r'^/'), ''),
+          depth: widget.depth + 1,
           dictionary: widget.dictionary,
           liked: widget.liked,
           favorites: widget.favorites,
@@ -6198,19 +6269,34 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _ganjoorBreadcrumb(
-                    context,
-                    fullTitle: fullTitle,
-                    path: widget.path,
-                    dictionary: widget.dictionary,
-                    liked: widget.liked,
-                    favorites: widget.favorites,
-                    onToggleLike: widget.onToggleLike,
-                    onToggleBookmark: widget.onToggleBookmark,
-                    onOpenEntry: widget.onOpenEntry,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _ganjoorBreadcrumb(
+                          context,
+                          fullTitle: fullTitle,
+                          path: widget.path,
+                          dictionary: widget.dictionary,
+                          liked: widget.liked,
+                          favorites: widget.favorites,
+                          onToggleLike: widget.onToggleLike,
+                          onToggleBookmark: widget.onToggleBookmark,
+                          onOpenEntry: widget.onOpenEntry,
+                        ),
+                      ),
+                    ),
+                    if (widget.depth == 1) ...[
+                      const SizedBox(width: 8),
+                      LikeBookmarkButtons(
+                        liked: widget.liked?.contains('book:${widget.path}') ?? false,
+                        bookmarked: widget.favorites?.contains('book:${widget.path}') ?? false,
+                        onToggleLike: () => widget.onToggleLike?.call('book:${widget.path}'),
+                        onToggleBookmark: () => widget.onToggleBookmark?.call('book:${widget.path}'),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Expanded(
