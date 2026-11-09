@@ -57,8 +57,8 @@ class Pal {
 
 Pal pal = Pal.light;
 
-/// Motion language (Claude-inspired feel, Souren's own numbers): one place
-/// for every duration/curve so entrances, toggles and transitions match.
+/// Souren motion tokens: concise, purposeful and driven by direct
+/// manipulation. Keep timings consistent; avoid decorative movement.
 /// Souren's own visual language with purposeful, restrained motion:
 /// short ease-out transitions, subtle press feedback and no decorative bounce.
 class Motion {
@@ -76,32 +76,11 @@ class Motion {
   static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
 }
 
-PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
-  transitionDuration: Motion.slow,
-  reverseTransitionDuration: Motion.base,
-  pageBuilder: (_, __, ___) => page,
-  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    if (MediaQuery.of(context).disableAnimations) return child;
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Motion.curve,
-      reverseCurve: Curves.easeInOutCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.028),
-          end: Offset.zero,
-        ).animate(curved),
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.975, end: 1.0).animate(curved),
-          child: child,
-        ),
-      ),
-    );
-  },
-);
+/// Keep pushed pages on the known-good v0.4.1.1 route behavior.
+/// The app theme supplies the same restrained page transition; do not add
+/// a second custom fade/slide/scale layer here.
+PageRoute<T> _softRoute<T>(Widget page) =>
+    MaterialPageRoute<T>(builder: (_) => page);
 
 /// Capsule roundness (round 3): 90% of the maximum — the radius is
 /// 45% of the capsule's height, so a capsule is almost a pill but
@@ -1698,7 +1677,15 @@ class _ShellState extends State<Shell> {
         builder: (context, constraints) {
           const pill = 42.0;
           const contentH = 58.0;
-          final slotW = (constraints.maxWidth - 16) / 6;
+          // Keep only the two endpoint actions anchored. The four middle
+          // actions share the remaining width and reflow around the active tab.
+          const fixedSlotW = 52.0;
+          const selectedExtraW = 32.0;
+          final innerWidth = constraints.maxWidth - 16;
+          final middleBaseW =
+              (innerWidth - fixedSlotW * 2 -
+                      (tab >= 1 && tab <= 4 ? selectedExtraW : 0)) /
+                  4;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
@@ -1712,72 +1699,66 @@ class _ShellState extends State<Shell> {
                 ),
               ],
             ),
-            child: Stack(
+            child: Row(
               children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Motion.curve,
-                  left: tab * slotW + (slotW - pill) / 2,
-                  top: 0,
-                  width: pill,
-                  height: pill,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color.lerp(pal.sel, pal.bg, 0.38)!,
-                      borderRadius: BorderRadius.circular(capR(pill)),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: Pressable(
-                          onTap: () => _go(i),
-                          child: SizedBox(
-                            height: contentH,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: pill,
-                                  height: pill,
-                                  child: Icon(
-                                    items[i].$1,
-                                    size: 22,
-                                    fill: tab == i ? 1 : 0,
-                                    weight: tab == i ? 600 : 400,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                SizedBox(
-                                  height: 13,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: AnimatedOpacity(
-                                      opacity: tab == i ? 1 : 0,
-                                      duration: Motion.fast,
-                                      child: Text(
-                                        items[i].$2,
-                                        style: TextStyle(
-                                          color: pal.sel,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 11,
-                                        ),
-                                      ),
+                for (var i = 0; i < items.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Motion.curve,
+                    width: (i == 0 || i == 5)
+                        ? fixedSlotW
+                        : middleBaseW + (tab == i ? selectedExtraW : 0),
+                    child: Pressable(
+                      onTap: () => _go(i),
+                      child: SizedBox(
+                        height: contentH,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: Motion.fast,
+                              width: pill,
+                              height: pill,
+                              decoration: BoxDecoration(
+                                color: tab == i
+                                    ? Color.lerp(pal.sel, pal.bg, 0.38)!
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(capR(pill)),
+                              ),
+                              child: Icon(
+                                items[i].$1,
+                                size: 22,
+                                fill: tab == i ? 1 : 0,
+                                weight: tab == i ? 600 : 400,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .72),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            SizedBox(
+                              height: 13,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: AnimatedOpacity(
+                                  opacity: tab == i ? 1 : 0,
+                                  duration: Motion.fast,
+                                  child: Text(
+                                    items[i].$2,
+                                    style: TextStyle(
+                                      color: pal.sel,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
               ],
             ),
           );
@@ -1911,10 +1892,10 @@ class _ShellState extends State<Shell> {
                 ],
               ),
               const Positioned(
-                top: 24,
+                top: 30,
                 left: 0,
                 right: 0,
-                child: Center(child: SourenLogo(width: 150)),
+                child: Center(child: SourenLogo(width: 140)),
               ),
               Positioned(
                 top: logoGap + searchH,
@@ -1961,58 +1942,121 @@ class _ShellState extends State<Shell> {
       'گنجینۀ شاعران',
       'گنجینۀ کتاب‌ها',
     ];
-    return PopupMenuButton<int>(
-      tooltip: 'انتخاب گنجینه',
-      color: pal.cardC,
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(capR(34)),
-        side: BorderSide(color: pal.div),
+    const icons = <IconData>[
+      Symbols.translate_rounded,
+      Symbols.format_quote_rounded,
+      Symbols.person_rounded,
+      Symbols.menu_book_rounded,
+    ];
+    return MenuAnchor(
+      alignmentOffset: const Offset(0, 8),
+      style: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(pal.cardC),
+        elevation: const WidgetStatePropertyAll(12),
+        padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: pal.div),
+          ),
+        ),
       ),
-      onSelected: (value) {
-        setState(() {
-          _homeCollection = value;
-          if (value == 2) {
-            _homePoets = _loadHomePoets();
-          } else if (value == 3) {
-            _homeBooks = GanjoorData.bookCatalog();
-          }
-        });
-      },
-      itemBuilder: (_) => [
+      menuChildren: [
         for (var i = 0; i < labels.length; i++)
-          PopupMenuItem<int>(
-            value: i,
+          MenuItemButton(
+            onPressed: () {
+              setState(() {
+                _homeCollection = i;
+                if (i == 2) {
+                  _homePoets = _loadHomePoets();
+                } else if (i == 3) {
+                  _homeBooks = GanjoorData.bookCatalog();
+                }
+              });
+            },
+            style: ButtonStyle(
+              minimumSize: const WidgetStatePropertyAll(Size(190, 48)),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 12),
+              ),
+              backgroundColor: WidgetStatePropertyAll(
+                i == _homeCollection ? pal.pillC : Colors.transparent,
+              ),
+              shape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(capR(46)),
+                ),
+              ),
+            ),
             child: SizedBox(
               width: 190,
-              child: Text(
-                labels[i],
+              height: 48,
+              child: Row(
                 textDirection: TextDirection.rtl,
-                textAlign: TextAlign.right,
+                children: [
+                  Icon(
+                    icons[i],
+                    size: 19,
+                    color: i == _homeCollection ? pal.sel : pal.muted,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      labels[i],
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: i == _homeCollection ? pal.ink : pal.muted,
+                        fontSize: 13.5,
+                        fontWeight: i == _homeCollection
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (i == _homeCollection) ...[
+                    const SizedBox(width: 8),
+                    Icon(Symbols.check_rounded, size: 18, color: pal.sel),
+                  ],
+                ],
               ),
             ),
           ),
       ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textDirection: TextDirection.rtl,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: pal.ink,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
+      builder: (context, controller, child) => Pressable(
+        onTap: () => controller.isOpen ? controller.close() : controller.open(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            textDirection: TextDirection.rtl,
+            children: [
+              Expanded(
+                child: Text(
+                  labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: pal.ink,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
-            Icon(Symbols.expand_more_rounded, size: 20, color: pal.muted),
-          ],
+              const SizedBox(width: 4),
+              AnimatedRotation(
+                turns: controller.isOpen ? 0.5 : 0,
+                duration: Motion.fast,
+                curve: Motion.curve,
+                child: Icon(
+                  Symbols.expand_more_rounded,
+                  size: 20,
+                  color: pal.muted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -4226,7 +4270,7 @@ class _ShellState extends State<Shell> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'درباره: سورن دیکشنری عربی به فارسی است با کیبوردی که درست‌نویسی فارسی را رعایت می‌کند. فونت برنامه: آراد. یادگیری کیبورد فقط روی همین دستگاه انجام می‌شود و داده‌ای بیرون نمی‌رود.',
+                'درباره: سورن دیکشنری عربی به فارسی است با کیبوردی برای درست‌نویسی فارسی. فونت برنامه: آراد. یادگیری روی همین دستگاه انجام می‌شود؛ فقط اگر گزینهٔ «کمک به بهبود هوشمند سورن» را روشن کنید، نمونه‌های ناشناسِ واژه و معادل انتخابی برای بهبود مدل مشترک ارسال می‌شوند. متن کامل، کلیپ‌بورد و اطلاعات حساب ارسال نمی‌شوند.',
                 style: TextStyle(color: pal.muted, height: 1.9, fontSize: 13),
               ),
             ),

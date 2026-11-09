@@ -1,10 +1,10 @@
 name: CI
 on:
   push:
-    branches: [main, fix/v0.4.5.5-ui-keyboard]
+    branches: [main, fix/v0.4.5.5-ui-keyboard, release/v0.4.6]
     tags: ['v*']
   pull_request:
-    branches: [maintenance/v0.4.1, release/v0.4.5]
+    branches: [maintenance/v0.4.1, release/v0.4.5, release/v0.4.6]
   workflow_dispatch:
 jobs:
   build:
@@ -30,8 +30,8 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.5+11' pubspec.yaml
-          grep -F 'versionName = "0.4.5.5"' android/app/build.gradle.kts
+          grep -F 'version: 0.4.6+12' pubspec.yaml
+          grep -F 'versionName = "0.4.6"' android/app/build.gradle.kts
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -63,13 +63,13 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           sed -n '1,3p' /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='11' versionName='0.4.5.5'"
-          cp "$APK" Souren-v0.4.5.5.apk
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='12' versionName='0.4.6'"
+          cp "$APK" Souren-v0.4.6.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: souren-v0.4.5.5-apk
-          path: android/Souren-v0.4.5.5.apk
+          name: souren-v0.4.6-apk
+          path: android/Souren-v0.4.6.apk
