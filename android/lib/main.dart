@@ -1486,9 +1486,9 @@ class _SourenLogoPainter extends CustomPainter {
       oldDelegate.progress != progress || oldDelegate.color != color;
 }
 
-/// The ONE list/page entrance: soft fade + gentle rise, staggered by
-/// [index] for list items only. Replaces the three old entrances
-/// (Stagger, the route fade, the tab cross-fade).
+/// Soft fade + gentle rise, staggered by [index] for list items only.
+/// Tab switches are intentionally immediate; only the home search expansion
+/// keeps its spring animation.
 class Enter extends StatelessWidget {
   final int index;
   final Widget child;
@@ -1662,15 +1662,11 @@ class _ShellState extends State<Shell> {
       body: SafeArea(
         top: true,
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: Motion.base,
-          transitionBuilder: enterTransition,
-          child: KeyedSubtree(
-            key: ValueKey(
-              '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
-            ),
-            child: pages[tab],
+        child: KeyedSubtree(
+          key: ValueKey(
+            '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
           ),
+          child: pages[tab],
         ),
       ),
       bottomNavigationBar: _searchFocused
