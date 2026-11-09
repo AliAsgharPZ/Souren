@@ -1469,7 +1469,7 @@ class _SourenLogoState extends State<SourenLogo>
 
   @override
   Widget build(BuildContext context) {
-    final height = widget.width * 291.68 / 980.05;
+    final height = widget.width * 264.51 / 120.21;
     return SizedBox(
       width: widget.width,
       height: height,
@@ -1478,7 +1478,7 @@ class _SourenLogoState extends State<SourenLogo>
         builder: (context, _) => CustomPaint(
           painter: _SourenLogoPainter(
             progress: Curves.easeInOutCubic.transform(_controller.value),
-            color: pal.accent,
+            color: pal.ink,
           ),
         ),
       ),
@@ -1489,73 +1489,31 @@ class _SourenLogoState extends State<SourenLogo>
 class _SourenLogoPainter extends CustomPainter {
   final double progress;
   final Color color;
-
   _SourenLogoPainter({required this.progress, required this.color});
 
-  static final List<Path> _shapes = [
-    parseSvgPathData(
-      'M932.05 27.17v96.3c0 13.24-10.77 24-24 24h-11.67c-13.23 0-24-10.76-24-24V51.22h-48v72.25c0 13.24-10.76 24-24 24h-12.79c-13.24 0-24-10.76-24-24V36.44h-48v72.99c-23.25 12.09-83.09 38.04-168.41 38.04h-.05V57.91c0-14.89-6.73-28.68-18.46-37.84-11.73-9.16-26.74-12.34-41.19-8.73l-29.94 7.49c-32.16 8.03-54.62 36.8-54.62 69.94v58.7c0 26.47 21.53 48 48 48h48.21v31.71c-.16.33-.44.73-.68 1-15.06 5.91-43.77 15.5-71.53 15.5v48c34.33 0 67.81-10.41 89.85-19.13 17.59-6.96 30.36-25.74 30.36-44.64v-32.44h.05c82.82 0 144.23-21.58 177.52-36.98 12.32 22.04 35.89 36.98 62.89 36.98h12.79c18.42 0 35.25-6.95 48-18.38 12.75 11.43 29.58 18.38 48 18.38h11.67c39.7 0 72-32.3 72-72V27.17h-48ZM499.13 147.47h-48.21v-58.7c0-11.08 7.51-20.69 18.26-23.38l29.95-7.48v89.56Z',
-    ),
-    parseSvgPathData(
-      'M268.56 290.86v-48c28.17 0 57.32-9.87 72.19-15.76l.02-200.75h48v200.74c0 19.82-11.91 37.34-30.35 44.64-22.05 8.73-55.53 19.13-89.85 19.13Z',
-    ),
-    parseSvgPathData(
-      'M144.26 290.86h-24.05c-21.45 0-45.04-4.06-70.11-12.08C20.13 269.21 0 241.64 0 210.19V51.22h48v158.98c0 10.48 6.71 19.67 16.71 22.87 20.06 6.41,39.25 9.8,55.5 9.8h24.05c16.25 0 35.44-3.39 55.5-9.8,9.99-3.19 16.71-12.38 16.71-22.87V26.35h48v183.85c0 31.45-20.13 59.01-50.09 68.59-25.07 8.01-48.66 12.08-70.11 12.08Z',
-    ),
-  ];
-
-  static final Path _square = Path()
-    ..addRect(const Rect.fromLTWH(108.18, 0, 48.1, 48.1));
+  // Only the third Persian letter «ر» from the supplied original SVG.
+  static final Path _letter = parseSvgPathData(
+    'M268.56 290.86v-48c28.17 0 57.32-9.87 72.19-15.76l.02-200.75h48v200.74c0 19.82-11.91 37.34-30.35 44.64-22.05 8.73-55.53 19.13-89.85 19.13Z',
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
-    canvas.scale(size.width / 980.05, size.height / 291.68);
-
-    final fill = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6.0
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    if (progress >= 1) {
-      for (final shape in _shapes) {
-        canvas.drawPath(shape, fill);
-      }
-      canvas.drawPath(_square, fill);
-    } else {
-      final metrics = <ui.PathMetric>[];
-      for (final shape in _shapes) {
-        metrics.addAll(shape.computeMetrics().toList());
-      }
-      metrics.addAll(_square.computeMetrics().toList());
-      final totalLength = metrics.fold<double>(
-        0,
-        (sum, metric) => sum + metric.length,
-      );
-      var remaining = totalLength * progress;
-      ui.Tangent? tip;
-
-      for (final metric in metrics) {
-        if (remaining <= 0) break;
-        final segmentLength = remaining.clamp(0.0, metric.length).toDouble();
-        final segment = metric.extractPath(0, segmentLength);
-        canvas.drawPath(segment, stroke);
-        if (segmentLength > 0) {
-          tip = metric.getTangentForOffset(segmentLength);
-        }
-        remaining -= segmentLength;
-      }
-
-      if (tip != null) {
-        canvas.drawCircle(tip.position, 5.5, Paint()..color = color);
-      }
-    }
-
+    canvas.scale(size.width / 120.21, size.height / 264.51);
+    canvas.translate(-268.56, -26.35);
+    final reveal = progress.clamp(0.0, 1.0);
+    canvas.clipRect(Rect.fromLTWH(
+      268.56 + 120.21 * (1 - reveal),
+      26.35,
+      120.21 * reveal,
+      264.51,
+    ));
+    canvas.drawPath(
+      _letter,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
     canvas.restore();
   }
 
@@ -1630,8 +1588,7 @@ class _ShellState extends State<Shell> {
   }
 
   String query = '';
-  int _homeCollection = 0; // words, proverbs, poems, poets, books
-  Future<List<Map<String, dynamic>>>? _homePoems;
+  int _homeCollection = 0; // words, proverbs, poets, books
   Future<List<Map<String, dynamic>>>? _homePoets;
   Future<List<Map<String, dynamic>>>? _homeBooks;
   int _metricIndex = 0;
@@ -2042,10 +1999,10 @@ class _ShellState extends State<Shell> {
                 ],
               ),
               const Positioned(
-                top: 5,
+                top: 18,
                 left: 0,
                 right: 0,
-                child: Center(child: SourenLogo(width: 164)),
+                child: Center(child: SourenLogo(width: 54)),
               ),
               Positioned(
                 top: logoGap + searchH,
@@ -2086,54 +2043,26 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _homeCollectionHeader() {
-    final labels = [
+    const labels = [
       'گنجینۀ واژه‌ها',
       'گنجینۀ پندواژه‌ها',
-      'گنجینۀ شعرها',
       'گنجینۀ شاعران',
       'گنجینۀ کتاب‌ها',
     ];
     return Row(
       children: [
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final base = labels[_homeCollection];
-              var best = base;
-              for (var count = 1; count <= 18; count++) {
-                final candidate = base.replaceFirst(
-                  ' ',
-                  '${List<String>.filled(count, String.fromCharCode(0x0640)).join()} ',
-                );
-                final painter = TextPainter(
-                  text: TextSpan(
-                    text: candidate,
-                    style: TextStyle(
-                      color: pal.ink,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  textDirection: TextDirection.rtl,
-                  maxLines: 1,
-                )..layout();
-                if (painter.width > constraints.maxWidth) break;
-                best = candidate;
-              }
-              return Text(
-                best,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.clip,
-                textDirection: TextDirection.rtl,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: pal.ink,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              );
-            },
+          child: Text(
+            labels[_homeCollection.clamp(0, labels.length - 1)],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textDirection: TextDirection.rtl,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: pal.ink,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         PopupMenuButton<int>(
@@ -2142,12 +2071,8 @@ class _ShellState extends State<Shell> {
             setState(() {
               _homeCollection = value;
               if (value == 2) {
-                _homePoems = query.isEmpty
-                    ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
-                    : GanjoorData.searchPoems(query);
-              } else if (value == 3) {
                 _homePoets = _loadHomePoets();
-              } else if (value == 4) {
+              } else if (value == 3) {
                 _homeBooks = GanjoorData.bookCatalog();
               }
             });
@@ -2157,9 +2082,8 @@ class _ShellState extends State<Shell> {
           itemBuilder: (_) => const [
             PopupMenuItem(value: 0, child: Text('گنجینۀ واژه‌ها')),
             PopupMenuItem(value: 1, child: Text('گنجینۀ پندواژه‌ها')),
-            PopupMenuItem(value: 2, child: Text('گنجینۀ شعرها')),
-            PopupMenuItem(value: 3, child: Text('گنجینۀ شاعران')),
-            PopupMenuItem(value: 4, child: Text('گنجینۀ کتاب‌ها')),
+            PopupMenuItem(value: 2, child: Text('گنجینۀ شاعران')),
+            PopupMenuItem(value: 3, child: Text('گنجینۀ کتاب‌ها')),
           ],
         ),
       ],
@@ -2320,10 +2244,10 @@ class _ShellState extends State<Shell> {
         ),
       );
     }
-    if (_homeCollection == 3) {
+    if (_homeCollection == 2) {
       return _homeEntityList(_homePoets ??= _loadHomePoets(), poets: true);
     }
-    if (_homeCollection == 4) {
+    if (_homeCollection == 3) {
       return _homeEntityList(_homeBooks ??= GanjoorData.bookCatalog(), poets: false);
     }
     final future = _homePoems ??= query.isEmpty
@@ -2392,14 +2316,14 @@ class _ShellState extends State<Shell> {
         focusNode: _searchFocus,
         onChanged: (v) => setState(() {
           query = v.trim();
-          if (_homeCollection == 2) {
-            _homePoems = query.isEmpty
-                ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
-                : GanjoorData.searchPoems(query);
-          }
         }),
         decoration: InputDecoration(
-          hintText: 'واژه‌ای را جستجو کنید',
+          hintText: const [
+            'واژه‌ای را جستجو کنید',
+            'پندواژه‌ای را جستجو کنید',
+            'نام شاعری را جستجو کنید',
+            'نام کتابی را جستجو کنید',
+          ][_homeCollection.clamp(0, 3)],
           hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
           prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 23),
           filled: true,
