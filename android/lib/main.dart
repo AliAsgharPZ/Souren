@@ -191,10 +191,14 @@ class _AnimatedValueState extends State<AnimatedValue>
 class ScrollFade extends StatefulWidget {
   final Widget child;
   final bool alwaysVisible;
+  final double fadeExtent;
+  final double fadeStrength;
   const ScrollFade({
     super.key,
     required this.child,
     this.alwaysVisible = false,
+    this.fadeExtent = 0.22,
+    this.fadeStrength = 0.38,
   });
   @override
   State<ScrollFade> createState() => _ScrollFadeState();
@@ -233,8 +237,9 @@ class _ScrollFadeState extends State<ScrollFade> {
       },
       child: ShaderMask(
         shaderCallback: (rect) {
-          final top = widget.alwaysVisible ? 0.38 : _top;
-          final bottom = widget.alwaysVisible ? 0.38 : _bottom;
+          final top = widget.alwaysVisible ? widget.fadeStrength : _top;
+          final bottom = widget.alwaysVisible ? widget.fadeStrength : _bottom;
+          final fade = widget.fadeExtent;
           return LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -246,7 +251,14 @@ class _ScrollFadeState extends State<ScrollFade> {
               Color.fromRGBO(0, 0, 0, 1 - bottom * 0.55),
               Color.fromRGBO(0, 0, 0, 1 - bottom),
             ],
-            stops: const [0, 0.10, 0.22, 0.78, 0.90, 1],
+            stops: [
+              0,
+              fade * 0.45,
+              fade,
+              1 - fade,
+              1 - fade * 0.45,
+              1,
+            ],
           ).createShader(rect);
         },
         blendMode: BlendMode.dstIn,
@@ -261,7 +273,14 @@ class _ScrollFadeState extends State<ScrollFade> {
 Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
-}) => ScrollFade(alwaysVisible: alwaysVisible, child: child);
+  double fadeExtent = 0.22,
+  double fadeStrength = 0.38,
+}) => ScrollFade(
+  alwaysVisible: alwaysVisible,
+  fadeExtent: fadeExtent,
+  fadeStrength: fadeStrength,
+  child: child,
+);
 
 /// Apple-like press feedback for every custom button: the control
 /// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
@@ -1871,7 +1890,10 @@ class _ShellState extends State<Shell> {
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
         const searchLift = searchH * 1.5;
-        const searchTop = logoGap + searchH - searchLift;
+        // Keep the logo's original position; only the search and home content
+        // move down by half the search capsule's height.
+        const logoBottom = logoGap + searchH - searchLift;
+        const searchTop = logoBottom + searchH * 0.5;
         const contentTop = searchTop + searchH + gapAfterSearch;
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
@@ -1888,20 +1910,25 @@ class _ShellState extends State<Shell> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _homeCollectionHeader(),
-                                const SizedBox(height: 6),
-                                Expanded(
-                                  child: KeyedSubtree(
-                                    key: ValueKey(
-                                      'home-$_homeCollection-$_searchFocused',
+                            child: Padding(
+                              // Keep the word-list column a little shorter
+                              // than the full action-button column.
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _homeCollectionHeader(),
+                                  const SizedBox(height: 6),
+                                  Expanded(
+                                    child: KeyedSubtree(
+                                      key: ValueKey(
+                                        'home-$_homeCollection-$_searchFocused',
+                                      ),
+                                      child: _homeCollectionView(d, results),
                                     ),
-                                    child: _homeCollectionView(d, results),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                           AnimatedContainer(
@@ -1985,7 +2012,7 @@ class _ShellState extends State<Shell> {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: searchTop,
+                height: logoBottom,
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
@@ -2137,7 +2164,7 @@ class _ShellState extends State<Shell> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.right,
                   style: TextStyle(
                     color: pal.ink,
                     fontSize: 14.5,
@@ -2145,7 +2172,7 @@ class _ShellState extends State<Shell> {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 10),
               AnimatedRotation(
                 turns: controller.isOpen ? 0.5 : 0,
                 duration: Motion.fast,
@@ -2471,7 +2498,7 @@ class _ShellState extends State<Shell> {
               onHorizontalDragEnd: (details) {
                 final velocity = details.primaryVelocity ?? 0;
                 if (velocity.abs() < 80) return;
-                step(velocity < 0 ? 1 : -1);
+                step(velocity < 0 ? -1 : 1);
               },
               child: Container(
                 width: double.infinity,
@@ -2528,7 +2555,7 @@ class _ShellState extends State<Shell> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 7),
+                            const SizedBox(width: 10),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -2609,6 +2636,8 @@ class _ShellState extends State<Shell> {
     }
     return edgeFade(
       alwaysVisible: alwaysFade,
+      fadeExtent: alwaysFade ? 0.30 : 0.22,
+      fadeStrength: alwaysFade ? 0.28 : 0.38,
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
         itemCount: items.length,
