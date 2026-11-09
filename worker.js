@@ -363,8 +363,10 @@ async function handleLearningModel(request, env) {
     const response = json(request, {
         version: 1,
         pairs: pairs.slice(0, 500),
+    }, 200, {
+        'Cache-Control': 'public, max-age=600',
+        'Access-Control-Allow-Origin': '*',
     });
-    response.headers.set('Cache-Control', 'public, max-age=600');
     await caches.default.put(cacheKey, response.clone());
     return response;
 }
