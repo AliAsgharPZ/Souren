@@ -1977,44 +1977,60 @@ class _ShellState extends State<Shell> {
       'گنجینۀ شاعران',
       'گنجینۀ کتاب‌ها',
     ];
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textDirection: TextDirection.rtl,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: pal.ink,
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
+    return PopupMenuButton<int>(
+      tooltip: 'انتخاب گنجینه',
+      color: pal.cardC,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(capR(34)),
+        side: BorderSide(color: pal.div),
+      ),
+      onSelected: (value) {
+        setState(() {
+          _homeCollection = value;
+          if (value == 2) {
+            _homePoets = _loadHomePoets();
+          } else if (value == 3) {
+            _homeBooks = GanjoorData.bookCatalog();
+          }
+        });
+      },
+      itemBuilder: (_) => [
+        for (var i = 0; i < labels.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: SizedBox(
+              width: 190,
+              child: Text(
+                labels[i],
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
+              ),
             ),
           ),
-        ),
-        PopupMenuButton<int>(
-          tooltip: 'انتخاب گنجینه',
-          onSelected: (value) {
-            setState(() {
-              _homeCollection = value;
-              if (value == 2) {
-                _homePoets = _loadHomePoets();
-              } else if (value == 3) {
-                _homeBooks = GanjoorData.bookCatalog();
-              }
-            });
-          },
-          icon: Icon(LucideIcons.chevronDown, size: 19, color: pal.muted),
-          color: pal.cardC,
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 0, child: Text('گنجینۀ واژه‌ها')),
-            PopupMenuItem(value: 1, child: Text('گنجینۀ پندواژه‌ها')),
-            PopupMenuItem(value: 2, child: Text('گنجینۀ شاعران')),
-            PopupMenuItem(value: 3, child: Text('گنجینۀ کتاب‌ها')),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: pal.ink,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Icon(Symbols.expand_more_rounded, size: 20, color: pal.muted),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2254,7 +2270,10 @@ class _ShellState extends State<Shell> {
             'نام کتابی را جستجو کنید',
           ][ _homeCollection.clamp(0, 3).toInt()],
           hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
-          prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 23),
+          prefixIcon: Transform.translate(
+            offset: const Offset(-4, 0),
+            child: Icon(LucideIcons.search, color: pal.muted, size: 20),
+          ),
           filled: true,
           fillColor: pal.cardC,
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
@@ -2270,7 +2289,7 @@ class _ShellState extends State<Shell> {
   Widget _homeMetrics(Dictionary d) {
     return SizedBox(
       width: 124,
-      height: 94,
+      height: 118,
       child: FutureBuilder<Map<String, int>>(
         future: GanjoorData.stats(),
         builder: (context, snapshot) {
@@ -2292,13 +2311,13 @@ class _ShellState extends State<Shell> {
                 final velocity = details.primaryVelocity ?? 0;
                 if (velocity.abs() < 80) return;
                 // In RTL, a left swipe advances toward the previous item.
-                step(velocity < 0 ? -1 : 1);
+                step(velocity < 0 ? 1 : -1);
               },
               child: AnimatedContainer(
                 duration: Motion.base,
                 curve: Motion.spring,
-                height: 94,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                height: 118,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
                   color: pal.cardC,
                   borderRadius: BorderRadius.circular(capR(68)),
@@ -2379,36 +2398,13 @@ class _ShellState extends State<Shell> {
           color: pal.pillC,
           borderRadius: BorderRadius.circular(capR(54)),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            var display = label;
-            if (label == 'گنجینهٔ واژه‌ها') {
-              var best = 'گنجینۀ واژه‌ها';
-              for (var count = 1; count <= 12; count++) {
-                final kashida = List<String>.filled(count, 'ـ').join();
-                final candidate = 'گنجینۀ واژه$kashidaها';
-                final painter = TextPainter(
-                  text: TextSpan(
-                    text: candidate,
-                    style: TextStyle(fontSize: 14, color: pal.ink),
-                  ),
-                  textDirection: TextDirection.rtl,
-                  maxLines: 1,
-                )..layout();
-                if (painter.width > constraints.maxWidth) break;
-                best = candidate;
-              }
-              display = best;
-            }
-            return Text(
-              display,
-              maxLines: 1,
-              softWrap: false,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: pal.ink),
-            );
-          },
+        child: Text(
+          label,
+          maxLines: 1,
+          softWrap: false,
+          textDirection: TextDirection.rtl,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: pal.ink),
         ),
       ),
     );
