@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.4.6+12 # Souren v0.4.6 — UI, keyboard and correction engine refinement
+version: 0.4.6.1+13 # Souren v0.4.6.1 — restore original navigation geometry and fix indicator bounds
 
 environment:
   sdk: ^3.13.5
