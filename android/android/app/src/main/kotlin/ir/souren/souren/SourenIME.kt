@@ -238,7 +238,7 @@ class SourenIME : InputMethodService() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM
         ))
-        sideSwitchButton = TextView(this).apply {
+        val sideSwitch = TextView(this).apply {
             text = "‹"
             textSize = 27f
             gravity = Gravity.CENTER
@@ -251,8 +251,9 @@ class SourenIME : InputMethodService() {
                 applyKeyboardMode()
             }
         }
+        sideSwitchButton = sideSwitch
         frame.addView(
-            sideSwitchButton,
+            sideSwitch,
             FrameLayout.LayoutParams(dp(32), dp(48), Gravity.BOTTOM or Gravity.LEFT).apply {
                 bottomMargin = dp(34)
             }
