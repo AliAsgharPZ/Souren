@@ -236,7 +236,7 @@ String correctText(String text,
     {Map<String, List<String>> dictionary = const {}, bool replaceArabic = true}) {
   var t = normalizeLetters(text);
   // Contextual phrase: in a time question, «ساعت چند» means «چه زمانی».
-  t = t.replaceAll(RegExp(r'ساعت\\s+چند'), 'چه زمانی');
+  t = t.replaceAll(RegExp(r'ساعت\s+چند'), 'چه زمانی');
   t = t.replaceAllMapped(
       RegExp(r'\s+([،.؟!؛:])'), (m) => m.group(1)!);
   final tokens = t.split(' ');
