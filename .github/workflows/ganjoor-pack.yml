@@ -1,0 +1,93 @@
+name: Build Souren seekable Ganjoor pack
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/ganjoor-on-demand-pack
+      - release/v0.4.5
+    paths:
+      - '.github/workflows/ganjoor-pack.yml'
+      - 'android/tools/build_ganjoor_seekable_pack.py'
+      - 'android/lib/data/ganjoor_pack.dart'
+      - 'android/lib/main.dart'
+      - 'android/pubspec.yaml'
+      - 'android/tools/test_ganjoor_seekable_pack.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: souren-ganjoor-pack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout Souren
+        uses: actions/checkout@v4
+      - name: Checkout official Ganjoor export
+        uses: actions/checkout@v4
+        with:
+          repository: ganjoor/ganjoor-data
+          ref: main
+          path: upstream/ganjoor-data
+          fetch-depth: 1
+      - name: Install Zstandard
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+      - name: Build 64 MiB independently-decodable frames
+        run: |
+          export GANJOOR_SOURCE_SHA="$(git -C upstream/ganjoor-data rev-parse HEAD)"
+          python3 android/tools/build_ganjoor_seekable_pack.py \
+            --source upstream/ganjoor-data \
+            --out dist/ganjoor-pack \
+            --chunk-mib 64 \
+            --max-total-mib 200
+      - name: Test seekable pack builder
+        run: |
+          python3 -m unittest discover -s android/tools -p 'test_ganjoor_seekable_pack.py'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-dependency-path: android/pubspec.lock
+      - name: Resolve Flutter dependencies and compile Android debug APK
+        working-directory: android
+        run: |
+          flutter pub get
+          flutter build apk --debug
+      - name: Upload verified pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: souren-ganjoor-seekable-pack
+          path: |
+            dist/ganjoor-pack/souren-ganjoor-pack.bin
+            dist/ganjoor-pack/souren-ganjoor-index.json.zst
+            dist/ganjoor-pack/pack-report.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Publish or update stable pack release
+        if: github.ref == 'refs/heads/release/v0.4.5'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view ganjoor-pack-latest --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload ganjoor-pack-latest \
+              dist/ganjoor-pack/souren-ganjoor-pack.bin \
+              dist/ganjoor-pack/souren-ganjoor-index.json.zst \
+              --clobber --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release create ganjoor-pack-latest \
+              dist/ganjoor-pack/souren-ganjoor-pack.bin \
+              dist/ganjoor-pack/souren-ganjoor-index.json.zst \
+              --title "Souren Ganjoor Offline Pack" \
+              --notes "Independently compressed Ganjoor content pack for Souren. Each frame is decoded only when a contained source file is requested." \
+              --target "${GITHUB_SHA}" --latest=false \
+              --repo "${GITHUB_REPOSITORY}"
+          fi

@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  zstandard: ^1.5.6
 dev_dependencies:
   flutter_test:
     sdk: flutter
