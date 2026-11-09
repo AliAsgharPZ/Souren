@@ -127,7 +127,7 @@ String correctionLearningKey(
   String left,
   String right,
   String candidate,
-) => [from, left, right, candidate].join('\u001F');
+) => [from, left, right, candidate].map(normalizeLetters).join('\u001F');
 
 WordFix correctWord(
   String word, {
