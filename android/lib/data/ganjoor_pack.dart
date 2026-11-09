@@ -14,7 +14,7 @@ import 'store.dart';
 class GanjoorPack {
   static const _releaseBase =
       'https://github.com/AliAsgharPZ/Souren/releases/download/ganjoor-pack-latest';
-  static const _indexName = 'souren-ganjoor-index.json';
+  static const _indexName = 'souren-ganjoor-index.json.zst';
   static const _packName = 'souren-ganjoor-pack.bin';
   static const _indexUrl = '$_releaseBase/$_indexName';
   static const _packUrl = '$_releaseBase/$_packName';
@@ -26,8 +26,15 @@ class GanjoorPack {
 
   static Future<Map<String, dynamic>?> _loadIndex() async {
     if (_index != null) return _index;
-    final index = await SharedFiles.readJson(_indexName);
-    if (index == null || index['format'] != 1) return null;
+    final file = await SharedFiles.file(_indexName);
+    if (!await file.exists()) return null;
+    final compressed = await file.readAsBytes();
+    final decoded = await _zstandard.decompress(compressed);
+    if (decoded == null) {
+      throw const FormatException('Ganjoor index decompression failed');
+    }
+    final index = jsonDecode(utf8.decode(decoded)) as Map<String, dynamic>;
+    if (index['format'] != 1) return null;
     _index = index;
     return index;
   }
@@ -73,7 +80,13 @@ class GanjoorPack {
         <int>[],
         (buffer, part) => buffer..addAll(part),
       );
-      final index = jsonDecode(utf8.decode(indexBytes)) as Map<String, dynamic>;
+      final decodedIndex = await _zstandard.decompress(
+        Uint8List.fromList(indexBytes),
+      );
+      if (decodedIndex == null) {
+        throw const FormatException('Downloaded Ganjoor index is corrupt');
+      }
+      final index = jsonDecode(utf8.decode(decodedIndex)) as Map<String, dynamic>;
       if (index['format'] != 1 || index['pack_bytes'] is! num) {
         throw const FormatException('Unsupported Ganjoor pack index');
       }
