@@ -4852,6 +4852,10 @@ class _PandvazhePageState extends State<PandvazhePage> {
     final tokens = normalizeLetters('$title $meaning')
         .split(RegExp(r'[\s،,.؟!؛:()«»]+'))
         .where((word) => word.length > 1)
+        .where((word) => !const {
+              'از', 'به', 'در', 'که', 'و', 'را', 'با', 'این', 'آن',
+              'هر', 'هم', 'تا', 'می', 'است', 'برای', 'بر', 'یک',
+            }.contains(word))
         .toSet();
     final relatedEntries = widget.dict.entries.where((entry) {
       final terms = <String>[entry.ar, ...entry.fa]
