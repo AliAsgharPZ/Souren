@@ -1870,22 +1870,22 @@ class _ShellState extends State<Shell> {
         const logoGap = 116.0;
         const searchH = 58.0;
         const gapAfterSearch = 18.0;
+        const searchLift = searchH * 1.5;
+        const searchTop = logoGap + searchH - searchLift;
+        const contentTop = searchTop + searchH + gapAfterSearch;
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
           child: Stack(
             children: [
               Column(
                 children: [
-                  const SizedBox(height: logoGap),
-                  const SizedBox(height: searchH),
-                  const SizedBox(height: searchH),
-                  const SizedBox(height: gapAfterSearch),
+                  SizedBox(height: contentTop),
                   Expanded(
                     child: Padding(
                       // End the home viewport above the floating nav bar.
                       padding: const EdgeInsets.only(bottom: kNavClearance),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
                             child: Column(
@@ -1917,8 +1917,11 @@ class _ShellState extends State<Shell> {
                               child: AnimatedOpacity(
                                 opacity: _searchFocused ? 0 : 1,
                                 duration: Motion.fast,
-                                child: edgeFade(
-                                  child: SingleChildScrollView(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.topCenter,
+                                  child: SizedBox(
+                                    width: 124,
                                     child: Column(
                                       children: [
                                         _sidePill(
@@ -1982,17 +1985,21 @@ class _ShellState extends State<Shell> {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: logoGap,
-                child: Center(
-                  child: SourenLogo(
-                    width: 112,
-                    animate: false,
-                    color: pal.sel,
+                height: searchTop,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: SourenLogo(
+                      width: 112,
+                      animate: false,
+                      color: pal.sel,
+                    ),
                   ),
                 ),
               ),
               Positioned(
-                top: logoGap + searchH,
+                top: searchTop,
                 left: 0,
                 right: 0,
                 child: _searchCapsule(),
@@ -2202,6 +2209,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
+          alwaysVisible: true,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: rows.length,
@@ -2287,6 +2295,7 @@ class _ShellState extends State<Shell> {
         );
       }
       return edgeFade(
+        alwaysVisible: true,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
           itemCount: rows.length,
@@ -2338,6 +2347,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
+          alwaysVisible: true,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: poems.length,
@@ -2384,6 +2394,7 @@ class _ShellState extends State<Shell> {
     return SizedBox(
       height: 58,
       child: TextField(
+        scrollPadding: EdgeInsets.zero,
         controller: _searchCtl,
         focusNode: _searchFocus,
         onChanged: (v) => setState(() {
@@ -2404,8 +2415,25 @@ class _ShellState extends State<Shell> {
           ),
           filled: true,
           fillColor: pal.cardC,
+          isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
           border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(capR(58)),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(capR(58)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(capR(58)),
+            borderSide: BorderSide.none,
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(capR(58)),
+            borderSide: BorderSide.none,
+          ),
+          focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(capR(58)),
             borderSide: BorderSide.none,
           ),
