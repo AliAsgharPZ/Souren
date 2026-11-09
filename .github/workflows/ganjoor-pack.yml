@@ -67,7 +67,7 @@ jobs:
           name: souren-ganjoor-seekable-pack
           path: |
             dist/ganjoor-pack/souren-ganjoor-pack.bin
-            dist/ganjoor-pack/souren-ganjoor-index.json
+            dist/ganjoor-pack/souren-ganjoor-index.json.zst
             dist/ganjoor-pack/pack-report.json
           if-no-files-found: error
           compression-level: 0
@@ -80,12 +80,12 @@ jobs:
           if gh release view ganjoor-pack-latest --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload ganjoor-pack-latest \
               dist/ganjoor-pack/souren-ganjoor-pack.bin \
-              dist/ganjoor-pack/souren-ganjoor-index.json \
+              dist/ganjoor-pack/souren-ganjoor-index.json.zst \
               --clobber --repo "${GITHUB_REPOSITORY}"
           else
             gh release create ganjoor-pack-latest \
               dist/ganjoor-pack/souren-ganjoor-pack.bin \
-              dist/ganjoor-pack/souren-ganjoor-index.json \
+              dist/ganjoor-pack/souren-ganjoor-index.json.zst \
               --title "Souren Ganjoor Offline Pack" \
               --notes "Independently compressed Ganjoor content pack for Souren. Each frame is decoded only when a contained source file is requested." \
               --target "${GITHUB_SHA}" --latest=false \
