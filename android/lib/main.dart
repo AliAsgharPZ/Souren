@@ -2649,9 +2649,8 @@ class _ShellState extends State<Shell> {
               onTap: () => onChanged(i),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
-                child: AnimatedDefaultTextStyle(
-                  duration: Motion.fast,
-                  curve: Curves.easeOut,
+                child: Text(
+                  labels[i],
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: selected == i
@@ -2662,7 +2661,6 @@ class _ShellState extends State<Shell> {
                         ? FontWeight.w800
                         : FontWeight.w500,
                   ),
-                  child: Text(labels[i]),
                 ),
               ),
             ),
@@ -5877,9 +5875,8 @@ class _GanjoorPageState extends State<GanjoorPage> {
                           onTap: () => setState(() => _filter = i),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 11),
-                            child: AnimatedDefaultTextStyle(
-                              duration: Motion.fast,
-                              curve: Curves.easeOut,
+                            child: Text(
+                              ['شاعران', 'کتاب‌ها'][i],
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: _filter == i
@@ -5890,7 +5887,6 @@ class _GanjoorPageState extends State<GanjoorPage> {
                                     ? FontWeight.w800
                                     : FontWeight.w500,
                               ),
-                              child: Text(['شاعران', 'کتاب‌ها'][i]),
                             ),
                           ),
                         ),
