@@ -1506,6 +1506,11 @@ class _ShellState extends State<Shell> {
   int learnedWords = 0;
   int learnedCorrections = 0;
   int tab = 0;
+  // Geometry tracking for the original v0.4.1 expanding navigation bar.
+  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
+  final GlobalKey _navStackKey = GlobalKey();
+  double _indLeft = 0;
+  double _indWidth = 0;
   String query = '';
   int _homeCollection = 0; // words, proverbs, poets, books
   Future<List<Map<String, dynamic>>>? _homePoets;
@@ -1658,10 +1663,37 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// Restored v0.4.1 navigation geometry and interaction:
-  /// the selected item expands to reveal its label and one indicator slides
-  /// between tabs. Only the surface changed from glass to a solid color.
-  /// Icons remain from the current CUI Lucide pack.
+  /// Original v0.4.1 navigation structure: the active item expands,
+  /// its label is revealed, and one capsule slides behind the active item.
+  /// The surface is solid; the measured capsule is clipped to the nav row
+  /// to prevent the lower-edge paint protrusion from the previous version.
+  void _measureIndicator() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final stackBox =
+          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
+      final tabBox =
+          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
+      if (stackBox == null || tabBox == null || !stackBox.hasSize || !tabBox.hasSize) {
+        return;
+      }
+      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
+      // A one-logical-pixel inset keeps antialiased edges inside the measured
+      // tab bounds and prevents the indicator from hanging below the capsule.
+      final left = (pos.dx + 1).clamp(0.0, stackBox.size.width);
+      final right = (pos.dx + tabBox.size.width - 1)
+          .clamp(left, stackBox.size.width);
+      final width = right - left;
+      if ((left - _indLeft).abs() > .5 ||
+          (width - _indWidth).abs() > .5) {
+        setState(() {
+          _indLeft = left;
+          _indWidth = width;
+        });
+      }
+    });
+  }
+
   Widget _navBar() {
     final items = <(IconData, String)>[
       (Symbols.home_rounded, 'پیشگاه'),
@@ -1671,98 +1703,118 @@ class _ShellState extends State<Shell> {
       (Symbols.person_rounded, 'نمایه'),
       (Symbols.settings_rounded, 'پیکربندی'),
     ];
+    _measureIndicator();
+    final selSoft = Color.lerp(pal.sel, pal.bg, 0.38)!;
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 6, 20, 14),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const pill = 42.0;
-          const contentH = 58.0;
-          // Keep only the two endpoint actions anchored. The four middle
-          // actions share the remaining width and reflow around the active tab.
-          const fixedSlotW = 52.0;
-          const selectedExtraW = 32.0;
-          final innerWidth = constraints.maxWidth - 16;
-          final middleBaseW =
-              (innerWidth - fixedSlotW * 2 -
-                      (tab >= 1 && tab <= 4 ? selectedExtraW : 0)) /
-                  4;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: pal.cardC,
-              borderRadius: BorderRadius.circular(capR(70)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
+      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: pal.cardC,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: pal.div.withValues(alpha: 0.6)),
+          ),
+          child: Stack(
+            key: _navStackKey,
+            clipBehavior: Clip.hardEdge,
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                left: _indLeft,
+                top: 1,
+                bottom: 1,
+                width: _indWidth,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(19),
+                  child: ColoredBox(color: selSoft),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 320),
-                    curve: Motion.curve,
-                    width: (i == 0 || i == 5)
-                        ? fixedSlotW
-                        : middleBaseW + (tab == i ? selectedExtraW : 0),
-                    child: Pressable(
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    GestureDetector(
+                      key: _tabKeys[i],
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => _go(i),
-                      child: SizedBox(
-                        height: contentH,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedContainer(
-                              duration: Motion.fast,
-                              width: pill,
-                              height: pill,
-                              decoration: BoxDecoration(
-                                color: tab == i
-                                    ? Color.lerp(pal.sel, pal.bg, 0.38)!
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(capR(pill)),
-                              ),
-                              child: Icon(
-                                items[i].$1,
-                                size: 22,
-                                fill: tab == i ? 1 : 0,
-                                weight: tab == i ? 600 : 400,
-                                color: tab == i
-                                    ? pal.bg
-                                    : pal.ink.withValues(alpha: .72),
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            SizedBox(
-                              height: 13,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: AnimatedOpacity(
-                                  opacity: tab == i ? 1 : 0,
-                                  duration: Motion.fast,
-                                  child: Text(
-                                    items[i].$2,
-                                    style: TextStyle(
-                                      color: pal.sel,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 11,
+                      child: AnimatedContainer(
+                        duration: Motion.base,
+                        curve: Motion.curve,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tab == i ? 17 : 12,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: AnimatedSize(
+                          duration: Motion.base,
+                          curve: Motion.curve,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedSwitcher(
+                                duration: Motion.fast,
+                                switchInCurve: Motion.curve,
+                                switchOutCurve: Motion.curve,
+                                transitionBuilder: (child, anim) =>
+                                    FadeTransition(
+                                      opacity: anim,
+                                      child: ScaleTransition(
+                                        scale: Tween<double>(
+                                          begin: 0.8,
+                                          end: 1,
+                                        ).animate(anim),
+                                        child: child,
+                                      ),
                                     ),
-                                  ),
+                                child: Icon(
+                                  key: ValueKey<bool>(tab == i),
+                                  items[i].$1,
+                                  size: 23,
+                                  fill: tab == i ? 1 : 0,
+                                  weight: tab == i ? 600 : 400,
+                                  color: tab == i
+                                      ? pal.bg
+                                      : pal.ink.withValues(alpha: .72),
                                 ),
                               ),
-                            ),
-                          ],
+                              if (tab == i)
+                                TweenAnimationBuilder<double>(
+                                  tween: Tween(begin: 0, end: 1),
+                                  duration: Motion.base,
+                                  curve: Motion.curve,
+                                  builder: (_, v, c) =>
+                                      Opacity(opacity: v, child: c),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(width: 7),
+                                      Text(
+                                        items[i].$2,
+                                        style: TextStyle(
+                                          color: pal.bg,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
