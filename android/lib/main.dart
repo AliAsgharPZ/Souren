@@ -2627,37 +2627,29 @@ class _ShellState extends State<Shell> {
     required int selected,
     required ValueChanged<int> onChanged,
   }) {
-    const labels = ['همه', 'واژه', 'پندواژه', 'شعر'];
+    const labels = ['واژه', 'پندواژه', 'شعر', 'ریشه‌شناسی'];
     return Row(
       children: [
         for (var i = 0; i < labels.length; i++)
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Pressable(
-                onTap: () => onChanged(i),
-                child: AnimatedContainer(
-                  duration: Motion.base,
-                  curve: Motion.spring,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: selected == i ? pal.pillC : Colors.transparent,
-                    borderRadius: BorderRadius.circular(capR(42)),
-                    border: Border.all(
-                      color: selected == i ? pal.div : Colors.transparent,
-                    ),
+            child: Pressable(
+              onTap: () => onChanged(i),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
+                child: AnimatedDefaultTextStyle(
+                  duration: Motion.fast,
+                  curve: Curves.easeOut,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: selected == i
+                        ? pal.ink
+                        : pal.muted.withValues(alpha: 0.62),
+                    fontSize: 11.5,
+                    fontWeight: selected == i
+                        ? FontWeight.w800
+                        : FontWeight.w500,
                   ),
-                  child: Text(
-                    labels[i],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: selected == i ? pal.ink : pal.muted,
-                      fontSize: 11.5,
-                      fontWeight: selected == i
-                          ? FontWeight.w800
-                          : FontWeight.w600,
-                    ),
-                  ),
+                  child: Text(labels[i]),
                 ),
               ),
             ),
@@ -2676,12 +2668,14 @@ class _ShellState extends State<Shell> {
       liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
     final savedPoems = liked.where((key) => key.startsWith('poem:')).toList();
-    final wordsVisible = _likedFilter == 0 || _likedFilter == 1;
-    final proverbsVisible = _likedFilter == 0 || _likedFilter == 2;
-    final poemsVisible = _likedFilter == 0 || _likedFilter == 3;
-    final isEmpty = (!wordsVisible || (mine.isEmpty && savedRoots.isEmpty)) &&
+    final wordsVisible = _likedFilter == 0;
+    final proverbsVisible = _likedFilter == 1;
+    final poemsVisible = _likedFilter == 2;
+    final rootsVisible = _likedFilter == 3;
+    final isEmpty = (!wordsVisible || mine.isEmpty) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
-        (!poemsVisible || savedPoems.isEmpty);
+        (!poemsVisible || savedPoems.isEmpty) &&
+        (!rootsVisible || savedRoots.isEmpty);
 
     return _pageShell(
       'پسندیده‌ها',
@@ -2707,10 +2701,10 @@ class _ShellState extends State<Shell> {
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: kNavClearance),
                         children: [
-                          if (wordsVisible) ...[
+                          if (wordsVisible)
                             for (final e in mine) _pairRow(e),
+                          if (rootsVisible)
                             for (final row in savedRoots) _savedRootRow(row),
-                          ],
                           if (proverbsVisible)
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
@@ -2735,12 +2729,14 @@ class _ShellState extends State<Shell> {
       favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
     final savedPoems = favorites.where((key) => key.startsWith('poem:')).toList();
-    final wordsVisible = _favoritesFilter == 0 || _favoritesFilter == 1;
-    final proverbsVisible = _favoritesFilter == 0 || _favoritesFilter == 2;
-    final poemsVisible = _favoritesFilter == 0 || _favoritesFilter == 3;
-    final isEmpty = (!wordsVisible || (favs.isEmpty && savedRoots.isEmpty)) &&
+    final wordsVisible = _favoritesFilter == 0;
+    final proverbsVisible = _favoritesFilter == 1;
+    final poemsVisible = _favoritesFilter == 2;
+    final rootsVisible = _favoritesFilter == 3;
+    final isEmpty = (!wordsVisible || favs.isEmpty) &&
         (!proverbsVisible || savedProverbs.isEmpty) &&
-        (!poemsVisible || savedPoems.isEmpty);
+        (!poemsVisible || savedPoems.isEmpty) &&
+        (!rootsVisible || savedRoots.isEmpty);
 
     return _pageShell(
       'نشان‌شده',
@@ -2766,10 +2762,10 @@ class _ShellState extends State<Shell> {
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: kNavClearance),
                         children: [
-                          if (wordsVisible) ...[
+                          if (wordsVisible)
                             for (final e in favs) _pairRow(e),
+                          if (rootsVisible)
                             for (final row in savedRoots) _savedRootRow(row),
-                          ],
                           if (proverbsVisible)
                             for (final p in savedProverbs) _savedProverbRow(p),
                           if (poemsVisible)
