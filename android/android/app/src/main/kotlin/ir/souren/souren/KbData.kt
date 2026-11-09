@@ -91,6 +91,7 @@ object KbData {
                 }
                 learnedPairs = pairMap
             }
+            if (shareLearning) syncLearning(ctx)
         } catch (e: Exception) { }
     }
 
