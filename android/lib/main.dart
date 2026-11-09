@@ -3,9 +3,11 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_drawing/path_drawing.dart';
 
 import 'lucide.dart';
 import 'share.dart';
@@ -72,92 +74,6 @@ class Motion {
   static const pressDown = Duration(milliseconds: 100);
   static const pressUp = Duration(milliseconds: 300);
   static const spring = Cubic(0.2, 1.08, 0.32, 1.0);
-}
-
-/// A real, interruptible spring for the single navigation selection capsule.
-/// The six tab hit-targets never move; only this fixed-size surface travels.
-class SpringSlideIndicator extends StatefulWidget {
-  final double left;
-  final double top;
-  final double width;
-  final double height;
-  final Color color;
-
-  const SpringSlideIndicator({
-    super.key,
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.height,
-    required this.color,
-  });
-
-  @override
-  State<SpringSlideIndicator> createState() => _SpringSlideIndicatorState();
-}
-
-class _SpringSlideIndicatorState extends State<SpringSlideIndicator>
-    with TickerProviderStateMixin {
-  late final AnimationController _position = AnimationController.unbounded(
-    vsync: this,
-    value: widget.left,
-  );
-  late final AnimationController _width = AnimationController.unbounded(
-    vsync: this,
-    value: widget.width,
-  );
-
-  void _springTo(AnimationController controller, double target) {
-    controller.animateWith(
-      SpringSimulation(
-        const SpringDescription(mass: 1, stiffness: 520, damping: 38),
-        controller.value,
-        target,
-        controller.velocity,
-      ),
-    );
-  }
-
-  @override
-  void didUpdateWidget(covariant SpringSlideIndicator oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduceMotion) {
-      _position.value = widget.left;
-      _width.value = widget.width;
-      return;
-    }
-    if (oldWidget.left != widget.left) _springTo(_position, widget.left);
-    if (oldWidget.width != widget.width) _springTo(_width, widget.width);
-  }
-
-  @override
-  void dispose() {
-    _position.dispose();
-    _width.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_position, _width]),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: widget.color,
-          borderRadius: BorderRadius.circular(19),
-        ),
-      ),
-      builder: (context, child) => Positioned(
-        left: _position.value,
-        top: widget.top,
-        width: _width.value,
-        height: widget.height,
-        child: child!,
-      ),
-    );
-  }
 }
 
 PageRoute<T> _softRoute<T>(Widget page) => PageRouteBuilder<T>(
@@ -229,24 +145,6 @@ class FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     return enterTransition(child, animation);
-  }
-}
-
-/// Scale pop for toggle icons (like / bookmark): replays on [active] change.
-class PopIcon extends StatelessWidget {
-  final bool active;
-  final Widget child;
-  const PopIcon({super.key, required this.active, required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(active),
-      tween: Tween(begin: 0.6, end: 1),
-      duration: Motion.fast,
-      curve: Motion.pop,
-      builder: (_, v, c) => Transform.scale(scale: v, child: c),
-      child: child,
-    );
   }
 }
 
@@ -324,11 +222,14 @@ class _ScrollFadeState extends State<ScrollFade> {
 
   void _onScroll(ScrollNotification n) {
     if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      final progress = (n.metrics.pixels / 96).clamp(0.0, 1.0);
-      // Smoothstep avoids a sudden fade when the finger first moves.
-      final eased = progress * progress * (3 - 2 * progress);
-      final top = eased;
-      final bottom = n.metrics.extentAfter > 1 ? eased : 0.0;
+      final topProgress = (n.metrics.pixels / 96).clamp(0.0, 1.0);
+      final bottomProgress = n.metrics.maxScrollExtent > 1
+          ? (1 - n.metrics.extentAfter / 96).clamp(0.0, 1.0)
+          : 0.0;
+      // Smoothstep keeps both edge fades tied to the actual scroll edges.
+      double smooth(double value) => value * value * (3 - 2 * value);
+      final top = smooth(topProgress);
+      final bottom = smooth(bottomProgress);
       if ((top - _top).abs() > 0.005 ||
           (bottom - _bottom).abs() > 0.005) {
         setState(() {
@@ -415,8 +316,8 @@ class _PressableState extends State<Pressable>
       SpringSimulation(
         const SpringDescription(
           mass: 1,
-          stiffness: 520,
-          damping: 38,
+          stiffness: 420,
+          damping: 30,
         ),
         _scaleController.value,
         target,
@@ -474,9 +375,12 @@ Widget pressIcon({
     onTap: onTap,
     child: Padding(
       padding: const EdgeInsets.all(8),
-      child: PopIcon(
-        active: active,
-        child: Icon(icon, size: 21, color: active ? activeColor : inactive),
+      child: Icon(
+        icon,
+        size: 21,
+        color: active ? activeColor : inactive,
+        fill: active ? 1 : 0,
+        weight: active ? 600 : 400,
       ),
     ),
   );
@@ -500,20 +404,49 @@ class LikeBookmarkButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void runToggle({
+      required bool wasActive,
+      required String message,
+      required VoidCallback action,
+    }) {
+      action();
+      if (!wasActive) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 10),
+          content: Text(message),
+          action: SnackBarAction(
+            label: 'واگردانی',
+            onPressed: action,
+          ),
+        ),
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         pressIcon(
           active: liked,
-          icon: LucideIcons.heart,
+          icon: Symbols.favorite_rounded,
           activeColor: pal.accent,
-          onTap: onToggleLike,
+          onTap: () => runToggle(
+            wasActive: liked,
+            message: 'از پسندیده‌ها حذف شد',
+            action: onToggleLike,
+          ),
         ),
         pressIcon(
           active: bookmarked,
-          icon: LucideIcons.bookmark,
+          icon: Symbols.bookmark_rounded,
           activeColor: pal.ink,
-          onTap: onToggleBookmark,
+          onTap: () => runToggle(
+            wasActive: bookmarked,
+            message: 'از نشان‌شده‌ها حذف شد',
+            action: onToggleBookmark,
+          ),
         ),
       ],
     );
@@ -671,8 +604,11 @@ class DetailSheet extends StatefulWidget {
   final VoidCallback? onOpenEtymology;
   final String? etymologyWord;
   final List<String> relatedPersianWords;
+  final String? relatedPoemTitle;
   final List<Entry> relatedEntries;
   final void Function(Entry)? onOpenRelatedEntry;
+  final List<String> copyableLines;
+  final bool showActions;
   const DetailSheet({
     super.key,
     required this.card,
@@ -683,8 +619,11 @@ class DetailSheet extends StatefulWidget {
     this.onOpenEtymology,
     this.etymologyWord,
     this.relatedPersianWords = const [],
+    this.relatedPoemTitle,
     this.relatedEntries = const [],
     this.onOpenRelatedEntry,
+    this.copyableLines = const [],
+    this.showActions = true,
   });
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -693,6 +632,14 @@ class DetailSheet extends StatefulWidget {
 class _DetailSheetState extends State<DetailSheet> {
   late bool _liked = widget.initialLiked;
   late bool _bookmarked = widget.initialBookmarked;
+
+  Future<void> _copyText(String value, String message) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -714,36 +661,98 @@ class _DetailSheetState extends State<DetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  widget.card.title,
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: widget.copyableLines.isEmpty
+                    ? Text(
+                        widget.card.title,
+                        textAlign: TextAlign.right,
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < widget.copyableLines.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: SelectableText(
+                                widget.copyableLines[i],
+                                textAlign: TextAlign.right,
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.7,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+              if (widget.showActions)
+                LikeBookmarkButtons(
+                  liked: _liked,
+                  bookmarked: _bookmarked,
+                  onToggleLike: () async {
+                    setState(() => _liked = !_liked);
+                    await widget.onToggleLike();
+                  },
+                  onToggleBookmark: () async {
+                    setState(() => _bookmarked = !_bookmarked);
+                    await widget.onToggleBookmark();
+                  },
                 ),
-              ),
-              LikeBookmarkButtons(
-                liked: _liked,
-                bookmarked: _bookmarked,
-                onToggleLike: () async {
-                  setState(() => _liked = !_liked);
-                  await widget.onToggleLike();
-                },
-                onToggleBookmark: () async {
-                  setState(() => _bookmarked = !_bookmarked);
-                  await widget.onToggleBookmark();
-                },
-              ),
             ],
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              widget.card.lines.join('\n'),
-              style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+          if (widget.card.breadcrumb != null) ...[
+            const SizedBox(height: 5),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.breadcrumb!,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.faint, fontSize: 11.5, height: 1.6),
+              ),
             ),
-          ),
+          ],
+          if (widget.card.meaning != null) ...[
+            const SizedBox(height: 9),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.meaning!,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+              ),
+            ),
+          ],
+          if (widget.card.lines.isNotEmpty)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                widget.card.lines.join('\n'),
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: pal.muted, fontSize: 14, height: 1.8),
+              ),
+            ),
+          if (widget.copyableLines.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'برای کپی بیت از دکمهٔ کپی و برای واژه یا مصراع، متن را انتخاب کنید.',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.faint, fontSize: 10.5),
+                ),
+              ),
+            ),
           if (widget.card.caption != null) ...[
             const SizedBox(height: 6),
             Align(
@@ -774,14 +783,20 @@ class _DetailSheetState extends State<DetailSheet> {
               runSpacing: 8,
               children: [
                 for (final entry in widget.relatedEntries)
-                  ActionChip(
-                    label: Text(entry.ar),
-                    onPressed: widget.onOpenRelatedEntry == null
-                        ? null
-                        : () => widget.onOpenRelatedEntry!(entry),
-                    backgroundColor: pal.pillC,
-                    side: BorderSide(color: pal.div),
-                    labelStyle: TextStyle(color: pal.ink, fontWeight: FontWeight.w600),
+                  GestureDetector(
+                    onLongPress: () => _copyText(entry.ar, 'واژه کپی شد'),
+                    child: ActionChip(
+                      label: Text(entry.ar),
+                      onPressed: widget.onOpenRelatedEntry == null
+                          ? null
+                          : () => widget.onOpenRelatedEntry!(entry),
+                      backgroundColor: pal.pillC,
+                      side: BorderSide(color: pal.div),
+                      labelStyle: TextStyle(
+                        color: pal.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -830,12 +845,18 @@ class _DetailSheetState extends State<DetailSheet> {
               const SizedBox(width: 10),
               Pressable(
                 onTap: () async {
-                  await Clipboard.setData(
-                    ClipboardData(text: buildShareText(widget.card)),
-                  );
+                  final copyText = widget.copyableLines.isEmpty
+                      ? buildShareText(widget.card)
+                      : widget.copyableLines.join('\n');
+                  await Clipboard.setData(ClipboardData(text: copyText));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('کپی شد')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          widget.copyableLines.isEmpty ? 'کپی شد' : 'بیت کپی شد',
+                        ),
+                      ),
+                    );
                   }
                 },
                 child: Container(
@@ -862,11 +883,13 @@ class _DetailSheetState extends State<DetailSheet> {
               ),
             ],
           ),
-          if (widget.etymologyWord != null) ...[
+          if (widget.etymologyWord != null)
             _RootInfoCard(word: widget.etymologyWord!),
-            _PoemUsageCard(words: widget.relatedPersianWords.isNotEmpty
-                ? widget.relatedPersianWords : [widget.etymologyWord!]),
-          ],
+          if (widget.relatedPersianWords.isNotEmpty)
+            _PoemUsageCard(
+              words: widget.relatedPersianWords,
+              title: widget.relatedPoemTitle ?? 'شعرهایی که این واژه در آن‌ها آمده',
+            ),
           if (widget.onOpenEtymology != null) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -915,18 +938,41 @@ class ShareCardImage extends StatelessWidget {
         children: [
           Text(
             card.title,
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: pal.ink,
+              height: 1.75,
             ),
           ),
           const SizedBox(height: 10),
+          if (card.breadcrumb != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              card.breadcrumb!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontSize: 12, color: pal.faint, height: 1.6),
+            ),
+          ],
+          if (card.meaning != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              card.meaning!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontSize: 15, color: pal.muted, height: 1.8),
+            ),
+          ],
           for (final line in card.lines)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 line,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
                 style: TextStyle(fontSize: 15, color: pal.muted, height: 1.8),
               ),
             ),
@@ -934,6 +980,8 @@ class ShareCardImage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               card.caption!,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
               style: TextStyle(fontSize: 12.5, color: pal.faint),
             ),
           ],
@@ -941,12 +989,16 @@ class ShareCardImage extends StatelessWidget {
           Divider(height: 1, color: pal.div),
           const SizedBox(height: 10),
           Row(
+            textDirection: TextDirection.rtl,
             children: [
-              Icon(LucideIcons.badgeCheck, size: 16, color: pal.sel),
-              const SizedBox(width: 6),
-              Text(
-                'سورن — دیکشنری عربی به فارسی',
-                style: TextStyle(fontSize: 12, color: pal.muted),
+              const SourenLogo(width: 34, animate: false),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  '، دیکشنری عربی به فارسی',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontSize: 12, color: pal.muted),
+                ),
               ),
             ],
           ),
@@ -1326,7 +1378,7 @@ class _SourenAppState extends State<SourenApp> {
             : const KeyedSubtree(
                 key: ValueKey('loading'),
                 child: Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
+                  body: Center(child: SourenLogo(width: 190)),
                 ),
               ),
       ),
@@ -1334,9 +1386,109 @@ class _SourenAppState extends State<SourenApp> {
   }
 }
 
-/// The ONE list/page entrance: soft fade + gentle rise, staggered by
-/// [index] for list items only. Replaces the three old entrances
-/// (Stagger, the route fade, the tab cross-fade).
+/// The complete official Souren wordmark, revealed as a filled silhouette.
+class SourenLogo extends StatefulWidget {
+  final double width;
+  final bool animate;
+  const SourenLogo({super.key, required this.width, this.animate = true});
+
+  @override
+  State<SourenLogo> createState() => _SourenLogoState();
+}
+
+class _SourenLogoState extends State<SourenLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+    value: widget.animate ? 0 : 1,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const ratio = 980.05 / 291.68;
+    final height = widget.width / ratio;
+    return SizedBox(
+      width: widget.width,
+      height: height,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => CustomPaint(
+          painter: _SourenLogoPainter(
+            progress: widget.animate
+                ? Curves.easeInOutCubic.transform(_controller.value)
+                : 1.0,
+            color: pal.ink,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SourenLogoPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  _SourenLogoPainter({required this.progress, required this.color});
+
+  static const Size _viewBox = Size(980.05, 291.68);
+  static final List<Path> _paths = [
+    parseSvgPathData(
+      'M932.05,27.17v96.3c0,13.24-10.77,24-24,24h-11.67c-13.23,0-24-10.76-24-24V51.22h-48v72.25c0,13.24-10.76,24-24,24h-12.79c-13.24,0-24-10.76-24-24V36.44h-48v72.99c-23.25,12.09-83.09,38.04-168.41,38.04h-.05V57.91c0-14.89-6.73-28.68-18.46-37.84-11.73-9.16-26.74-12.34-41.19-8.73l-29.94,7.49c-32.16,8.03-54.62,36.8-54.62,69.94v58.7c0,26.47,21.53,48,48,48h48.21v31.71c-.16.33-.44.73-.68,1-15.06,5.91-43.77,15.5-71.53,15.5v48c34.33,0,67.81-10.41,89.85-19.13,17.59-6.96,30.36-25.74,30.36-44.64v-32.44h.05c82.82,0,144.23-21.58,177.52-36.98,12.32,22.04,35.89,36.98,62.89,36.98h12.79c18.42,0,35.25-6.95,48-18.38,12.75,11.43,29.58,18.38,48,18.38h11.67c39.7,0,72-32.3,72-72V27.17h-48ZM499.13,147.47h-48.21v-58.7c0-11.08,7.51-20.69,18.26-23.38l29.95-7.48v89.56Z',
+    ),
+    parseSvgPathData(
+      'M268.56,290.86v-48c28.17,0,57.32-9.87,72.19-15.76l.02-200.75h48v200.74c0,19.82-11.91,37.34-30.35,44.64-22.05,8.73-55.53,19.13-89.85,19.13Z',
+    ),
+    parseSvgPathData(
+      'M144.26,290.86h-24.05c-21.45,0-45.04-4.06-70.11-12.08C20.13,269.21,0,241.64,0,210.19V51.22h48v158.98c0,10.48,6.71,19.67,16.71,22.87,20.06,6.41,39.25,9.8,55.5,9.8h24.05c16.25,0,35.44-3.39,55.5-9.8,9.99-3.19,16.71-12.38,16.71-22.87V26.35h48v183.85c0,31.45-20.13,59.01-50.09,68.59-25.07,8.01-48.66,12.08-70.11,12.08Z',
+    ),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / _viewBox.width, size.height / _viewBox.height);
+    final reveal = progress.clamp(0.0, 1.0);
+    canvas.clipRect(Rect.fromLTWH(
+      _viewBox.width * (1 - reveal),
+      0,
+      _viewBox.width * reveal,
+      _viewBox.height,
+    ));
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    for (final path in _paths) {
+      canvas.drawPath(path, paint);
+    }
+    canvas.drawRect(
+      const Rect.fromLTWH(108.18, 0, 48.1, 48.1),
+      paint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SourenLogoPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
+}
+
+/// Soft fade + gentle rise, staggered by [index] for list items only.
+/// Tab switches are intentionally immediate; only the home search expansion
+/// keeps its spring animation.
 class Enter extends StatelessWidget {
   final int index;
   final Widget child;
@@ -1375,35 +1527,15 @@ class _ShellState extends State<Shell> {
   int learnedWords = 0;
   int learnedCorrections = 0;
   int tab = 0;
-  final List<GlobalKey> _tabKeys = List.generate(6, (_) => GlobalKey());
-  final GlobalKey _navStackKey = GlobalKey();
-  double _indLeft = 0;
-  double _indWidth = 0;
-
-  void _measureIndicator() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final stackBox =
-          _navStackKey.currentContext?.findRenderObject() as RenderBox?;
-      final tabBox =
-          _tabKeys[tab].currentContext?.findRenderObject() as RenderBox?;
-      if (stackBox == null || tabBox == null) return;
-      final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
-      if ((pos.dx - _indLeft).abs() > .5 ||
-          (tabBox.size.width - _indWidth).abs() > .5) {
-        setState(() {
-          _indLeft = pos.dx;
-          _indWidth = tabBox.size.width;
-        });
-      }
-    });
-  }
-
   String query = '';
-  int _homeCollection = 0; // words, proverbs, poems, poets, books
-  Future<List<Map<String, dynamic>>>? _homePoems;
+  int _homeCollection = 0; // words, proverbs, poets, books
   Future<List<Map<String, dynamic>>>? _homePoets;
+  Future<List<Map<String, dynamic>>>? _homePoems;
   Future<List<Map<String, dynamic>>>? _homeBooks;
+  Future<List<Map<String, dynamic>>>? _savedBookCatalog;
+  int _metricIndex = 0;
+  int _likedFilter = 0; // words, proverbs, poems, books, roots
+  int _favoritesFilter = 0; // words, proverbs, poems, books, roots
 
   // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
@@ -1531,15 +1663,11 @@ class _ShellState extends State<Shell> {
       body: SafeArea(
         top: true,
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: Motion.base,
-          transitionBuilder: enterTransition,
-          child: KeyedSubtree(
-            key: ValueKey(
-              '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
-            ),
-            child: pages[tab],
+        child: KeyedSubtree(
+          key: ValueKey(
+            '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
           ),
+          child: pages[tab],
         ),
       ),
       bottomNavigationBar: _searchFocused
@@ -1556,117 +1684,104 @@ class _ShellState extends State<Shell> {
   /// between tabs. Only the surface changed from glass to a solid color.
   /// Icons remain from the current CUI Lucide pack.
   Widget _navBar() {
-    // The first and last actions stay anchored at the edges. The selected
-    // middle item expands; the other middle items reflow around it.
-    final items = <(IconData, IconData, String)>[
-      (LucideIcons.house, Icons.home_filled, 'پیشگاه'),
-      (LucideIcons.heart, Icons.favorite, 'پسندیده‌ها'),
-      (LucideIcons.layoutDashboard, Icons.dashboard, 'بخش‌ها'),
-      (LucideIcons.bookmark, Icons.bookmark, 'نشان‌شده'),
-      (LucideIcons.user, Icons.person, 'نمایه'),
-      (LucideIcons.settings, Icons.settings, 'پیکربندی'),
+    final items = <(IconData, String)>[
+      (Symbols.home_rounded, 'پیشگاه'),
+      (Symbols.favorite_rounded, 'پسندیده‌ها'),
+      (Symbols.grid_view_rounded, 'بخش‌ها'),
+      (Symbols.bookmark_rounded, 'نشان‌شده'),
+      (Symbols.person_rounded, 'نمایه'),
+      (Symbols.settings_rounded, 'پیکربندی'),
     ];
-    _measureIndicator();
-    final selectedColor = Color.lerp(pal.sel, pal.bg, 0.38)!;
-
     return Container(
-      margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: pal.cardC,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: pal.div.withValues(alpha: 0.6)),
-        ),
-        child: Stack(
-          key: _navStackKey,
-          children: [
-            SpringSlideIndicator(
-              left: _indLeft,
-              top: 0,
-              width: _indWidth,
-              height: 52,
-              color: selectedColor,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  GestureDetector(
-                    key: _tabKeys[i],
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _go(i),
-                    child: AnimatedContainer(
-                      duration: Motion.base,
-                      curve: Motion.curve,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tab == i ? 17 : 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: AnimatedSize(
-                        duration: Motion.base,
-                        curve: Motion.curve,
-                        alignment: AlignmentDirectional.center,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: Motion.fast,
-                              switchInCurve: Motion.curve,
-                              switchOutCurve: Motion.curve,
-                              transitionBuilder: (child, anim) =>
-                                  FadeTransition(
-                                opacity: anim,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(begin: .8, end: 1)
-                                      .animate(anim),
-                                  child: child,
-                                ),
-                              ),
-                              child: Icon(
-                                key: ValueKey<bool>(tab == i),
-                                tab == i ? items[i].$2 : items[i].$1,
-                                size: 23,
-                                color: tab == i
-                                    ? pal.bg
-                                    : pal.ink.withValues(alpha: .72),
-                              ),
-                            ),
-                            if (tab == i)
-                              TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
-                                duration: Motion.base,
-                                curve: Motion.curve,
-                                builder: (_, value, child) =>
-                                    Opacity(opacity: value, child: child),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const SizedBox(width: 7),
-                                    Text(
-                                      items[i].$3,
-                                      style: TextStyle(
-                                        color: pal.bg,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+      margin: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const pill = 42.0;
+          const contentH = 58.0;
+          final slotW = (constraints.maxWidth - 16) / 6;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: pal.cardC,
+              borderRadius: BorderRadius.circular(capR(70)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
-          ],
-        ),
+            child: Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 320),
+                  curve: Motion.curve,
+                  left: tab * slotW + (slotW - pill) / 2,
+                  top: 0,
+                  width: pill,
+                  height: pill,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Color.lerp(pal.sel, pal.bg, 0.38)!,
+                      borderRadius: BorderRadius.circular(capR(pill)),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      Expanded(
+                        child: Pressable(
+                          onTap: () => _go(i),
+                          child: SizedBox(
+                            height: contentH,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: pill,
+                                  height: pill,
+                                  child: Icon(
+                                    items[i].$1,
+                                    size: 22,
+                                    fill: tab == i ? 1 : 0,
+                                    weight: tab == i ? 600 : 400,
+                                    color: tab == i
+                                        ? pal.bg
+                                        : pal.ink.withValues(alpha: .72),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                SizedBox(
+                                  height: 13,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: AnimatedOpacity(
+                                      opacity: tab == i ? 1 : 0,
+                                      duration: Motion.fast,
+                                      child: Text(
+                                        items[i].$2,
+                                        style: TextStyle(
+                                          color: pal.sel,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -1712,29 +1827,11 @@ class _ShellState extends State<Shell> {
                               _homeCollectionHeader(),
                               const SizedBox(height: 6),
                               Expanded(
-                                child: AnimatedSwitcher(
-                                  duration: Motion.slow,
-                                  switchInCurve: Motion.curve,
-                                  switchOutCurve: Curves.easeInOutCubic,
-                                  transitionBuilder: (child, animation) =>
-                                      FadeTransition(
-                                    opacity: animation,
-                                    child: SizeTransition(
-                                      sizeFactor: animation,
-                                      axis: Axis.horizontal,
-                                      child: ScaleTransition(
-                                        scale: Tween<double>(begin: 0.985, end: 1)
-                                            .animate(animation),
-                                        child: child,
-                                      ),
-                                    ),
+                                child: KeyedSubtree(
+                                  key: ValueKey(
+                                    'home-$_homeCollection-$_searchFocused',
                                   ),
-                                  child: KeyedSubtree(
-                                    key: ValueKey(
-                                      'home-$_homeCollection-$_searchFocused',
-                                    ),
-                                    child: _homeCollectionView(d, results),
-                                  ),
+                                  child: _homeCollectionView(d, results),
                                 ),
                               ),
                             ],
@@ -1742,20 +1839,24 @@ class _ShellState extends State<Shell> {
                         ),
                         AnimatedContainer(
                           duration: Motion.slow,
-                          curve: Curves.easeInOutCubic,
+                          curve: Motion.spring,
                           width: _searchFocused ? 0 : 16,
                         ),
                         AnimatedContainer(
                           duration: Motion.slow,
-                          curve: Curves.easeInOutCubic,
+                          curve: Motion.spring,
                           width: _searchFocused ? 0 : 124,
                           child: ClipRect(
                             child: AnimatedOpacity(
                               opacity: _searchFocused ? 0 : 1,
                               duration: Motion.fast,
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  children: [
+                              child: edgeFade(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.only(
+                                    bottom: kNavClearance,
+                                  ),
+                                  child: Column(
+                                    children: [
                                     _sidePill(
                                       'گنجینهٔ واژه‌ها',
                                       () => _open(
@@ -1770,12 +1871,8 @@ class _ShellState extends State<Shell> {
                                       () => _open(CorrectorPage(dict: d)),
                                     ),
                                     _sidePill(
-                                      'نیم‌فاصله',
-                                      () => _open(const NimeFaselePage()),
-                                    ),
-                                    _sidePill(
                                       'پندواژه',
-                                      () => _open(_pandvazhePage()),
+                                      () => _open(_pandvazhePage(d)),
                                     ),
                                     _sidePill(
                                       'واژه‌های تازه',
@@ -1791,11 +1888,18 @@ class _ShellState extends State<Shell> {
                                     ),
                                     _sidePill(
                                       'ریشه‌شناسی',
-                                      () => _open(EtymologyPage(dict: d)),
+                                      () => _open(EtymologyPage(
+                                        dict: d,
+                                        liked: liked,
+                                        favorites: favorites,
+                                        onToggleLike: _toggleLike,
+                                        onToggleBookmark: _toggleFav,
+                                      )),
                                     ),
-                                    const SizedBox(height: 4),
-                                    _homeMetrics(d),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      _homeMetrics(d),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -1805,6 +1909,12 @@ class _ShellState extends State<Shell> {
                     ),
                   ),
                 ],
+              ),
+              const Positioned(
+                top: 24,
+                left: 0,
+                right: 0,
+                child: Center(child: SourenLogo(width: 150)),
               ),
               Positioned(
                 top: logoGap + searchH,
@@ -1845,45 +1955,53 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _homeCollectionHeader() {
-    final labels = [
+    const labels = [
       'گنجینۀ واژه‌ها',
       'گنجینۀ پندواژه‌ها',
-      'گنجینۀ شعرها',
       'گنجینۀ شاعران',
       'گنجینۀ کتاب‌ها',
     ];
-    return Row(
-      children: [
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final base = labels[_homeCollection];
-              var best = base;
-              for (var count = 1; count <= 18; count++) {
-                final candidate = base.replaceFirst(
-                  ' ',
-                  '${List<String>.filled(count, String.fromCharCode(0x0640)).join()} ',
-                );
-                final painter = TextPainter(
-                  text: TextSpan(
-                    text: candidate,
-                    style: TextStyle(
-                      color: pal.ink,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  textDirection: TextDirection.rtl,
-                  maxLines: 1,
-                )..layout();
-                if (painter.width > constraints.maxWidth) break;
-                best = candidate;
-              }
-              return Text(
-                best,
+    return PopupMenuButton<int>(
+      tooltip: 'انتخاب گنجینه',
+      color: pal.cardC,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(capR(34)),
+        side: BorderSide(color: pal.div),
+      ),
+      onSelected: (value) {
+        setState(() {
+          _homeCollection = value;
+          if (value == 2) {
+            _homePoets = _loadHomePoets();
+          } else if (value == 3) {
+            _homeBooks = GanjoorData.bookCatalog();
+          }
+        });
+      },
+      itemBuilder: (_) => [
+        for (var i = 0; i < labels.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: SizedBox(
+              width: 190,
+              child: Text(
+                labels[i],
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                labels[_homeCollection.clamp(0, labels.length - 1).toInt()],
                 maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.clip,
+                overflow: TextOverflow.ellipsis,
                 textDirection: TextDirection.rtl,
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -1891,37 +2009,12 @@ class _ShellState extends State<Shell> {
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                 ),
-              );
-            },
-          ),
-        ),
-        PopupMenuButton<int>(
-          tooltip: 'انتخاب گنجینه',
-          onSelected: (value) {
-            setState(() {
-              _homeCollection = value;
-              if (value == 2) {
-                _homePoems = query.isEmpty
-                    ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
-                    : GanjoorData.searchPoems(query);
-              } else if (value == 3) {
-                _homePoets = _loadHomePoets();
-              } else if (value == 4) {
-                _homeBooks = GanjoorData.bookCatalog();
-              }
-            });
-          },
-          icon: Icon(LucideIcons.chevronDown, size: 19, color: pal.muted),
-          color: pal.cardC,
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 0, child: Text('گنجینۀ واژه‌ها')),
-            PopupMenuItem(value: 1, child: Text('گنجینۀ پندواژه‌ها')),
-            PopupMenuItem(value: 2, child: Text('گنجینۀ شعرها')),
-            PopupMenuItem(value: 3, child: Text('گنجینۀ شاعران')),
-            PopupMenuItem(value: 4, child: Text('گنجینۀ کتاب‌ها')),
+              ),
+            ),
+            Icon(Symbols.expand_more_rounded, size: 20, color: pal.muted),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2015,12 +2108,13 @@ class _ShellState extends State<Shell> {
                   textAlign: TextAlign.right,
                   style: TextStyle(color: pal.muted, fontSize: 11.5),
                 ),
-                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                trailing: Icon(LucideIcons.chevronLeft, size: 17, color: pal.muted),
                 onTap: full.isEmpty
                     ? null
                     : () => _open(GanjoorNodePage(
                           title: title,
                           path: full,
+                          depth: poets ? 0 : 1,
                           dictionary: dict,
                           liked: liked,
                           favorites: favorites,
@@ -2079,10 +2173,10 @@ class _ShellState extends State<Shell> {
         ),
       );
     }
-    if (_homeCollection == 3) {
+    if (_homeCollection == 2) {
       return _homeEntityList(_homePoets ??= _loadHomePoets(), poets: true);
     }
-    if (_homeCollection == 4) {
+    if (_homeCollection == 3) {
       return _homeEntityList(_homeBooks ??= GanjoorData.bookCatalog(), poets: false);
     }
     final future = _homePoems ??= query.isEmpty
@@ -2124,7 +2218,7 @@ class _ShellState extends State<Shell> {
                     style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
                 subtitle: Text(poet, textAlign: TextAlign.right,
                     style: TextStyle(color: pal.muted, fontSize: 11.5)),
-                trailing: Icon(LucideIcons.chevronRight, size: 17, color: pal.muted),
+                trailing: Icon(LucideIcons.chevronLeft, size: 17, color: pal.muted),
                 onTap: full.isEmpty ? null : () => _open(GanjoorPoemPage(
                   title: title,
                   path: 'poets/$full.json',
@@ -2151,16 +2245,20 @@ class _ShellState extends State<Shell> {
         focusNode: _searchFocus,
         onChanged: (v) => setState(() {
           query = v.trim();
-          if (_homeCollection == 2) {
-            _homePoems = query.isEmpty
-                ? GanjoorData.searchPoemsForTerms(['عشق', 'دل', 'زندگی'])
-                : GanjoorData.searchPoems(query);
-          }
+          _homePoems = null;
         }),
         decoration: InputDecoration(
-          hintText: 'واژه‌ای را جستجو کنید',
+          hintText: const [
+            'واژه‌ای را جستجو کنید',
+            'پندواژه‌ای را جستجو کنید',
+            'نام شاعری را جستجو کنید',
+            'نام کتابی را جستجو کنید',
+          ][ _homeCollection.clamp(0, 3).toInt()],
           hintStyle: TextStyle(color: pal.muted, fontSize: 14.5),
-          prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 23),
+          prefixIcon: Transform.translate(
+            offset: const Offset(-4, 0),
+            child: Icon(LucideIcons.search, color: pal.muted, size: 20),
+          ),
           filled: true,
           fillColor: pal.cardC,
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
@@ -2176,43 +2274,97 @@ class _ShellState extends State<Shell> {
   Widget _homeMetrics(Dictionary d) {
     return SizedBox(
       width: 124,
-      height: 54,
+      height: 118,
       child: FutureBuilder<Map<String, int>>(
         future: GanjoorData.stats(),
         builder: (context, snapshot) {
           final stats = snapshot.data ?? const <String, int>{};
           final values = <(String, int)>[
             ('واژه', d.entries.length),
-            ('برابر', d.pairCount),
-            ('شاعر', stats['poets'] ?? 0),
             ('کتاب', stats['books'] ?? 0),
             ('شعر', stats['poems'] ?? 0),
           ];
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: [
-                for (final item in values)
-                  Container(
-                    margin: const EdgeInsets.only(left: 6, top: 3, bottom: 3),
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: pal.cardC,
-                      borderRadius: BorderRadius.circular(12),
+          final selected = _metricIndex % values.length;
+          final item = values[selected];
+          void step(int delta) => setState(() {
+            _metricIndex = (_metricIndex + delta + values.length) % values.length;
+          });
+          return Pressable(
+            onTap: () => step(1),
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity.abs() < 80) return;
+                // In RTL, a left swipe advances toward the previous item.
+                step(velocity < 0 ? 1 : -1);
+              },
+              child: AnimatedContainer(
+                duration: Motion.base,
+                curve: Motion.spring,
+                height: 118,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: pal.cardC,
+                  borderRadius: BorderRadius.circular(capR(68)),
+                  border: Border.all(color: pal.div.withValues(alpha: .65)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: Motion.fast,
+                      child: Text(
+                        faNum(item.$2),
+                        key: ValueKey(item.$2),
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          color: pal.ink,
+                          fontSize: 27,
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
+                        ),
+                      ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    const SizedBox(height: 7),
+                    Row(
                       children: [
-                        Text(faNum(item.$2),
-                            style: TextStyle(color: pal.ink,
-                                fontSize: 12, fontWeight: FontWeight.w700)),
-                        Text(item.$1,
-                            style: TextStyle(color: pal.muted, fontSize: 9.5)),
+                        Expanded(
+                          child: Text(
+                            item.$1,
+                            textAlign: TextAlign.right,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: pal.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var i = 0; i < values.length; i++)
+                              AnimatedContainer(
+                                duration: Motion.base,
+                                curve: Motion.spring,
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                width: i == selected ? 11 : 4,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: i == selected
+                                      ? pal.sel
+                                      : pal.faint.withValues(alpha: .55),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           );
         },
@@ -2231,36 +2383,13 @@ class _ShellState extends State<Shell> {
           color: pal.pillC,
           borderRadius: BorderRadius.circular(capR(54)),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            var display = label;
-            if (label == 'گنجینهٔ واژه‌ها') {
-              var best = 'گنجینۀ واژه‌ها';
-              for (var count = 1; count <= 12; count++) {
-                final kashida = List<String>.filled(count, 'ـ').join();
-                final candidate = 'گنجینۀ واژه$kashidaها';
-                final painter = TextPainter(
-                  text: TextSpan(
-                    text: candidate,
-                    style: TextStyle(fontSize: 14, color: pal.ink),
-                  ),
-                  textDirection: TextDirection.rtl,
-                  maxLines: 1,
-                )..layout();
-                if (painter.width > constraints.maxWidth) break;
-                best = candidate;
-              }
-              display = best;
-            }
-            return Text(
-              display,
-              maxLines: 1,
-              softWrap: false,
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: pal.ink),
-            );
-          },
+        child: Text(
+          label,
+          maxLines: 1,
+          softWrap: false,
+          textDirection: TextDirection.rtl,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: pal.ink),
         ),
       ),
     );
@@ -2364,8 +2493,10 @@ class _ShellState extends State<Shell> {
   }
 
   /// Proverb page wired to the shell's like/favorite storage.
-  Widget _pandvazhePage() => PandvazhePage(
+  Widget _pandvazhePage(Dictionary d) => PandvazhePage(
     proverbs: proverbs,
+    dict: d,
+    onOpenEntry: _showEntry,
     liked: liked,
     favorites: favorites,
     onToggleLike: _toggleLike,
@@ -2398,16 +2529,64 @@ class _ShellState extends State<Shell> {
       context: context,
       backgroundColor: pal.bg,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-          card: card,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
           initialLiked: liked.contains(key) || liked.contains(title),
           initialBookmarked: favorites.contains(key) || favorites.contains(title),
           onToggleLike: () => _toggleLike(key),
-          onToggleBookmark: () => _toggleFav(key),
+            onToggleBookmark: () => _toggleFav(key),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRootPopup(String word) {
+    final current = dict;
+    if (current == null || word.trim().isEmpty) return;
+    final key = 'root:$word';
+    final rows = PersianRoots.index(current);
+    final base = PersianRoots.baseOf(word);
+    final related = PersianRoots.sameBase(rows, word);
+    final lines = <String>[
+      'بن‌واژه: $base',
+      if (related.isNotEmpty)
+        'واژه‌های هم‌بن: ${related.map((item) => item.word).join('، ')}',
+      'این بن‌واژه از ساخت صرفی واژه به‌دست آمده و لزوماً خاستگاه تاریخی آن نیست.',
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: ShareCardData(
+              title: word,
+              lines: lines,
+              caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
+            ),
+            initialLiked: liked.contains(key),
+            initialBookmarked: favorites.contains(key),
+            onToggleLike: () => _toggleLike(key),
+            onToggleBookmark: () => _toggleFav(key),
+          ),
         ),
       ),
     );
@@ -2426,13 +2605,19 @@ class _ShellState extends State<Shell> {
     );
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: pal.bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => SingleChildScrollView(
-        child: DetailSheet(
-        card: card,
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
         initialLiked: liked.contains(e.ar),
         initialBookmarked: favorites.contains(e.ar),
         onToggleLike: () => _toggleLike(e.ar),
@@ -2442,45 +2627,112 @@ class _ShellState extends State<Shell> {
         onOpenEtymology: () {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && dict != null) {
-              _open(EtymologyPage(dict: dict!, initialWord: e.hasFa ? e.fa.first : null));
+            if (mounted && e.hasFa) {
+              _showRootPopup(e.fa.first);
             }
           });
         },
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _savedFilterBar({
+    required int selected,
+    required ValueChanged<int> onChanged,
+  }) {
+    const labels = ['واژه', 'پندواژه', 'شعر', 'کتاب', 'ریشه‌شناسی'];
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++)
+          Expanded(
+            child: Pressable(
+              onTap: () => onChanged(i),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
+                child: Text(
+                  labels[i],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: selected == i
+                        ? pal.ink
+                        : pal.muted.withValues(alpha: 0.62),
+                    fontSize: 11.5,
+                    fontWeight: selected == i
+                        ? FontWeight.w800
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
+    final savedRoots = PersianRoots.index(d)
+        .where((row) => liked.contains('root:${row.word}'))
+        .toList();
     final savedProverbs = proverbs.where((p) =>
       liked.contains('proverb:${p.$1}') || liked.contains(p.$1)
     ).toList();
     final savedPoems = liked.where((key) => key.startsWith('poem:')).toList();
+    final savedBooks = liked.where((key) => key.startsWith('book:')).toList();
+    final wordsVisible = _likedFilter == 0;
+    final proverbsVisible = _likedFilter == 1;
+    final poemsVisible = _likedFilter == 2;
+    final booksVisible = _likedFilter == 3;
+    final rootsVisible = _likedFilter == 4;
+    final isEmpty = (!wordsVisible || mine.isEmpty) &&
+        (!proverbsVisible || savedProverbs.isEmpty) &&
+        (!poemsVisible || savedPoems.isEmpty) &&
+        (!booksVisible || savedBooks.isEmpty) &&
+        (!rootsVisible || savedRoots.isEmpty);
+
     return _pageShell(
       'پسندیده‌ها',
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: mine.isEmpty && savedProverbs.isEmpty && savedPoems.isEmpty
-            ? Center(
-                child: Text(
-                  'هنوز چیزی را نپسندیده‌اید.\nبا زدن قلبِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: pal.muted, height: 1.9),
-                ),
-              )
-            : edgeFade(
-                child: ListView(
-                  padding: const EdgeInsets.only(bottom: kNavClearance),
-                  children: [
-                    for (final e in mine) _pairRow(e),
-                    for (final p in savedProverbs) _savedProverbRow(p),
-                    for (final poem in savedPoems) _savedPoemRow(poem, d),
-                  ],
-                ),
-              ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            _savedFilterBar(
+              selected: _likedFilter,
+              onChanged: (value) => setState(() => _likedFilter = value),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: isEmpty
+                  ? Center(
+                      child: Text(
+                        'موردی در این دسته پسندیده نشده است.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: pal.muted, height: 1.9),
+                      ),
+                    )
+                  : edgeFade(
+                      child: ListView(
+                        padding: const EdgeInsets.only(bottom: kNavClearance),
+                        children: [
+                          if (wordsVisible)
+                            for (final e in mine) _pairRow(e),
+                          if (rootsVisible)
+                            for (final row in savedRoots) _savedRootRow(row),
+                          if (proverbsVisible)
+                            for (final p in savedProverbs) _savedProverbRow(p),
+                          if (poemsVisible)
+                            for (final poem in savedPoems) _savedPoemRow(poem, d),
+                          if (booksVisible)
+                            for (final book in savedBooks) _savedBookRow(book, d),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2488,33 +2740,143 @@ class _ShellState extends State<Shell> {
   // ---------- نشان‌شده ----------
   Widget _favoritesPage(Dictionary d) {
     final favs = d.entries.where((e) => favorites.contains(e.ar)).toList();
+    final savedRoots = PersianRoots.index(d)
+        .where((row) => favorites.contains('root:${row.word}'))
+        .toList();
     final savedProverbs = proverbs.where((p) =>
       favorites.contains('proverb:${p.$1}') || favorites.contains(p.$1)
     ).toList();
     final savedPoems = favorites.where((key) => key.startsWith('poem:')).toList();
+    final savedBooks = favorites.where((key) => key.startsWith('book:')).toList();
+    final wordsVisible = _favoritesFilter == 0;
+    final proverbsVisible = _favoritesFilter == 1;
+    final poemsVisible = _favoritesFilter == 2;
+    final booksVisible = _favoritesFilter == 3;
+    final rootsVisible = _favoritesFilter == 4;
+    final isEmpty = (!wordsVisible || favs.isEmpty) &&
+        (!proverbsVisible || savedProverbs.isEmpty) &&
+        (!poemsVisible || savedPoems.isEmpty) &&
+        (!booksVisible || savedBooks.isEmpty) &&
+        (!rootsVisible || savedRoots.isEmpty);
+
     return _pageShell(
       'نشان‌شده',
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: favs.isEmpty && savedProverbs.isEmpty && savedPoems.isEmpty
-            ? Center(
-                child: Text(
-                  'هنوز چیزی را نشان نکرده‌اید.\nبا زدن نشانکِ واژه‌ها و پندواژه‌ها آن‌ها را اینجا نگه دارید.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: pal.muted, height: 1.9),
-                ),
-              )
-            : edgeFade(
-                child: ListView(
-                  padding: const EdgeInsets.only(bottom: kNavClearance),
-                  children: [
-                    for (final e in favs) _pairRow(e),
-                    for (final p in savedProverbs) _savedProverbRow(p),
-                    for (final poem in savedPoems) _savedPoemRow(poem, d),
-                  ],
-                ),
-              ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            _savedFilterBar(
+              selected: _favoritesFilter,
+              onChanged: (value) => setState(() => _favoritesFilter = value),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: isEmpty
+                  ? Center(
+                      child: Text(
+                        'موردی در این دسته نشان نشده است.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: pal.muted, height: 1.9),
+                      ),
+                    )
+                  : edgeFade(
+                      child: ListView(
+                        padding: const EdgeInsets.only(bottom: kNavClearance),
+                        children: [
+                          if (wordsVisible)
+                            for (final e in favs) _pairRow(e),
+                          if (rootsVisible)
+                            for (final row in savedRoots) _savedRootRow(row),
+                          if (proverbsVisible)
+                            for (final p in savedProverbs) _savedProverbRow(p),
+                          if (poemsVisible)
+                            for (final poem in savedPoems) _savedPoemRow(poem, d),
+                          if (booksVisible)
+                            for (final book in savedBooks) _savedBookRow(book, d),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _savedRootRow(PersianLexeme row) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      leading: Icon(LucideIcons.gitBranch, color: pal.sel),
+      title: Text(
+        row.word,
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
+        style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        'بن‌واژه: ${row.base}',
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
+        style: TextStyle(color: pal.muted, fontSize: 11.5),
+      ),
+      trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
+      onTap: () => _showRootPopup(row.word),
+    );
+  }
+
+  Widget _savedBookRow(String key, Dictionary dictionary) {
+    final path = key.substring('book:'.length);
+    final future = _savedBookCatalog ??= GanjoorData.bookCatalog();
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snapshot) {
+        Map<String, dynamic>? row;
+        for (final item in snapshot.data ?? const <Map<String, dynamic>>[]) {
+          final full = (item['FullUrl'] ?? item['fullUrl'] ?? '')
+              .toString()
+              .replaceFirst(RegExp(r'^/'), '');
+          if (full == path) {
+            row = item;
+            break;
+          }
+        }
+        final title = (row?['Title'] ?? row?['title'] ?? row?['Name'] ??
+                row?['name'] ?? path.split('/').last)
+            .toString();
+        final poet = (row?['PoetName'] ?? row?['PoetNickname'] ??
+                row?['poetName'] ?? '')
+            .toString();
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+          leading: Icon(LucideIcons.notebookPen, color: pal.sel),
+          title: Text(
+            title,
+            textAlign: TextAlign.right,
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+          ),
+          subtitle: poet.isEmpty
+              ? null
+              : Text(
+                  poet,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: pal.muted, fontSize: 11.5),
+                ),
+          trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
+          onTap: () => _open(GanjoorNodePage(
+            title: title,
+            path: path,
+            depth: 1,
+            dictionary: dictionary,
+            liked: liked,
+            favorites: favorites,
+            onToggleLike: _toggleLike,
+            onToggleBookmark: _toggleFav,
+            onOpenEntry: _showEntry,
+          )),
+        );
+      },
     );
   }
 
@@ -2527,19 +2889,35 @@ class _ShellState extends State<Shell> {
     return FutureBuilder<Map<String, dynamic>>(
       future: GanjoorData.json(path),
       builder: (context, snapshot) {
-        final title = snapshot.data?['Title']?.toString() ?? 'شعر ذخیره‌شده';
+        final data = snapshot.data;
+        final poemTitle = data?['Title']?.toString() ?? 'شعر ذخیره‌شده';
+        final fullTitle = data?['FullTitle']?.toString() ?? poemTitle;
+        final pathParts = fullTitle
+            .split(RegExp(r'\s*[»›>]+\s*'))
+            .where((part) => part.trim().isNotEmpty)
+            .toList();
+        final breadcrumb = pathParts.join('  ›  ');
+        final bookTitle = pathParts.length > 1 ? pathParts[1] : poemTitle;
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           leading: Icon(LucideIcons.fileText, color: pal.sel),
-          title: Text(title,
+          title: Text(
+            bookTitle,
             textAlign: TextAlign.right,
-            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
-          subtitle: Text('بیت ${coupletIndex + 1} · گنجور',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(
+            '$breadcrumb  ·  بیت ${faNum(coupletIndex + 1)}',
             textAlign: TextAlign.right,
-            style: TextStyle(color: pal.muted, fontSize: 11.5)),
-          trailing: Icon(LucideIcons.chevronRight, color: pal.muted, size: 17),
+            textDirection: TextDirection.rtl,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: pal.muted, fontSize: 11.5, height: 1.6),
+          ),
+          trailing: Icon(LucideIcons.chevronLeft, color: pal.muted, size: 17),
           onTap: () => _open(GanjoorPoemPage(
-            title: title,
+            title: poemTitle,
             path: path,
             dictionary: dictionary,
             liked: liked,
@@ -2609,11 +2987,19 @@ class _ShellState extends State<Shell> {
       ),
       (LucideIcons.type, 'درست‌نویسی', () => _open(CorrectorPage(dict: d))),
       (LucideIcons.alignLeft, 'نیم‌فاصله', () => _open(const NimeFaselePage())),
-      (LucideIcons.fileText, 'پندواژه', () => _open(_pandvazhePage())),
+      (LucideIcons.fileText, 'پندواژه', () => _open(_pandvazhePage(d))),
       (
         LucideIcons.gitBranch,
         'ریشه‌شناسی',
-        () => _open(EtymologyPage(dict: d)),
+        () => _open(
+          EtymologyPage(
+            dict: d,
+            liked: liked,
+            favorites: favorites,
+            onToggleLike: _toggleLike,
+            onToggleBookmark: _toggleFav,
+          ),
+        ),
       ),
       (LucideIcons.sparkles, 'واژه‌های تازه', () => _open(_freshPage(d))),
       (LucideIcons.star, 'واژهٔ روز', () => _pushPage(_dailyPage(d))),
@@ -3044,6 +3430,29 @@ class _ShellState extends State<Shell> {
       corrections: learnedCorrections,
     );
     final next = nextLevelAt(score);
+    final levelIndex = levelThresholds.lastIndexWhere((t) => score >= t.$1);
+    final currentLevel = levelThresholds[levelIndex];
+    final previousLevel = levelIndex > 0 ? levelThresholds[levelIndex - 1] : null;
+    final followingLevel = levelIndex + 1 < levelThresholds.length
+        ? levelThresholds[levelIndex + 1]
+        : null;
+    final profileCard = ShareCardData(
+      title: user?.displayName ?? 'نمایهٔ مهمان',
+      lines: [
+        if (user != null) '@${user.username}',
+        'امتیاز کل: ${faNum(score)}',
+        'سطح فعلی: ${currentLevel.$2}',
+        if (previousLevel != null)
+          'سطح قبلی: ${previousLevel.$2}، ${faNum(previousLevel.$1)} امتیاز',
+        if (followingLevel != null)
+          'سطح بعدی: ${followingLevel.$2}، ${faNum(followingLevel.$1)} امتیاز',
+        'موارد نشان‌شده: ${faNum(favorites.length)}',
+        'موارد پسندیده: ${faNum(liked.length)}',
+        'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
+        'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
+      ],
+      caption: 'نمایهٔ کاربری سورن',
+    );
     final levelStart = levelThresholds.lastWhere((t) => score >= t.$1).$1;
     final progress = next == null
         ? 1.0
@@ -3164,6 +3573,30 @@ class _ShellState extends State<Shell> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _levelInfoTile('سطح قبلی', previousLevel),
+                const SizedBox(width: 8),
+                _levelInfoTile('سطح فعلی', currentLevel, active: true),
+                const SizedBox(width: 8),
+                _levelInfoTile('سطح بعدی', followingLevel),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Symbols.share_rounded, size: 19),
+                label: const Text('اشتراک‌گذاری نمایه'),
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _ShareSheet(card: profileCard),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -3315,6 +3748,44 @@ class _ShellState extends State<Shell> {
               title: const Text('آموخته‌های کیبورد'),
               subtitle: const Text('آنچه کیبورد سورن از شما آموخته است'),
               onTap: () => _pushPage(_learningPage()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _levelInfoTile(
+    String label,
+    (int, String)? level, {
+    bool active = false,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+        decoration: BoxDecoration(
+          color: active ? pal.pillC : Colors.transparent,
+          borderRadius: BorderRadius.circular(capR(42)),
+          border: Border.all(color: active ? pal.div : pal.div.withValues(alpha: .5)),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: TextStyle(fontSize: 10.5, color: pal.muted)),
+            const SizedBox(height: 5),
+            Text(
+              level?.$2 ?? '—',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: active ? pal.ink : pal.muted,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              level == null ? '—' : '${faNum(level.$1)} امتیاز',
+              style: TextStyle(fontSize: 9.5, color: pal.faint),
             ),
           ],
         ),
@@ -3544,7 +4015,7 @@ class _ShellState extends State<Shell> {
                   height: 26,
                   decoration: BoxDecoration(
                     color: pal.bg,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(capR(26)),
                   ),
                 ),
               ),
@@ -3578,6 +4049,15 @@ class _ShellState extends State<Shell> {
               value: settings.autoCorrect,
               onChanged: (v) async {
                 setState(() => settings.autoCorrect = v);
+                await SettingsStore.update(settings);
+              },
+            ),
+            _toggleRow(
+              title: 'کمک به بهبود هوشمند سورن',
+              subtitle: 'فقط واژه، معادل انتخاب‌شده و حداکثر دو واژهٔ مجاور به‌صورت ناشناس ارسال می‌شوند؛ متن کامل، کلیپ‌بورد و اطلاعات حساب ارسال نمی‌شوند. این گزینه پیش‌فرض خاموش است.',
+              value: settings.shareLearning,
+              onChanged: (v) async {
+                setState(() => settings.shareLearning = v);
                 await SettingsStore.update(settings);
               },
             ),
@@ -3852,25 +4332,34 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _pageShell(String title, Widget body, {bool back = false}) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-          child: Row(
-            children: [
-              if (back) ...[const BackIconButton(), const SizedBox(width: 4)],
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w700,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+            child: Row(
+              children: [
+                if (back) ...[const BackIconButton(), const SizedBox(width: 4)],
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        Expanded(child: body),
-      ],
+          Expanded(child: body),
+        ],
+      ),
     );
   }
 }
@@ -3892,42 +4381,43 @@ class BackIconButton extends StatelessWidget {
   }
 }
 
-/// Scaffold for sub-pages: the content scrolls under a header strip
-/// whose background fades and blurs into the page colour — no hard
-/// rectangle edge appears under the page title while scrolling.
+/// Plain sub-page scaffold: a transparent, right-aligned title row
+/// without a background strip or rectangle beneath the tab title.
 Widget subScaffold(String title, Widget body) {
   return Scaffold(
     backgroundColor: pal.bg,
     body: SafeArea(
-      child: Stack(
-        children: [
-          Positioned.fill(top: 58, child: body),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 58,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Row(
-                children: [
-                  const BackIconButton(),
-                  const SizedBox(width: 2),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        color: pal.ink,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Column(
+          children: [
+            SizedBox(
+              height: 58,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Row(
+                  children: [
+                    const BackIconButton(),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.right,
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          color: pal.ink,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+            Expanded(child: body),
+          ],
+        ),
       ),
     ),
   );
@@ -4082,12 +4572,15 @@ class _LexiconPageState extends State<LexiconPage> {
                     child: Column(
                       children: [
                         Expanded(
-                          child: InkWell(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () => widget.onTapEntry(e),
                             child: Row(
+                              textDirection: TextDirection.rtl,
                               children: [
                                 Text(
                                   e.ar,
+                                  textDirection: TextDirection.rtl,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 15.5,
@@ -4098,6 +4591,8 @@ class _LexiconPageState extends State<LexiconPage> {
                                 Expanded(
                                   child: Text(
                                     e.fa.join('، '),
+                                    textDirection: TextDirection.rtl,
+                                    textAlign: TextAlign.left,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -4106,6 +4601,7 @@ class _LexiconPageState extends State<LexiconPage> {
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 Icon(
                                   LucideIcons.chevronLeft,
                                   size: 13,
@@ -4143,6 +4639,34 @@ class CorrectorPage extends StatefulWidget {
 class _CorrectorPageState extends State<CorrectorPage> {
   final _ctrl = TextEditingController();
   String _out = '';
+  Map<String, int> _learnedPairs = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLearningModel();
+  }
+
+  Future<void> _loadLearningModel() async {
+    final learned = await SharedFiles.readJson('learned.json');
+    if (learned == null) return;
+    final model = <String, int>{};
+    for (final key in ['pairs', 'sharedPairs']) {
+      final values = learned[key];
+      if (values is Map) {
+        for (final entry in values.entries) {
+          final count = entry.value;
+          if (count is num) {
+            model[entry.key.toString()] =
+                (model[entry.key.toString()] ?? 0) + count.toInt();
+          }
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() => _learnedPairs = model);
+    if (_ctrl.text.isNotEmpty) _run(_ctrl.text);
+  }
 
   void _run(String v) {
     setState(
@@ -4150,6 +4674,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
         v,
         dictionary: widget.dict.map,
         replaceArabic: true,
+        learnedPairs: _learnedPairs,
       ),
     );
   }
@@ -4187,18 +4712,21 @@ class _CorrectorPageState extends State<CorrectorPage> {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: pal.pillC,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: AnimatedSwitcher(
                 duration: Motion.fast,
                 transitionBuilder: (child, anim) =>
                     FadeTransition(opacity: anim, child: child),
-                child: Text(
-                  _out.isEmpty ? '…' : _out,
+                child: SizedBox(
                   key: ValueKey(_out),
-                  textAlign: TextAlign.right,
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(fontSize: 17.5, height: 1.8),
+                  width: double.infinity,
+                  child: Text(
+                    _out.isEmpty ? '…' : _out,
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(fontSize: 17.5, height: 1.8),
+                  ),
                 ),
               ),
             ),
@@ -4292,7 +4820,7 @@ class NimeFaselePage extends StatelessWidget {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: pal.pillC,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -4326,6 +4854,8 @@ class NimeFaselePage extends StatelessWidget {
 // ================= پندواژه (ضرب‌المثل‌ها) =================
 class PandvazhePage extends StatefulWidget {
   final List<(String, String)> proverbs;
+  final Dictionary dict;
+  final ValueChanged<Entry> onOpenEntry;
   final Set<String> liked;
   final Set<String> favorites;
   final Future<void> Function(String) onToggleLike;
@@ -4334,6 +4864,8 @@ class PandvazhePage extends StatefulWidget {
   const PandvazhePage({
     super.key,
     required this.proverbs,
+    required this.dict,
+    required this.onOpenEntry,
     required this.liked,
     required this.favorites,
     required this.onToggleLike,
@@ -4390,18 +4922,53 @@ class _PandvazhePageState extends State<PandvazhePage> {
       lines: [meaning],
       caption: 'ضرب‌المثل فارسی',
     );
+    final tokens = normalizeLetters('$title $meaning')
+        .split(RegExp(r'[\s،,.؟!؛:()«»]+'))
+        .where((word) => word.length > 1)
+        .where((word) => !const {
+              'از', 'به', 'در', 'که', 'و', 'را', 'با', 'این', 'آن',
+              'هر', 'هم', 'تا', 'می', 'است', 'برای', 'بر', 'یک',
+            }.contains(word))
+        .toSet();
+    final relatedEntries = widget.dict.entries.where((entry) {
+      final terms = <String>[entry.ar, ...entry.fa]
+          .expand((term) => normalizeLetters(term)
+              .split(RegExp(r'[\\s،,.؟!؛:()«»]+')));
+      return terms.any(tokens.contains);
+    }).take(8).toList();
+    final relatedWords = relatedEntries
+        .expand((entry) => entry.fa)
+        .where((word) => word.trim().isNotEmpty)
+        .take(2)
+        .toList();
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: pal.bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => DetailSheet(
-        card: card,
-        initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
-        initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
-        onToggleLike: () async => _toggleLike(title),
-        onToggleBookmark: () async => _toggleFav(title),
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
+            initialLiked: _liked.contains('proverb:$title') || _liked.contains(title),
+            initialBookmarked: _faved.contains('proverb:$title') || _faved.contains(title),
+            onToggleLike: () async => _toggleLike(title),
+            onToggleBookmark: () async => _toggleFav(title),
+            relatedEntries: relatedEntries,
+            relatedPersianWords: [title, ...relatedWords],
+            relatedPoemTitle: 'شعرهای مرتبط با این پندواژه',
+            onOpenRelatedEntry: (entry) {
+              Navigator.of(sheetContext).pop();
+              widget.onOpenEntry(entry);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -4426,26 +4993,29 @@ class _PandvazhePageState extends State<PandvazhePage> {
                       widget.proverbs[i].$2,
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       child: BackdropFilter(
                         filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
                           decoration: BoxDecoration(
                             color: pal.pillC.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: pal.div.withValues(alpha: 0.5),
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Row(
+                                textDirection: TextDirection.rtl,
                                 children: [
                                   Expanded(
                                     child: Text(
                                       widget.proverbs[i].$1,
+                                      textAlign: TextAlign.right,
+                                      textDirection: TextDirection.rtl,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 19,
@@ -4458,6 +5028,8 @@ class _PandvazhePageState extends State<PandvazhePage> {
                               const SizedBox(height: 10),
                               Text(
                                 widget.proverbs[i].$2,
+                                textAlign: TextAlign.right,
+                                textDirection: TextDirection.rtl,
                                 style: const TextStyle(
                                   color: Color(0xFF5C5546),
                                   height: 1.9,
@@ -4556,7 +5128,7 @@ class _FreshPageState extends State<FreshPage> {
                   padding: const EdgeInsets.symmetric(vertical: 17),
                   decoration: BoxDecoration(
                     color: pal.pillC,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -4666,7 +5238,7 @@ class _RootInfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -4701,7 +5273,19 @@ class _RootInfoCard extends StatelessWidget {
 class EtymologyPage extends StatefulWidget {
   final Dictionary dict;
   final String? initialWord;
-  const EtymologyPage({super.key, required this.dict, this.initialWord});
+  final Set<String>? liked;
+  final Set<String>? favorites;
+  final Future<void> Function(String)? onToggleLike;
+  final Future<void> Function(String)? onToggleBookmark;
+  const EtymologyPage({
+    super.key,
+    required this.dict,
+    this.initialWord,
+    this.liked,
+    this.favorites,
+    this.onToggleLike,
+    this.onToggleBookmark,
+  });
   @override
   State<EtymologyPage> createState() => _EtymologyPageState();
 }
@@ -4710,7 +5294,6 @@ class _EtymologyPageState extends State<EtymologyPage> {
   final _ctrl = TextEditingController();
   late final List<PersianLexeme> _rows = PersianRoots.index(widget.dict);
   String _query = '';
-  String? _selectedWord;
 
   @override
   void initState() {
@@ -4719,7 +5302,6 @@ class _EtymologyPageState extends State<EtymologyPage> {
     if (initial.isNotEmpty) {
       _ctrl.text = initial;
       _query = PersianRoots.normalize(initial);
-      _selectedWord = initial;
     }
   }
 
@@ -4729,172 +5311,152 @@ class _EtymologyPageState extends State<EtymologyPage> {
     super.dispose();
   }
 
-  void _select(String word) {
-    setState(() {
-      _selectedWord = word;
-      _ctrl.text = word;
-      _query = PersianRoots.normalize(word);
-    });
+  void _showLexeme(PersianLexeme row) {
+    final related = PersianRoots.sameBase(_rows, row.word);
+    final key = 'root:${row.word}';
+    final lines = <String>[
+      'بن‌واژه: ${row.base}',
+      '${faNum(row.sourceCount)} پیوند به مدخل‌های واژگان',
+      if (related.length > 1)
+        'واژه‌های هم‌بن: ${related.map((item) => item.word).join('، ')}',
+      'این بن‌واژه از ساخت صرفی واژه به‌دست آمده و لزوماً خاستگاه تاریخی آن نیست.',
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: ShareCardData(
+              title: row.word,
+              lines: lines,
+              caption: 'ریشه‌شناسی فارسی · بن‌واژهٔ ساختاری',
+            ),
+            initialLiked: widget.liked?.contains(key) ?? false,
+            initialBookmarked: widget.favorites?.contains(key) ?? false,
+            onToggleLike: () async {
+              final callback = widget.onToggleLike;
+              if (callback != null) await callback(key);
+            },
+            onToggleBookmark: () async {
+              final callback = widget.onToggleBookmark;
+              if (callback != null) await callback(key);
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final matches = PersianRoots.search(_rows, _query);
-    PersianLexeme? selected;
-    final target = _selectedWord == null ? _query : PersianRoots.normalize(_selectedWord!);
-    if (target.isNotEmpty) {
-      for (final row in _rows) {
-        if (PersianRoots.normalize(row.word) == target) {
-          selected = row;
-          break;
-        }
-      }
-    }
-    final related = selected == null
-        ? const <PersianLexeme>[]
-        : PersianRoots.sameBase(_rows, selected.word);
-
     return subScaffold(
       'ریشه‌شناسی فارسی',
-      Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _ctrl,
-              onChanged: (v) => setState(() {
-                _query = PersianRoots.normalize(v);
-                _selectedWord = null;
-              }),
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.right,
-              decoration: InputDecoration(
-                hintText: 'یک واژهٔ فارسی جست‌وجو کنید',
-                prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 22),
-                filled: true,
-                fillColor: pal.cardC,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(capR(54)),
-                  borderSide: BorderSide.none,
+      Directionality(
+        textDirection: TextDirection.rtl,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _ctrl,
+                onChanged: (value) => setState(
+                  () => _query = PersianRoots.normalize(value),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (selected != null)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: pal.pillC,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(selected.word, textDirection: TextDirection.rtl,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink, fontSize: 20,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 5),
-                    Text('بن‌واژه: ${selected.base}',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.sel, fontSize: 15,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text('${faNum(selected.sourceCount)} پیوند به مدخل واژگان',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.muted, fontSize: 11.5)),
-                    if (related.length > 1) ...[
-                      const SizedBox(height: 10),
-                      Text('واژه‌های هم‌بن', textAlign: TextAlign.right,
-                          style: TextStyle(color: pal.muted, fontSize: 11.5)),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final item in related)
-                            ActionChip(
-                              label: Text(item.word,
-                                  textDirection: TextDirection.rtl),
-                              onPressed: () => _select(item.word),
-                              backgroundColor: pal.cardC,
-                              side: BorderSide.none,
-                              labelStyle: TextStyle(color: pal.ink),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '${faNum(matches.length)} واژهٔ فارسی',
+                textDirection: TextDirection.rtl,
                 textAlign: TextAlign.right,
-                style: TextStyle(color: pal.muted, fontSize: 12),
+                decoration: InputDecoration(
+                  hintText: 'یک واژهٔ فارسی جست‌وجو کنید',
+                  prefixIcon: Icon(LucideIcons.search, color: pal.muted, size: 22),
+                  filled: true,
+                  fillColor: pal.cardC,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(capR(54)),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: matches.isEmpty
-                  ? Center(
-                      child: Text('واژه‌ای در برابرهای فارسی پیدا نشد.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: pal.muted, height: 1.8)),
-                    )
-                  : edgeFade(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(top: 4, bottom: 24),
-                        itemCount: matches.length,
-                        separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: pal.div),
-                        itemBuilder: (_, i) {
-                          final row = matches[i];
-                          return Enter(
-                            index: i,
-                            child: InkWell(
-                              onTap: () => _select(row.word),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 12, horizontal: 4),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text('بن: ${row.base}',
-                                          textAlign: TextAlign.left,
-                                          style: TextStyle(color: pal.sel,
-                                              fontSize: 12.5,
-                                              fontWeight: FontWeight.w600)),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(row.word,
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${faNum(matches.length)} واژهٔ فارسی',
+                  textAlign: TextAlign.right,
+                  style: TextStyle(color: pal.muted, fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: matches.isEmpty
+                    ? Center(
+                        child: Text(
+                          'واژه‌ای در برابرهای فارسی پیدا نشد.',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(color: pal.muted, height: 1.8),
+                        ),
+                      )
+                    : edgeFade(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(top: 4, bottom: 24),
+                          itemCount: matches.length,
+                          separatorBuilder: (_, __) =>
+                              Divider(height: 1, color: pal.div),
+                          itemBuilder: (_, i) {
+                            final row = matches[i];
+                            return Enter(
+                              index: i,
+                              child: Pressable(
+                                onTap: () => _showLexeme(row),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 4,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Text(
+                                        row.word,
                                         textDirection: TextDirection.rtl,
-                                        style: TextStyle(color: pal.ink,
-                                            fontSize: 16.5,
-                                            fontWeight: FontWeight.w700)),
-                                  ],
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: pal.ink,
+                                          fontSize: 16.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        'بن‌واژه: ${row.base}',
+                                        textDirection: TextDirection.rtl,
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: pal.sel,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 5),
-              child: Text(
-                'این بخش واژه‌های فارسیِ ثبت‌شده در برابرهای دیکشنری را بررسی می‌کند؛ دادهٔ ریشه‌های عربی در آن استفاده نمی‌شود.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: pal.faint, fontSize: 10.5, height: 1.6),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -5033,7 +5595,11 @@ class GanjoorData {
 
 class _PoemUsageCard extends StatelessWidget {
   final List<String> words;
-  const _PoemUsageCard({required this.words});
+  final String title;
+  const _PoemUsageCard({
+    required this.words,
+    this.title = 'شعرهایی که این واژه در آن‌ها آمده',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -5051,12 +5617,12 @@ class _PoemUsageCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: pal.cardC,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('شعرهایی که این واژه در آن‌ها آمده',
+              Text(title,
                   textAlign: TextAlign.right,
                   style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700,
                       fontSize: 13.5)),
@@ -5079,7 +5645,7 @@ class _PoemUsageCard extends StatelessWidget {
                     textAlign: TextAlign.right,
                     style: TextStyle(color: pal.muted, fontSize: 11),
                   ),
-                  trailing: Icon(LucideIcons.chevronRight,
+                  trailing: Icon(LucideIcons.chevronLeft,
                       size: 16, color: pal.muted),
                   onTap: () {
                     final full = (poem['FullUrl'] ?? poem['fullUrl'] ?? '')
@@ -5123,11 +5689,9 @@ class GanjoorPage extends StatefulWidget {
 class _GanjoorPageState extends State<GanjoorPage> {
   late Future<Map<String, dynamic>> _manifest = GanjoorData.json('manifest.json');
   late final Future<List<Map<String, dynamic>>> _books = GanjoorData.bookCatalog();
-  Future<List<Map<String, dynamic>>>? _poems;
   String _query = '';
-  int _filter = 0; // all, poets, books, poems
+  int _filter = 0; // poets, books
   int _view = 0; // list, two columns, cards
-  int _searchTicket = 0;
 
   String _value(Map<String, dynamic> row, List<String> keys) {
     for (final key in keys) {
@@ -5144,25 +5708,14 @@ class _GanjoorPageState extends State<GanjoorPage> {
   }
 
   void _queryChanged(String value) {
-    final q = value.trim();
-    setState(() {
-      _query = q;
-      _poems = null;
-    });
-    final ticket = ++_searchTicket;
-    if (q.isEmpty) return;
-    Future.delayed(const Duration(milliseconds: 350), () async {
-      if (!mounted || ticket != _searchTicket) return;
-      final future = GanjoorData.searchPoems(q);
-      if (mounted) setState(() => _poems = future);
-    });
+    setState(() => _query = value.trim());
   }
 
   void _showSourceInfo() {
     showTopBanner(
       context,
       title: 'داده‌های کتابخانهٔ شعر',
-      message: 'متن و فهرست آثار از داده‌های عمومی گنجور دریافت می‌شود. جست‌وجوی شعر از API گنجور انجام می‌شود.',
+      message: 'فهرست شاعران و کتاب‌ها از داده‌های عمومی گنجور دریافت می‌شود؛ متن هر اثر هنگام بازکردن آن بارگیری و روی دستگاه نگه‌داری می‌شود.',
     );
   }
 
@@ -5198,23 +5751,6 @@ class _GanjoorPageState extends State<GanjoorPage> {
     )));
   }
 
-  void _openPoem(Map<String, dynamic> poem) {
-    final full = _value(poem, ['FullUrl', 'fullUrl', 'Url', 'url'])
-        .replaceFirst(RegExp(r'^/'), '');
-    if (full.isEmpty) return;
-    Navigator.of(context).push(_softRoute(GanjoorPoemPage(
-      title: _value(poem, ['Title', 'title']).isEmpty
-          ? 'شعر' : _value(poem, ['Title', 'title']),
-      path: 'poets/$full.json',
-      dictionary: widget.dictionary,
-      liked: widget.liked,
-      favorites: widget.favorites,
-      onToggleLike: widget.onToggleLike,
-      onToggleBookmark: widget.onToggleBookmark,
-      onOpenEntry: widget.onOpenEntry,
-    )));
-  }
-
   Widget _resultTile({
     required Map<String, dynamic> item,
     required String title,
@@ -5229,7 +5765,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: pal.cardC,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(23),
             border: Border.all(color: pal.div.withValues(alpha: .7)),
           ),
           child: Column(
@@ -5258,7 +5794,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: _view == 1 ? pal.cardC : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(22),
           border: _view == 1 ? Border.all(color: pal.div) : null,
         ),
         child: Row(
@@ -5280,7 +5816,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                 ],
               ),
             ),
-            Icon(LucideIcons.chevronRight, color: pal.muted, size: 16),
+            Icon(LucideIcons.chevronLeft, color: pal.muted, size: 16),
           ],
         ),
       ),
@@ -5304,12 +5840,12 @@ class _GanjoorPageState extends State<GanjoorPage> {
           padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
           child: Row(
             children: [
-              Text(faNum(items.length),
-                  style: TextStyle(color: pal.faint, fontSize: 11)),
-              const Spacer(),
               Text(title, textAlign: TextAlign.right,
                   style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700,
                       fontSize: 14)),
+              const Spacer(),
+              Text(faNum(items.length),
+                  style: TextStyle(color: pal.faint, fontSize: 11)),
             ],
           ),
         ),
@@ -5349,211 +5885,292 @@ class _GanjoorPageState extends State<GanjoorPage> {
     return Scaffold(
       backgroundColor: pal.bg,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 12, 10),
-              child: Row(
-                children: [
-                  const BackIconButton(),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text('کتابخانهٔ شعر',
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 12, 10),
+                child: Row(
+                  children: [
+                    const BackIconButton(),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'کتابخانهٔ شعر',
                         textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink, fontSize: 20,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                  IconButton(
-                    tooltip: 'دربارهٔ منبع',
-                    onPressed: _showSourceInfo,
-                    icon: Icon(LucideIcons.info, color: pal.muted, size: 20),
-                  ),
-                ],
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(
+                          color: pal.ink,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'دربارهٔ منبع',
+                      onPressed: _showSourceInfo,
+                      icon: Icon(LucideIcons.info, color: pal.muted, size: 20),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-              child: TextField(
-                onChanged: _queryChanged,
-                textDirection: TextDirection.rtl,
-                textAlign: TextAlign.right,
-                decoration: InputDecoration(
-                  hintText: 'جست‌وجو در شاعر، کتاب و متن شعر',
-                  prefixIcon: Icon(LucideIcons.search, color: pal.muted),
-                  filled: true,
-                  fillColor: pal.cardC,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(capR(54)),
-                    borderSide: BorderSide.none,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: TextField(
+                  onChanged: _queryChanged,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                  decoration: InputDecoration(
+                    hintText: 'جست‌وجو در شاعر و کتاب',
+                    prefixIcon: Icon(LucideIcons.search, color: pal.muted),
+                    filled: true,
+                    fillColor: pal.cardC,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(capR(54)),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-              child: Row(
-                children: [
-                  for (var i = 0; i < 4; i++)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < 2; i++)
+                      Expanded(
                         child: Pressable(
                           onTap: () => setState(() => _filter = i),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 9),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                            ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
                             child: Text(
-                              ['همه', 'شاعران', 'کتاب‌ها', 'شعرها'][i],
+                              ['شاعران', 'کتاب‌ها'][i],
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: _filter == i ? pal.sel : pal.muted,
-                                fontSize: 11.5,
-                                fontWeight: _filter == i ? FontWeight.w800 : FontWeight.w600,
+                                color: _filter == i
+                                    ? pal.ink
+                                    : pal.muted.withValues(alpha: 0.62),
+                                fontSize: 12,
+                                fontWeight: _filter == i
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-              child: Row(
-                children: [
-                  for (var i = 0; i < 3; i++)
-                    Pressable(
-                      onTap: () => setState(() => _view = i),
-                      child: Container(
-                        margin: const EdgeInsets.only(left: 7),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _view == i ? pal.pillC : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          [LucideIcons.list, LucideIcons.grid3x3,
-                            LucideIcons.panelLeft][i],
-                          size: 18,
-                          color: _view == i ? pal.sel : pal.muted,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      ['فهرست', 'دوستونه', 'کاشی‌ای'][_view],
+                      style: TextStyle(color: pal.muted, fontSize: 11),
+                    ),
+                    const Spacer(),
+                    for (var i = 0; i < 3; i++)
+                      Pressable(
+                        onTap: () => setState(() => _view = i),
+                        child: AnimatedContainer(
+                          duration: Motion.base,
+                          curve: Motion.spring,
+                          margin: const EdgeInsets.only(left: 7),
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: _view == i ? pal.pillC : Colors.transparent,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Icon(
+                            [LucideIcons.list, LucideIcons.grid3x3,
+                              LucideIcons.panelLeft][i],
+                            size: 18,
+                            color: _view == i ? pal.sel : pal.muted,
+                          ),
                         ),
                       ),
-                    ),
-                  const Spacer(),
-                  Text(
-                    ['فهرست', 'دوستونه', 'کاشی‌ای'][_view],
-                    style: TextStyle(color: pal.muted, fontSize: 11),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: FutureBuilder<Map<String, dynamic>>(
-                future: _manifest,
-                builder: (context, manifestSnapshot) {
-                  if (manifestSnapshot.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (!manifestSnapshot.hasData || manifestSnapshot.hasError) {
-                    return _ganjoorError('دریافت فهرست شاعران انجام نشد.',
-                        () => setState(() => _manifest = GanjoorData.json('manifest.json')));
-                  }
-                  final poets = GanjoorData.rows(manifestSnapshot.data!['Poets'])
-                      .where((p) => _matches(p, _query)).toList();
-                  return FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _books,
-                    builder: (context, bookSnapshot) {
-                      if (bookSnapshot.connectionState != ConnectionState.done &&
-                          _filter == 2) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final books = (bookSnapshot.data ?? const <Map<String, dynamic>>[])
-                          .where((b) => _matches(b, _query)).toList();
-                      final poemFuture = _query.isEmpty ? null : _poems;
-                      if (_filter == 3 && poemFuture == null && _query.isNotEmpty) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      return FutureBuilder<List<Map<String, dynamic>>>(
-                        future: poemFuture,
-                        builder: (context, poemSnapshot) {
-                          final poems = poemSnapshot.data ?? const <Map<String, dynamic>>[];
-                          final showPoets = _filter == 0 || _filter == 1;
-                          final showBooks = _filter == 0 || _filter == 2;
-                          final showPoems = _filter == 0 || _filter == 3;
-                          if (_filter == 3 && _query.isNotEmpty &&
-                              poemSnapshot.connectionState != ConnectionState.done) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          return edgeFade(
-                            child: ListView(
-                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
-                              children: [
-                                if (showPoets)
-                                  _section(
-                                    'شاعران',
-                                    poets,
-                                    LucideIcons.user,
-                                    (p) => _value(p, ['Nickname', 'nickname', 'Name', 'name']),
-                                    (p) => _value(p, ['Bio', 'bio', 'Period', 'period']),
-                                    _openPoet,
-                                  ),
-                                if (showBooks)
-                                  _section(
-                                    'کتاب‌ها و مجموعه‌ها',
-                                    books,
-                                    LucideIcons.notebookPen,
-                                    (b) => _value(b, ['Title', 'title', 'Name', 'name']),
-                                    (b) => _value(b, ['PoetName', 'PoetNickname', 'poetName']),
-                                    _openBook,
-                                  ),
-                                if (showPoems && _query.isNotEmpty)
-                                  _section(
-                                    'شعرهای پیدا‌شده',
-                                    poems,
-                                    LucideIcons.fileText,
-                                    (p) => _value(p, ['Title', 'title']),
-                                    (p) => _value(p, ['PoetName', 'PoetNickname', 'poetName']),
-                                    _openPoem,
-                                  ),
-                                if (_query.isEmpty && _filter == 3)
-                                  Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Text('برای جست‌وجوی شعر، نام یا بخشی از متن آن را بنویسید.',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: pal.muted, height: 1.8)),
-                                  ),
-                                if (_query.isNotEmpty && poets.isEmpty &&
-                                    books.isEmpty && poems.isEmpty &&
-                                    poemSnapshot.connectionState == ConnectionState.done)
-                                  Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Text('در شاعرها، کتاب‌ها و متن شعرها نتیجه‌ای پیدا نشد.',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: pal.muted, height: 1.8)),
-                                  ),
-                              ],
+              Expanded(
+                child: FutureBuilder<Map<String, dynamic>>(
+                  future: _manifest,
+                  builder: (context, manifestSnapshot) {
+                    if (manifestSnapshot.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!manifestSnapshot.hasData || manifestSnapshot.hasError) {
+                      return _ganjoorError(
+                        'دریافت فهرست شاعران انجام نشد.',
+                        () => setState(() => _manifest = GanjoorData.json('manifest.json')),
+                      );
+                    }
+                    final poets = GanjoorData.rows(
+                      manifestSnapshot.data!['Poets'],
+                    ).where((p) => _matches(p, _query)).toList();
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _books,
+                      builder: (context, bookSnapshot) {
+                        if (_filter == 1 &&
+                            bookSnapshot.connectionState != ConnectionState.done) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final books = (bookSnapshot.data ??
+                                const <Map<String, dynamic>>[])
+                            .where((b) => _matches(b, _query))
+                            .toList();
+                        final showingPoets = _filter == 0;
+                        final visibleCount = showingPoets ? poets.length : books.length;
+                        if (visibleCount == 0) {
+                          return Center(
+                            child: Text(
+                              showingPoets ? 'شاعری پیدا نشد' : 'کتابی پیدا نشد',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: pal.muted),
                             ),
                           );
-                        },
-                      );
-                    },
-                  );
-                },
+                        }
+                        return edgeFade(
+                          child: ListView(
+                            padding: const EdgeInsets.fromLTRB(18, 0, 18, 30),
+                            children: [
+                              if (showingPoets)
+                                _section(
+                                  'شاعران',
+                                  poets,
+                                  LucideIcons.user,
+                                  (p) => _value(p, [
+                                    'Nickname', 'nickname', 'Name', 'name',
+                                  ]),
+                                  (p) => _value(p, [
+                                    'Bio', 'bio', 'Period', 'period',
+                                  ]),
+                                  _openPoet,
+                                )
+                              else
+                                _section(
+                                  'کتاب‌ها و مجموعه‌ها',
+                                  books,
+                                  LucideIcons.notebookPen,
+                                  (b) => _value(b, [
+                                    'Title', 'title', 'Name', 'name',
+                                  ]),
+                                  (b) => _value(b, [
+                                    'PoetName', 'PoetNickname', 'poetName',
+                                  ]),
+                                  _openBook,
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+Widget _ganjoorBreadcrumb(
+  BuildContext context, {
+  required String fullTitle,
+  required String path,
+  Dictionary? dictionary,
+  Set<String>? liked,
+  Set<String>? favorites,
+  Future<void> Function(String)? onToggleLike,
+  Future<void> Function(String)? onToggleBookmark,
+  void Function(Entry)? onOpenEntry,
+}) {
+  final titles = fullTitle
+      .split(RegExp(r'\s*[»›>]+\s*'))
+      .where((part) => part.trim().isNotEmpty)
+      .toList();
+  var cleanPath = path.replaceFirst(RegExp(r'^/'), '');
+  if (cleanPath.startsWith('poets/')) {
+    cleanPath = cleanPath.substring('poets/'.length);
+  }
+  cleanPath = cleanPath.replaceFirst(RegExp(r'\.json$'), '');
+  final segments = cleanPath
+      .split('/')
+      .where((part) => part.trim().isNotEmpty)
+      .toList();
+
+  return SizedBox(
+    height: 24,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < titles.length; i++) ...[
+            if (i < titles.length - 1 && i < segments.length - 1)
+              Pressable(
+                onTap: () {
+                  final target = segments.take(i + 1).join('/');
+                  Navigator.of(context).pushAndRemoveUntil(
+                    _softRoute(
+                      GanjoorNodePage(
+                        title: titles[i],
+                        path: target,
+                        dictionary: dictionary,
+                        liked: liked,
+                        favorites: favorites,
+                        onToggleLike: onToggleLike,
+                        onToggleBookmark: onToggleBookmark,
+                        onOpenEntry: onOpenEntry,
+                      ),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+                child: Text(
+                  titles[i],
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: pal.sel,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              Text(
+                titles[i],
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: pal.muted,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            if (i < titles.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: Icon(
+                  LucideIcons.chevronLeft,
+                  color: pal.faint,
+                  size: 12,
+                ),
+              ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
 class GanjoorNodePage extends StatefulWidget {
   final String title;
   final String path;
+  final int depth;
   final Dictionary? dictionary;
   final Set<String>? liked;
   final Set<String>? favorites;
@@ -5565,6 +6182,7 @@ class GanjoorNodePage extends StatefulWidget {
     super.key,
     required this.title,
     required this.path,
+    this.depth = 0,
     this.dictionary,
     this.liked,
     this.favorites,
@@ -5578,6 +6196,16 @@ class GanjoorNodePage extends StatefulWidget {
 
 class _GanjoorNodePageState extends State<GanjoorNodePage> {
   late Future<Map<String, dynamic>> _future = _load();
+  bool _bookLiked = false;
+  bool _bookmarked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final key = 'book:${widget.path}';
+    _bookLiked = widget.liked?.contains(key) ?? false;
+    _bookmarked = widget.favorites?.contains(key) ?? false;
+  }
 
   Future<Map<String, dynamic>> _load() =>
       GanjoorData.json('poets/${widget.path}/_cat.json');
@@ -5590,6 +6218,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
         GanjoorNodePage(
           title: category['Title']?.toString() ?? 'مجموعه',
           path: path.replaceFirst(RegExp(r'^/'), ''),
+          depth: widget.depth + 1,
           dictionary: widget.dictionary,
           liked: widget.liked,
           favorites: widget.favorites,
@@ -5637,6 +6266,7 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
             );
           }
           final data = snapshot.data!;
+          final fullTitle = data['FullTitle']?.toString() ?? widget.title;
           final categories = (data['ChildCats'] as List? ?? const [])
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
@@ -5645,61 +6275,110 @@ class _GanjoorNodePageState extends State<GanjoorNodePage> {
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
-          return edgeFade(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-              children: [
-                if ((data['Description']?.toString() ?? '').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      data['Description'].toString(),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: pal.muted,
-                        height: 1.9,
-                        fontSize: 13.5,
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _ganjoorBreadcrumb(
+                          context,
+                          fullTitle: fullTitle,
+                          path: widget.path,
+                          dictionary: widget.dictionary,
+                          liked: widget.liked,
+                          favorites: widget.favorites,
+                          onToggleLike: widget.onToggleLike,
+                          onToggleBookmark: widget.onToggleBookmark,
+                          onOpenEntry: widget.onOpenEntry,
+                        ),
                       ),
                     ),
+                    if (widget.depth == 1) ...[
+                      const SizedBox(width: 8),
+                      LikeBookmarkButtons(
+                        liked: _bookLiked,
+                        bookmarked: _bookmarked,
+                        onToggleLike: () async {
+                          setState(() => _bookLiked = !_bookLiked);
+                          await widget.onToggleLike?.call('book:${widget.path}');
+                        },
+                        onToggleBookmark: () async {
+                          setState(() => _bookmarked = !_bookmarked);
+                          await widget.onToggleBookmark?.call('book:${widget.path}');
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Expanded(
+                child: edgeFade(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, kNavClearance),
+                    children: [
+                      if ((data['Description']?.toString() ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            data['Description'].toString(),
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(
+                              color: pal.muted,
+                              height: 1.9,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
+                      for (var i = 0; i < categories.length; i++)
+                        Enter(
+                          index: i,
+                          child: ListTile(
+                            leading: Icon(LucideIcons.folder, color: pal.sel),
+                            title: Text(
+                              categories[i]['Title']?.toString() ?? '',
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: pal.ink),
+                            ),
+                            trailing: Icon(
+                              LucideIcons.chevronLeft,
+                              color: pal.muted,
+                              size: 18,
+                            ),
+                            onTap: () => _openCategory(categories[i]),
+                          ),
+                        ),
+                      if (categories.isNotEmpty && poems.isNotEmpty)
+                        Divider(height: 18, color: pal.div),
+                      for (var i = 0; i < poems.length; i++)
+                        Enter(
+                          index: categories.length + i,
+                          child: ListTile(
+                            leading: Icon(LucideIcons.fileText, color: pal.muted),
+                            title: Text(
+                              poems[i]['Title']?.toString() ?? '',
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              style: TextStyle(color: pal.ink),
+                            ),
+                            trailing: Icon(
+                              LucideIcons.chevronLeft,
+                              color: pal.muted,
+                              size: 18,
+                            ),
+                            onTap: () => _openPoem(poems[i]),
+                          ),
+                        ),
+                    ],
                   ),
-                for (var i = 0; i < categories.length; i++)
-                  Enter(
-                    index: i,
-                    child: ListTile(
-                      leading: Icon(LucideIcons.folder, color: pal.sel),
-                      title: Text(
-                        categories[i]['Title']?.toString() ?? '',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink),
-                      ),
-                      trailing: Icon(
-                        LucideIcons.chevronRight,
-                        color: pal.muted,
-                        size: 18,
-                      ),
-                      onTap: () => _openCategory(categories[i]),
-                    ),
-                  ),
-                if (categories.isNotEmpty && poems.isNotEmpty)
-                  Divider(height: 18, color: pal.div),
-                for (var i = 0; i < poems.length; i++)
-                  Enter(
-                    index: categories.length + i,
-                    child: ListTile(
-                      leading: Icon(
-                        LucideIcons.fileText,
-                        color: pal.muted,
-                      ),
-                      title: Text(
-                        poems[i]['Title']?.toString() ?? '',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: pal.ink),
-                      ),
-                      onTap: () => _openPoem(poems[i]),
-                    ),
-                  ),
-              ],
-            ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -5772,84 +6451,68 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
     await SharedFiles.writeJson(file, {'words': values.toList()});
   }
 
-  void _showCouplet(int index, List<String> lines) {
+  void _showCouplet(
+    int index,
+    List<String> lines, {
+    String? meaning,
+    String? breadcrumb,
+  }) {
     final key = 'poem:${widget.path}#$index';
     final related = _relatedEntries(lines.join(' '));
+    final path = (breadcrumb ?? widget.title).replaceAll(' » ', ' > ');
+    final summary = meaning?.trim();
     final card = ShareCardData(
-      title: widget.title,
-      lines: lines,
-      caption: 'بیت ${index + 1} · گنجور',
+      title: lines.join('\n'),
+      lines: const [],
+      breadcrumb: path,
+      meaning: summary == null || summary.isEmpty ? null : summary,
+      caption: 'بیت ${faNum(index + 1)} · گنجور',
     );
-    Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        opaque: false,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: .34),
-        barrierLabel: 'بیت شعر',
-        transitionDuration: Motion.slow,
-        reverseTransitionDuration: Motion.base,
-        pageBuilder: (dialogContext, _, __) => Center(
-          child: Hero(
-            tag: key,
-            child: Material(
-              color: pal.bg,
-              borderRadius: BorderRadius.circular(24),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 560,
-                  maxHeight: MediaQuery.sizeOf(dialogContext).height * .78,
-                ),
-                child: SingleChildScrollView(
-                  child: DetailSheet(
-                    card: card,
-                    initialLiked: widget.liked?.contains(key) ?? false,
-                    initialBookmarked: widget.favorites?.contains(key) ?? false,
-                    onToggleLike: () async {
-                      final callback = widget.onToggleLike;
-                      if (callback != null) {
-                        await callback(key);
-                      } else {
-                        await _toggleLocalContent('liked.json', key);
-                      }
-                    },
-                    onToggleBookmark: () async {
-                      final callback = widget.onToggleBookmark;
-                      if (callback != null) {
-                        await callback(key);
-                      } else {
-                        await _toggleLocalContent('favorites.json', key);
-                      }
-                    },
-                    relatedEntries: related,
-                    onOpenRelatedEntry: widget.onOpenEntry == null
-                        ? null
-                        : (entry) {
-                            Navigator.of(dialogContext).pop();
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              widget.onOpenEntry?.call(entry);
-                            });
-                          },
-                  ),
-                ),
-              ),
-            ),
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: pal.bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (sheetContext) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheetContext).height * .92,
+        ),
+        child: SingleChildScrollView(
+          child: DetailSheet(
+            card: card,
+            initialLiked: widget.liked?.contains(key) ?? false,
+            initialBookmarked: widget.favorites?.contains(key) ?? false,
+            onToggleLike: () async {
+              final callback = widget.onToggleLike;
+              if (callback != null) {
+                await callback(key);
+              } else {
+                await _toggleLocalContent('liked.json', key);
+              }
+            },
+            onToggleBookmark: () async {
+              final callback = widget.onToggleBookmark;
+              if (callback != null) {
+                await callback(key);
+              } else {
+                await _toggleLocalContent('favorites.json', key);
+              }
+            },
+            relatedEntries: related,
+            copyableLines: lines,
+            onOpenRelatedEntry: widget.onOpenEntry == null
+                ? null
+                : (entry) {
+                    Navigator.of(sheetContext).pop();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      widget.onOpenEntry?.call(entry);
+                    });
+                  },
           ),
         ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Motion.curve,
-            reverseCurve: Curves.easeInOutCubic,
-          );
-          return FadeTransition(
-            opacity: curved,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: .94, end: 1).animate(curved),
-              child: child,
-            ),
-          );
-        },
       ),
     );
   }
@@ -5871,114 +6534,162 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
             );
           }
           final data = snapshot.data!;
+          final fullTitle = data['FullTitle']?.toString() ?? widget.title;
           final verses = (data['Verses'] as List? ?? const [])
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
           final couplets = <int, List<String>>{};
+          final coupletMeanings = <int, String>{};
           for (final verse in verses) {
             final index = (verse['CoupletIndex'] as num?)?.toInt() ?? -1;
             if (index < 0) continue;
             couplets.putIfAbsent(index, () => <String>[]);
             couplets[index]!.add(verse['Text']?.toString() ?? '');
+            final summary = verse['CoupletSummary']?.toString().trim();
+            if (summary != null && summary.isNotEmpty) {
+              coupletMeanings.putIfAbsent(index, () => summary);
+            }
           }
           final ordered = couplets.keys.toList()..sort();
-          return edgeFade(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(22, 10, 22, 32),
-              children: [
-                if ((data['PoemSummary']?.toString() ?? '').isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 18),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: pal.cardC,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      data['PoemSummary'].toString(),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: pal.muted,
-                        height: 1.9,
-                        fontSize: 13.5,
-                      ),
-                    ),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _ganjoorBreadcrumb(
+                    context,
+                    fullTitle: fullTitle,
+                    path: widget.path,
+                    dictionary: widget.dictionary,
+                    liked: widget.liked,
+                    favorites: widget.favorites,
+                    onToggleLike: widget.onToggleLike,
+                    onToggleBookmark: widget.onToggleBookmark,
+                    onOpenEntry: widget.onOpenEntry,
                   ),
-                if (data['Metre'] is Map &&
-                    (data['Metre']['Rhythm']?.toString() ?? '').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Text(
-                      'وزن: ${data['Metre']['Rhythm']}',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(color: pal.faint, fontSize: 12),
-                    ),
-                  ),
-                for (var i = 0; i < ordered.length; i++)
-                  Enter(
-                    index: i,
-                    child: Hero(
-                      tag: 'poem:${widget.path}#${ordered[i]}',
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          onTap: () => _showCouplet(
-                            ordered[i],
-                            couplets[ordered[i]]!,
+                ),
+              ),
+              Expanded(
+                child: edgeFade(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(22, 10, 22, kNavClearance),
+                    children: [
+                      if ((data['PoemSummary']?.toString() ?? '').isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 18),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: pal.cardC,
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pal.pillC,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            couplets[ordered[i]]!.first,
-                            textAlign: TextAlign.center,
+                          child: Text(
+                            data['PoemSummary'].toString(),
+                            textAlign: TextAlign.right,
                             textDirection: TextDirection.rtl,
                             style: TextStyle(
-                              color: pal.ink,
-                              fontSize: 16,
+                              color: pal.muted,
                               height: 1.9,
+                              fontSize: 13.5,
                             ),
-                          ),
-                          if (couplets[ordered[i]]!.length > 1) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              couplets[ordered[i]]![1],
-                              textAlign: TextAlign.center,
-                              textDirection: TextDirection.rtl,
-                              style: TextStyle(
-                                color: pal.ink,
-                                fontSize: 16,
-                                height: 1.9,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
                           ),
                         ),
+                      if (data['Metre'] is Map &&
+                          (data['Metre']['Rhythm']?.toString() ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Text(
+                            'وزن: ${data['Metre']['Rhythm']}',
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(color: pal.faint, fontSize: 12),
+                          ),
+                        ),
+                      for (var i = 0; i < ordered.length; i++)
+                        Enter(
+                          index: i,
+                          child: Hero(
+                            tag: 'poem:${widget.path}#${ordered[i]}',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: InkWell(
+                                onTap: () => _showCouplet(
+                                  ordered[i],
+                                  couplets[ordered[i]]!,
+                                  meaning: coupletMeanings[ordered[i]],
+                                  breadcrumb: fullTitle,
+                                ),
+                                borderRadius: BorderRadius.circular(23),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: pal.pillC,
+                                    borderRadius: BorderRadius.circular(23),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        couplets[ordered[i]]!.first,
+                                        textAlign: TextAlign.center,
+                                        textDirection: TextDirection.rtl,
+                                        style: TextStyle(
+                                          color: pal.ink,
+                                          fontSize: 16,
+                                          height: 1.9,
+                                        ),
+                                      ),
+                                      if (couplets[ordered[i]]!.length > 1) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          couplets[ordered[i]]![1],
+                                          textAlign: TextAlign.center,
+                                          textDirection: TextDirection.rtl,
+                                          style: TextStyle(
+                                            color: pal.ink,
+                                            fontSize: 16,
+                                            height: 1.9,
+                                          ),
+                                        ),
+                                      ],
+                                      if ((coupletMeanings[ordered[i]] ?? '').isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          coupletMeanings[ordered[i]]!,
+                                          textAlign: TextAlign.right,
+                                          textDirection: TextDirection.rtl,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: pal.muted,
+                                            fontSize: 12,
+                                            height: 1.65,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'متن شعر از گنجور — github.com/hrmoh',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: pal.faint, fontSize: 11.5),
                       ),
-                    ),
+                    ],
                   ),
-                const SizedBox(height: 12),
-                Text(
-                  'متن شعر از گنجور — github.com/hrmoh',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: pal.faint, fontSize: 11.5),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),

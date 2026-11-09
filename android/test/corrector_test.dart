@@ -14,6 +14,30 @@ void main() {
     'احترام': ['گرامیداشت', 'ارج'],
     'ابتدا': ['آغاز'],
   };
+  test('context resolves the time-question phrase', () {
+    expect(correctText('ساعت چند'), 'چه زمانی');
+    expect(correctText('ساعت چند؟'), 'چه زمانی؟');
+  });
+
+  test('contextual learned preference ranks a secondary meaning', () {
+    final key = correctionLearningKey('ساعت', 'چه', '', 'گاه');
+    expect(
+      correctText(
+        'چه ساعت',
+        dictionary: {'ساعت': ['زمان‌سنج', 'گاه']},
+        learnedPairs: {key: 4},
+      ),
+      'چه گاه',
+    );
+  });
+
+  test('a source-equivalent stays preferred while alternatives remain available', () {
+    const d = {'حرکت': ['حرکت', 'جنبش']};
+    final fix = correctWord('حرکت', dictionary: d);
+    expect(fix.fixed, 'حرکت');
+    expect(fix.suggestions, ['حرکت', 'جنبش']);
+  });
+
   group('owner examples', () {
     test('میخام/میخوام → می‌خوام', () {
       expect(correctWord('میخام').fixed, 'می‌خوام');

@@ -186,12 +186,10 @@ object Corrector {
                 // First single-word equivalent wins (the old rule needed
                 // exactly one equivalent, so multi-equivalent words like
                 // اتفاق never got replaced at all).
-                for (cand in eq) {
-                    if (!cand.contains(' ') && !cand.contains('،') && cand != w) {
-                        w = cand
-                        break
-                    }
+                val preferred = eq.firstOrNull {
+                    !it.contains(' ') && !it.contains('،')
                 }
+                if (preferred != null && preferred != w) w = preferred
             }
         }
         return WordFix(w, suggestions)
@@ -224,6 +222,10 @@ object Corrector {
             }
         }
 
+        if (words.size >= 2 && words[words.size - 2] == "ساعت" && last == "چند") {
+            return (words[words.size - 2].length + 1 + rawLast.length) to ("چه زمانی" + punct)
+        }
+
         val fix = correctWord(last, dictionary, replaceArabic)
         val newLast = fix.fixed + punct
 
@@ -238,11 +240,19 @@ object Corrector {
         return null
     }
 
+    fun learningKey(from: String, left: String, right: String, candidate: String): String =
+        listOf(from, left, right, candidate)
+            .map { normalizeLetters(it) }
+            .joinToString("\u001F")
+
     fun suggestionsFor(
         word: String,
         dictionary: Map<String, List<String>>,
         learnedCounts: Map<String, Int>,
-        vocab: List<String>
+        vocab: List<String>,
+        leftContext: String = "",
+        rightContext: String = "",
+        learnedPairs: Map<String, Int> = emptyMap()
     ): List<String> {
         if (word.isEmpty()) return emptyList()
         val out = mutableListOf<String>()
@@ -254,6 +264,12 @@ object Corrector {
             .sortedByDescending { learnedCounts[it] ?: 0 }
             .take(3)
         out.addAll(completions)
-        return out.distinct().take(4)
+        return out.distinct()
+            .withIndex()
+            .sortedWith(compareByDescending<IndexedValue<String>> {
+                learnedPairs[learningKey(word, leftContext, rightContext, it.value)] ?: 0
+            }.thenBy { it.index })
+            .map { it.value }
+            .take(4)
     }
 }

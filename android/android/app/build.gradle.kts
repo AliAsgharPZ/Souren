@@ -36,7 +36,7 @@ android {
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
         // flag during build.
         versionCode = flutter.versionCode
-        versionName = "0.4.5" // Release label; versionCode is managed by pubspec.yaml
+        versionName = "0.4.5.5" // Four-part patch release label; versionCode is managed by pubspec.yaml
     }
 
     signingConfigs {

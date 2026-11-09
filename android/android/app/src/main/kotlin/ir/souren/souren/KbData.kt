@@ -4,6 +4,8 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** Data shared between the dictionary app and this keyboard: same
  *  package, same filesDir. The app writes settings + dataset updates;
@@ -15,6 +17,13 @@ object KbData {
     @Volatile var autoCorrect: Boolean = true
     @Volatile var kbHeight: String = "tall"
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
+    @Volatile var learnedPairs: MutableMap<String, Int> = mutableMapOf()
+    @Volatile var shareLearning: Boolean = false
+    @Volatile var kbMode: String = "standard"
+    @Volatile var kbSide: String = "right"
+    @Volatile private var syncingLearning = false
+    @Volatile private var syncingModel = false
+    @Volatile private var lastModelAttemptAt = 0L
     private var loaded = false
 
     @Synchronized
@@ -59,48 +68,242 @@ object KbData {
                 replaceArabic = j.optBoolean("replaceArabic", true)
                 autoCorrect = j.optBoolean("autoCorrect", true)
                 kbHeight = j.optString("kbHeight", "tall")
+                val wasSharing = shareLearning
+                shareLearning = j.optBoolean("shareLearning", false)
+                if (wasSharing && !shareLearning) {
+                    val learnedFile = File(ctx.filesDir, "learned.json")
+                    if (learnedFile.exists()) {
+                        val learned = JSONObject(learnedFile.readText())
+                        learned.put("pending", JSONArray())
+                        learnedFile.writeText(learned.toString())
+                    }
+                }
+            }
+            val keyboardFile = File(ctx.filesDir, "souren_keyboard.json")
+            if (keyboardFile.exists()) {
+                val keyboard = JSONObject(keyboardFile.readText())
+                kbMode = keyboard.optString("mode", "standard")
+                kbSide = keyboard.optString("side", "right")
             }
         } catch (e: Exception) { }
     }
 
+    @Synchronized
+    fun setKeyboardMode(ctx: Context, mode: String, side: String = kbSide) {
+        kbMode = if (mode in setOf("standard", "one-handed", "floating")) mode else "standard"
+        kbSide = if (side == "left") "left" else "right"
+        try {
+            File(ctx.filesDir, "souren_keyboard.json").writeText(
+                JSONObject().put("mode", kbMode).put("side", kbSide).toString()
+            )
+        } catch (_: Exception) { }
+    }
+
+    @Synchronized
     fun readLearned(ctx: Context) {
         try {
-            val f = File(ctx.filesDir, "learned.json")
-            if (f.exists()) {
-                val j = JSONObject(f.readText())
-                val counts = j.optJSONObject("counts") ?: JSONObject()
-                val m = HashMap<String, Int>()
-                val keys = counts.keys()
-                while (keys.hasNext()) {
-                    val k = keys.next()
-                    m[k] = counts.optInt(k)
-                }
-                learnedCounts = m
+            val file = File(ctx.filesDir, "learned.json")
+            val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+            val counts = root.optJSONObject("counts") ?: JSONObject()
+            val countMap = HashMap<String, Int>()
+            val countKeys = counts.keys()
+            while (countKeys.hasNext()) {
+                val key = countKeys.next()
+                countMap[key] = counts.optInt(key)
             }
-        } catch (e: Exception) { }
+            learnedCounts = countMap
+
+            val localPairs = root.optJSONObject("pairs") ?: JSONObject()
+            val sharedPairs = root.optJSONObject("sharedPairs") ?: JSONObject()
+            val pairMap = HashMap<String, Int>()
+            val localKeys = localPairs.keys()
+            while (localKeys.hasNext()) {
+                val key = localKeys.next()
+                pairMap[key] = localPairs.optInt(key)
+            }
+            val sharedKeys = sharedPairs.keys()
+            while (sharedKeys.hasNext()) {
+                val key = sharedKeys.next()
+                pairMap[key] = (pairMap[key] ?: 0) + sharedPairs.optInt(key)
+            }
+            learnedPairs = pairMap
+
+            val fetchedAt = root.optLong("modelFetchedAt", 0L)
+            if (System.currentTimeMillis() - fetchedAt > 24L * 60 * 60 * 1000) {
+                fetchSharedModel(ctx)
+            }
+            if (shareLearning) syncLearning(ctx)
+        } catch (_: Exception) { }
     }
 
     /** Record that the user ended up with [to] after typing [from]:
      *  bumps the learned count and appends to the history the app shows. */
     @Synchronized
-    fun recordLearned(ctx: Context, from: String, to: String) {
+    fun recordLearned(
+        ctx: Context,
+        from: String,
+        to: String,
+        leftContext: String = "",
+        rightContext: String = ""
+    ) {
         if (from == to || from.isBlank() || to.isBlank()) return
         learnedCounts[to] = (learnedCounts[to] ?: 0) + 1
+        val key = Corrector.learningKey(from, leftContext, rightContext, to)
+        learnedPairs[key] = (learnedPairs[key] ?: 0) + 1
         try {
             val file = File(ctx.filesDir, "learned.json")
             val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
             val counts = root.optJSONObject("counts") ?: JSONObject()
             counts.put(to, learnedCounts[to])
             root.put("counts", counts)
-            val history = root.optJSONArray("history") ?: JSONArray()
-            history.put(JSONObject().apply {
+            val pairs = root.optJSONObject("pairs") ?: JSONObject()
+            val localCount = pairs.optInt(key) + 1
+            pairs.put(key, localCount)
+            root.put("pairs", pairs)
+            val sharedCount = (root.optJSONObject("sharedPairs") ?: JSONObject()).optInt(key)
+            learnedPairs[key] = localCount + sharedCount
+            val sample = JSONObject().apply {
                 put("from", from); put("to", to)
+                put("left", leftContext); put("right", rightContext)
                 put("ts", System.currentTimeMillis())
-            })
+            }
+            val history = root.optJSONArray("history") ?: JSONArray()
+            history.put(sample)
             while (history.length() > 300) history.remove(0)
             root.put("history", history)
+            if (shareLearning) {
+                val pending = root.optJSONArray("pending") ?: JSONArray()
+                pending.put(JSONObject().apply {
+                    put("from", from); put("to", to)
+                    put("left", leftContext); put("right", rightContext)
+                })
+                while (pending.length() > 100) pending.remove(0)
+                root.put("pending", pending)
+            }
             file.writeText(root.toString())
+            if (shareLearning) syncLearning(ctx)
         } catch (e: Exception) { }
+    }
+
+    /** Sends only token-level correction examples after explicit opt-in.
+     *  Full sentences, account identifiers and clipboard contents are never sent. */
+    private fun syncLearning(ctx: Context) {
+        synchronized(this) {
+            if (syncingLearning) return
+            syncingLearning = true
+        }
+        Thread {
+            try {
+                val file = File(ctx.filesDir, "learned.json")
+                val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+                val pending = root.optJSONArray("pending") ?: JSONArray()
+                if (pending.length() == 0) return@Thread
+                val batch = JSONArray()
+                for (i in 0 until minOf(pending.length(), 20)) {
+                    batch.put(pending.getJSONObject(i))
+                }
+                val payload = JSONObject().put("samples", batch)
+                val connection = (URL("https://souren.aliasgharpanahizare.workers.dev/api/learning")
+                    .openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                }
+                val accepted = try {
+                    connection.outputStream.use {
+                        it.write(payload.toString().toByteArray(Charsets.UTF_8))
+                    }
+                    connection.responseCode in 200..299
+                } finally {
+                    connection.disconnect()
+                }
+                if (accepted) synchronized(this) {
+                    val latest = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+                    val current = latest.optJSONArray("pending") ?: JSONArray()
+                    val remaining = JSONArray()
+                    for (i in batch.length() until current.length()) {
+                        remaining.put(current.getJSONObject(i))
+                    }
+                    latest.put("pending", remaining)
+                    file.writeText(latest.toString())
+                }
+            } catch (_: Exception) {
+                // Keep the pending batch locally; a later accepted correction retries it.
+            } finally {
+                synchronized(this) { syncingLearning = false }
+            }
+        }.start()
+    }
+
+    /** Downloads only the thresholded, aggregate model. This is read-only and
+     *  does not require or imply consent to upload personal corrections. */
+    private fun fetchSharedModel(ctx: Context) {
+        synchronized(this) {
+            if (syncingModel || System.currentTimeMillis() - lastModelAttemptAt < 60L * 60 * 1000) return
+            syncingModel = true
+            lastModelAttemptAt = System.currentTimeMillis()
+        }
+        Thread {
+            try {
+                val connection = (URL("https://souren.aliasgharpanahizare.workers.dev/api/learning/model")
+                    .openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 8000
+                    readTimeout = 10000
+                    setRequestProperty("Accept", "application/json")
+                }
+                val payload = try {
+                    if (connection.responseCode !in 200..299) return@Thread
+                    connection.inputStream.bufferedReader().use { it.readText() }
+                } finally {
+                    connection.disconnect()
+                }
+                val response = JSONObject(payload)
+                if (response.optInt("version") != 1) return@Thread
+                val rows = response.optJSONArray("pairs") ?: JSONArray()
+                val shared = JSONObject()
+                val sharedMap = HashMap<String, Int>()
+                for (i in 0 until rows.length()) {
+                    val row = rows.optJSONObject(i) ?: continue
+                    val from = row.optString("from")
+                    val to = row.optString("to")
+                    if (from.isBlank() || to.isBlank()) continue
+                    val key = Corrector.learningKey(
+                        from, row.optString("left"), row.optString("right"), to
+                    )
+                    val count = row.optInt("count").coerceAtLeast(0)
+                    if (count == 0) continue
+                    val combinedCount = (sharedMap[key] ?: 0) + count
+                    shared.put(key, combinedCount)
+                    sharedMap[key] = combinedCount
+                }
+                synchronized(this) {
+                    val file = File(ctx.filesDir, "learned.json")
+                    val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+                    root.put("sharedPairs", shared)
+                    root.put("modelFetchedAt", System.currentTimeMillis())
+                    file.writeText(root.toString())
+
+                    val combined = HashMap<String, Int>()
+                    val local = root.optJSONObject("pairs") ?: JSONObject()
+                    val localKeys = local.keys()
+                    while (localKeys.hasNext()) {
+                        val key = localKeys.next()
+                        combined[key] = local.optInt(key)
+                    }
+                    for ((key, count) in sharedMap) {
+                        combined[key] = (combined[key] ?: 0) + count
+                    }
+                    learnedPairs = combined
+                }
+            } catch (_: Exception) {
+                // Keep the last local model; retry after the hourly cooldown.
+            } finally {
+                synchronized(this) { syncingModel = false }
+            }
+        }.start()
     }
 
     // ---------------- clipboard panel store ----------------

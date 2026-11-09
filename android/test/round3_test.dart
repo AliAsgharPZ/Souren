@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:souren/data/store.dart';
-import 'package:souren/lucide.dart';
 import 'package:souren/main.dart';
 import 'package:souren/share.dart';
 
@@ -72,8 +72,8 @@ void main() {
       ),
     );
     final faded = pal.muted.withValues(alpha: 0.55);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.heart)).color, faded);
-    expect(tester.widget<Icon>(find.byIcon(LucideIcons.bookmark)).color, faded);
+    expect(tester.widget<Icon>(find.byIcon(Symbols.favorite_rounded)).color, faded);
+    expect(tester.widget<Icon>(find.byIcon(Symbols.bookmark_rounded)).color, faded);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -88,11 +88,11 @@ void main() {
       ),
     );
     expect(
-      tester.widget<Icon>(find.byIcon(LucideIcons.heart)).color,
+      tester.widget<Icon>(find.byIcon(Symbols.favorite_rounded)).color,
       pal.accent,
     );
     expect(
-      tester.widget<Icon>(find.byIcon(LucideIcons.bookmark)).color,
+      tester.widget<Icon>(find.byIcon(Symbols.bookmark_rounded)).color,
       pal.ink,
     );
   });
@@ -124,17 +124,17 @@ void main() {
     expect(find.text('دسته: سخن و نوشتار'), findsOneWidget);
     expect(find.text('اشتراک‌گذاری'), findsOneWidget);
     expect(find.text('کپی'), findsOneWidget);
-    expect(find.byIcon(LucideIcons.heart), findsOneWidget);
-    expect(find.byIcon(LucideIcons.bookmark), findsOneWidget);
+    expect(find.byIcon(Symbols.favorite_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.bookmark_rounded), findsOneWidget);
 
-    await tester.tap(find.byIcon(LucideIcons.heart));
+    await tester.tap(find.byIcon(Symbols.favorite_rounded));
     await tester.pump();
     expect(toggled, 1);
     // The sheet stays open and the heart turns red in place —
     // no pop + reopen, no second card.
     expect(find.text('سوال'), findsOneWidget);
     expect(
-      tester.widget<Icon>(find.byIcon(LucideIcons.heart)).color,
+      tester.widget<Icon>(find.byIcon(Symbols.favorite_rounded)).color,
       pal.accent,
     );
   });

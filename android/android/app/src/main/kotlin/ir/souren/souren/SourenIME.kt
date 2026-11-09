@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ColorDrawable
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
@@ -17,6 +18,7 @@ import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.TextView
@@ -26,9 +28,9 @@ import kotlin.math.roundToInt
 /**
  * Souren Keyboard — rebuilt as a native Samsung One UI–inspired IME.
  *
- * The visual system is deliberately based on Samsung Keyboard's hierarchy:
- * compact toolbar/suggestion rail, a dedicated number row, square-soft keys,
- * restrained elevation, cool neutral surfaces, and high-contrast action keys.
+ * The visual system follows Samsung Keyboard / One UI conventions:
+ * icon-only toolbar, a three-candidate suggestion rail, compact number strip,
+ * softly rounded low-profile keycaps, and a distinct space row.
  * All input is committed through Android's InputConnection; no Flutter view
  * is embedded in the IME.
  */
@@ -54,6 +56,9 @@ class SourenIME : InputMethodService() {
     private var topArea: LinearLayout? = null
     private var keyArea: LinearLayout? = null
     private var root: FrameLayout? = null
+    private var shellView: LinearLayout? = null
+    private var dragHandle: View? = null
+    private var sideSwitchButton: TextView? = null
     private var popup: PopupWindow? = null
     private var popupCells = mutableListOf<TextView>()
     private var popupValues = emptyList<String>()
@@ -61,6 +66,8 @@ class SourenIME : InputMethodService() {
     private val handler = Handler(Looper.getMainLooper())
     private var repeatDelete: Runnable? = null
     private var lastSuggestionWord = ""
+    private var dragStartX = 0f
+    private var dragStartTranslationX = 0f
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).roundToInt()
@@ -72,17 +79,89 @@ class SourenIME : InputMethodService() {
     private fun color(light: String, night: String): Int =
         Color.parseColor(if (dark) night else light)
 
-    private val surface get() = color("#DDE1E8", "#17191E")
+    private val surface get() = color("#E9ECF1", "#17191F")
     private val keySurface get() = color("#FFFFFF", "#30343B")
-    private val specialSurface get() = color("#C7CDD6", "#444A54")
-    private val ink get() = color("#20242B", "#F2F4F7")
-    private val mutedInk get() = color("#59616D", "#C0C6D0")
-    private val accent get() = color("#3974C6", "#8AB4F8")
+    private val specialSurface get() = color("#D7DCE4", "#3C424C")
+    private val ink get() = color("#20252D", "#F5F6F8")
+    private val mutedInk get() = color("#737C89", "#B8C0CB")
+    private val accent get() = color("#7FA5D8", "#8AB4F8")
+
+    private fun applyKeyboardMode() {
+        val frame = root ?: return
+        val shell = shellView ?: return
+        val screenWidth = resources.displayMetrics.widthPixels
+        val params = (shell.layoutParams as? FrameLayout.LayoutParams)
+            ?: FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        params.width = when (KbData.kbMode) {
+            "one-handed" -> (screenWidth * 0.78f).toInt()
+            "floating" -> (screenWidth * 0.84f).toInt()
+            else -> ViewGroup.LayoutParams.MATCH_PARENT
+        }
+        params.gravity = when (KbData.kbMode) {
+            "one-handed" -> Gravity.BOTTOM or
+                (if (KbData.kbSide == "left") Gravity.LEFT else Gravity.RIGHT)
+            "floating" -> Gravity.CENTER
+            else -> Gravity.BOTTOM
+        }
+        shell.layoutParams = params
+        shell.translationX = 0f
+        shell.background = if (KbData.kbMode == "floating") {
+            rounded(surface, 20, 1)
+        } else {
+            ColorDrawable(surface)
+        }
+        shell.elevation = if (KbData.kbMode == "floating") dp(10).toFloat() else 0f
+        dragHandle?.visibility =
+            if (KbData.kbMode == "floating") View.VISIBLE else View.GONE
+        sideSwitchButton?.let { button ->
+            if (KbData.kbMode == "one-handed") {
+                button.visibility = View.VISIBLE
+                button.text = if (KbData.kbSide == "right") "‹" else "›"
+                val buttonParams = button.layoutParams as FrameLayout.LayoutParams
+                buttonParams.gravity = Gravity.BOTTOM or
+                    (if (KbData.kbSide == "right") Gravity.LEFT else Gravity.RIGHT)
+                button.layoutParams = buttonParams
+            } else {
+                button.visibility = View.GONE
+            }
+        }
+        frame.setBackgroundColor(
+            if (KbData.kbMode == "standard") surface else Color.TRANSPARENT
+        )
+    }
+
+    private fun showKeyboardModeMenu(anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        menu.menu.add("استاندارد").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "standard")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("یک‌دستی، سمت راست").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "one-handed", "right")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("یک‌دستی، سمت چپ").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "one-handed", "left")
+            applyKeyboardMode()
+            true
+        }
+        menu.menu.add("شناور").setOnMenuItemClickListener {
+            KbData.setKeyboardMode(this, "floating")
+            applyKeyboardMode()
+            true
+        }
+        menu.show()
+    }
 
     private fun keyHeight(): Int = when (KbData.kbHeight) {
-        "short" -> dp(42)
-        "normal" -> dp(46)
-        else -> dp(49)
+        "short" -> dp(41)
+        "normal" -> dp(45)
+        else -> dp(48)
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
@@ -97,6 +176,7 @@ class SourenIME : InputMethodService() {
         super.onStartInputView(info, restarting)
         KbData.readSettings(this)
         KbData.readLearned(this)
+        applyKeyboardMode()
         if (KbData.kbHeight != appliedHeight) {
             appliedHeight = KbData.kbHeight
             rebuildKeyboard()
@@ -114,22 +194,75 @@ class SourenIME : InputMethodService() {
     override fun onCreateInputView(): View {
         val frame = FrameLayout(this).apply {
             setBackgroundColor(surface)
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             clipChildren = false
             clipToPadding = false
         }
         root = frame
         val shell = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             setBackgroundColor(surface)
-            setPadding(dp(4), dp(2), dp(4), dp(9))
+            setPadding(dp(4), dp(2), dp(4), dp(8))
         }
+        shellView = shell
+        dragHandle = View(this).apply {
+            background = rounded(mutedInk, 20, 0)
+            visibility = View.GONE
+            setOnTouchListener { _, event ->
+                if (KbData.kbMode != "floating") return@setOnTouchListener false
+                val content = shellView ?: return@setOnTouchListener false
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        dragStartX = event.rawX
+                        dragStartTranslationX = content.translationX
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val max = ((frame.width - content.width) / 2f).coerceAtLeast(0f)
+                        content.translationX = (dragStartTranslationX + event.rawX - dragStartX)
+                            .coerceIn(-max, max)
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> true
+                    else -> false
+                }
+            }
+        }
+        shell.addView(dragHandle, LinearLayout.LayoutParams(dp(34), dp(4)).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            topMargin = dp(5)
+            bottomMargin = dp(4)
+        })
         frame.addView(shell, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM
         ))
+        val sideSwitch = TextView(this).apply {
+            text = "‹"
+            textSize = 27f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            background = rounded(surface, 18, 1)
+            visibility = View.GONE
+            setOnClickListener {
+                val nextSide = if (KbData.kbSide == "right") "left" else "right"
+                KbData.setKeyboardMode(this@SourenIME, "one-handed", nextSide)
+                applyKeyboardMode()
+            }
+        }
+        sideSwitchButton = sideSwitch
+        frame.addView(
+            sideSwitch,
+            FrameLayout.LayoutParams(dp(32), dp(48), Gravity.BOTTOM or Gravity.LEFT).apply {
+                bottomMargin = dp(34)
+            }
+        )
 
         topArea = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(3), 0, dp(3), 0)
         }
@@ -139,71 +272,74 @@ class SourenIME : InputMethodService() {
 
         keyArea = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(0, dp(1), 0, 0)
         }
         shell.addView(keyArea, LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
+        // Reserve a stable bottom inset so the system navigation area never
+        // overlaps the keyboard's bottom row.
+        shell.addView(View(this), LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(22)
+        ))
         appliedHeight = KbData.kbHeight
         renderToolbar()
         rebuildKeyboard()
+        applyKeyboardMode()
         return frame
     }
 
     // ── Top toolbar and live suggestions ────────────────────────────────────
 
     private fun toolbarButton(icon: Int, label: String, action: () -> Unit): View {
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(dp(7), dp(3), dp(7), dp(2))
-            background = rounded(specialSurface, 14, 0)
+        return FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(42), dp(38))
+            contentDescription = label
+            isClickable = true
+            isFocusable = true
+            addView(
+                ImageView(this@SourenIME).apply {
+                    setImageResource(icon)
+                    setColorFilter(mutedInk)
+                    scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    contentDescription = label
+                    setPadding(dp(10), dp(9), dp(10), dp(9))
+                },
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Gravity.CENTER
+                )
+            )
             setOnClickListener { action() }
+            setOnTouchListener { v, event ->
+                pressFeedback(v, event)
+                false
+            }
         }
-        val image = ImageView(this).apply {
-            setImageResource(icon)
-            setColorFilter(mutedInk)
-            scaleType = ImageView.ScaleType.CENTER_INSIDE
-        }
-        box.addView(image, LinearLayout.LayoutParams(dp(21), dp(21)))
-        box.addView(TextView(this).apply {
-            text = label
-            textSize = 9f
-            setTextColor(mutedInk)
-            gravity = Gravity.CENTER
-        })
-        box.setOnTouchListener { v, event ->
-            pressFeedback(v, event)
-            false
-        }
-        return box
     }
 
     private fun renderToolbar() {
         val bar = topArea ?: return
         bar.removeAllViews()
-        bar.addView(toolbarButton(R.drawable.ic_more, "بیشتر") {
-            lastLanguage = page
-            page = Page.SYMBOLS
-            rebuildKeyboard()
-        })
+        val modeButton = toolbarButton(R.drawable.ic_more, "حالت صفحه‌کلید") { }
+        modeButton.setOnClickListener { showKeyboardModeMenu(modeButton) }
+        bar.addView(modeButton)
         addSpacer(bar)
         bar.addView(toolbarButton(R.drawable.ic_clipboard, "کلیپ‌بورد") {
             lastLanguage = page
             page = Page.CLIPBOARD
             rebuildKeyboard()
         })
-        addSpacer(bar)
         bar.addView(toolbarButton(R.drawable.ic_emoji, "ایموجی") {
             lastLanguage = page
             page = Page.EMOJI
             rebuildKeyboard()
         })
-        addSpacer(bar)
         bar.addView(toolbarButton(R.drawable.ic_keyboard, "زبان") {
             switchLanguage()
         })
-        addSpacer(bar)
         bar.addView(toolbarButton(R.drawable.ic_gear, "تنظیمات") {
             openApp()
         })
@@ -216,44 +352,57 @@ class SourenIME : InputMethodService() {
     private fun renderSuggestions(word: String, suggestions: List<String>) {
         val bar = topArea ?: return
         bar.removeAllViews()
-        val all = (listOf(word) + suggestions).filter { it.isNotBlank() }.distinct().take(3)
+        val all = (listOf(word) + suggestions)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .take(3)
         if (all.isEmpty()) {
             renderToolbar()
             return
         }
+        bar.addView(toolbarButton(R.drawable.ic_more, "ابزارها") {
+            renderToolbar()
+        })
         all.forEachIndexed { index, candidate ->
             val slot = TextView(this).apply {
                 text = candidate
-                textSize = if (index == 0) 14f else 15f
+                textSize = if (index == 1) 16f else 14.5f
                 gravity = Gravity.CENTER
-                setTextColor(if (index == 0) mutedInk else ink)
+                setTextColor(if (index == 1) ink else mutedInk)
                 if (index == 1) paint.isFakeBoldText = true
-                setPadding(dp(6), 0, dp(6), 0)
+                setPadding(dp(5), 0, dp(5), 0)
+                maxLines = 1
                 setOnClickListener { replaceCurrentWord(candidate) }
             }
-            bar.addView(slot, LinearLayout.LayoutParams(0, dp(42), 1f))
+            bar.addView(slot, LinearLayout.LayoutParams(0, dp(40), 1f))
             if (index != all.lastIndex) {
                 bar.addView(View(this).apply {
-                    setBackgroundColor(color("#C5CAD2", "#484E58"))
-                }, LinearLayout.LayoutParams(dp(1), dp(22)))
+                    setBackgroundColor(color("#C8CDD5", "#454B55"))
+                }, LinearLayout.LayoutParams(dp(1), dp(20)))
             }
         }
-        bar.addView(toolbarButton(R.drawable.ic_more, "⋯") { renderToolbar() },
-            LinearLayout.LayoutParams(dp(48), dp(42)))
     }
 
     private fun refreshSuggestions() {
         if (page != Page.FA && page != Page.EN) return
         val word = currentWord()
+        val (leftContext, rightContext) = contextAroundCurrentWord()
+        val suggestionKey = listOf(word, leftContext, rightContext).joinToString("\u001F")
         if (word.length < 2 || page == Page.EN) {
-            lastSuggestionWord = word
+            lastSuggestionWord = suggestionKey
             renderToolbar()
             return
         }
-        if (word == lastSuggestionWord) return
-        lastSuggestionWord = word
+        if (suggestionKey == lastSuggestionWord) return
+        lastSuggestionWord = suggestionKey
         val suggestions = Corrector.suggestionsFor(
-            word, KbData.dictionary, KbData.learnedCounts, KbData.vocab
+            word,
+            KbData.dictionary,
+            KbData.learnedCounts,
+            KbData.vocab,
+            leftContext,
+            rightContext,
+            KbData.learnedPairs
         )
         if (suggestions.isEmpty()) renderToolbar()
         else renderSuggestions(word, suggestions)
@@ -263,9 +412,10 @@ class SourenIME : InputMethodService() {
         val ic = currentInputConnection ?: return
         val old = currentWord()
         if (old.isEmpty()) return
+        val (leftContext, rightContext) = contextAroundCurrentWord()
         ic.deleteSurroundingText(old.length, 0)
         ic.commitText(value, 1)
-        KbData.recordLearned(this, old, value)
+        KbData.recordLearned(this, old, value, leftContext, rightContext)
         lastSuggestionWord = ""
         refreshSuggestions()
     }
@@ -285,13 +435,16 @@ class SourenIME : InputMethodService() {
     }
 
     private fun buildLetters(area: LinearLayout) {
+        area.layoutDirection = if (page == Page.EN)
+            View.LAYOUT_DIRECTION_LTR else View.LAYOUT_DIRECTION_RTL
         val numberRow = if (page == Page.FA) "۱۲۳۴۵۶۷۸۹۰" else "1234567890"
-        addRow(area, numberRow.map { KeySpec(it.toString()) }, 0.72f)
+        addRow(area, numberRow.map { KeySpec(it.toString()) }, compact = true)
 
         if (page == Page.FA) {
             addRow(area, "ضصثقفغعهخحجچ".map { KeySpec(it.toString()) })
             addRow(area, "شسیبلاتنمکگ".map { KeySpec(it.toString()) })
-            addRow(area,
+            addRow(
+                area,
                 listOf(KeySpec("", Action.SHIFT, 1.45f, R.drawable.ic_shift)) +
                     "ظطزژرذدپو".map { KeySpec(it.toString()) } +
                     listOf(KeySpec("", Action.DELETE, 1.45f, R.drawable.ic_backspace))
@@ -299,7 +452,8 @@ class SourenIME : InputMethodService() {
         } else {
             addRow(area, "qwertyuiop".map { KeySpec(it.toString()) })
             addRow(area, "asdfghjkl".map { KeySpec(it.toString()) })
-            addRow(area,
+            addRow(
+                area,
                 listOf(KeySpec("", Action.SHIFT, 1.45f, R.drawable.ic_shift)) +
                     "zxcvbnm".map { KeySpec(it.toString()) } +
                     listOf(KeySpec("", Action.DELETE, 1.45f, R.drawable.ic_backspace))
@@ -307,24 +461,24 @@ class SourenIME : InputMethodService() {
         }
 
         val bottom = mutableListOf(
-            KeySpec("?۱۲۳", Action.SYMBOLS, 1.35f),
-            KeySpec("", Action.EMOJI, 1.0f, R.drawable.ic_emoji),
-            KeySpec(customSymbol, Action.CHAR, 1.0f),
-            KeySpec(if (page == Page.FA) "فارسی" else "English", Action.SPACE, 4.1f),
+            KeySpec("?۱۲۳", Action.SYMBOLS, 1.25f),
+            KeySpec("", Action.EMOJI, 0.9f, R.drawable.ic_emoji),
+            KeySpec(customSymbol, Action.CHAR, 0.9f),
+            KeySpec(if (page == Page.FA) "فارسی" else "English", Action.SPACE, 4.2f),
         )
-        if (page == Page.FA) bottom.add(KeySpec("", Action.ZWNJ, 1.25f, R.drawable.ic_half_space))
-        bottom.add(KeySpec(".", Action.CHAR, 0.8f))
-        bottom.add(KeySpec("", Action.ENTER, 1.35f, R.drawable.ic_enter))
+        if (page == Page.FA) bottom.add(KeySpec("", Action.ZWNJ, 1.1f, R.drawable.ic_half_space))
+        bottom.add(KeySpec(".", Action.CHAR, 0.75f))
+        bottom.add(KeySpec("", Action.ENTER, 1.25f, R.drawable.ic_enter))
         addRow(area, bottom)
     }
 
     private fun buildSymbols(area: LinearLayout) {
         val nums = if (lastLanguage == Page.FA) "۱۲۳۴۵۶۷۸۹۰" else "1234567890"
-        addRow(area, nums.map { KeySpec(it.toString()) }, 0.72f)
+        addRow(area, nums.map { KeySpec(it.toString()) }, compact = true)
         listOf("@#٪&*()-+".map { KeySpec(it.toString()) },
             "=/_:؛،.؟!".map { KeySpec(it.toString()) },
             listOf("«", "»", "'", "\"", "[", "]", "{", "}", "<", ">").map { KeySpec(it) },
-            listOf("﷼", "ـ", "…", "÷", "×", "±", "∞", "√", "©", "®").map { KeySpec(it) }
+            listOf("﷼", "…", "÷", "×", "±", "∞", "√", "©", "®").map { KeySpec(it) }
         ).forEach { addRow(area, it) }
         addRow(area, listOf(
             KeySpec("ABC", Action.BACK, 1.5f),
@@ -334,19 +488,27 @@ class SourenIME : InputMethodService() {
         ))
     }
 
-    private fun addRow(area: LinearLayout, keys: List<KeySpec>, topGap: Float = 0.0f) {
+    private fun addRow(
+        area: LinearLayout,
+        keys: List<KeySpec>,
+        compact: Boolean = false,
+    ) {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            layoutDirection = if (page == Page.EN && area === keyArea)
+                View.LAYOUT_DIRECTION_LTR else View.LAYOUT_DIRECTION_RTL
             gravity = Gravity.CENTER
-            setPadding(0, dp(if (topGap > 0) 2 else 3), 0, dp(3))
+            setPadding(0, dp(3), 0, dp(4))
         }
+        val height = if (compact) dp(34) else keyHeight()
         keys.forEach { spec ->
-            row.addView(createKey(spec), LinearLayout.LayoutParams(
-                0, keyHeight(), spec.weight
-            ).apply {
-                marginStart = dp(2)
-                marginEnd = dp(2)
-            })
+            row.addView(
+                createKey(spec),
+                LinearLayout.LayoutParams(0, height, spec.weight).apply {
+                    marginStart = dp(2)
+                    marginEnd = dp(2)
+                }
+            )
         }
         area.addView(row)
     }
@@ -361,10 +523,10 @@ class SourenIME : InputMethodService() {
             }
             background = rounded(
                 keyColor,
-                if (spec.action == Action.SPACE) 8 else 7,
-                if (spec.action == Action.ENTER) dp(2) else dp(1)
+                if (spec.action == Action.SPACE) 9 else 8,
+                0
             )
-            elevation = if (spec.action == Action.SPACE) dp(1).toFloat() else dp(2).toFloat()
+            elevation = dp(1).toFloat()
             isClickable = true
             isFocusable = true
         }
@@ -386,11 +548,11 @@ class SourenIME : InputMethodService() {
                 text = label
                 gravity = Gravity.CENTER
                 textSize = when {
-                    spec.action == Action.SPACE -> 13f
+                    spec.action == Action.SPACE -> 12.5f
                     spec.action == Action.ZWNJ -> 10f
-                    spec.label.length > 3 -> 11.5f
-                    spec.label.length == 1 && spec.label[0].isDigit() -> 17f
-                    else -> 19f
+                    spec.label.length > 3 -> 11f
+                    spec.label.length == 1 && spec.label[0].isDigit() -> 14f
+                    else -> 18f
                 }
                 setTextColor(if (spec.action == Action.ENTER) Color.WHITE else ink)
                 if (spec.action == Action.ENTER || spec.action == Action.SYMBOLS)
@@ -414,12 +576,13 @@ class SourenIME : InputMethodService() {
     private fun pressFeedback(view: View, event: MotionEvent) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                view.animate().scaleX(0.96f).scaleY(0.94f).alpha(0.92f)
-                    .setDuration(65).start()
+                view.animate().scaleX(0.965f).scaleY(0.955f).alpha(0.9f)
+                    .setDuration(85).start()
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 view.animate().scaleX(1f).scaleY(1f).alpha(1f)
-                    .setDuration(115).start()
+                    .setInterpolator(android.view.animation.OvershootInterpolator(1.25f))
+                    .setDuration(210).start()
             }
         }
     }
@@ -800,6 +963,20 @@ class SourenIME : InputMethodService() {
         return if (index < 0) before else before.substring(index + 1)
     }
 
+    /** Capture only the adjacent tokens used by the on-device ranking model. */
+    private fun contextAroundCurrentWord(): Pair<String, String> {
+        val ic = currentInputConnection ?: return "" to ""
+        val before = ic.getTextBeforeCursor(128, 0)?.toString().orEmpty()
+        val after = ic.getTextAfterCursor(64, 0)?.toString().orEmpty()
+        val word = currentWord()
+        val leftText = if (word.isNotEmpty() && before.endsWith(word))
+            before.dropLast(word.length) else before
+        val separators = Regex("[\\s،,.؟!؛:()«»]+")
+        val left = leftText.trimEnd().split(separators).lastOrNull().orEmpty()
+        val right = after.trimStart().split(separators).firstOrNull().orEmpty()
+        return left to right
+    }
+
     private fun onSpace() {
         val ic = currentInputConnection ?: return
         if (KbData.autoCorrect && page == Page.FA) {
@@ -809,9 +986,10 @@ class SourenIME : InputMethodService() {
             )
             if (fix != null) {
                 val from = currentWord()
+                val (leftContext, rightContext) = contextAroundCurrentWord()
                 ic.deleteSurroundingText(fix.first, 0)
                 ic.commitText(fix.second, 1)
-                KbData.recordLearned(this, from, fix.second)
+                KbData.recordLearned(this, from, fix.second, leftContext, rightContext)
             }
         }
         ic.commitText(" ", 1)

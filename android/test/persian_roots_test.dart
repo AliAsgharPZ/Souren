@@ -10,9 +10,10 @@ void main() {
     ], 1, false);
 
     final rows = PersianRoots.index(dictionary);
-    expect(rows.map((e) => e.word), containsAll(['کتاب', 'کتابها', 'دانش', 'آگاهی']));
-    expect(PersianRoots.baseOf('کتاب‌ها'), 'کتاب');
+    expect(rows.map((e) => e.word), ['کتابها']);
+    expect(rows.single.base, 'کتاب');
     expect(PersianRoots.baseOf('دانش'), 'دانش');
+    expect(rows.any((e) => e.word == 'دانش' || e.word == 'آگاهی'), isFalse);
   });
 
   test('Persian search finds both a word and its structural base', () {
@@ -21,6 +22,8 @@ void main() {
       Entry('واژه۲', ['کتاب']),
     ], 1, false);
     final rows = PersianRoots.index(dictionary);
-    expect(PersianRoots.search(rows, 'کتاب').length, 2);
+    final matches = PersianRoots.search(rows, 'کتاب');
+    expect(matches.length, 1);
+    expect(matches.single.word, 'کتابها');
   });
 }

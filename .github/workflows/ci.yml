@@ -1,10 +1,10 @@
 name: CI
 on:
   push:
-    branches: [main]
+    branches: [main, fix/v0.4.5.5-ui-keyboard]
     tags: ['v*']
   pull_request:
-    branches: [maintenance/v0.4.1]
+    branches: [maintenance/v0.4.1, release/v0.4.5]
   workflow_dispatch:
 jobs:
   build:
@@ -14,6 +14,8 @@ jobs:
         working-directory: android
     steps:
       - uses: actions/checkout@v4
+      - name: Validate Cloudflare Worker syntax
+        run: node --check ../worker.js
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -26,6 +28,10 @@ jobs:
         run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Pub get
         run: flutter pub get
+      - name: Verify Souren package version
+        run: |
+          grep -F 'version: 0.4.5+11' pubspec.yaml
+          grep -F 'versionName = "0.4.5.5"' android/app/build.gradle.kts
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -51,14 +57,19 @@ jobs:
           fi
       - name: Build release APK
         run: |
+          set -euo pipefail
           flutter build apk --release
-          BT=$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
-          $ANDROID_HOME/build-tools/$BT/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | head -3
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
+          sed -n '1,3p' /tmp/souren-apksigner.txt
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='11' versionName='0.4.5.5'"
+          cp "$APK" Souren-v0.4.5.5.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: souren-release-apk
-          path: android/build/app/outputs/flutter-apk/app-release.apk
+          name: souren-v0.4.5.5-apk
+          path: android/Souren-v0.4.5.5.apk
