@@ -100,7 +100,7 @@ class SourenIME : InputMethodService() {
         }
         params.gravity = when (KbData.kbMode) {
             "one-handed" -> Gravity.BOTTOM or
-                if (KbData.kbSide == "left") Gravity.LEFT else Gravity.RIGHT
+                (if (KbData.kbSide == "left") Gravity.LEFT else Gravity.RIGHT)
             "floating" -> Gravity.CENTER
             else -> Gravity.BOTTOM
         }
