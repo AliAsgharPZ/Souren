@@ -324,11 +324,14 @@ class _ScrollFadeState extends State<ScrollFade> {
 
   void _onScroll(ScrollNotification n) {
     if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      final progress = (n.metrics.pixels / 96).clamp(0.0, 1.0);
-      // Smoothstep avoids a sudden fade when the finger first moves.
-      final eased = progress * progress * (3 - 2 * progress);
-      final top = eased;
-      final bottom = n.metrics.extentAfter > 1 ? eased : 0.0;
+      final topProgress = (n.metrics.pixels / 96).clamp(0.0, 1.0);
+      final bottomProgress = n.metrics.maxScrollExtent > 1
+          ? (1 - n.metrics.extentAfter / 96).clamp(0.0, 1.0)
+          : 0.0;
+      // Smoothstep keeps both edge fades tied to the actual scroll edges.
+      double smooth(double value) => value * value * (3 - 2 * value);
+      final top = smooth(topProgress);
+      final bottom = smooth(bottomProgress);
       if ((top - _top).abs() > 0.005 ||
           (bottom - _bottom).abs() > 0.005) {
         setState(() {
@@ -2341,7 +2344,7 @@ class _ShellState extends State<Shell> {
   Widget _homeMetrics(Dictionary d) {
     return SizedBox(
       width: 124,
-      height: 70,
+      height: 94,
       child: FutureBuilder<Map<String, int>>(
         future: GanjoorData.stats(),
         builder: (context, snapshot) {
@@ -2353,54 +2356,61 @@ class _ShellState extends State<Shell> {
           ];
           final selected = _metricIndex % values.length;
           final item = values[selected];
+          void step(int delta) => setState(() {
+            _metricIndex = (_metricIndex + delta + values.length) % values.length;
+          });
           return Pressable(
-            onTap: () => setState(() => _metricIndex = (_metricIndex + 1) % values.length),
+            onTap: () => step(1),
             child: GestureDetector(
               onHorizontalDragEnd: (details) {
                 final velocity = details.primaryVelocity ?? 0;
                 if (velocity.abs() < 80) return;
-                setState(() {
-                  _metricIndex = velocity < 0
-                      ? (_metricIndex + 1) % values.length
-                      : (_metricIndex - 1 + values.length) % values.length;
-                });
+                // In RTL, a left swipe advances toward the previous item.
+                step(velocity < 0 ? -1 : 1);
               },
               child: AnimatedContainer(
                 duration: Motion.base,
                 curve: Motion.spring,
-                height: 68,
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                height: 94,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: pal.cardC,
                   borderRadius: BorderRadius.circular(capR(68)),
                   border: Border.all(color: pal.div.withValues(alpha: .65)),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      faNum(item.$2),
-                      textDirection: TextDirection.ltr,
-                      style: TextStyle(
-                        color: pal.ink,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
+                    AnimatedSwitcher(
+                      duration: Motion.fast,
+                      child: Text(
+                        faNum(item.$2),
+                        key: ValueKey(item.$2),
+                        textDirection: TextDirection.ltr,
+                        style: TextStyle(
+                          color: pal.ink,
+                          fontSize: 27,
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 7),
+                    Row(
                       children: [
-                        Text(
-                          item.$1,
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: pal.muted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            item.$1,
+                            textAlign: TextAlign.right,
+                            maxLines: 1,
+                            style: TextStyle(
+                              color: pal.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 7),
+                        const SizedBox(width: 7),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -2412,7 +2422,9 @@ class _ShellState extends State<Shell> {
                                 width: i == selected ? 11 : 4,
                                 height: 4,
                                 decoration: BoxDecoration(
-                                  color: i == selected ? pal.sel : pal.faint.withValues(alpha: .55),
+                                  color: i == selected
+                                      ? pal.sel
+                                      : pal.faint.withValues(alpha: .55),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
