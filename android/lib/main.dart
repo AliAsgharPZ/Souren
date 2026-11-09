@@ -1680,9 +1680,10 @@ class _ShellState extends State<Shell> {
       final pos = tabBox.localToGlobal(Offset.zero, ancestor: stackBox);
       // A one-logical-pixel inset keeps antialiased edges inside the measured
       // tab bounds and prevents the indicator from hanging below the capsule.
-      final left = (pos.dx + 1).clamp(0.0, stackBox.size.width);
+      final left = (pos.dx + 1).clamp(0.0, stackBox.size.width).toDouble();
       final right = (pos.dx + tabBox.size.width - 1)
-          .clamp(left, stackBox.size.width);
+          .clamp(left, stackBox.size.width)
+          .toDouble();
       final width = right - left;
       if ((left - _indLeft).abs() > .5 ||
           (width - _indWidth).abs() > .5) {
