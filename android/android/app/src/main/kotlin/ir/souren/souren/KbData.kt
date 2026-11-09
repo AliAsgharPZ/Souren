@@ -4,6 +4,8 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** Data shared between the dictionary app and this keyboard: same
  *  package, same filesDir. The app writes settings + dataset updates;
@@ -15,6 +17,9 @@ object KbData {
     @Volatile var autoCorrect: Boolean = true
     @Volatile var kbHeight: String = "tall"
     @Volatile var learnedCounts: MutableMap<String, Int> = mutableMapOf()
+    @Volatile var learnedPairs: MutableMap<String, Int> = mutableMapOf()
+    @Volatile var shareLearning: Boolean = false
+    @Volatile private var syncingLearning = false
     private var loaded = false
 
     @Synchronized
@@ -59,6 +64,7 @@ object KbData {
                 replaceArabic = j.optBoolean("replaceArabic", true)
                 autoCorrect = j.optBoolean("autoCorrect", true)
                 kbHeight = j.optString("kbHeight", "tall")
+                shareLearning = j.optBoolean("shareLearning", false)
             }
         } catch (e: Exception) { }
     }
@@ -76,6 +82,14 @@ object KbData {
                     m[k] = counts.optInt(k)
                 }
                 learnedCounts = m
+                val pairJson = j.optJSONObject("pairs") ?: JSONObject()
+                val pairMap = HashMap<String, Int>()
+                val pairKeys = pairJson.keys()
+                while (pairKeys.hasNext()) {
+                    val key = pairKeys.next()
+                    pairMap[key] = pairJson.optInt(key)
+                }
+                learnedPairs = pairMap
             }
         } catch (e: Exception) { }
     }
@@ -83,24 +97,97 @@ object KbData {
     /** Record that the user ended up with [to] after typing [from]:
      *  bumps the learned count and appends to the history the app shows. */
     @Synchronized
-    fun recordLearned(ctx: Context, from: String, to: String) {
+    fun recordLearned(
+        ctx: Context,
+        from: String,
+        to: String,
+        leftContext: String = "",
+        rightContext: String = ""
+    ) {
         if (from == to || from.isBlank() || to.isBlank()) return
         learnedCounts[to] = (learnedCounts[to] ?: 0) + 1
+        val key = Corrector.learningKey(from, leftContext, rightContext, to)
+        learnedPairs[key] = (learnedPairs[key] ?: 0) + 1
         try {
             val file = File(ctx.filesDir, "learned.json")
             val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
             val counts = root.optJSONObject("counts") ?: JSONObject()
             counts.put(to, learnedCounts[to])
             root.put("counts", counts)
-            val history = root.optJSONArray("history") ?: JSONArray()
-            history.put(JSONObject().apply {
+            val pairs = root.optJSONObject("pairs") ?: JSONObject()
+            pairs.put(key, learnedPairs[key])
+            root.put("pairs", pairs)
+            val sample = JSONObject().apply {
                 put("from", from); put("to", to)
+                put("left", leftContext); put("right", rightContext)
                 put("ts", System.currentTimeMillis())
-            })
+            }
+            val history = root.optJSONArray("history") ?: JSONArray()
+            history.put(sample)
             while (history.length() > 300) history.remove(0)
             root.put("history", history)
+            if (shareLearning) {
+                val pending = root.optJSONArray("pending") ?: JSONArray()
+                pending.put(JSONObject().apply {
+                    put("from", from); put("to", to)
+                    put("left", leftContext); put("right", rightContext)
+                })
+                while (pending.length() > 100) pending.remove(0)
+                root.put("pending", pending)
+            }
             file.writeText(root.toString())
+            if (shareLearning) syncLearning(ctx)
         } catch (e: Exception) { }
+    }
+
+    /** Sends only token-level correction examples after explicit opt-in.
+     *  Full sentences, account identifiers and clipboard contents are never sent. */
+    private fun syncLearning(ctx: Context) {
+        synchronized(this) {
+            if (syncingLearning) return
+            syncingLearning = true
+        }
+        Thread {
+            try {
+                val file = File(ctx.filesDir, "learned.json")
+                val root = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+                val pending = root.optJSONArray("pending") ?: JSONArray()
+                if (pending.length() == 0) return@Thread
+                val batch = JSONArray()
+                for (i in 0 until pending.length()) batch.put(pending.getJSONObject(i))
+                val payload = JSONObject().put("samples", batch)
+                val connection = (URL("https://souren.aliasgharpanahizare.workers.dev/api/learning")
+                    .openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                }
+                val accepted = try {
+                    connection.outputStream.use {
+                        it.write(payload.toString().toByteArray(Charsets.UTF_8))
+                    }
+                    connection.responseCode in 200..299
+                } finally {
+                    connection.disconnect()
+                }
+                if (accepted) synchronized(this) {
+                    val latest = if (file.exists()) JSONObject(file.readText()) else JSONObject()
+                    val current = latest.optJSONArray("pending") ?: JSONArray()
+                    val remaining = JSONArray()
+                    for (i in batch.length() until current.length()) {
+                        remaining.put(current.getJSONObject(i))
+                    }
+                    latest.put("pending", remaining)
+                    file.writeText(latest.toString())
+                }
+            } catch (_: Exception) {
+                // Keep the pending batch locally; a later accepted correction retries it.
+            } finally {
+                synchronized(this) { syncingLearning = false }
+            }
+        }.start()
     }
 
     // ---------------- clipboard panel store ----------------
