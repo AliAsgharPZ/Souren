@@ -4595,6 +4595,34 @@ class CorrectorPage extends StatefulWidget {
 class _CorrectorPageState extends State<CorrectorPage> {
   final _ctrl = TextEditingController();
   String _out = '';
+  Map<String, int> _learnedPairs = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLearningModel();
+  }
+
+  Future<void> _loadLearningModel() async {
+    final learned = await SharedFiles.readJson('learned.json');
+    if (learned == null) return;
+    final model = <String, int>{};
+    for (final key in ['pairs', 'sharedPairs']) {
+      final values = learned[key];
+      if (values is Map) {
+        for (final entry in values.entries) {
+          final count = entry.value;
+          if (count is num) {
+            model[entry.key.toString()] =
+                (model[entry.key.toString()] ?? 0) + count.toInt();
+          }
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() => _learnedPairs = model);
+    if (_ctrl.text.isNotEmpty) _run(_ctrl.text);
+  }
 
   void _run(String v) {
     setState(
@@ -4602,6 +4630,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
         v,
         dictionary: widget.dict.map,
         replaceArabic: true,
+        learnedPairs: _learnedPairs,
       ),
     );
   }
