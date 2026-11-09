@@ -971,12 +971,16 @@ class ShareCardImage extends StatelessWidget {
           Divider(height: 1, color: pal.div),
           const SizedBox(height: 10),
           Row(
+            textDirection: TextDirection.rtl,
             children: [
-              Icon(LucideIcons.badgeCheck, size: 16, color: pal.sel),
-              const SizedBox(width: 6),
-              Text(
-                'سورن — دیکشنری عربی به فارسی',
-                style: TextStyle(fontSize: 12, color: pal.muted),
+              SourenLogo(width: 34, animate: false),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  '، دیکشنری عربی به فارسی',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontSize: 12, color: pal.muted),
+                ),
               ),
             ],
           ),
@@ -1367,7 +1371,8 @@ class _SourenAppState extends State<SourenApp> {
 /// The complete official Souren wordmark, revealed as a filled silhouette.
 class SourenLogo extends StatefulWidget {
   final double width;
-  const SourenLogo({super.key, required this.width});
+  final bool animate;
+  const SourenLogo({super.key, required this.width, this.animate = true});
 
   @override
   State<SourenLogo> createState() => _SourenLogoState();
@@ -1378,7 +1383,14 @@ class _SourenLogoState extends State<SourenLogo>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1500),
-  )..forward();
+    value: widget.animate ? 0 : 1,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _controller.forward();
+  }
 
   @override
   void dispose() {
@@ -1397,7 +1409,9 @@ class _SourenLogoState extends State<SourenLogo>
         animation: _controller,
         builder: (context, _) => CustomPaint(
           painter: _SourenLogoPainter(
-            progress: Curves.easeInOutCubic.transform(_controller.value),
+            progress: widget.animate
+                ? Curves.easeInOutCubic.transform(_controller.value)
+                : 1.0,
             color: pal.ink,
           ),
         ),
@@ -3351,6 +3365,29 @@ class _ShellState extends State<Shell> {
       corrections: learnedCorrections,
     );
     final next = nextLevelAt(score);
+    final levelIndex = levelThresholds.lastIndexWhere((t) => score >= t.$1);
+    final currentLevel = levelThresholds[levelIndex];
+    final previousLevel = levelIndex > 0 ? levelThresholds[levelIndex - 1] : null;
+    final followingLevel = levelIndex + 1 < levelThresholds.length
+        ? levelThresholds[levelIndex + 1]
+        : null;
+    final profileCard = ShareCardData(
+      title: user?.displayName ?? 'نمایهٔ مهمان',
+      lines: [
+        if (user != null) '@${user.username}',
+        'امتیاز کل: ${faNum(score)}',
+        'سطح فعلی: ${currentLevel.$2}',
+        if (previousLevel != null)
+          'سطح قبلی: ${previousLevel.$2}، ${faNum(previousLevel.$1)} امتیاز',
+        if (followingLevel != null)
+          'سطح بعدی: ${followingLevel.$2}، ${faNum(followingLevel.$1)} امتیاز',
+        'واژه‌های نشان‌شده: ${faNum(favorites.length)}',
+        'واژه‌های پسندیده: ${faNum(liked.length)}',
+        'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
+        'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
+      ],
+      caption: 'نمایهٔ کاربری سورن',
+    );
     final levelStart = levelThresholds.lastWhere((t) => score >= t.$1).$1;
     final progress = next == null
         ? 1.0
@@ -3471,6 +3508,30 @@ class _ShellState extends State<Shell> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _levelInfoTile('سطح قبلی', previousLevel),
+                const SizedBox(width: 8),
+                _levelInfoTile('سطح فعلی', currentLevel, active: true),
+                const SizedBox(width: 8),
+                _levelInfoTile('سطح بعدی', followingLevel),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Symbols.share_rounded, size: 19),
+                label: const Text('اشتراک‌گذاری نمایه'),
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _ShareSheet(card: profileCard),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -3622,6 +3683,44 @@ class _ShellState extends State<Shell> {
               title: const Text('آموخته‌های کیبورد'),
               subtitle: const Text('آنچه کیبورد سورن از شما آموخته است'),
               onTap: () => _pushPage(_learningPage()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _levelInfoTile(
+    String label,
+    (int, String)? level, {
+    bool active = false,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 11),
+        decoration: BoxDecoration(
+          color: active ? pal.pillC : Colors.transparent,
+          borderRadius: BorderRadius.circular(capR(42)),
+          border: Border.all(color: active ? pal.div : pal.div.withValues(alpha: .5)),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: TextStyle(fontSize: 10.5, color: pal.muted)),
+            const SizedBox(height: 5),
+            Text(
+              level?.$2 ?? '—',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: active ? pal.ink : pal.muted,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              level == null ? '—' : '${faNum(level.$1)} امتیاز',
+              style: TextStyle(fontSize: 9.5, color: pal.faint),
             ),
           ],
         ),
