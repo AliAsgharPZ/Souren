@@ -211,7 +211,7 @@ class DatasetValidatorTest {
     }
 
     @Test fun contentSignatureDetectsSameLengthReplacement() {
-        val firstText = """{"entries":[{"ar":"آب"}]}"""
+        val firstText = """{"entries":[{"ar":"باد"}]}"""
         val secondText = """{"entries":[{"ar":"نان"}]}"""
         assertEquals(firstText.length, secondText.length)
         assertFalse(DatasetValidator.signature(firstText) == DatasetValidator.signature(secondText))
