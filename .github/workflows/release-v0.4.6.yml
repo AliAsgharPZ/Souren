@@ -1,0 +1,136 @@
+name: Release Souren v0.4.6
+
+concurrency:
+  group: souren-v0.4.6-release
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - release/v0.4.6
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Verify and build signed APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Dataset integrity
+        shell: bash
+        run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Dart and widget tests
+        run: flutter test
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Kotlin IME unit tests
+        working-directory: android/android
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Configure production signing key
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PW: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KS_B64:-}" ] || [ -z "${KS_PW:-}" ] || [ -z "${KEY_PW:-}" ] || [ -z "${KEY_ALIAS:-}" ]; then
+            echo "::error::Production signing secrets are missing. Refusing to publish a debug-signed APK."
+            exit 1
+          fi
+          CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
+          printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore
+          test -s android/souren-release.keystore
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Verify APK signature and version
+        run: |
+          set -euo pipefail
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > "$RUNNER_TEMP/apk-cert.txt"
+          grep -q "Signer" "$RUNNER_TEMP/apk-cert.txt"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" > "$RUNNER_TEMP/apk-badging.txt"
+          grep -F "package: name='ir.souren.souren' versionCode='12' versionName='0.4.6'" "$RUNNER_TEMP/apk-badging.txt" > /dev/null
+
+      - name: Prepare release asset
+        run: |
+          mkdir -p ../release-assets
+          cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Souren-v0.4.6-APK
+          path: release-assets/Souren-v0.4.6.apk
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v0.4.6
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Souren-v0.4.6-APK
+          path: release-assets
+
+      - name: Create tag and publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.4.6
+          target_commitish: release/v0.4.6
+          name: Souren v0.4.6
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          overwrite_files: true
+          body: |
+            ## Souren v0.4.6
+
+            - Restored the v0.4.1.1 navigation-bar geometry with a solid surface; only Home and Settings remain fixed while the four middle actions reflow.
+            - Refined the original Souren logo placement and scale without changing its artwork.
+            - Updated the home feed, search, word/proverb details, favorites, bookmarks, profile, etymology, Ganjoor library and Persian keyboard.
+            - Added contextual correction preferences with local learning and optional anonymous aggregate sharing.
+            - Ganjoor remains online-first with API fallback; offline content-pack delivery is handled separately after full-pack verification.
+
+            Built after dataset integrity checks, Flutter analysis, Dart/widget tests,
+            Kotlin IME unit tests, production APK signing and package-version verification.
+          files: release-assets/Souren-v0.4.6.apk
+          fail_on_unmatched_files: true
