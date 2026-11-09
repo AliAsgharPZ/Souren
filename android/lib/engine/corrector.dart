@@ -261,8 +261,8 @@ const String _trailingMarks = '»"\')’”،.؟!؛:…';
 String correctText(String text,
     {Map<String, List<String>> dictionary = const {}, bool replaceArabic = true}) {
   var t = normalizeLetters(text);
-  t = t.replaceAllMapped(
-      RegExp(r'\s+([،.؟!؛:])'), (m) => m.group(1)!);
+  // Do not normalize whitespace before punctuation: spaces, tabs and
+  // line breaks are user-authored content and must survive verbatim.
   final wordRe = RegExp(r'[^\s]+');
   final matches = wordRe.allMatches(t).toList();
 
