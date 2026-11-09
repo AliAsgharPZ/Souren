@@ -1951,10 +1951,10 @@ class _ShellState extends State<Shell> {
     return MenuAnchor(
       alignmentOffset: const Offset(0, 8),
       style: MenuStyle(
-        backgroundColor: MaterialStatePropertyAll(pal.cardC),
-        elevation: const MaterialStatePropertyAll(12),
-        padding: const MaterialStatePropertyAll(EdgeInsets.all(8)),
-        shape: MaterialStatePropertyAll(
+        backgroundColor: WidgetStatePropertyAll(pal.cardC),
+        elevation: const WidgetStatePropertyAll(12),
+        padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
+        shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
             side: BorderSide(color: pal.div),
@@ -1975,14 +1975,14 @@ class _ShellState extends State<Shell> {
               });
             },
             style: ButtonStyle(
-              minimumSize: const MaterialStatePropertyAll(Size(190, 48)),
-              padding: const MaterialStatePropertyAll(
+              minimumSize: const WidgetStatePropertyAll(Size(190, 48)),
+              padding: const WidgetStatePropertyAll(
                 EdgeInsets.symmetric(horizontal: 12),
               ),
-              backgroundColor: MaterialStatePropertyAll(
+              backgroundColor: WidgetStatePropertyAll(
                 i == _homeCollection ? pal.pillC : Colors.transparent,
               ),
-              shape: MaterialStatePropertyAll(
+              shape: WidgetStatePropertyAll(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(capR(46)),
                 ),
