@@ -1698,7 +1698,15 @@ class _ShellState extends State<Shell> {
         builder: (context, constraints) {
           const pill = 42.0;
           const contentH = 58.0;
-          final slotW = (constraints.maxWidth - 16) / 6;
+          // Keep only the two endpoint actions anchored. The four middle
+          // actions share the remaining width and reflow around the active tab.
+          const fixedSlotW = 52.0;
+          const selectedExtraW = 32.0;
+          final innerWidth = constraints.maxWidth - 16;
+          final middleBaseW =
+              (innerWidth - fixedSlotW * 2 -
+                      (tab >= 1 && tab <= 4 ? selectedExtraW : 0)) /
+                  4;
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
@@ -1712,72 +1720,66 @@ class _ShellState extends State<Shell> {
                 ),
               ],
             ),
-            child: Stack(
+            child: Row(
               children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Motion.curve,
-                  left: tab * slotW + (slotW - pill) / 2,
-                  top: 0,
-                  width: pill,
-                  height: pill,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color.lerp(pal.sel, pal.bg, 0.38)!,
-                      borderRadius: BorderRadius.circular(capR(pill)),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: Pressable(
-                          onTap: () => _go(i),
-                          child: SizedBox(
-                            height: contentH,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: pill,
-                                  height: pill,
-                                  child: Icon(
-                                    items[i].$1,
-                                    size: 22,
-                                    fill: tab == i ? 1 : 0,
-                                    weight: tab == i ? 600 : 400,
-                                    color: tab == i
-                                        ? pal.bg
-                                        : pal.ink.withValues(alpha: .72),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                SizedBox(
-                                  height: 13,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: AnimatedOpacity(
-                                      opacity: tab == i ? 1 : 0,
-                                      duration: Motion.fast,
-                                      child: Text(
-                                        items[i].$2,
-                                        style: TextStyle(
-                                          color: pal.sel,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 11,
-                                        ),
-                                      ),
+                for (var i = 0; i < items.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Motion.curve,
+                    width: (i == 0 || i == 5)
+                        ? fixedSlotW
+                        : middleBaseW + (tab == i ? selectedExtraW : 0),
+                    child: Pressable(
+                      onTap: () => _go(i),
+                      child: SizedBox(
+                        height: contentH,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: Motion.fast,
+                              width: pill,
+                              height: pill,
+                              decoration: BoxDecoration(
+                                color: tab == i
+                                    ? Color.lerp(pal.sel, pal.bg, 0.38)!
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(capR(pill)),
+                              ),
+                              child: Icon(
+                                items[i].$1,
+                                size: 22,
+                                fill: tab == i ? 1 : 0,
+                                weight: tab == i ? 600 : 400,
+                                color: tab == i
+                                    ? pal.bg
+                                    : pal.ink.withValues(alpha: .72),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            SizedBox(
+                              height: 13,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: AnimatedOpacity(
+                                  opacity: tab == i ? 1 : 0,
+                                  duration: Motion.fast,
+                                  child: Text(
+                                    items[i].$2,
+                                    style: TextStyle(
+                                      color: pal.sel,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                  ),
               ],
             ),
           );
@@ -1911,10 +1913,10 @@ class _ShellState extends State<Shell> {
                 ],
               ),
               const Positioned(
-                top: 24,
+                top: 30,
                 left: 0,
                 right: 0,
-                child: Center(child: SourenLogo(width: 150)),
+                child: Center(child: SourenLogo(width: 140)),
               ),
               Positioned(
                 top: logoGap + searchH,
