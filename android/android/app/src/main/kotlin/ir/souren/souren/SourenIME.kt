@@ -257,14 +257,15 @@ class SourenIME : InputMethodService() {
     private fun refreshSuggestions() {
         if (page != Page.FA && page != Page.EN) return
         val word = currentWord()
+        val (leftContext, rightContext) = contextAroundCurrentWord()
+        val suggestionKey = listOf(word, leftContext, rightContext).joinToString("\u001F")
         if (word.length < 2 || page == Page.EN) {
-            lastSuggestionWord = word
+            lastSuggestionWord = suggestionKey
             renderToolbar()
             return
         }
-        if (word == lastSuggestionWord) return
-        lastSuggestionWord = word
-        val (leftContext, rightContext) = contextAroundCurrentWord()
+        if (suggestionKey == lastSuggestionWord) return
+        lastSuggestionWord = suggestionKey
         val suggestions = Corrector.suggestionsFor(
             word,
             KbData.dictionary,
@@ -856,9 +857,10 @@ class SourenIME : InputMethodService() {
             )
             if (fix != null) {
                 val from = currentWord()
+                val (leftContext, rightContext) = contextAroundCurrentWord()
                 ic.deleteSurroundingText(fix.first, 0)
                 ic.commitText(fix.second, 1)
-                KbData.recordLearned(this, from, fix.second)
+                KbData.recordLearned(this, from, fix.second, leftContext, rightContext)
             }
         }
         ic.commitText(" ", 1)
