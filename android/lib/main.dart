@@ -1871,9 +1871,13 @@ class _ShellState extends State<Shell> {
                             child: AnimatedOpacity(
                               opacity: _searchFocused ? 0 : 1,
                               duration: Motion.fast,
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  children: [
+                              child: edgeFade(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.only(
+                                    bottom: kNavClearance,
+                                  ),
+                                  child: Column(
+                                    children: [
                                     _sidePill(
                                       'گنجینهٔ واژه‌ها',
                                       () => _open(
@@ -1913,9 +1917,10 @@ class _ShellState extends State<Shell> {
                                         onToggleBookmark: _toggleFav,
                                       )),
                                     ),
-                                    const SizedBox(height: 4),
-                                    _homeMetrics(d),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      _homeMetrics(d),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
