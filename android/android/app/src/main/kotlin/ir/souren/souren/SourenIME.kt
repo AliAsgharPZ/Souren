@@ -57,6 +57,7 @@ class SourenIME : InputMethodService() {
     private var root: FrameLayout? = null
     private var shellView: LinearLayout? = null
     private var dragHandle: View? = null
+    private var sideSwitchButton: TextView? = null
     private var popup: PopupWindow? = null
     private var popupCells = mutableListOf<TextView>()
     private var popupValues = emptyList<String>()
@@ -114,6 +115,18 @@ class SourenIME : InputMethodService() {
         shell.elevation = if (KbData.kbMode == "floating") dp(10).toFloat() else 0f
         dragHandle?.visibility =
             if (KbData.kbMode == "floating") View.VISIBLE else View.GONE
+        sideSwitchButton?.let { button ->
+            if (KbData.kbMode == "one-handed") {
+                button.visibility = View.VISIBLE
+                button.text = if (KbData.kbSide == "right") "‹" else "›"
+                val buttonParams = button.layoutParams as FrameLayout.LayoutParams
+                buttonParams.gravity = Gravity.BOTTOM or
+                    (if (KbData.kbSide == "right") Gravity.LEFT else Gravity.RIGHT)
+                button.layoutParams = buttonParams
+            } else {
+                button.visibility = View.GONE
+            }
+        }
         frame.setBackgroundColor(
             if (KbData.kbMode == "standard") surface else Color.TRANSPARENT
         )
@@ -225,6 +238,25 @@ class SourenIME : InputMethodService() {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM
         ))
+        sideSwitchButton = TextView(this).apply {
+            text = "‹"
+            textSize = 27f
+            gravity = Gravity.CENTER
+            setTextColor(ink)
+            background = rounded(surface, 18, 1)
+            visibility = View.GONE
+            setOnClickListener {
+                val nextSide = if (KbData.kbSide == "right") "left" else "right"
+                KbData.setKeyboardMode(this@SourenIME, "one-handed", nextSide)
+                applyKeyboardMode()
+            }
+        }
+        frame.addView(
+            sideSwitchButton,
+            FrameLayout.LayoutParams(dp(32), dp(48), Gravity.BOTTOM or Gravity.LEFT).apply {
+                bottomMargin = dp(34)
+            }
+        )
 
         topArea = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
