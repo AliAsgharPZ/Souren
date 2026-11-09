@@ -261,7 +261,7 @@ class _ScrollFadeState extends State<ScrollFade> {
 Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
-}) => ScrollFade(child: child, alwaysVisible: alwaysVisible);
+}) => ScrollFade(alwaysVisible: alwaysVisible, child: child);
 
 /// Apple-like press feedback for every custom button: the control
 /// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
