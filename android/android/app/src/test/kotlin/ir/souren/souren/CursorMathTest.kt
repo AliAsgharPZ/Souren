@@ -10,8 +10,13 @@ import org.junit.Test
  *  positioning), B2 (dataset reload/fallback), B3 (whitespace +
  *  punctuation in correction) and B5 (settings rebuilds). */
 class CursorMathTest {
-    private fun move(selStart: Int, selEnd: Int, len: Int, delta: Int) =
-        CursorMath.newSelection(selStart, selEnd, len, delta)
+    private fun move(
+        selStart: Int,
+        selEnd: Int,
+        len: Int,
+        delta: Int,
+        startOffset: Int = 0
+    ) = CursorMath.newSelection(startOffset, selStart, selEnd, len, delta)
 
     @Test fun nearTheBeginning_neverGoesNegative() {
         assertEquals(0, move(0, 0, 1000, -1))
@@ -28,6 +33,14 @@ class CursorMathTest {
         assertEquals(260, move(261, 261, len, -1))
         assertEquals(262, move(261, 261, len, 1))
         assertEquals(510, move(500, 500, len, 10))
+    }
+
+    @Test fun partialExtractedWindow_usesAbsoluteStartOffset() {
+        // ExtractedText.selectionStart/End are relative to its window;
+        // setSelection needs the corresponding document-absolute offset.
+        assertEquals(10_160, move(150, 150, 200, 10, startOffset = 10_000))
+        assertEquals(10_000, move(2, 2, 200, -5, startOffset = 10_000))
+        assertEquals(10_200, move(195, 195, 200, 20, startOffset = 10_000))
     }
 
     @Test fun beyondCharacter500() {
