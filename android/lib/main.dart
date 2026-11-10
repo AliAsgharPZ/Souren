@@ -1905,15 +1905,15 @@ class _ShellState extends State<Shell> {
                   Expanded(
                     child: Padding(
                       // End the home viewport above the floating nav bar.
-                      padding: const EdgeInsets.only(bottom: kNavClearance),
+                      padding: EdgeInsets.only(bottom: _searchFocused ? 0 : kNavClearance),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
                             child: Padding(
-                              // Keep the word-list column a little shorter
-                              // than the full action-button column.
-                              padding: const EdgeInsets.only(bottom: 16),
+                              // Keep the list just a little shorter than the action column;
+                              // in search mode let it use the full screen height.
+                              padding: EdgeInsets.only(bottom: _searchFocused ? 0 : 5),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -2237,6 +2237,8 @@ class _ShellState extends State<Shell> {
         }
         return edgeFade(
           alwaysVisible: true,
+          fadeExtent: 0.30,
+          fadeStrength: 0.28,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: rows.length,
@@ -2323,6 +2325,8 @@ class _ShellState extends State<Shell> {
       }
       return edgeFade(
         alwaysVisible: true,
+        fadeExtent: 0.30,
+        fadeStrength: 0.28,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
           itemCount: rows.length,
@@ -2375,6 +2379,8 @@ class _ShellState extends State<Shell> {
         }
         return edgeFade(
           alwaysVisible: true,
+          fadeExtent: 0.30,
+          fadeStrength: 0.28,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: poems.length,
@@ -2517,12 +2523,27 @@ class _ShellState extends State<Shell> {
                       flex: 3,
                       child: Center(
                         child: AnimatedSwitcher(
-                          duration: Motion.fast,
+                          duration: Motion.base,
+                          switchInCurve: Motion.curve,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) => FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.16),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: ScaleTransition(
+                                scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
+                                child: child,
+                              ),
+                            ),
+                          ),
                           child: FittedBox(
+                            key: ValueKey(item.$2),
                             fit: BoxFit.scaleDown,
                             child: Text(
                               faNum(item.$2),
-                              key: ValueKey(item.$2),
                               textDirection: TextDirection.ltr,
                               style: TextStyle(
                                 color: pal.ink,
