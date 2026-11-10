@@ -2480,7 +2480,9 @@ class _ShellState extends State<Shell> {
       child: FutureBuilder<Map<String, int>>(
         future: GanjoorData.stats(),
         builder: (context, snapshot) {
-          final stats = snapshot.data ?? const <String, int>{};
+          // Show the last published corpus totals while remote stats load.
+          // Never flash a misleading zero for the poem count.
+          final stats = snapshot.data ?? GanjoorData.fallbackStats;
           final values = <(String, int)>[
             ('واژه', d.entries.length),
             ('برابر', d.pairCount),
@@ -2669,11 +2671,13 @@ class _ShellState extends State<Shell> {
               child: _pairRow(items[i], singleLine: singleLine),
             ),
           ),
+          // Long, multi-stop edge fades: stronger at the screen edge,
+          // then easing gradually into the scrolling content.
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 46,
+            height: 88,
             child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -2682,10 +2686,12 @@ class _ShellState extends State<Shell> {
                     end: Alignment.bottomCenter,
                     colors: [
                       pal.bg,
-                      pal.bg.withValues(alpha: 0.82),
+                      pal.bg.withValues(alpha: 0.96),
+                      pal.bg.withValues(alpha: 0.78),
+                      pal.bg.withValues(alpha: 0.38),
                       pal.bg.withValues(alpha: 0),
                     ],
-                    stops: const [0, 0.42, 1],
+                    stops: const [0, 0.16, 0.42, 0.74, 1],
                   ),
                 ),
               ),
@@ -2695,7 +2701,7 @@ class _ShellState extends State<Shell> {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 46,
+            height: 88,
             child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -2704,10 +2710,12 @@ class _ShellState extends State<Shell> {
                     end: Alignment.topCenter,
                     colors: [
                       pal.bg,
-                      pal.bg.withValues(alpha: 0.82),
+                      pal.bg.withValues(alpha: 0.96),
+                      pal.bg.withValues(alpha: 0.78),
+                      pal.bg.withValues(alpha: 0.38),
                       pal.bg.withValues(alpha: 0),
                     ],
-                    stops: const [0, 0.42, 1],
+                    stops: const [0, 0.16, 0.42, 0.74, 1],
                   ),
                 ),
               ),
@@ -5768,6 +5776,12 @@ class GanjoorData {
       'https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/';
   static const _apiBase = 'https://api.ganjoor.net';
   static Future<Map<String, int>>? _statsFuture;
+  static const int fallbackPoemCount = 139042;
+  static const Map<String, int> fallbackStats = {
+    'poets': 245,
+    'books': 0,
+    'poems': fallbackPoemCount,
+  };
   static final Map<String, Future<List<Map<String, dynamic>>>> _poemSearchCache = {};
 
   static String _cacheName(String path) =>
@@ -5875,20 +5889,50 @@ class GanjoorData {
   static Future<Map<String, int>> stats() =>
       _statsFuture ??= _loadStats();
 
+  static int _manifestCount(
+    Map<String, dynamic> manifest,
+    List<String> keys, {
+    required int fallback,
+  }) {
+    for (final key in keys) {
+      final raw = manifest[key];
+      final value = raw is num
+          ? raw.toInt()
+          : int.tryParse(raw?.toString().replaceAll(',', '').trim() ?? '');
+      if (value != null && value > 0) return value;
+    }
+    return fallback;
+  }
+
   static Future<Map<String, int>> _loadStats() async {
-    var poets = 0, books = 0, poems = 0;
+    var poets = fallbackStats['poets']!;
+    var books = fallbackStats['books']!;
+    var poems = fallbackPoemCount;
     try {
       final manifest = await json('manifest.json');
-      poets = (manifest['PoetsCount'] as num?)?.toInt() ??
-          rows(manifest['Poets']).length;
-      poems = (manifest['PoemsCount'] as num?)?.toInt() ??
-          (manifest['poemsCount'] as num?)?.toInt() ??
-          (manifest['PoemCount'] as num?)?.toInt() ??
-          (manifest['poemCount'] as num?)?.toInt() ??
-          (manifest['TotalPoems'] as num?)?.toInt() ??
-          (manifest['totalPoems'] as num?)?.toInt() ?? 0;
+      poets = _manifestCount(
+        manifest,
+        const ['PoetsCount', 'poetsCount'],
+        fallback: rows(manifest['Poets'] ?? manifest['poets']).length,
+      );
+      poems = _manifestCount(
+        manifest,
+        const [
+          'PoemsCount',
+          'poemsCount',
+          'PoemCount',
+          'poemCount',
+          'TotalPoems',
+          'totalPoems',
+        ],
+        fallback: fallbackPoemCount,
+      );
+    } catch (_) {
+      // Keep the last published corpus count instead of replacing it with 0.
+    }
+    try {
+      books = (await bookCatalog()).length;
     } catch (_) {}
-    try { books = (await bookCatalog()).length; } catch (_) {}
     return {'poets': poets, 'books': books, 'poems': poems};
   }
 }
