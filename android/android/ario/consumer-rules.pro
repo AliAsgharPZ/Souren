@@ -1,0 +1,1 @@
+# Ario library consumer rules.
