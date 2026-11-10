@@ -1,13 +1,17 @@
-name: CI
+name: CI and Souren release
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
+    name: Test and build Souren v0.4.6.9
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -16,14 +20,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Cloudflare Worker syntax
         run: node --check ../worker.js
-      - uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Dataset integrity (anchors)
+      - name: Dataset integrity
         shell: bash
         run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Install Zstandard CLI for Ganjoor pack tests
@@ -32,43 +38,50 @@ jobs:
           sudo apt-get install -y zstd
       - name: Ganjoor seekable pack builder tests
         run: python3 -m unittest discover -s tools -p 'test_ganjoor_seekable_pack.py'
-      - name: Pub get
+      - name: Resolve Flutter dependencies
         run: flutter pub get
       - name: Verify Souren package version
-        run: |
-          grep -F 'version: 0.4.6+21' pubspec.yaml
-      - name: Analyze
+        run: grep -F 'version: 0.4.6+21' pubspec.yaml
+      - name: Flutter static analysis
         run: flutter analyze
-      - name: Dart tests (corrector engine + widgets)
+      - name: Dart and widget tests
         run: flutter test
-      - name: Release signing key (from secrets, if present)
+      - name: Configure signing key
         env:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PW: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          if [ -n "$KS_B64" ]; then
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            if [ -z "${KS_B64:-}" ] || [ -z "${KS_PW:-}" ] || [ -z "${KEY_PW:-}" ] || [ -z "${KEY_ALIAS:-}" ]; then
+              echo "::error::Production signing secrets are required for publishing."
+              exit 1
+            fi
+          fi
+          if [ -n "${KS_B64:-}" ] && [ -n "${KS_PW:-}" ] && [ -n "${KEY_PW:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
             CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
             if printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore 2>/dev/null && [ -s android/souren-release.keystore ]; then
               printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
-              echo "release key ready"
+              echo "production signing key ready"
             else
-              echo "keystore decode failed; debug signing fallback"
-              rm -f android/souren-release.keystore
+              echo "::error::Could not decode production signing key."
+              exit 1
             fi
           else
-            echo "no keystore secret; debug signing fallback"
+            echo "Using debug signing for non-publishing validation only."
           fi
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --build-name=0.4.6.9 --build-number=20
+          flutter build apk --release --build-name=0.4.6.9 --build-number=21
           APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
-          sed -n '1,3p' /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='21' versionName='0.4.6.9'"
+          grep -q "Signer" /tmp/souren-apksigner.txt
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='21' versionName='0.4.6.9'"
           cp "$APK" Souren-v0.4.6.9.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
@@ -76,5 +89,45 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: souren-v0.4.6.9-apk
+          name: Souren-v0.4.6.9-APK
           path: android/Souren-v0.4.6.9.apk
+          if-no-files-found: error
+
+  publish:
+    name: Publish Souren v0.4.6.9
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download verified APK
+        uses: actions/download-artifact@v4
+        with:
+          name: Souren-v0.4.6.9-APK
+          path: release-assets
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.4.6.9
+          target_commitish: main
+          name: Souren v0.4.6.9
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          overwrite_files: true
+          body: |
+            ## Souren v0.4.6.9
+
+            - Added an optional downloadable Ganjoor offline corpus. Independently compressed Zstandard frames are read on demand; the full corpus is not extracted. Online access remains the fallback.
+            - Added Ario as a separate Android library module with its own Activity, preferences, database and private storage namespace.
+            - Added an Ario launcher switch in Souren settings. It shows or hides only Ario's launcher icon; disabling it preserves Ario data and does not uninstall Souren.
+            - Uses the bundled Abar FaNum interface font.
+
+            Verified with dataset integrity checks, Ganjoor pack-builder tests, Flutter analysis,
+            Dart/widget tests, Kotlin IME unit tests, production APK signing, and package/version
+            verification (ir.souren.souren, versionName 0.4.6.9, versionCode 21).
+          files: release-assets/Souren-v0.4.6.9.apk
+          fail_on_unmatched_files: true
