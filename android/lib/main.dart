@@ -2311,7 +2311,6 @@ class _ShellState extends State<Shell> {
         wordResults,
         bottomPad: 0,
         singleLine: true,
-        alwaysFade: true,
       );
     }
     if (_homeCollection == 1) {
@@ -2640,15 +2639,14 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// Pair list with the shared top+bottom scroll fade and the unified
-  /// entrance. [bottomPad] clears the floating nav bar on tab pages.
-  /// [singleLine] (home): word right-aligned, meaning left-aligned,
-  /// one line each, showing only the first meaning.
+  /// Word list with a permanently visible, long and soft fade at
+  /// BOTH the top and bottom edges, including at scroll offset zero.
+  /// [bottomPad] clears the floating nav bar on tab pages.
+  /// [singleLine] (home): word right-aligned, meaning left-aligned.
   Widget _pairList(
     List<Entry> items, {
     double bottomPad = 0,
     bool singleLine = false,
-    bool alwaysFade = false,
   }) {
     if (items.isEmpty) {
       return Center(
@@ -2656,9 +2654,10 @@ class _ShellState extends State<Shell> {
       );
     }
     return edgeFade(
-      alwaysVisible: alwaysFade,
-      fadeExtent: alwaysFade ? 0.30 : 0.22,
-      fadeStrength: alwaysFade ? 0.28 : 0.38,
+      // Keep both edge fades visible at all times, not only while scrolling.
+      alwaysVisible: true,
+      fadeExtent: 0.34,
+      fadeStrength: 0.44,
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
         itemCount: items.length,
