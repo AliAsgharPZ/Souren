@@ -1347,7 +1347,7 @@ class _SourenAppState extends State<SourenApp> {
       title: 'سورن',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: st.font == 'arad' ? 'Arad' : null,
+        fontFamily: 'Abar',
         brightness: st.dark ? Brightness.dark : Brightness.light,
         scaffoldBackgroundColor: pal.bg,
         pageTransitionsTheme: const PageTransitionsTheme(
@@ -1686,7 +1686,7 @@ class _ShellState extends State<Shell> {
         bottom: false,
         child: KeyedSubtree(
           key: ValueKey(
-            '${tab}_${settings.font}_${settings.direction}_${settings.textSize}',
+            '${tab}_${settings.direction}_${settings.textSize}',
           ),
           child: pages[tab],
         ),
@@ -4414,26 +4414,6 @@ class _ShellState extends State<Shell> {
                 value: settings.theme,
                 onChanged: (v) async {
                   setState(() => settings.theme = v);
-                  await SettingsStore.update(settings);
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'فونت برنامه',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: capsuleGroup<String>(
-                options: const [('arad', 'آراد'), ('system', 'پیش‌فرض سیستم')],
-                value: settings.font,
-                onChanged: (v) async {
-                  setState(() => settings.font = v);
                   await SettingsStore.update(settings);
                 },
               ),
