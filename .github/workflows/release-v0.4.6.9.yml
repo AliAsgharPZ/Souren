@@ -1,4 +1,5 @@
 name: Release Souren v0.4.6.9
+# Registration marker: signed v0.4.6.9 release workflow.
 
 concurrency:
   group: souren-v0.4.6.9-release
