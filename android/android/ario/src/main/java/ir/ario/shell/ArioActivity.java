@@ -3,15 +3,11 @@ package ir.ario.shell;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 
-/** Minimal native shell used to verify the Ario module boundary. */
+/** Empty native shell used to verify the Ario module boundary. */
 public final class ArioActivity extends Activity {
     private static final int BACKGROUND = Color.rgb(247, 241, 227);
-    private static final int FOREGROUND = Color.rgb(111, 102, 87);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,19 +20,8 @@ public final class ArioActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
         );
 
-        FrameLayout root = new FrameLayout(this);
+        View root = new View(this);
         root.setBackgroundColor(BACKGROUND);
-
-        TextView marker = new TextView(this);
-        marker.setText("Ario");
-        marker.setTextColor(FOREGROUND);
-        marker.setTextSize(22);
-        marker.setGravity(Gravity.CENTER);
-
-        root.addView(marker, new FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ));
         setContentView(root);
     }
 }
