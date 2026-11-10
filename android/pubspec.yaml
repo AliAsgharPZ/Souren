@@ -24,14 +24,18 @@ flutter:
     - assets/db/proverbs.json
     - assets/branding/souren-logo.svg
   fonts:
-    - family: Arad
+    - family: Abar
       fonts:
-        - asset: assets/fonts/arad/Arad-Regular.ttf
+        - asset: assets/fonts/abar/AbarMidFaNum-Regular.ttf
           weight: 400
-        - asset: assets/fonts/arad/Arad-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/arad/Arad-Bold.ttf
+        - asset: assets/fonts/abar/AbarMidFaNum-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/abar/AbarMidFaNum-Bold.ttf
           weight: 700
+        - asset: assets/fonts/abar/AbarMidFaNum-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/abar/AbarMidFaNum-Black.ttf
+          weight: 900
     # Lucide soft icon pack (ISC) — vendored from CUI
     # (yappologistic/CUI, assets/fonts/Lucide-CUI.ttf): a single
     # stroke weight, so the selected state is conveyed by color.
