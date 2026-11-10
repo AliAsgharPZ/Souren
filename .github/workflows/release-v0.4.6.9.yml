@@ -1,5 +1,6 @@
 name: Release Souren v0.4.6.9
-# Registration marker: signed v0.4.6.9 release workflow.
+# CI release workflow for build 21.
+# Includes the downloadable Ganjoor pack and optional Ario launcher module.
 
 concurrency:
   group: souren-v0.4.6.9-release
@@ -9,10 +10,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/release-v0.4.6.9.yml'
-      - 'android/**'
-      - 'worker.js'
   workflow_dispatch:
 
 permissions:
@@ -27,23 +24,18 @@ jobs:
       run:
         working-directory: android
     steps:
-      - name: Check out Souren
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
-          cache-dependency-path: android/pubspec.lock
 
       - name: Install Zstandard CLI
         run: |
@@ -60,17 +52,16 @@ jobs:
       - name: Resolve Flutter dependencies
         run: flutter pub get
 
-      - name: Verify Souren version
+      - name: Verify Souren package version
         run: grep -F 'version: 0.4.6+21' pubspec.yaml
 
-      - name: Flutter static analysis
+      - name: Static analysis
         run: flutter analyze
 
       - name: Dart and widget tests
         run: flutter test
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
 
@@ -98,7 +89,7 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release --build-name=0.4.6.9 --build-number=21
 
-      - name: Verify APK signature, package ID and version
+      - name: Verify APK signature and version
         run: |
           set -euo pipefail
           APK="build/app/outputs/flutter-apk/app-release.apk"
@@ -114,26 +105,22 @@ jobs:
           mkdir -p ../release-assets
           cp build/app/outputs/flutter-apk/app-release.apk ../release-assets/Souren-v0.4.6.9.apk
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: Souren-v0.4.6.9-APK
           path: release-assets/Souren-v0.4.6.9.apk
-          if-no-files-found: error
 
   publish:
     name: Publish GitHub release
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Check out main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Download verified APK
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: Souren-v0.4.6.9-APK
           path: release-assets
@@ -157,7 +144,7 @@ jobs:
             - Uses the bundled Abar FaNum interface font across the app.
 
             Built after dataset integrity checks, Ganjoor pack-builder tests, Flutter analysis,
-            Dart/widget tests, Kotlin IME unit tests, production APK signing, and verification
+            Dart/widget tests, Kotlin IME unit tests, production APK signing and verification
             of package ID ir.souren.souren, versionName 0.4.6.9 and versionCode 21.
           files: release-assets/Souren-v0.4.6.9.apk
           fail_on_unmatched_files: true
