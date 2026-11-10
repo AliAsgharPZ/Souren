@@ -10,6 +10,23 @@ import 'package:flutter/services.dart';
 class SharedFiles {
   static String? _dir;
   static const _channel = MethodChannel('souren/files');
+  static const _arioChannel = MethodChannel('souren/ario');
+
+  static Future<bool> isArioLauncherEnabled() async {
+    try {
+      return await _arioChannel.invokeMethod<bool>('launcherEnabled') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> setArioLauncherEnabled(bool enabled) async {
+    final result = await _arioChannel.invokeMethod<bool>(
+      'setLauncherEnabled',
+      {'enabled': enabled},
+    );
+    return result ?? false;
+  }
 
   static Future<String> dir() async {
     if (_dir != null) return _dir!;
