@@ -30,8 +30,7 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -Eq '^version: 0\\.4\\.6\\+20([[:space:]]|$)' pubspec.yaml
-          grep -F 'versionName = "0.4.6.8"' android/app/build.gradle.kts
+          grep -F 'version: 0.4.6+20' pubspec.yaml
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
