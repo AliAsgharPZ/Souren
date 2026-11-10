@@ -13,7 +13,7 @@
             android:targetActivity="ir.ario.shell.ArioActivity"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@drawable/ario_launcher"
             android:label="Ario">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
