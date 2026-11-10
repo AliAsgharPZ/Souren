@@ -26,11 +26,17 @@ jobs:
       - name: Dataset integrity (anchors)
         shell: bash
         run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
+      - name: Install Zstandard CLI for Ganjoor pack tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+      - name: Ganjoor seekable pack builder tests
+        run: python3 -m unittest discover -s tools -p 'test_ganjoor_seekable_pack.py'
       - name: Pub get
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.6+20' pubspec.yaml
+          grep -F 'version: 0.4.6+21' pubspec.yaml
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -57,18 +63,18 @@ jobs:
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --build-name=0.4.6.8 --build-number=20
+          flutter build apk --release --build-name=0.4.6.9 --build-number=20
           APK=build/app/outputs/flutter-apk/app-release.apk
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           sed -n '1,3p' /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='20' versionName='0.4.6.8'"
-          cp "$APK" Souren-v0.4.6.apk
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='21' versionName='0.4.6.9'"
+          cp "$APK" Souren-v0.4.6.9.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: souren-v0.4.6-apk
-          path: android/Souren-v0.4.6.apk
+          name: souren-v0.4.6.9-apk
+          path: android/Souren-v0.4.6.9.apk
