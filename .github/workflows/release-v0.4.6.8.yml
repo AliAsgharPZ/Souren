@@ -1,5 +1,6 @@
 name: Release Souren v0.4.6.8
 # CI release workflow for build 20.
+# Workflow registration marker.
 # Includes the supplied vector launcher icon, stronger word-list fades,
 # and a robust Ganjoor poem-count fallback.
 
