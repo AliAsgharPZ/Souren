@@ -2639,8 +2639,8 @@ class _ShellState extends State<Shell> {
     );
   }
 
-  /// Word list with a permanently visible, long and soft fade at
-  /// BOTH the top and bottom edges, including at scroll offset zero.
+  /// Word list with fades physically anchored to the top and bottom
+  /// edges of its own visible viewport, below the collection header.
   /// [bottomPad] clears the floating nav bar on tab pages.
   /// [singleLine] (home): word right-aligned, meaning left-aligned.
   Widget _pairList(
@@ -2653,19 +2653,67 @@ class _ShellState extends State<Shell> {
         child: Text('واژه‌ای پیدا نشد', style: TextStyle(color: pal.muted)),
       );
     }
-    return edgeFade(
-      // Keep both edge fades visible at all times, not only while scrolling.
-      alwaysVisible: true,
-      fadeExtent: 0.34,
-      fadeStrength: 0.44,
-      child: ListView.separated(
-        padding: EdgeInsets.only(top: 6, bottom: bottomPad),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
-        itemBuilder: (_, i) => Enter(
-          index: i,
-          child: _pairRow(items[i], singleLine: singleLine),
-        ),
+    // The word list occupies only the content viewport below its collection
+    // header. Anchor the fades to THAT viewport (not the whole page and not
+    // the scrolling content) so both edges remain visible at every offset.
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ListView.separated(
+            padding: EdgeInsets.only(top: 6, bottom: bottomPad),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
+            itemBuilder: (_, i) => Enter(
+              index: i,
+              child: _pairRow(items[i], singleLine: singleLine),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 46,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      pal.bg,
+                      pal.bg.withValues(alpha: 0.82),
+                      pal.bg.withValues(alpha: 0),
+                    ],
+                    stops: const [0, 0.42, 1],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 46,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      pal.bg,
+                      pal.bg.withValues(alpha: 0.82),
+                      pal.bg.withValues(alpha: 0),
+                    ],
+                    stops: const [0, 0.42, 1],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
