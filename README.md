@@ -1,25 +1,54 @@
 # Souren
 
-Souren is an Arabic-to-Persian dictionary with a Samsung-style Persian keyboard for Android: automatic spelling and half-space correction, replacement of Arabic words with Persian equivalents, and on-device learning.
+Souren is an Android Persian writing and language app that combines an Arabic-to-Persian dictionary, a Persian keyboard, spelling assistance, and Persian literary references.
 
-## Download
+**Latest release:** [v0.4.6.8](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.6.8)  
+**Website:** https://souren.pages.dev
 
-Get the latest Android APK from the [Releases](https://github.com/AliAsgharPZ/Souren/releases) page. The current release is [v0.3.1](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.3.1). After installing, enable the Souren keyboard in the Android input settings and select it as the current keyboard.
+## What Souren does
 
-The universal APK (arm64-v8a, armeabi-v7a, x86_64) is signed with the project's release key, so new versions install over older ones.
+- **Persian keyboard:** a Samsung-inspired Persian layout with Persian digits, secondary characters, a dedicated half-space key, and a suggestion/tool row.
+- **Writing correction:** automatic half-space and ezafe-hamza correction, plus normalization of Arabic letters and Arabic-Indic digits to Persian forms.
+- **Arabic-to-Persian dictionary:** search Arabic words, Persian equivalents, and meanings; inspect entries and their etymological roots.
+- **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem.
+- **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
+- **Categories:** explore dictionary entries through subject-based categories.
+- **Favorites and likes:** save entries and like them; signed-in users can synchronize their profile data.
+- **User profile:** sign in or register, view profile information, score, level, and earned badges.
+- **Learning:** keyboard corrections and choices are learned locally on the device. An optional, disabled-by-default improvement setting can send limited anonymous correction context; it does not send full text or clipboard contents.
+- **Database management:** refresh the dictionary online, continue using the bundled/offline copy, and import or export JSON/CSV data.
+- **Appearance:** cream/light and dark themes, adjustable text size, and RTL/LTR layout direction. The app uses Abar FaNum as its bundled interface font.
+
+## Ario module
+
+Ario is kept in the same repository and is developed as a separate Android module under `android/android/ario/`. It has its own Activity and storage helper while being packaged with Souren. This is a module-level separation inside the Souren Android package, not a separately uninstallable Android package.
 
 ## Website
 
-Live site: https://souren.pages.dev — intro page with download and GitHub links; the dictionary itself lives in the Android app. The old workers.dev address redirects to the Pages site.
+The website includes a searchable dictionary, category filters, word details, account access, favorites/likes, and links to the Android release. The website uses Arad as a fallback because browser-delivered fonts cannot be made non-extractable: any font required for rendering in a browser can be inspected or downloaded by the visitor. The Android app itself uses Abar.
 
 ## Repository layout
 
-- `android/` — the Flutter Android app (keyboard + dictionary). The app version lives in `android/pubspec.yaml`.
-- `index.html`, `script.js`, `style.css` — the static website (vanilla JS/CSS, no build step).
-- `dictionary.json`, `categories.json` — the website's dictionary data.
-- `worker.js` — the Cloudflare Worker behind the site APIs (dictionary, auth, likes).
-- `.github/workflows/ci.yml` — CI: dataset check, `flutter analyze`, tests, and a signed release APK build on pushes to `main` and on `v*` tags.
+- `android/` — Flutter application and Android project.
+- `android/android/ario/` — Ario Android library module.
+- `index.html`, `style.css`, `script.js` — static website (vanilla HTML/CSS/JS).
+- `dictionary.json`, `categories.json` — website dictionary data and category data.
+- `worker.js` — Cloudflare Worker API for dictionary, account, and like synchronization.
+- `.github/workflows/` — CI, dataset integrity, and signed Android release workflows.
 
-## Versioning
+## Build and test
 
-The site and the app share one version, following the `0.x.x` pattern (currently 0.3.1). Releases are cut from `main` through CI and published on the Releases page with the APK attached.
+From the `android/` directory:
+
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --release
+```
+
+The production release workflow also validates the dictionary dataset, runs Kotlin IME unit tests, signs the APK with the configured production key, and verifies the package ID and version metadata before publishing.
+
+## Keyboard setup
+
+After installing Souren, open Android's keyboard/input-method settings, enable **کیبورد سورن**, and select it as the current keyboard.
