@@ -13,6 +13,7 @@ import 'lucide.dart';
 import 'share.dart';
 
 import 'data/store.dart';
+import 'data/ganjoor_pack.dart';
 import 'data/persian_roots.dart';
 import 'engine/corrector.dart';
 
@@ -4463,6 +4464,8 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const Divider(height: 32),
+            const ArioActivationTile(),
+            const Divider(height: 32),
             ListTile(
               leading: const Icon(LucideIcons.keyboard),
               title: const Text('فعال‌کردن کیبورد سورن'),
@@ -5768,6 +5771,12 @@ class GanjoorData {
       'ganjoor_${base64Url.encode(utf8.encode(path))}.json';
 
   static Future<Map<String, dynamic>> json(String path) async {
+    try {
+      final packed = await GanjoorPack.readJson(path);
+      if (packed != null) return packed;
+    } catch (_) {
+      // A missing or damaged pack entry must not break the online fallback.
+    }
     final cached = await SharedFiles.readJson(_cacheName(path));
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15);
@@ -5831,6 +5840,10 @@ class GanjoorData {
   }
 
   static Future<List<Map<String, dynamic>>> bookCatalog() async {
+    try {
+      final packed = await GanjoorPack.readJson('catalog/books.json');
+      if (packed != null) return rows(packed);
+    } catch (_) {}
     final data = await _apiJson('api/ganjoor/book-catalog');
     return rows(data);
   }
@@ -6035,11 +6048,118 @@ class _GanjoorPageState extends State<GanjoorPage> {
     setState(() => _query = value.trim());
   }
 
+  Future<void> _manageOfflinePack() async {
+    var installed = await GanjoorPack.isInstalled();
+    if (!mounted) return;
+    var downloading = false;
+    var received = 0;
+    var total = 0;
+    String? error;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          backgroundColor: pal.cardC,
+          title: Text('محتوای آفلاین گنجور',
+              textAlign: TextAlign.right,
+              style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                installed
+                    ? 'بستهٔ شعر روی دستگاه نصب است. فایل فشرده باقی می‌ماند و فقط قطعهٔ لازم هنگام خواندن باز می‌شود.'
+                    : 'با دانلود این بسته، متن شعرها و فهرست کتاب‌ها از حافظهٔ دستگاه خوانده می‌شوند؛ کل دیتابیس استخراج نمی‌شود.',
+                textAlign: TextAlign.right,
+                style: TextStyle(color: pal.muted, height: 1.8),
+              ),
+              if (downloading) ...[
+                const SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: total > 0 ? received / total : null,
+                  color: pal.sel,
+                  backgroundColor: pal.div,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  total > 0
+                      ? '${(received / (1024 * 1024)).toStringAsFixed(1)} از ${(total / (1024 * 1024)).toStringAsFixed(1)} مگابایت'
+                      : 'در حال دریافت…',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: pal.muted, fontSize: 11),
+                ),
+              ],
+              if (error != null) ...[
+                const SizedBox(height: 12),
+                Text(error!, textAlign: TextAlign.right,
+                    style: const TextStyle(color: Colors.redAccent)),
+              ],
+            ],
+          ),
+          actions: [
+            if (installed && !downloading)
+              TextButton(
+                onPressed: () async {
+                  await GanjoorPack.remove();
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  if (mounted) setState(() {});
+                },
+                child: const Text('حذف بسته'),
+              ),
+            TextButton(
+              onPressed: downloading ? null : () => Navigator.pop(dialogContext),
+              child: const Text('بستن'),
+            ),
+            FilledButton(
+              onPressed: downloading
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        downloading = true;
+                        received = 0;
+                        total = 0;
+                        error = null;
+                      });
+                      try {
+                        await GanjoorPack.download(
+                          onProgress: (value, length) {
+                            if (!dialogContext.mounted) return;
+                            setDialogState(() {
+                              received = value;
+                              total = length;
+                            });
+                          },
+                        );
+                        installed = true;
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                        if (mounted) setState(() {});
+                      } catch (e) {
+                        if (dialogContext.mounted) {
+                          setDialogState(() {
+                            error = 'دانلود بسته انجام نشد: $e';
+                          });
+                        }
+                      } finally {
+                        if (dialogContext.mounted) {
+                          setDialogState(() => downloading = false);
+                        }
+                      }
+                    },
+              child: Text(installed ? 'به‌روزرسانی' : 'دانلود بسته'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showSourceInfo() {
     showTopBanner(
       context,
       title: 'داده‌های کتابخانهٔ شعر',
-      message: 'فهرست شاعران و کتاب‌ها از داده‌های عمومی گنجور دریافت می‌شود؛ متن هر اثر هنگام بازکردن آن بارگیری و روی دستگاه نگه‌داری می‌شود.',
+      message: 'با نصب بسته، متن‌ها و فهرست کتاب‌ها از فایل فشردهٔ محلی خوانده می‌شوند. در نبود بسته، مسیر آنلاین فعلی حفظ می‌شود؛ جست‌وجوی متن شعر همچنان از API گنجور است.',
     );
   }
 
@@ -6230,6 +6350,11 @@ class _GanjoorPageState extends State<GanjoorPage> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
+                    ),
+                    IconButton(
+                      tooltip: 'محتوای آفلاین',
+                      onPressed: _manageOfflinePack,
+                      icon: Icon(LucideIcons.download, color: pal.muted, size: 20),
                     ),
                     IconButton(
                       tooltip: 'دربارهٔ منبع',
@@ -7094,6 +7219,87 @@ class KeyboardGuidePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+/// Toggles only Ario's launcher alias. Disabling it hides the Ario icon;
+/// it does not uninstall Souren or clear Ario-owned data.
+class ArioActivationTile extends StatefulWidget {
+  const ArioActivationTile({super.key});
+
+  @override
+  State<ArioActivationTile> createState() => _ArioActivationTileState();
+}
+
+class _ArioActivationTileState extends State<ArioActivationTile> {
+  bool _enabled = false;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final enabled = await SharedFiles.isArioLauncherEnabled();
+    if (!mounted) return;
+    setState(() {
+      _enabled = enabled;
+      _loading = false;
+    });
+  }
+
+  Future<void> _setEnabled(bool value) async {
+    setState(() => _loading = true);
+    try {
+      final enabled = await SharedFiles.setArioLauncherEnabled(value);
+      if (!mounted) return;
+      setState(() {
+        _enabled = enabled;
+        _loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled
+                ? 'آیکون Ario به فهرست برنامه‌ها اضافه شد'
+                : 'آیکون Ario غیرفعال شد؛ اطلاعات آن باقی می‌ماند',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تغییر وضعیت Ario انجام نشد')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(Icons.apps_rounded, color: pal.muted),
+      title: const Text('فعال‌سازی Ario'),
+      subtitle: Text(
+        _enabled
+            ? 'آیکون Ario در فهرست برنامه‌ها نمایش داده می‌شود'
+            : 'با فعال‌سازی، آیکون مستقل Ario اضافه می‌شود؛ داده‌ها جدا می‌مانند',
+      ),
+      trailing: _loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Switch.adaptive(
+              value: _enabled,
+              onChanged: _setEnabled,
+            ),
+      onTap: _loading ? null : () => _setEnabled(!_enabled),
     );
   }
 }
