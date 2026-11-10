@@ -1,10 +1,10 @@
 name: CI
 on:
   push:
-    branches: [main, fix/v0.4.5.5-ui-keyboard, release/v0.4.6]
+    branches: [main]
     tags: ['v*']
   pull_request:
-    branches: [maintenance/v0.4.1, release/v0.4.5, release/v0.4.6]
+    branches: [main]
   workflow_dispatch:
 jobs:
   build:
@@ -30,8 +30,8 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.6+12' pubspec.yaml
-          grep -F 'versionName = "0.4.6"' android/app/build.gradle.kts
+          grep -Eq '^version: 0\\.4\\.6\\+20([[:space:]]|$)' pubspec.yaml
+          grep -F 'versionName = "0.4.6.8"' android/app/build.gradle.kts
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -58,12 +58,12 @@ jobs:
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release
+          flutter build apk --release --build-name=0.4.6.8 --build-number=20
           APK=build/app/outputs/flutter-apk/app-release.apk
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           sed -n '1,3p' /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='12' versionName='0.4.6'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "versionCode='20' versionName='0.4.6.8'"
           cp "$APK" Souren-v0.4.6.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
