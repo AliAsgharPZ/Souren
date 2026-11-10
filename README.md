@@ -9,11 +9,12 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 
 - **Persian keyboard:** a Samsung-inspired Persian layout with Persian digits, secondary characters, a dedicated half-space key, and a suggestion/tool row.
 - **Writing correction:** automatic half-space and ezafe-hamza correction, plus normalization of Arabic letters and Arabic-Indic digits to Persian forms.
-- **Arabic-to-Persian dictionary:** search Arabic words, Persian equivalents, and meanings; inspect entries and their etymological roots.
+- **Arabic-to-Persian dictionary:** search Arabic words, Persian equivalents, and meanings; inspect entries and their Persian structural base-form analysis. This is not presented as historical or comparative etymology.
 - **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem.
 - **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
 - **Categories:** explore dictionary entries through subject-based categories.
 - **Favorites and likes:** save entries and like them; signed-in users can synchronize their profile data.
+- **Sharing and export cards:** share or save word and proverb details as formatted text or images.
 - **User profile:** sign in or register, view profile information, score, level, and earned badges.
 - **Learning:** keyboard corrections and choices are learned locally on the device. An optional, disabled-by-default improvement setting can send limited anonymous correction context; it does not send full text or clipboard contents.
 - **Database management:** refresh the dictionary online, continue using the bundled/offline copy, and import or export JSON/CSV data.
