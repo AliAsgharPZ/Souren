@@ -10,7 +10,7 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 - **Persian keyboard:** a Samsung-inspired Persian layout with Persian digits, secondary characters, a dedicated half-space key, and a suggestion/tool row.
 - **Writing correction:** automatic half-space and ezafe-hamza correction, plus normalization of Arabic letters and Arabic-Indic digits to Persian forms.
 - **Arabic-to-Persian dictionary:** search Arabic words, Persian equivalents, and meanings; inspect entries and their Persian structural base-form analysis. This is not presented as historical or comparative etymology.
-- **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem.
+- **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem. A downloadable, chunked Zstandard pack enables on-device reading without extracting the full corpus; online access remains the fallback.
 - **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
 - **Categories:** explore dictionary entries through subject-based categories.
 - **Favorites and likes:** save entries and like them; signed-in users can synchronize their profile data.
@@ -22,7 +22,7 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 
 ## Ario module
 
-Ario is kept in the same repository and is developed as a separate Android module under `android/android/ario/`. It has its own Activity and storage helper while being packaged with Souren. This is a module-level separation inside the Souren Android package, not a separately uninstallable Android package.
+Ario is kept in the same repository as a separate Android library module under `android/android/ario/`. Its launcher icon can be enabled or disabled from Souren settings; disabling it hides only the Ario icon and preserves its data. Ario has a separate Activity, preferences, database name and private storage directory, but it shares the installed Android package with Souren and cannot be uninstalled independently.
 
 ## Website
 
