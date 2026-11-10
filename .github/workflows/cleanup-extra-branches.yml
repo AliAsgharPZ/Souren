@@ -1,0 +1,68 @@
+name: One-time branch cleanup
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Delete obsolete and integrated branches
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=$(cat <<'BRANCHES'
+          backup/v0.4.1-before-ui-fixes
+          feat/persian-connected-library-keyboard
+          feature/ario-shell
+          fix/ui-rework
+          fix/v0.4.1.2-polish
+          fix/v0.4.5.5-ui-keyboard
+          fix/zai-v0.4.1-fixes
+          font
+          maintenance/v0.4.1
+          release/v0.4.1.1
+          release/v0.4.5
+          release/v0.4.6
+          release/v0.4.6.1
+          site-showcase
+          site-v3
+          site-v3-fixes
+          BRANCHES
+          )
+          while IFS= read -r branch; do
+            [ -n "$branch" ] || continue
+            if git ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null 2>&1; then
+              echo "Deleting obsolete branch: $branch"
+              git push origin --delete "$branch"
+            else
+              echo "Already absent: $branch"
+            fi
+          done <<< "$branches"
+
+      - name: Remove this one-time workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          path=".github/workflows/cleanup-extra-branches.yml"
+          sha=$(gh api "repos/${GITHUB_REPOSITORY}/contents/$path?ref=main" --jq '.sha')
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/contents/$path" \
+            -f message="chore: remove one-time branch cleanup workflow" \
+            -f sha="$sha" -f branch=main
