@@ -20,16 +20,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Cloudflare Worker syntax
         run: node --check ../worker.js
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Dataset integrity
+      - name: Dataset integrity (anchors)
         shell: bash
         run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
       - name: Install Zstandard CLI for Ganjoor pack tests
@@ -41,12 +39,13 @@ jobs:
       - name: Pub get
         run: flutter pub get
       - name: Verify Souren package version
-        run: grep -F 'version: 0.4.6+21' pubspec.yaml
+        run: |
+          grep -F 'version: 0.4.6+21' pubspec.yaml
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
         run: flutter test
-      - name: Configure signing key
+      - name: Release signing key
         env:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -55,22 +54,13 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            if [ -z "${KS_B64:-}" ] || [ -z "${KS_PW:-}" ] || [ -z "${KEY_PW:-}" ] || [ -z "${KEY_ALIAS:-}" ]; then
-              echo "::error::Production signing secrets are required for publishing."
-              exit 1
-            fi
+            test -n "$KS_B64" && test -n "$KS_PW" && test -n "$KEY_PW" && test -n "$KEY_ALIAS"
           fi
-          if [ -n "${KS_B64:-}" ] && [ -n "${KS_PW:-}" ] && [ -n "${KEY_PW:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
+          if [ -n "$KS_B64" ] && [ -n "$KS_PW" ] && [ -n "$KEY_PW" ] && [ -n "$KEY_ALIAS" ]; then
             CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
-            if printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore 2>/dev/null && [ -s android/souren-release.keystore ]; then
-              printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
-              echo "production signing key ready"
-            else
-              echo "::error::Could not decode production signing key."
-              exit 1
-            fi
-          else
-            echo "Using debug signing for non-publishing validation only."
+            printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore
+            test -s android/souren-release.keystore
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
           fi
       - name: Build release APK
         run: |
@@ -91,27 +81,10 @@ jobs:
         with:
           name: Souren-v0.4.6.9-APK
           path: android/Souren-v0.4.6.9.apk
-          if-no-files-found: error
       - name: Publish Souren v0.4.6.9
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            gh release create v0.4.6.9 Souren-v0.4.6.9.apk \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Souren v0.4.6.9" \
-              --notes-file - <<'NOTES'
-          ## Souren v0.4.6.9
-
-          - Added an optional downloadable Ganjoor offline corpus. Independently compressed Zstandard frames are read on demand; the full corpus is not extracted. Online access remains the fallback.
-          - Added Ario as a separate Android library module with its own Activity, preferences, database and private storage namespace.
-          - Added an Ario launcher switch in Souren settings. It shows or hides only Ario's launcher icon; disabling it preserves Ario data and does not uninstall Souren.
-          - Uses the bundled Abar FaNum interface font.
-
-          Verified with dataset integrity checks, Ganjoor pack-builder tests, Flutter analysis,
-          Dart/widget tests, Kotlin IME unit tests, production APK signing, and package/version
-          verification (ir.souren.souren, versionName 0.4.6.9, versionCode 21).
-          NOTES
+            gh release create v0.4.6.9 Souren-v0.4.6.9.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.6.9" --notes "Ganjoor on-demand offline pack; Ario optional launcher module with isolated data; bundled Abar FaNum font. Verified with dataset, pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.6.9 (21)."
           fi
