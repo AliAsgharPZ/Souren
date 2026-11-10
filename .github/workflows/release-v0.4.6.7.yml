@@ -2,6 +2,7 @@ name: Release Souren v0.4.6.7
 # CI release workflow for build 19.
 # Triggered after the workflow file is registered on the release branch.
 # Includes the permanent word-list edge-fade correction.
+# Workflow registration marker.
 
 concurrency:
   group: souren-v0.4.6.7-release
