@@ -1,7 +1,8 @@
-name: CI and Souren release
+name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,7 +12,6 @@ permissions:
 
 jobs:
   build:
-    name: Test and build Souren v0.4.6.9
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,13 +38,13 @@ jobs:
           sudo apt-get install -y zstd
       - name: Ganjoor seekable pack builder tests
         run: python3 -m unittest discover -s tools -p 'test_ganjoor_seekable_pack.py'
-      - name: Resolve Flutter dependencies
+      - name: Pub get
         run: flutter pub get
       - name: Verify Souren package version
         run: grep -F 'version: 0.4.6+21' pubspec.yaml
-      - name: Flutter static analysis
+      - name: Analyze
         run: flutter analyze
-      - name: Dart and widget tests
+      - name: Dart tests (corrector engine + widgets)
         run: flutter test
       - name: Configure signing key
         env:
@@ -92,42 +92,26 @@ jobs:
           name: Souren-v0.4.6.9-APK
           path: android/Souren-v0.4.6.9.apk
           if-no-files-found: error
+      - name: Publish Souren v0.4.6.9
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            gh release create v0.4.6.9 Souren-v0.4.6.9.apk \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Souren v0.4.6.9" \
+              --notes-file - <<'NOTES'
+          ## Souren v0.4.6.9
 
-  publish:
-    name: Publish Souren v0.4.6.9
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-      - name: Download verified APK
-        uses: actions/download-artifact@v4
-        with:
-          name: Souren-v0.4.6.9-APK
-          path: release-assets
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v0.4.6.9
-          target_commitish: main
-          name: Souren v0.4.6.9
-          draft: false
-          prerelease: false
-          generate_release_notes: false
-          overwrite_files: true
-          body: |
-            ## Souren v0.4.6.9
+          - Added an optional downloadable Ganjoor offline corpus. Independently compressed Zstandard frames are read on demand; the full corpus is not extracted. Online access remains the fallback.
+          - Added Ario as a separate Android library module with its own Activity, preferences, database and private storage namespace.
+          - Added an Ario launcher switch in Souren settings. It shows or hides only Ario's launcher icon; disabling it preserves Ario data and does not uninstall Souren.
+          - Uses the bundled Abar FaNum interface font.
 
-            - Added an optional downloadable Ganjoor offline corpus. Independently compressed Zstandard frames are read on demand; the full corpus is not extracted. Online access remains the fallback.
-            - Added Ario as a separate Android library module with its own Activity, preferences, database and private storage namespace.
-            - Added an Ario launcher switch in Souren settings. It shows or hides only Ario's launcher icon; disabling it preserves Ario data and does not uninstall Souren.
-            - Uses the bundled Abar FaNum interface font.
-
-            Verified with dataset integrity checks, Ganjoor pack-builder tests, Flutter analysis,
-            Dart/widget tests, Kotlin IME unit tests, production APK signing, and package/version
-            verification (ir.souren.souren, versionName 0.4.6.9, versionCode 21).
-          files: release-assets/Souren-v0.4.6.9.apk
-          fail_on_unmatched_files: true
+          Verified with dataset integrity checks, Ganjoor pack-builder tests, Flutter analysis,
+          Dart/widget tests, Kotlin IME unit tests, production APK signing, and package/version
+          verification (ir.souren.souren, versionName 0.4.6.9, versionCode 21).
+          NOTES
+          fi
