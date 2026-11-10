@@ -1,9 +1,11 @@
 package ir.souren.souren
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -109,9 +111,32 @@ class MainActivity : FlutterActivity() {
                         startActivity(Intent(this, ArioActivity::class.java))
                         result.success(true)
                     }
+                    "launcherEnabled" -> {
+                        result.success(isArioLauncherEnabled())
+                    }
+                    "setLauncherEnabled" -> {
+                        val enabled = call.argument<Boolean>("enabled") ?: false
+                        try {
+                            packageManager.setComponentEnabledSetting(
+                                ComponentName(this, "ir.souren.souren.ArioLauncher"),
+                                if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                                else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                                PackageManager.DONT_KILL_APP
+                            )
+                            result.success(isArioLauncherEnabled())
+                        } catch (error: Exception) {
+                            result.error("ARIO_LAUNCHER", error.message, null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun isArioLauncherEnabled(): Boolean {
+        val component = ComponentName(this, "ir.souren.souren.ArioLauncher")
+        return packageManager.getComponentEnabledSetting(component) ==
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
     }
 
     /** Saves PNG bytes to Pictures/Souren and returns the content URI,
