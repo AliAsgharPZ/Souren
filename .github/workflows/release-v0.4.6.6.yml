@@ -1,5 +1,6 @@
 name: Release Souren v0.4.6.6
 # CI release workflow for build 18.
+# Triggered after the workflow file is registered on the release branch.
 
 concurrency:
   group: souren-v0.4.6.6-release
