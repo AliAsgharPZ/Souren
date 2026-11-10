@@ -103,9 +103,6 @@ class Settings {
   /// App theme: 'light' (cream) | 'dark'
   String theme;
 
-  /// App font: 'arad' | 'system'
-  String font;
-
   /// Text size: 'small' | 'normal' | 'large'
   String textSize;
 
@@ -117,7 +114,6 @@ class Settings {
     this.shareLearning = false,
     this.kbHeight = 'tall',
     this.theme = 'light',
-    this.font = 'arad',
     this.textSize = 'normal',
     this.direction = 'rtl',
   });
@@ -135,7 +131,6 @@ class Settings {
       shareLearning: j['shareLearning'] == true,
       kbHeight: (j['kbHeight'] as String?) ?? 'tall',
       theme: (j['theme'] as String?) ?? 'light',
-      font: (j['font'] as String?) ?? 'arad',
       textSize: (j['textSize'] as String?) ?? 'normal',
       direction: (j['direction'] as String?) ?? 'rtl',
     );
@@ -147,14 +142,13 @@ class Settings {
         'shareLearning': shareLearning,
         'kbHeight': kbHeight,
         'theme': theme,
-        'font': font,
         'textSize': textSize,
         'direction': direction,
       });
 }
 
 /// Shared settings instance + revision bus so the app chrome (theme,
-/// font, direction) rebuilds when the settings page changes a value.
+/// direction) rebuilds when the settings page changes a value.
 class SettingsStore {
   static Settings current = Settings();
   static final revision = ValueNotifier<int>(0);
