@@ -11,7 +11,8 @@ to its own repository.
 - Host application ID remains: `ir.souren.souren`
 - Entry activity: `ArioActivity`
 - Souren bridge: MethodChannel `souren/ario`, method `open`
-- Optional launcher alias: `ir.souren.souren.ArioLauncher` (disabled by default)
+- Optional launcher alias: `ir.souren.souren.ArioLauncher` (disabled by default; enabled or disabled from Souren settings)
+- Disabling the alias hides only the Ario launcher icon and preserves Ario-owned local data.
 - Ario storage namespace: `ArioStorage`
 
 ## Important Android constraint
