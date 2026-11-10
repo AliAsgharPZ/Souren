@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import ir.ario.shell.ArioActivity
 import java.io.File
 
 class MainActivity : FlutterActivity() {
@@ -96,6 +97,17 @@ class MainActivity : FlutterActivity() {
                         val text = call.argument<String>("text") ?: ""
                         val name = call.argument<String>("name") ?: "souren-share.txt"
                         result.success(saveTextFile(text, name))
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/ario")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "open" -> {
+                        startActivity(Intent(this, ArioActivity::class.java))
+                        result.success(true)
                     }
                     else -> result.notImplemented()
                 }
