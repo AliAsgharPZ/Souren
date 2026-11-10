@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="ir.ario.shell.ArioActivity"
+            android:exported="false"
+            android:label="Ario"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+
+        <!-- Disabled until Souren explicitly activates Ario. -->
+        <activity-alias
+            android:name="ir.souren.souren.ArioLauncher"
+            android:targetActivity="ir.ario.shell.ArioActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Ario">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>
