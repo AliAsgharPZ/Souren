@@ -13,3 +13,5 @@
 - Added a persisted randomized weekly schedule for dictionary refresh requests to reduce Worker traffic.
 - Added a lower-edge fade beneath the floating navigation bar and retained the home-list scroll fade.
 - Added email OTP registration, email login and email linking endpoints to the Cloudflare Worker, plus website UI and Android shared account sessions. Email delivery uses Resend and requires Worker secrets/vars `RESEND_API_KEY` and `EMAIL_FROM`.
+
+- Release APK refreshed with Android versionCode 24 under the existing v0.4.7.1 tag.
