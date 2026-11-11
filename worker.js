@@ -235,15 +235,24 @@ async function handleVerifyOtp(request, env) {
     }
 
     const otpKey = `otp:${purpose}:${email}`;
+    const attemptKey = `otp:attempt:${purpose}:${email}`;
     const record = await env.USERS.get(otpKey, 'json');
     if (!record || Date.now() - Number(record.createdAt || 0) > 10 * 60 * 1000) {
         return json(request, { error: 'کد تأیید منقضی شده است؛ کد تازه بگیرید' }, 400);
     }
+    const attempts = Number(await env.USERS.get(attemptKey) || 0);
+    if (attempts >= 5) {
+        await env.USERS.delete(otpKey);
+        return json(request, { error: 'تعداد تلاش‌ها بیش از حد مجاز است؛ کد تازه بگیرید' }, 429);
+    }
+    await env.USERS.put(attemptKey, String(attempts + 1), { expirationTtl: 600 });
     const candidate = await hashPassword(code, record.salt);
     if (candidate !== record.codeHash) {
+        if (attempts + 1 >= 5) await env.USERS.delete(otpKey);
         return json(request, { error: 'کد تأیید نادرست است' }, 401);
     }
     await env.USERS.delete(otpKey);
+    await env.USERS.delete(attemptKey);
 
     if (purpose === 'register') {
         if (await env.USERS.get(`email:${email}`)) {
