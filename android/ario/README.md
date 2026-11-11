@@ -1,37 +1,27 @@
-# Ario — shell module
+# Ario — مسیر یادگیری سورن
 
-This is the first structural shell for Ario, currently staged inside the Souren
-repository so the host integration can be reviewed before the module is moved
-to its own repository.
+Ario یک تجربهٔ آموزشی همراه سورن است؛ نه فضای یادداشت و نه یک دیکشنری جداگانه.
 
-## Module boundary
+## رابط و یکپارچگی
+- Ario در همان APK سورن نصب می‌شود و از آیکون مستقل قابل اجراست.
+- رابط Ario در Flutter و با همان پوسته، فونت Abar، رنگ‌ها، کپسول‌ها، انیمیشن‌ها و نویگیشن‌بار اصلی سورن نمایش داده می‌شود.
+- دکمهٔ «سورن» در سربرگ، کاربر را به محیط اصلی سورن برمی‌گرداند.
 
-- Android library module: `:ario`
-- Namespace: `ir.ario.shell`
-- Host application ID remains: `ir.souren.souren`
-- Entry activity: `ArioActivity`
-- Souren bridge: MethodChannel `souren/ario`, method `open`
-- Optional launcher alias: `ir.souren.souren.ArioLauncher` (disabled by default; enabled or disabled from Souren settings)
-- Disabling the alias hides only the Ario launcher icon and preserves Ario-owned local data.
-- Ario storage namespace: `ArioStorage`
+## منبع داده
+- Ario مستقیماً همان Dictionary و فایل assets/db/dataset.json سورن را مصرف می‌کند؛ دیتابیس واژگان جداگانه یا کپی مستقل ندارد.
+- پیشرفت یادگیری در ario_learning.json و در فضای خصوصی مشترک برنامه ذخیره می‌شود.
+- محتوای گنجور نیز از همان GanjoorPack و کش مشترک سورن خوانده می‌شود؛ در صورت نصب بستهٔ آفلاین، فایل‌ها به‌صورت انتخابی از فریم‌های فشرده خوانده می‌شوند.
 
-## Important Android constraint
+## قابلیت‌های آموزشی
+- خانهٔ یادگیری با واژهٔ روز و ادامهٔ مسیر
+- مسیر مرحله‌ای در درس‌های ۱۲ واژه‌ای
+- نمایش واژه و آشکارسازی پاسخ برای یادگیری فعال
+- تمرین چهارگزینه‌ای از همان مدخل‌های سورن
+- مرور واژه‌هایی که کاربر یاد گرفته یا در تمرین پاسخ درست داده است
+- صفحهٔ واژه‌ها برای دسترسی به کل مدخل‌های مشترک
+- آمار پیشرفت درس‌ها، واژه‌ها و تمرین‌ها
 
-Because this is an Android library embedded in Souren, it is part of the same
-installed Android package. It can have its own activity, launcher alias,
-preferences, database and private files, but Android cannot uninstall this
-library independently from Souren. The launcher alias can be disabled and
-Ario-owned local data can be cleared independently. Data that must survive
-deactivation needs to be synchronized/backed up before local clearing.
-
-## Current scope
-
-The activity intentionally contains only a neutral background and the word
-“Ario”. No product UI, business logic, network access, account system or
-synchronization is implemented yet.
-
-## Repository plan
-
-Keep Ario's source in a separate private repository once that repository is
-created, then consume a pinned revision from Souren's build. This staging copy
-exists only to validate the Android module boundary and host launch bridge.
+## چرخهٔ فعال‌سازی
+- آیکون Ario با سوییچ سوم تنظیمات سورن فعال/غیرفعال می‌شود.
+- غیرفعال‌سازی فقط آیکون اجرا را پنهان می‌کند؛ داده‌های یادگیری باقی می‌مانند.
+- Ario برنامهٔ اندرویدی جداگانه‌ای نیست و حذف مستقل APK از سورن امکان‌پذیر نیست.
