@@ -1,11 +1,10 @@
 # Souren v0.4.7.0
 
-- Ario now opens a functional local workspace with its own notes, search, settings and Souren-inspired floating navigation.
-- The existing third settings toggle now controls Ario activation; no duplicate Ario switch remains.
-- Removed app account/profile synchronization and app learning-data uploads. Personal favorites, likes and keyboard learning remain local.
-- Removed the Worker endpoint that accepted app learning samples; website account services remain available.
-- Unified the home collection edge fades and refined capsule/corner geometry.
-- Rebuilt the profile share image as a graphic card with a visual identity, level and score.
-- Grouped settings into clearer sections.
+- Rebuilt Ario as an educational companion using Souren's shared dictionary and Ganjoor data, Abar font, and the exact Souren navigation shell.
+- Added staged 12-word lessons, flashcards, multiple-choice practice, review, and learning progress.
+- Added Ganjoor offline pack download/removal controls in Souren settings.
+- Restored the original v0.4.6.9 switch geometry for Ario activation.
+- Strengthened scroll fades while preserving the first and last list rows.
+- Android profile, favorites, likes, and learning data remain local; no personal app data is uploaded.
 
-Verified by dataset integrity, Ganjoor pack tests, Flutter analysis, Dart/widget tests, Kotlin unit tests, signed APK verification and package/version checks.
+The bundled Arabic-to-Persian source currently contains 546 entries. The separate 552-entry source has not yet been supplied in this repository, so no six entries have been invented.
