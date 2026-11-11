@@ -1604,8 +1604,15 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _setArioState(bool value) async {
-    final enabled = await SharedFiles.setArioLauncherEnabled(value);
-    if (mounted) setState(() => arioEnabled = enabled);
+    try {
+      final enabled = await SharedFiles.setArioLauncherEnabled(value);
+      if (mounted) setState(() => arioEnabled = enabled);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تغییر وضعیت Ario انجام نشد')),
+      );
+    }
   }
 
   @override
