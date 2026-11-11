@@ -439,9 +439,13 @@ class AccountApi {
       });
 
   static Future<void> logout() async {
-    await _request('/api/auth/logout', method: 'POST');
-    _cookie = null;
-    await SharedFiles.writeJson('account_session.json', {'cookie': null});
+    try {
+      await _request('/api/auth/logout', method: 'POST');
+    } finally {
+      _cookie = null;
+      _loaded = true;
+      await SharedFiles.writeJson('account_session.json', {'cookie': null});
+    }
   }
 }
 
