@@ -1844,7 +1844,7 @@ class _ShellState extends State<Shell> {
     }
   }
 
-  Future<void> _applyAccountUser(Map<String, dynamic> user) async {
+  void _applyAccountUser(Map<String, dynamic> user) {
     if (!mounted) return;
     // Only account identity and verified email are shared. Favorites, likes,
     // keyboard learning and Ario progress remain local to this installation.
@@ -1918,7 +1918,7 @@ class _ShellState extends State<Shell> {
                   try {
                     final result = await AccountApi.verifyOtp(email.text, code.text);
                     if (result['status'] == 200 && result['user'] is Map) {
-                      await _applyAccountUser(Map<String, dynamic>.from(result['user'] as Map));
+                      _applyAccountUser(Map<String, dynamic>.from(result['user'] as Map));
                       if (dialogContext.mounted) Navigator.pop(dialogContext);
                     } else {
                       setDialogState(() {
