@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Souren's bundled dataset from the owner's two uploaded word lists.
+"""Build Souren's bundled 552-entry dataset from the canonical website dictionary and owner word-list uploads.
 
 The uploads are parallel lists, but NOT line-aligned as whole files:
 the Persian file holds equivalents for only 336 of the 552 Arabic words,
@@ -7,8 +7,9 @@ grouped in blocks of 42 whose order differs from the Arabic file.
 Each block below was verified semantically (first pair = anchor, checked
 by hand, plus spot pairs). The builder FAILS if any anchor mismatches,
 so a re-uploaded/reordered file can never silently produce wrong pairs.
-Arabic words without a Persian block stay in the lexicon, flagged
-hasEquivalent=False, so the app can show them honestly as «برابر ندارد».
+The canonical website dictionary adds six words to the original 546-word list;
+216 supplement entries complete the Persian equivalents for all 552 words.
+Explanatory concepts are carried across from the canonical website dictionary.
 """
 import json, sys
 
@@ -59,9 +60,14 @@ import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "data"))
 from supplement_fa import PAIRS as SUPPLEMENT  # noqa: E402
 missing = [w for w in a if w not in pairs]
+assert len(missing) == 216, len(missing)
 assert [w for w, _ in SUPPLEMENT] == missing, "supplement order mismatch"
 for w, eq in SUPPLEMENT:
     pairs[w] = [e.strip() for e in eq.split(",") if e.strip()]
+
+assert len(pairs) == 552, len(pairs)
+for item in canonical:
+    assert pairs[item['arabic']] == item['meanings'], (item['arabic'], pairs[item['arabic']], item['meanings'])
 
 entries = []
 for w in a:
