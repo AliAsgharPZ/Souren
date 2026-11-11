@@ -141,6 +141,148 @@ async function handleDictionary(request, env) {
     });
 }
 
+// ---------- Email OTP (Resend + Workers KV) ----------
+function normalizeEmail(value) {
+    return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function validEmail(value) {
+    return value.length <= 254 &&
+        /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+}
+
+async function handleRequestOtp(request, env) {
+    let body;
+    try { body = await request.json(); }
+    catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+
+    const email = normalizeEmail(body.email);
+    const purpose = ['register', 'login', 'link'].includes(body.purpose)
+        ? body.purpose : 'login';
+    if (!validEmail(email)) return json(request, { error: 'نشانی ایمیل معتبر نیست' }, 400);
+    if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
+        return json(request, { error: 'email_service_not_configured' }, 503);
+    }
+
+    let session = null;
+    if (purpose === 'link') {
+        session = await getSessionUser(request, env);
+        if (!session) return json(request, { error: 'وارد نشده‌اید' }, 401);
+    }
+    if (purpose === 'register' && await env.USERS.get(`email:${email}`)) {
+        return json(request, { error: 'این ایمیل قبلاً به یک حساب متصل شده است' }, 409);
+    }
+    if (purpose === 'link') {
+        const owner = await env.USERS.get(`email:${email}`);
+        if (owner && owner !== session.rec.username) {
+            return json(request, { error: 'این ایمیل به حساب دیگری متصل است' }, 409);
+        }
+    }
+
+    const rateKey = `otp:rate:${purpose}:${email}`;
+    if (await env.USERS.get(rateKey)) {
+        return json(request, { error: 'برای ارسال کد جدید کمی صبر کنید' }, 429);
+    }
+    await env.USERS.put(rateKey, '1', { expirationTtl: 60 });
+
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+    const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+    const codeHash = await hashPassword(code, salt);
+    const otpKey = `otp:${purpose}:${email}`;
+    await env.USERS.put(otpKey, JSON.stringify({
+        salt,
+        codeHash,
+        username: purpose === 'link' ? session.rec.username : null,
+        createdAt: Date.now(),
+    }), { expirationTtl: 600 });
+
+    const subject = purpose === 'login'
+        ? 'کد ورود به سورن'
+        : purpose === 'register' ? 'تأیید ایمیل برای سورن' : 'تأیید ایمیل حساب سورن';
+    const text = `کد یک‌بارمصرف شما: ${code}\nاین کد تا ۱۰ دقیقه معتبر است. اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.`;
+    const sent = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from: env.EMAIL_FROM,
+            to: [email],
+            subject,
+            text,
+            html: `<div dir="rtl" style="font-family:Arial,sans-serif"><h2>سورن</h2><p>کد یک‌بارمصرف شما:</p><div style="font-size:30px;font-weight:bold;letter-spacing:8px">${code}</div><p>این کد تا ۱۰ دقیقه معتبر است.</p></div>`,
+        }),
+    });
+    if (!sent.ok) {
+        await env.USERS.delete(otpKey);
+        await env.USERS.delete(rateKey);
+        return json(request, { error: 'ارسال ایمیل انجام نشد؛ تنظیمات سرویس ایمیل را بررسی کنید' }, 502);
+    }
+    return json(request, { success: true, message: 'کد تأیید ارسال شد' });
+}
+
+async function handleVerifyOtp(request, env) {
+    let body;
+    try { body = await request.json(); }
+    catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    const email = normalizeEmail(body.email);
+    const purpose = ['register', 'login', 'link'].includes(body.purpose)
+        ? body.purpose : 'login';
+    const code = typeof body.code === 'string' ? body.code.trim() : '';
+    if (!validEmail(email) || !/^\d{6}$/.test(code)) {
+        return json(request, { error: 'ایمیل یا کد تأیید نامعتبر است' }, 400);
+    }
+
+    const otpKey = `otp:${purpose}:${email}`;
+    const record = await env.USERS.get(otpKey, 'json');
+    if (!record || Date.now() - Number(record.createdAt || 0) > 10 * 60 * 1000) {
+        return json(request, { error: 'کد تأیید منقضی شده است؛ کد تازه بگیرید' }, 400);
+    }
+    const candidate = await hashPassword(code, record.salt);
+    if (candidate !== record.codeHash) {
+        return json(request, { error: 'کد تأیید نادرست است' }, 401);
+    }
+    await env.USERS.delete(otpKey);
+
+    if (purpose === 'register') {
+        if (await env.USERS.get(`email:${email}`)) {
+            return json(request, { error: 'این ایمیل قبلاً استفاده شده است' }, 409);
+        }
+        const verificationToken = randomToken();
+        await env.USERS.put(`email-verified:${verificationToken}`, JSON.stringify({ email }), { expirationTtl: 900 });
+        return json(request, { success: true, verificationToken });
+    }
+
+    if (purpose === 'link') {
+        const session = await getSessionUser(request, env);
+        if (!session || session.rec.username !== record.username) {
+            return json(request, { error: 'نشست حساب معتبر نیست' }, 401);
+        }
+        const owner = await env.USERS.get(`email:${email}`);
+        if (owner && owner !== session.rec.username) {
+            return json(request, { error: 'این ایمیل به حساب دیگری متصل است' }, 409);
+        }
+        if (session.rec.email && session.rec.email !== email) {
+            await env.USERS.delete(`email:${session.rec.email}`);
+        }
+        session.rec.email = email;
+        session.rec.emailVerified = true;
+        await env.USERS.put(`user:${session.rec.username}`, JSON.stringify(session.rec));
+        await env.USERS.put(`email:${email}`, session.rec.username);
+        return json(request, { success: true, user: publicUser(session.rec) });
+    }
+
+    const username = await env.USERS.get(`email:${email}`);
+    const user = username ? await env.USERS.get(`user:${username}`, 'json') : null;
+    if (!user || user.email !== email || user.emailVerified !== true) {
+        return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
+    }
+    const token = randomToken();
+    await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
+    return json(request, { user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
+}
+
 // ---------- Auth (KV) — هش PBKDF2 و نشست تصادفی ----------
 function b64(bytes) {
     let bin = '';
@@ -173,7 +315,14 @@ function validUsername(u) {
 }
 
 function publicUser(rec) {
-    return { username: rec.username, displayName: rec.displayName || rec.username, favorites: rec.favorites || [], likes: rec.likes || [] };
+    return {
+        username: rec.username,
+        displayName: rec.displayName || rec.username,
+        email: rec.email || null,
+        emailVerified: rec.emailVerified === true,
+        favorites: rec.favorites || [],
+        likes: rec.likes || [],
+    };
 }
 
 async function getSessionUser(request, env) {
@@ -201,16 +350,29 @@ async function registerInner(request, env) {
     const username = (body.username || '').trim();
     const password = body.password || '';
     const displayName = (body.displayName || '').trim() || username;
+    const email = normalizeEmail(body.email);
+    const verificationToken = typeof body.emailVerificationToken === 'string'
+        ? body.emailVerificationToken : '';
     if (!validUsername(username)) return json(request, { error: 'نام کاربری باید ۳ تا ۲۴ نویسه و بدون فاصله باشد' }, 400);
     if (typeof password !== 'string' || password.length < 6) {
         return json(request, { error: 'گذرواژه باید دست‌کم ۶ نویسه باشد' }, 400);
     }
+    if (!validEmail(email) || !verificationToken) {
+        return json(request, { error: 'ابتدا ایمیل خود را با کد یک‌بارمصرف تأیید کنید' }, 400);
+    }
+    const verified = await env.USERS.get(`email-verified:${verificationToken}`, 'json');
+    if (!verified || verified.email !== email) {
+        return json(request, { error: 'تأیید ایمیل معتبر نیست؛ دوباره کد بگیرید' }, 401);
+    }
     const key = `user:${username}`;
     if (await env.USERS.get(key)) return json(request, { error: 'این نام کاربری گرفته شده است' }, 409);
+    if (await env.USERS.get(`email:${email}`)) return json(request, { error: 'این ایمیل قبلاً استفاده شده است' }, 409);
     const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
     const rec = {
         username,
         displayName,
+        email,
+        emailVerified: true,
         salt,
         pw: await hashPassword(password, salt),
         favorites: [],
@@ -218,6 +380,8 @@ async function registerInner(request, env) {
         createdAt: Date.now(),
     };
     await env.USERS.put(key, JSON.stringify(rec));
+    await env.USERS.put(`email:${email}`, username);
+    await env.USERS.delete(`email-verified:${verificationToken}`);
     return json(request, { user: publicUser(rec) }, 201);
 }
 
@@ -344,6 +508,10 @@ export default {
                 ? handleDictionary(request, env) : methodNotAllowed();
             case '/api/auth/register': return request.method === 'POST'
                 ? handleRegister(request, env) : methodNotAllowed();
+            case '/api/auth/request-otp': return request.method === 'POST'
+                ? handleRequestOtp(request, env) : methodNotAllowed();
+            case '/api/auth/verify-otp': return request.method === 'POST'
+                ? handleVerifyOtp(request, env) : methodNotAllowed();
             case '/api/auth/login': return request.method === 'POST'
                 ? handleLogin(request, env) : methodNotAllowed();
             case '/api/auth/logout': return request.method === 'POST'
