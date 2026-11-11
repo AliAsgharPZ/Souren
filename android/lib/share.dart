@@ -17,6 +17,9 @@ class ShareCardData {
 
   /// Extra context, e.g. the category or «ضرب‌المثل فارسی».
   final String? caption;
+  final bool isProfile;
+  final int? profileScore;
+  final String? profileLevel;
 
   const ShareCardData({
     required this.title,
@@ -24,6 +27,9 @@ class ShareCardData {
     this.breadcrumb,
     this.meaning,
     this.caption,
+    this.isProfile = false,
+    this.profileScore,
+    this.profileLevel,
   });
 }
 
