@@ -5,7 +5,7 @@
 - Added Ganjoor offline pack download/removal controls in Souren settings.
 - Restored the original v0.4.6.9 switch geometry for Ario activation.
 - Strengthened scroll fades while preserving the first and last list rows.
-- Android profile, favorites, likes, and learning data remain local; no personal app data is uploaded.
+- Favorites and likes synchronize with the shared account when signed in; keyboard and Ario learning progress remain local to the device.
 - Synchronized the Android bundled dictionary with the canonical 552-entry website dataset, including the six missing words and their meanings.
 
 - Applied the supplied Souren and Ario launcher icon artwork.
