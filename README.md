@@ -2,7 +2,7 @@
 
 Souren is an Android Persian writing and language app that combines an Arabic-to-Persian dictionary, a Persian keyboard, spelling assistance, and Persian literary references.
 
-**Latest release:** [v0.4.6.8](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.7.1)  
+**Latest release:** [v0.4.7.1](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.7.1)  
 **Website:** https://souren.pages.dev
 
 ## What Souren does
@@ -13,16 +13,16 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 - **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem. A downloadable, chunked Zstandard pack enables on-device reading without extracting the full corpus; online access remains the fallback.
 - **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
 - **Categories:** explore dictionary entries through subject-based categories.
-- **Favorites and likes:** save entries and like them locally on the device; the Android app does not upload this data.
+- **Favorites and likes:** available locally as a guest; when signed in, favorites and likes synchronize with the same Souren account used by the website and Ario.
 - **Sharing and export cards:** share or save word and proverb details as formatted text or images.
-- **User profile:** view local progress, score, level, and earned badges; no app account or profile synchronization.
-- **Learning:** keyboard corrections and choices are learned locally on the device. Personal data and learning samples are not uploaded from the Android app.
+- **User profile:** one shared account identity across the website, Souren, and Ario, with email OTP sign-in and verified email; the app also shows device-local score and badges.
+- **Learning:** keyboard corrections and Ario lesson progress remain local to the device; they are not uploaded to the account.
 - **Database management:** refresh the dictionary online, continue using the bundled/offline copy, and import or export JSON/CSV data.
 - **Appearance:** cream/light and dark themes, adjustable text size, and RTL/LTR layout direction. The app uses Abar FaNum as its bundled interface font.
 
 ## Ario educational app
 
-Ario is an educational companion installed in the same APK as Souren. Its launcher icon can be enabled or disabled from Souren settings. The launcher opens the shared Flutter shell, so Ario uses the exact Souren navigation bar, Abar font, theme, colors, capsules, and motion. Its learning path, 12-word lessons, flashcards, multiple-choice practice, review list, and progress view use Souren's existing dictionary data and shared Ganjoor pack; Ario does not maintain a duplicate word database or a separate notes store. Learning progress is stored locally in the app's shared private files. Ario is not independently uninstallable from the Souren APK.
+Ario is an educational companion installed in the same APK as Souren. Its supplied launcher icon and wordmark are used in the app. The launcher opens the shared Flutter shell, so Ario uses the Souren navigation bar, Abar font, theme, colors, capsules, and motion. Its winding, Duolingo-style learning path, 12-word lessons, flashcards, multiple-choice practice, review list, and progress view use Souren's existing dictionary data and shared Ganjoor pack; Ario does not maintain a duplicate word database or a separate notes store. Learning progress remains local to the device. Ario shares the same signed-in account identity as Souren and the website.
 
 ## Website
 
@@ -34,7 +34,7 @@ The website includes a searchable dictionary, category filters, word details, ac
 - `android/android/ario/` — Ario Android library module.
 - `index.html`, `style.css`, `script.js` — static website (vanilla HTML/CSS/JS).
 - `dictionary.json`, `categories.json` — website dictionary data and category data.
-- `worker.js` — Cloudflare Worker API for dictionary, account, and like synchronization.
+- `worker.js` — Cloudflare Worker API for dictionary, shared accounts, email OTP, and account synchronization.
 - `.github/workflows/` — CI, dataset integrity, and signed Android release workflows.
 
 ## Build and test
@@ -53,3 +53,9 @@ The production release workflow also validates the dictionary dataset, runs Kotl
 ## Keyboard setup
 
 After installing Souren, open Android's keyboard/input-method settings, enable **کیبورد سورن**, and select it as the current keyboard.
+
+## Shared account and email delivery
+
+The website and Android app use the same Cloudflare Worker account records. New website registrations verify an email with a one-time code; both the website and Android app can sign in with an email OTP. Existing password accounts can add and verify an email from the website profile. Favorites and likes synchronize for signed-in accounts; keyboard learning and Ario lesson progress remain device-local.
+
+The Worker sends OTP email through Resend. Configure the Worker secret `RESEND_API_KEY` and the `EMAIL_FROM` variable with a sender address verified in Resend. Until those values are configured and the updated Worker is deployed, the OTP endpoints return `email_service_not_configured`.
