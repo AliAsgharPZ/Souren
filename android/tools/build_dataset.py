@@ -2,7 +2,7 @@
 """Build Souren's bundled dataset from the owner's two uploaded word lists.
 
 The uploads are parallel lists, but NOT line-aligned as whole files:
-the Persian file holds equivalents for only 336 of the 546 Arabic words,
+the Persian file holds equivalents for only 336 of the 552 Arabic words,
 grouped in blocks of 42 whose order differs from the Arabic file.
 Each block below was verified semantically (first pair = anchor, checked
 by hand, plus spot pairs). The builder FAILS if any anchor mismatches,
@@ -17,7 +17,7 @@ FA = "data/persian_all.txt"
 
 a = [x.strip() for x in open(AR, encoding="utf-8").read().splitlines() if x.strip()]
 p = [x.strip() for x in open(FA, encoding="utf-8").read().splitlines() if x.strip()]
-assert len(a) == 546, len(a)
+assert len(a) == 552, len(a)
 assert len(p) == 336, len(p)
 
 # (arabic_start_1based, persian_start_1based, anchor_arabic, anchor_persian)
@@ -33,6 +33,15 @@ BLOCKS = [
 ]
 BLOCK_LEN = 42
 
+# The website's 552-entry dictionary is the canonical source for word order
+# and explanatory concepts. The 546-word owner uploads remain the base list;
+# six later additions are appended to arabic_all.txt and supplemented below.
+with open('../dictionary.json', encoding='utf-8') as source_file:
+    canonical = json.load(source_file)['dictionary']
+canonical_words = [entry['arabic'] for entry in canonical]
+assert canonical_words == a, 'Arabic_All must match the canonical 552-entry website dictionary order'
+concepts = {entry['arabic']: entry.get('concept', '') for entry in canonical}
+
 pairs = {}
 for a0, p0, anchor_a, anchor_p in BLOCKS:
     ai, pi = a0 - 1, p0 - 1
@@ -44,7 +53,7 @@ for a0, p0, anchor_a, anchor_p in BLOCKS:
         assert word not in pairs, word
         pairs[word] = eq
 
-# Supplement: equivalents for the 210 words missing from Persian_All,
+# Supplement: equivalents for the 216 words missing from Persian_All,
 # authored for Souren (data/supplement_fa.py) — order-verified there.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "data"))
@@ -56,16 +65,17 @@ for w, eq in SUPPLEMENT:
 
 entries = []
 for w in a:
-    entries.append({"ar": w, "fa": pairs.get(w, [])})
+    entries.append({"ar": w, "fa": pairs.get(w, []), "concept": concepts.get(w, "")})
 out = {
-    "version": 2,
-    "source": "Arabic_All v1.5 + Persian_All v1.6 (owner upload) + supplement_fa (210 equivalents authored for Souren v0.2)",
+    "version": 3,
+    "source": "Canonical 552-entry dictionary.json + Arabic_All v1.5 + Persian_All v1.6 + 216 supplement equivalents",
     "arabicCount": len(a),
     "pairCount": len(pairs),
     "entries": entries,
 }
-with open("data/dataset.json", "w", encoding="utf-8") as f:
-    json.dump(out, f, ensure_ascii=False, indent=1)
-print(f"OK: {len(a)} arabic words, {len(pairs)} with persian equivalents, {len(a)-len(pairs)} without")
+for output_path in ("data/dataset.json", "assets/db/dataset.json"):
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=1)
+print(f"OK: {len(a)} Arabic words, {len(pairs)} with Persian equivalents, {len(a)-len(pairs)} without; wrote source and bundled datasets")
 for w, eq in pairs.items():
     print(w, "->", ", ".join(eq))
