@@ -2,7 +2,7 @@
 
 Souren is an Android Persian writing and language app that combines an Arabic-to-Persian dictionary, a Persian keyboard, spelling assistance, and Persian literary references.
 
-**Latest release:** [v0.4.6.8](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.6.8)  
+**Latest release:** [v0.4.6.8](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.7.1)  
 **Website:** https://souren.pages.dev
 
 ## What Souren does
