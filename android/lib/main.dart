@@ -664,7 +664,7 @@ class _DetailSheetState extends State<DetailSheet> {
             height: 5,
             decoration: BoxDecoration(
               color: pal.muted.withValues(alpha: .35),
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(capR(7)),
             ),
           ),
           const SizedBox(height: 20),
@@ -1138,7 +1138,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             height: 5,
             decoration: BoxDecoration(
               color: pal.muted.withValues(alpha: .35),
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(capR(7)),
             ),
           ),
           const SizedBox(height: 18),
@@ -1750,7 +1750,7 @@ class _ShellState extends State<Shell> {
         ),
         decoration: BoxDecoration(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(capR(45)),
         ),
         child: AnimatedSize(
           duration: Motion.base,
@@ -1812,12 +1812,12 @@ class _ShellState extends State<Shell> {
     return Container(
       margin: const EdgeInsets.fromLTRB(22, 6, 22, 14),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(capR(63)),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: pal.cardC,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(capR(63)),
             border: Border.all(color: pal.div.withValues(alpha: 0.6)),
           ),
           child: Stack(
@@ -1836,7 +1836,7 @@ class _ShellState extends State<Shell> {
                     height: 44,
                     width: double.infinity,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(19),
+                      borderRadius: BorderRadius.circular(capR(42)),
                       child: ColoredBox(color: selSoft),
                     ),
                   ),
@@ -2079,7 +2079,7 @@ class _ShellState extends State<Shell> {
         padding: const WidgetStatePropertyAll(EdgeInsets.all(8)),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(capR(54)),
             side: BorderSide(color: pal.div),
           ),
         ),
@@ -2232,8 +2232,8 @@ class _ShellState extends State<Shell> {
         }
         return edgeFade(
           alwaysVisible: true,
-          fadeExtent: 0.30,
-          fadeStrength: 0.28,
+          fadeExtent: 0.22,
+          fadeStrength: 0.46,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: rows.length,
@@ -2319,8 +2319,8 @@ class _ShellState extends State<Shell> {
       }
       return edgeFade(
         alwaysVisible: true,
-        fadeExtent: 0.30,
-        fadeStrength: 0.28,
+        fadeExtent: 0.22,
+        fadeStrength: 0.46,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
           itemCount: rows.length,
@@ -2373,8 +2373,8 @@ class _ShellState extends State<Shell> {
         }
         return edgeFade(
           alwaysVisible: true,
-          fadeExtent: 0.30,
-          fadeStrength: 0.28,
+          fadeExtent: 0.22,
+          fadeStrength: 0.46,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: poems.length,
@@ -2589,7 +2589,7 @@ class _ShellState extends State<Shell> {
                                       color: i == selected
                                           ? pal.sel
                                           : pal.faint.withValues(alpha: .55),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(capR(9)),
                                     ),
                                   ),
                               ],
@@ -2650,73 +2650,18 @@ class _ShellState extends State<Shell> {
         child: Text('واژه‌ای پیدا نشد', style: TextStyle(color: pal.muted)),
       );
     }
-    // The word list occupies only the content viewport below its collection
-    // header. Anchor the fades to THAT viewport (not the whole page and not
-    // the scrolling content) so both edges remain visible at every offset.
-    return ClipRect(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ListView.separated(
-            padding: EdgeInsets.only(top: 6, bottom: bottomPad),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
-            itemBuilder: (_, i) => Enter(
-              index: i,
-              child: _pairRow(items[i], singleLine: singleLine),
-            ),
-          ),
-          // Long, multi-stop edge fades: stronger at the screen edge,
-          // then easing gradually into the scrolling content.
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 88,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      pal.bg,
-                      pal.bg.withValues(alpha: 0.96),
-                      pal.bg.withValues(alpha: 0.78),
-                      pal.bg.withValues(alpha: 0.38),
-                      pal.bg.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.16, 0.42, 0.74, 1],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 88,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      pal.bg,
-                      pal.bg.withValues(alpha: 0.96),
-                      pal.bg.withValues(alpha: 0.78),
-                      pal.bg.withValues(alpha: 0.38),
-                      pal.bg.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.16, 0.42, 0.74, 1],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+    return edgeFade(
+      alwaysVisible: true,
+      fadeExtent: 0.22,
+      fadeStrength: 0.46,
+      child: ListView.separated(
+        padding: EdgeInsets.only(top: 6, bottom: bottomPad),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
+        itemBuilder: (_, i) => Enter(
+          index: i,
+          child: _pairRow(items[i], singleLine: singleLine),
+        ),
       ),
     );
   }
@@ -3335,7 +3280,7 @@ class _ShellState extends State<Shell> {
                           height: tileH,
                           decoration: BoxDecoration(
                             color: pal.pillC,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(capR(54)),
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 22),
                           child: Row(
@@ -3400,7 +3345,7 @@ class _ShellState extends State<Shell> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: pal.pillC,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(capR(54)),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -3446,7 +3391,7 @@ class _ShellState extends State<Shell> {
                     ),
                     decoration: BoxDecoration(
                       color: pal.pillC,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(capR(49)),
                     ),
                     child: Row(
                       children: [
@@ -3900,7 +3845,7 @@ class _ShellState extends State<Shell> {
                   height: 26,
                   decoration: BoxDecoration(
                     color: pal.bg,
-                    borderRadius: BorderRadius.circular(capR(26)),
+                    borderRadius: BorderRadius.circular(9),
                   ),
                 ),
               ),
@@ -4548,7 +4493,7 @@ class _CorrectorPageState extends State<CorrectorPage> {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: pal.pillC,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(capR(54)),
               ),
               child: AnimatedSwitcher(
                 duration: Motion.fast,
@@ -4656,7 +4601,7 @@ class NimeFaselePage extends StatelessWidget {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: pal.pillC,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(capR(54)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -4829,14 +4774,14 @@ class _PandvazhePageState extends State<PandvazhePage> {
                       widget.proverbs[i].$2,
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(capR(54)),
                       child: BackdropFilter(
                         filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
                           decoration: BoxDecoration(
                             color: pal.pillC.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(capR(54)),
                             border: Border.all(
                               color: pal.div.withValues(alpha: 0.5),
                             ),
@@ -4964,7 +4909,7 @@ class _FreshPageState extends State<FreshPage> {
                   padding: const EdgeInsets.symmetric(vertical: 17),
                   decoration: BoxDecoration(
                     color: pal.pillC,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(capR(54)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -5074,7 +5019,7 @@ class _RootInfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: pal.cardC,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(capR(54)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -5503,7 +5448,7 @@ class _PoemUsageCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: pal.cardC,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(capR(54)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -5758,7 +5703,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: pal.cardC,
-            borderRadius: BorderRadius.circular(23),
+            borderRadius: BorderRadius.circular(capR(52)),
             border: Border.all(color: pal.div.withValues(alpha: .7)),
           ),
           child: Column(
@@ -5787,7 +5732,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: _view == 1 ? pal.cardC : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(capR(49)),
           border: _view == 1 ? Border.all(color: pal.div) : null,
         ),
         child: Row(
@@ -5979,7 +5924,7 @@ class _GanjoorPageState extends State<GanjoorPage> {
                           padding: const EdgeInsets.all(9),
                           decoration: BoxDecoration(
                             color: _view == i ? pal.pillC : Colors.transparent,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(capR(54)),
                           ),
                           child: Icon(
                             [LucideIcons.list, LucideIcons.grid3x3,
@@ -6581,7 +6526,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: pal.cardC,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(capR(54)),
                           ),
                           child: Text(
                             data['PoemSummary'].toString(),
@@ -6619,7 +6564,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                   meaning: coupletMeanings[ordered[i]],
                                   breadcrumb: fullTitle,
                                 ),
-                                borderRadius: BorderRadius.circular(23),
+                                borderRadius: BorderRadius.circular(capR(52)),
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.symmetric(
@@ -6628,7 +6573,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: pal.pillC,
-                                    borderRadius: BorderRadius.circular(23),
+                                    borderRadius: BorderRadius.circular(capR(52)),
                                   ),
                                   child: Column(
                                     children: [
