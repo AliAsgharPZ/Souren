@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -946,8 +947,30 @@ class ShareCardImage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            card.title,
+          if (card.isProfile) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: pal.sel, borderRadius: BorderRadius.circular(capR(52))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Container(width: 48, height: 48, decoration: BoxDecoration(color: pal.bg.withValues(alpha: .16), borderRadius: BorderRadius.circular(capR(48)), border: Border.all(color: pal.bg.withValues(alpha: .35))), child: Icon(LucideIcons.userRound, color: pal.bg, size: 25)),
+                  const Spacer(),
+                  Icon(LucideIcons.sparkles, color: pal.bg.withValues(alpha: .8), size: 20),
+                ]),
+                const SizedBox(height: 18),
+                Text(card.title, style: TextStyle(color: pal.bg, fontSize: 22, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(card.profileLevel ?? 'سطح آغازین', style: TextStyle(color: pal.bg.withValues(alpha: .8), fontSize: 13)),
+                const SizedBox(height: 16),
+                Text(faNum(card.profileScore ?? 0), style: TextStyle(color: pal.bg, fontSize: 38, fontWeight: FontWeight.w800)),
+                Text('امتیاز کل', style: TextStyle(color: pal.bg.withValues(alpha: .78), fontSize: 12)),
+              ]),
+            ),
+            const SizedBox(height: 16),
+          ] else
+            Text(
+              card.title,
             textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
             style: TextStyle(
@@ -1563,7 +1586,6 @@ class _ShellState extends State<Shell> {
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
 
-  bool dbSyncing = false;
   bool arioEnabled = false;
 
   @override
@@ -1634,7 +1656,6 @@ class _ShellState extends State<Shell> {
       liked.contains(word) ? liked.remove(word) : liked.add(word);
     });
     await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
-    await AuthService.pushProfile(favorites, liked);
   }
 
   void _go(int i) => setState(() => tab = i);
@@ -3662,19 +3683,12 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _profilePage(Dictionary d) {
-    final score = profileScore(
-      favorites: favorites.length,
-      likes: liked.length,
-      learnedWords: learnedWords,
-      corrections: learnedCorrections,
-    );
+    final score = profileScore(favorites: favorites.length, likes: liked.length, learnedWords: learnedWords, corrections: learnedCorrections);
     final next = nextLevelAt(score);
     final levelIndex = levelThresholds.lastIndexWhere((t) => score >= t.$1);
     final currentLevel = levelThresholds[levelIndex];
     final previousLevel = levelIndex > 0 ? levelThresholds[levelIndex - 1] : null;
-    final followingLevel = levelIndex + 1 < levelThresholds.length
-        ? levelThresholds[levelIndex + 1]
-        : null;
+    final followingLevel = levelIndex + 1 < levelThresholds.length ? levelThresholds[levelIndex + 1] : null;
     final profileCard = ShareCardData(
       title: 'نمایهٔ من',
       lines: [
@@ -3690,130 +3704,77 @@ class _ShellState extends State<Shell> {
       profileScore: score,
       profileLevel: currentLevel.$2,
     );
-    final levelStart = currentLevel.$1;
-    final progress = next == null ? 1.0 : (score - levelStart) / (next - levelStart);
+    final progress = next == null ? 1.0 : (score - currentLevel.$1) / (next - currentLevel.$1);
     return _pageShell(
       'نمایهٔ کاربری',
       edgeFade(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 10, 24, 24 + kNavClearance),
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 33,
-                  backgroundColor: pal.sel,
-                  child: Icon(LucideIcons.user, color: pal.bg, size: 32),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('نمایهٔ محلی', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
-                      const SizedBox(height: 4),
-                      Text('اطلاعات و پیشرفت شما فقط روی همین دستگاه نگهداری می‌شود.', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            Row(children: [
+              CircleAvatar(radius: 33, backgroundColor: pal.sel, child: Icon(LucideIcons.user, color: pal.bg, size: 32)),
+              const SizedBox(width: 16),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('نمایهٔ محلی', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
+                const SizedBox(height: 4),
+                Text('اطلاعات و پیشرفت شما فقط روی همین دستگاه نگهداری می‌شود.', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
+              ])),
+            ]),
             const SizedBox(height: 22),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('امتیاز شما', style: TextStyle(fontSize: 14.5, color: pal.muted)),
-                      Text('سطح: ${currentLevel.$2}', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: pal.ink)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: AnimatedValue(value: score.toDouble(), builder: (v) => Text(faNum(v.round()), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, color: pal.ink))),
-                  ),
-                  const SizedBox(height: 10),
-                  AnimatedValue(
-                    value: progress,
-                    builder: (v) => ClipRRect(
-                      borderRadius: BorderRadius.circular(capR(18)),
-                      child: LinearProgressIndicator(value: v, minHeight: 9, backgroundColor: pal.div, color: pal.sel),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(next == null ? 'به بالاترین سطح رسیده‌اید' : 'تا سطح بعد ${faNum(next - score)} امتیاز دیگر', style: TextStyle(fontSize: 12.5, color: pal.muted)),
-                  ),
-                ],
-              ),
+              child: Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('امتیاز شما', style: TextStyle(fontSize: 14.5, color: pal.muted)),
+                  Text('سطح: ${currentLevel.$2}', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: pal.ink)),
+                ]),
+                const SizedBox(height: 8),
+                Align(alignment: Alignment.centerRight, child: AnimatedValue(value: score.toDouble(), builder: (v) => Text(faNum(v.round()), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, color: pal.ink)))),
+                const SizedBox(height: 10),
+                AnimatedValue(value: progress, builder: (v) => ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: v, minHeight: 9, backgroundColor: pal.div, color: pal.sel))),
+                const SizedBox(height: 8),
+                Align(alignment: Alignment.centerRight, child: Text(next == null ? 'به بالاترین سطح رسیده‌اید' : 'تا سطح بعد ${faNum(next - score)} امتیاز دیگر', style: TextStyle(fontSize: 12.5, color: pal.muted))),
+              ]),
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                _levelInfoTile('سطح قبلی', previousLevel),
-                const SizedBox(width: 8),
-                _levelInfoTile('سطح فعلی', currentLevel, active: true),
-                const SizedBox(width: 8),
-                _levelInfoTile('سطح بعدی', followingLevel),
-              ],
-            ),
+            Row(children: [
+              _levelInfoTile('سطح قبلی', previousLevel),
+              const SizedBox(width: 8),
+              _levelInfoTile('سطح فعلی', currentLevel, active: true),
+              const SizedBox(width: 8),
+              _levelInfoTile('سطح بعدی', followingLevel),
+            ]),
             const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Symbols.share_rounded, size: 19),
-                label: const Text('اشتراک‌گذاری نمایه'),
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => _ShareSheet(card: profileCard),
-                ),
-              ),
-            ),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              icon: const Icon(Symbols.share_rounded, size: 19),
+              label: const Text('اشتراک‌گذاری نمایه'),
+              onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (_) => _ShareSheet(card: profileCard)),
+            )),
             const SizedBox(height: 24),
             Text('نشان‌ها', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: pal.ink)),
             const SizedBox(height: 12),
-            Column(
-              children: [
-                for (var r = 0; r < 3; r++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
-                        const SizedBox(width: 10),
-                        Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+            Column(children: [
+              for (var r = 0; r < 3; r++)
+                Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
+                  Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
+                ])),
+            ]),
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))),
-              child: Column(
-                children: [
-                  _statRow('واژه‌های نشان‌شده', favorites.length),
-                  _statRow('واژه‌های پسندیده', liked.length),
-                  _statRow('واژه‌های آموختهٔ کیبورد', learnedWords),
-                  _statRow('اصلاح‌های پذیرفته‌شده', learnedCorrections, last: true),
-                ],
-              ),
+              child: Column(children: [
+                _statRow('واژه‌های نشان‌شده', favorites.length),
+                _statRow('واژه‌های پسندیده', liked.length),
+                _statRow('واژه‌های آموختهٔ کیبورد', learnedWords),
+                _statRow('اصلاح‌های پذیرفته‌شده', learnedCorrections, last: true),
+              ]),
             ),
             const SizedBox(height: 24),
-            ListTile(
-              leading: Icon(LucideIcons.award, color: pal.ink),
-              title: const Text('آموخته‌های کیبورد'),
-              subtitle: const Text('آنچه کیبورد سورن روی همین دستگاه آموخته است'),
-              onTap: () => _pushPage(_learningPage()),
-            ),
+            ListTile(leading: Icon(LucideIcons.award, color: pal.ink), title: const Text('آموخته‌های کیبورد'), subtitle: const Text('آنچه کیبورد سورن روی همین دستگاه آموخته است'), onTap: () => _pushPage(_learningPage())),
           ],
         ),
       ),
@@ -3977,19 +3938,16 @@ class _ShellState extends State<Shell> {
               },
             ),
             _toggleRow(
-              title: 'کمک به بهبود هوشمند سورن',
-              subtitle: 'فقط واژه، معادل انتخاب‌شده و حداکثر دو واژهٔ مجاور به‌صورت ناشناس ارسال می‌شوند؛ متن کامل، کلیپ‌بورد و اطلاعات حساب ارسال نمی‌شوند. این گزینه پیش‌فرض خاموش است.',
-              value: settings.shareLearning,
-              onChanged: (v) async {
-                setState(() => settings.shareLearning = v);
-                await SettingsStore.update(settings);
-              },
+              title: 'فعال‌سازی Ario',
+              subtitle: 'نمایش آیکون مستقل Ario در فهرست برنامه‌ها؛ داده‌های آن جدا نگهداری می‌شوند',
+              value: arioEnabled,
+              onChanged: _setArioState,
             ),
             const Divider(height: 32),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'ارتفاع کیبورد',
+                'رفتار کیبورد',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5),
               ),
             ),
@@ -4022,7 +3980,7 @@ class _ShellState extends State<Shell> {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'تم و رنگ',
+                'ظاهر و نمایش',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5),
               ),
             ),
@@ -4083,6 +4041,11 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const Divider(height: 32),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text('مدیریت کیبورد', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+            ),
+            const SizedBox(height: 8),
             ListTile(
               leading: const Icon(LucideIcons.keyboard),
               title: const Text('فعال‌کردن کیبورد سورن'),
@@ -4095,6 +4058,11 @@ class _ShellState extends State<Shell> {
               onTap: () => SharedFiles.showKeyboardPicker(),
             ),
             const Divider(height: 32),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text('پایگاه واژه‌ها', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+            ),
+            const SizedBox(height: 8),
             ListTile(
               leading: const Icon(LucideIcons.refreshCw),
               title: const Text('به‌روزرسانی پایگاه واژه‌ها'),
