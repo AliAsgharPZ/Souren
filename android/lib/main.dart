@@ -1837,7 +1837,7 @@ class _ShellState extends State<Shell> {
     try {
       final user = await AccountApi.me();
       if (user == null || !mounted) return;
-      await _applyAccountUser(user);
+      setState(() => accountUser = user);
     } catch (_) {
       // Offline use remains available; the saved account session is retried
       // the next time the app starts or the profile is opened.
@@ -1845,54 +1845,10 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _applyAccountUser(Map<String, dynamic> user) async {
-    final owner = await SharedFiles.readJson('account_owner.json');
-    final previousUsername = owner?['username'] as String?;
-    final username = user['username']?.toString() ?? '';
-    final serverFavorites = ((user['favorites'] as List?) ?? const [])
-        .map((e) => e.toString()).toSet();
-    final serverLikes = ((user['likes'] as List?) ?? const [])
-        .map((e) => e.toString()).toSet();
-    final sameAccount = previousUsername == username;
-    final nextFavorites = sameAccount || previousUsername == null
-        ? {...serverFavorites, ...favorites}
-        : serverFavorites;
-    final nextLikes = sameAccount || previousUsername == null
-        ? {...serverLikes, ...liked}
-        : serverLikes;
-    final differs = nextFavorites.length != serverFavorites.length ||
-        nextFavorites.any((e) => !serverFavorites.contains(e)) ||
-        nextLikes.length != serverLikes.length ||
-        nextLikes.any((e) => !serverLikes.contains(e));
     if (!mounted) return;
-    setState(() {
-      accountUser = Map<String, dynamic>.from(user);
-      favorites = nextFavorites;
-      liked = nextLikes;
-    });
-    await SharedFiles.writeJson('account_owner.json', {'username': username});
-    await SharedFiles.writeJson('favorites.json', {'words': favorites.toList()});
-    await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
-    if (differs) await _syncAccountProfile();
-  }
-
-  Future<void> _syncAccountProfile() async {
-    final user = accountUser;
-    if (user == null || accountBusy) return;
-    accountBusy = true;
-    try {
-      final result = await AccountApi.updateProfile(
-        displayName: (user['displayName'] ?? user['username'] ?? '').toString(),
-        favorites: favorites.toList(),
-        likes: liked.toList(),
-      );
-      if (result['status'] == 200 && result['user'] is Map && mounted) {
-        setState(() => accountUser = Map<String, dynamic>.from(result['user'] as Map));
-      }
-    } catch (_) {
-      // Keep local changes; the next explicit account sync can retry.
-    } finally {
-      accountBusy = false;
-    }
+    // Only account identity and verified email are shared. Favorites, likes,
+    // keyboard learning and Ario progress remain local to this installation.
+    setState(() => accountUser = Map<String, dynamic>.from(user));
   }
 
   Future<void> _showAccountDialog() async {
@@ -1986,15 +1942,8 @@ class _ShellState extends State<Shell> {
   Future<void> _logoutAccount() async {
     try { await AccountApi.logout(); } catch (_) {}
     if (!mounted) return;
-    setState(() {
-      accountUser = null;
-      favorites.clear();
-      liked.clear();
-    });
-    await SharedFiles.writeJson('favorites.json', {'words': <String>[]});
-    await SharedFiles.writeJson('liked.json', {'words': <String>[]});
-    final owner = await SharedFiles.file('account_owner.json');
-    if (await owner.exists()) await owner.delete();
+    // Signing out only ends the shared account session; device-local data stays.
+    setState(() => accountUser = null);
   }
 
   Future<void> _toggleFav(String word) async {
@@ -2002,7 +1951,6 @@ class _ShellState extends State<Shell> {
       favorites.contains(word) ? favorites.remove(word) : favorites.add(word);
     });
     await SharedFiles.writeJson('favorites.json', {'words': favorites.toList()});
-    await _syncAccountProfile();
   }
 
   Future<void> _toggleLike(String word) async {
@@ -2010,7 +1958,6 @@ class _ShellState extends State<Shell> {
       liked.contains(word) ? liked.remove(word) : liked.add(word);
     });
     await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
-    await _syncAccountProfile();
   }
 
   void _go(int i) => setState(() => tab = i);
@@ -4023,7 +3970,7 @@ class _ShellState extends State<Shell> {
         'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
         'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
       ],
-      caption: accountUser == null ? 'نمایهٔ شخصی سورن · داده‌های حساب در این دستگاه' : 'نمایهٔ حساب سورن · همگام با وب‌سایت',
+      caption: accountUser == null ? 'نمایهٔ شخصی سورن · داده‌های محلی' : 'حساب مشترک سورن و آریو · داده‌های شخصی محلی',
       isProfile: true,
       profileScore: score,
       profileLevel: currentLevel.$2,
