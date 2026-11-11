@@ -100,8 +100,7 @@ public final class ArioActivity extends Activity {
         LinearLayout hero = column(); hero.setPadding(dp(22), dp(22), dp(22), dp(22));
         hero.setBackground(shape(SELECTED, 30));
         TextView eyebrow = text("فضای شخصی شما", 13, BG, false);
-        TextView title = text("فکرهایت را
-مرتب کن.", 28, BG, true);
+        TextView title = text("فکرهایت را\\nمرتب کن.", 28, BG, true);
         title.setPadding(0, dp(12), 0, dp(12));
         hero.addView(eyebrow); hero.addView(title);
         hero.addView(text("یادداشت‌ها و ایده‌هایت، فقط روی همین دستگاه.", 13, 0xFFE6DDCC, false));
@@ -193,9 +192,9 @@ public final class ArioActivity extends Activity {
             .setNegativeButton("انصراف", null)
             .setPositiveButton("ذخیره", (d,w) -> {
                 java.util.Set<String> notes = new java.util.HashSet<>(ArioStorage.preferences(this).getStringSet("notes", new java.util.HashSet<String>()));
-                if (!oldTitle.isEmpty()) notes.remove(oldTitle + "\\n" + oldBody);
+                if (!oldTitle.isEmpty()) notes.remove(oldTitle + "\n" + oldBody);
                 String t = title.getText().toString().trim(); if (t.isEmpty()) t = "بدون عنوان";
-                notes.add(t + "\\n" + body.getText().toString().trim());
+                notes.add(t + "\n" + body.getText().toString().trim());
                 ArioStorage.preferences(this).edit().putStringSet("notes", notes).apply(); showTab(1);
             }).show();
     }
