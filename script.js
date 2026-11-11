@@ -623,7 +623,7 @@ async function loadSession() {
     try {
         const { res, data } = await api('/api/auth/me');
         if (res.ok && data && data.user) {
-            currentUser = { username: data.user.username, displayName: data.user.displayName };
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true };
             const serverFavs = Array.isArray(data.user.favorites) ? data.user.favorites : [];
             // یکی‌کردن نشان‌شده‌های سرور با نسخهٔ محلی تا چیزی از دست نرود
             favorites = [...new Set([...serverFavs, ...favorites])];
@@ -666,11 +666,111 @@ async function loadSession() {
 }
 
 function afterAuth(user) {
-    currentUser = { username: user.username, displayName: user.displayName };
+    currentUser = { username: user.username, displayName: user.displayName, email: user.email || null, emailVerified: user.emailVerified === true };
     sessionExpiredNotified = false;
     updateAccountUi();
     // نشان‌شده‌های حساب را تازه می‌خوانیم و با محلی یکی می‌کنیم
     loadSession();
+}
+
+async function requestEmailOtp(email, purpose) {
+    return api('/api/auth/request-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, purpose })
+    });
+}
+
+async function requestLoginOtp() {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    if (!email) return showMsg('loginMsg', 'ایمیل حساب را وارد کنید.', false);
+    try {
+        const { res, data } = await requestEmailOtp(email, 'login');
+        showMsg('loginMsg', res.ok ? 'کد ورود ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کنید.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
+    } catch (_) {
+        showMsg('loginMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
+    }
+}
+
+async function verifyLoginOtp() {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const code = document.getElementById('loginOtp').value.trim();
+    try {
+        const { res, data } = await api('/api/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, purpose: 'login' })
+        });
+        if (res.ok && data.user) {
+            hideModal('authModal');
+            afterAuth(data.user);
+        } else {
+            showMsg('loginMsg', errText(data, 'ورود با کد ناموفق بود.'), false);
+        }
+    } catch (_) {
+        showMsg('loginMsg', 'خطا در تأیید کد ایمیل.', false);
+    }
+}
+
+async function requestRegisterOtp() {
+    const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+    if (!email) return showMsg('registerMsg', 'ایمیل را وارد کنید.', false);
+    try {
+        const { res, data } = await requestEmailOtp(email, 'register');
+        showMsg('registerMsg', res.ok ? 'کد تأیید ارسال شد.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
+    } catch (_) {
+        showMsg('registerMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
+    }
+}
+
+async function verifyRegisterOtp() {
+    const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+    const code = document.getElementById('registerOtp').value.trim();
+    try {
+        const { res, data } = await api('/api/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, purpose: 'register' })
+        });
+        if (res.ok && data.verificationToken) {
+            document.getElementById('registerEmailVerificationToken').value = data.verificationToken;
+            document.getElementById('registerSubmitBtn').disabled = false;
+            showMsg('registerMsg', 'ایمیل تأیید شد؛ اکنون ثبت‌نام را کامل کنید.', true);
+        } else {
+            showMsg('registerMsg', errText(data, 'تأیید ایمیل ناموفق بود.'), false);
+        }
+    } catch (_) {
+        showMsg('registerMsg', 'خطا در تأیید کد ایمیل.', false);
+    }
+}
+
+async function requestProfileEmailOtp() {
+    const email = document.getElementById('profileEmail').value.trim().toLowerCase();
+    if (!email) return showMsg('profileMsg', 'ایمیل را وارد کنید.', false);
+    try {
+        const { res, data } = await requestEmailOtp(email, 'link');
+        showMsg('profileMsg', res.ok ? 'کد تأیید به ایمیل ارسال شد.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
+    } catch (_) {
+        showMsg('profileMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
+    }
+}
+
+async function verifyProfileEmailOtp() {
+    const email = document.getElementById('profileEmail').value.trim().toLowerCase();
+    const code = document.getElementById('profileEmailOtp').value.trim();
+    try {
+        const { res, data } = await api('/api/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, purpose: 'link' })
+        });
+        if (res.ok && data.user) {
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email, emailVerified: data.user.emailVerified };
+            document.getElementById('profileEmail').value = data.user.email || '';
+            updateAccountUi();
+            showMsg('profileMsg', 'ایمیل با موفقیت به حساب متصل شد.', true);
+        } else {
+            showMsg('profileMsg', errText(data, 'تأیید ایمیل ناموفق بود.'), false);
+        }
+    } catch (_) {
+        showMsg('profileMsg', 'خطا در تأیید کد ایمیل.', false);
+    }
 }
 
 async function doLogin(e) {
@@ -698,10 +798,16 @@ async function doRegister(e) {
     const displayName = document.getElementById('registerDisplayName').value.trim();
     const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
+    const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+    const emailVerificationToken = document.getElementById('registerEmailVerificationToken').value;
+    if (!emailVerificationToken) {
+        showMsg('registerMsg', 'ابتدا ایمیل را با کد یک‌بارمصرف تأیید کنید.', false);
+        return;
+    }
     try {
         const { res, data } = await api('/api/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ username, password, displayName })
+            body: JSON.stringify({ username, password, displayName, email, emailVerificationToken })
         });
         if ((res.status === 201 || res.ok) && data && data.user) {
             // باگ الف: register کوکیِ نشست نمی‌دهد؛ بلافاصله با همان مشخصات
@@ -750,6 +856,8 @@ function openProfile() {
     if (!currentUser) return;
     document.getElementById('profileUsername').value = currentUser.username;
     document.getElementById('profileDisplayName').value = currentUser.displayName || '';
+    const profileEmail = document.getElementById('profileEmail');
+    if (profileEmail) profileEmail.value = currentUser.email || '';
     document.getElementById('profileFavCount').textContent = faNum(favorites.length);
     const likeCountEl = document.getElementById('profileLikeCount');
     if (likeCountEl) likeCountEl.textContent = faNum(likes.length);
@@ -768,7 +876,7 @@ async function saveProfile(e) {
             body: JSON.stringify({ displayName, favorites, likes })
         });
         if (res.ok && data && data.user) {
-            currentUser = { username: data.user.username, displayName: data.user.displayName };
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true };
             updateAccountUi();
             showMsg('profileMsg', 'پروفایل ذخیره شد.', true);
         } else {
@@ -801,6 +909,12 @@ function initAuth() {
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    document.getElementById('requestLoginOtpBtn')?.addEventListener('click', requestLoginOtp);
+    document.getElementById('verifyLoginOtpBtn')?.addEventListener('click', verifyLoginOtp);
+    document.getElementById('requestRegisterOtpBtn')?.addEventListener('click', requestRegisterOtp);
+    document.getElementById('verifyRegisterOtpBtn')?.addEventListener('click', verifyRegisterOtp);
+    document.getElementById('requestProfileOtpBtn')?.addEventListener('click', requestProfileEmailOtp);
+    document.getElementById('verifyProfileOtpBtn')?.addEventListener('click', verifyProfileEmailOtp);
     if (loginForm) loginForm.addEventListener('submit', doLogin);
     if (registerForm) registerForm.addEventListener('submit', doRegister);
 
