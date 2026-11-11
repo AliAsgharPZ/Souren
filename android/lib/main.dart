@@ -3700,11 +3700,14 @@ class _ShellState extends State<Shell> {
             Text('نشان‌ها', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: pal.ink)),
             const SizedBox(height: 12),
             Column(children: [
-              for (var r = 0; r < 3; r++)
+              for (var r = 0; r < (badgeIds.length + 1) ~/ 2; r++)
                 Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
                   Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
                   const SizedBox(width: 10),
-                  Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
+                  if (r * 2 + 1 < badgeIds.length)
+                    Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score))
+                  else
+                    const Spacer(),
                 ])),
             ]),
             const SizedBox(height: 14),
