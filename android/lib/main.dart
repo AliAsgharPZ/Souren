@@ -4493,10 +4493,10 @@ class _ShellState extends State<Shell> {
           const SizedBox(height: 8),
           Text('با گذراندن درس‌ها یا پاسخ درست به تمرین‌ها، واژه‌ها اینجا جمع می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
         ])))
-      : _pairList(words, singleLine: true));
+      : _pairList(words, bottomPad: kNavClearance, singleLine: true));
   }
 
-  Widget _arioWords(Dictionary d) => _arioPageShell('واژه‌های سورن', _pairList(d.entries.where((e) => e.hasFa).toList(), singleLine: true));
+  Widget _arioWords(Dictionary d) => _arioPageShell('واژه‌های سورن', _pairList(d.entries.where((e) => e.hasFa).toList(), bottomPad: kNavClearance, singleLine: true));
 
   Widget _arioProgress(Dictionary d) {
     final total = (d.entries.where((e) => e.hasFa).length + 11) ~/ 12;
