@@ -1902,7 +1902,8 @@ class _ShellState extends State<Shell> {
                       busy = false;
                       sent = result['status'] == 200 && result['success'] == true;
                       success = sent;
-                      message = sent ? 'کد ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کن.' : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
+                      final error = result['error']?.toString();
+                      message = sent ? 'کد ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کن.' : error == 'email_service_not_configured' ? 'ارسال ایمیل هنوز در تنظیمات Cloudflare Worker فعال نشده است.' : (error ?? 'ارسال کد انجام نشد.');
                     });
                   } catch (_) {
                     setDialogState(() { busy = false; message = 'ارتباط با سرویس ایمیل برقرار نشد.'; });
