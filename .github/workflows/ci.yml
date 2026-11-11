@@ -67,6 +67,20 @@ jobs:
             test -s android/souren-release.keystore
             printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
           fi
+      - name: Normalize launcher PNG for Android AAPT2
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y python3-pil
+          python3 - <<'PY'
+          from PIL import Image
+          path = "android/android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
+          with Image.open(path) as source:
+              source.load()
+              image = source.convert("RGBA")
+              image.save(path, format="PNG", optimize=False)
+          with Image.open(path) as check:
+              check.verify()
+          PY
       - name: Build release APK
         run: |
           set -euo pipefail
@@ -92,7 +106,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            NOTES="Ario learning home redesigned as a winding, Duolingo-style lesson path with stateful lesson nodes and dedicated iconography; supplied Souren and Ario launcher artwork applied; randomized weekly dictionary refresh prevents unnecessary Worker requests; bottom content fade now extends behind the navigation bar; shared Cloudflare account session added to Android and Ario; website registration and email OTP login/profile verification added through the Worker (Resend provider). Canonical 552-entry dataset, Ganjoor offline pack, Abar font and restored v0.4.6.9 switch geometry retained. Signed APK package ir.souren.souren version 0.4.7.2 (24)."
+            NOTES="Ario learning home redesigned as a winding, Duolingo-style lesson path with stateful lesson nodes and dedicated iconography; supplied Souren and Ario launcher artwork applied; randomized weekly dictionary refresh prevents unnecessary Worker requests; bottom content fade now extends behind the navigation bar; shared Cloudflare account session added to Android and Ario; website registration and email OTP login/profile verification added through the Worker (Resend provider). Canonical 552-entry dataset, Ganjoor offline pack, Abar font and restored v0.4.6.9 switch geometry retained. Signed APK package ir.souren.souren version 0.4.7.2 (25)."
             if gh release view v0.4.7.2 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               gh release upload v0.4.7.2 Souren-v0.4.7.2.apk --repo "$GITHUB_REPOSITORY" --clobber
               gh release edit v0.4.7.2 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.2" --notes "$NOTES"
