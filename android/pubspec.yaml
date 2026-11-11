@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.4.6+21 # Souren v0.4.6.9 — Android build name is set explicitly in release workflow
+version: 0.4.7+22 # Souren v0.4.7.0
 
 environment:
   sdk: ^3.13.5
