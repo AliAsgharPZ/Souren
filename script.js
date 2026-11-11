@@ -599,7 +599,12 @@ function showMsg(id, text, ok) {
 }
 
 function errText(data, fallback) {
-    return (data && typeof data.error === 'string' && data.error) ? data.error : fallback;
+    const code = data && typeof data.error === 'string' ? data.error : '';
+    const messages = {
+        email_service_not_configured: 'سرویس ارسال ایمیل هنوز روی Cloudflare Worker تنظیم نشده است.',
+        server_error: 'خطای داخلی سرور؛ کمی بعد دوباره تلاش کنید.',
+    };
+    return messages[code] || code || fallback;
 }
 
 function updateAccountUi() {
