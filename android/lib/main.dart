@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -1564,15 +1563,8 @@ class _ShellState extends State<Shell> {
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
 
-  // auth form state (نمایهٔ کاربری)
-  bool showAuthForm = false;
-  bool authRegister = false;
-  bool authBusy = false;
   bool dbSyncing = false;
-  String? authError;
-  final _userCtl = TextEditingController();
-  final _passCtl = TextEditingController();
-  final _nameCtl = TextEditingController();
+  bool arioEnabled = false;
 
   @override
   void initState() {
@@ -1581,15 +1573,23 @@ class _ShellState extends State<Shell> {
       if (mounted) setState(() => _searchFocused = _searchFocus.hasFocus);
     });
     _load();
+    _loadArioState();
+  }
+
+  Future<void> _loadArioState() async {
+    final enabled = await SharedFiles.isArioLauncherEnabled();
+    if (mounted) setState(() => arioEnabled = enabled);
+  }
+
+  Future<void> _setArioState(bool value) async {
+    final enabled = await SharedFiles.setArioLauncherEnabled(value);
+    if (mounted) setState(() => arioEnabled = enabled);
   }
 
   @override
   void dispose() {
     _searchCtl.dispose();
     _searchFocus.dispose();
-    _userCtl.dispose();
-    _passCtl.dispose();
-    _nameCtl.dispose();
     super.dispose();
   }
 
@@ -1601,15 +1601,6 @@ class _ShellState extends State<Shell> {
     final fav = await SharedFiles.readJson('favorites.json');
     final lk = await SharedFiles.readJson('liked.json');
     final learned = await SharedFiles.readJson('learned.json');
-    await AuthService.restore();
-    Set<String> srvFav = {}, srvLiked = {};
-    if (AuthService.user != null) {
-      final prof = await AuthService.fetchProfile();
-      if (prof != null) {
-        srvFav = prof.$1;
-        srvLiked = prof.$2;
-      }
-    }
     setState(() {
       dict = d;
       settings = s;
@@ -1621,30 +1612,13 @@ class _ShellState extends State<Shell> {
       if (lk != null && lk['words'] is List) {
         liked = (lk['words'] as List).map((e) => e.toString()).toSet();
       }
-      favorites = {...favorites, ...srvFav};
-      liked = {...liked, ...srvLiked};
       if (learned != null) {
         learnedWords = ((learned['counts'] as Map?) ?? {}).length;
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
       }
     });
-    _syncDictionary(d);
   }
 
-  bool _dictSyncDone = false;
-
-  /// Online dictionary update: when the network is up, pull the Worker
-  /// dataset; a newer one replaces the on-device archive and the UI
-  /// reloads. Offline, the archive already on the phone is used.
-  Future<void> _syncDictionary(Dictionary current) async {
-    if (_dictSyncDone) return;
-    _dictSyncDone = true;
-    final updated = await DictionarySync.syncFromServer(current);
-    if (updated && mounted) {
-      final d2 = await Dictionary.load();
-      setState(() => dict = d2);
-    }
-  }
 
   Future<void> _toggleFav(String word) async {
     setState(() {
@@ -1653,7 +1627,6 @@ class _ShellState extends State<Shell> {
     await SharedFiles.writeJson('favorites.json', {
       'words': favorites.toList(),
     });
-    await AuthService.pushProfile(favorites, liked);
   }
 
   Future<void> _toggleLike(String word) async {
@@ -3637,44 +3610,6 @@ class _ShellState extends State<Shell> {
     'collector': (LucideIcons.archive, 'گنجینه‌دار', '۲۵ واژه نشان کنید'),
   };
 
-  Future<void> _authSubmit() async {
-    setState(() {
-      authBusy = true;
-      authError = null;
-    });
-    final (u, err) = authRegister
-        ? await AuthService.register(
-            _userCtl.text.trim(),
-            _passCtl.text,
-            _nameCtl.text.trim(),
-          )
-        : await AuthService.login(_userCtl.text.trim(), _passCtl.text);
-    if (!mounted) return;
-    setState(() {
-      authBusy = false;
-      authError = err;
-    });
-    if (u != null) {
-      await _syncAfterLogin();
-      if (mounted) setState(() => showAuthForm = false);
-    }
-  }
-
-  Future<void> _syncAfterLogin() async {
-    final prof = await AuthService.fetchProfile();
-    if (prof != null) {
-      setState(() {
-        favorites = {...favorites, ...prof.$1};
-        liked = {...liked, ...prof.$2};
-      });
-      await SharedFiles.writeJson('favorites.json', {
-        'words': favorites.toList(),
-      });
-      await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
-      await AuthService.pushProfile(favorites, liked);
-    }
-  }
-
   /// One badge tile: full-width row cell, earned = filled with a
   /// check. Tapping it slides its description down from the top of
   /// the screen like a notification (round 3 §17).
@@ -3727,7 +3662,6 @@ class _ShellState extends State<Shell> {
   }
 
   Widget _profilePage(Dictionary d) {
-    final user = AuthService.user;
     final score = profileScore(
       favorites: favorites.length,
       likes: liked.length,
@@ -3742,26 +3676,22 @@ class _ShellState extends State<Shell> {
         ? levelThresholds[levelIndex + 1]
         : null;
     final profileCard = ShareCardData(
-      title: user?.displayName ?? 'نمایهٔ مهمان',
+      title: 'نمایهٔ من',
       lines: [
-        if (user != null) '@${user.username}',
         'امتیاز کل: ${faNum(score)}',
         'سطح فعلی: ${currentLevel.$2}',
-        if (previousLevel != null)
-          'سطح قبلی: ${previousLevel.$2}، ${faNum(previousLevel.$1)} امتیاز',
-        if (followingLevel != null)
-          'سطح بعدی: ${followingLevel.$2}، ${faNum(followingLevel.$1)} امتیاز',
         'موارد نشان‌شده: ${faNum(favorites.length)}',
         'موارد پسندیده: ${faNum(liked.length)}',
         'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
         'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
       ],
-      caption: 'نمایهٔ کاربری سورن',
+      caption: 'نمایهٔ شخصی سورن · ذخیره‌شده فقط روی دستگاه',
+      isProfile: true,
+      profileScore: score,
+      profileLevel: currentLevel.$2,
     );
-    final levelStart = levelThresholds.lastWhere((t) => score >= t.$1).$1;
-    final progress = next == null
-        ? 1.0
-        : (score - levelStart) / (next - levelStart);
+    final levelStart = currentLevel.$1;
+    final progress = next == null ? 1.0 : (score - levelStart) / (next - levelStart);
     return _pageShell(
       'نمایهٔ کاربری',
       edgeFade(
@@ -3773,41 +3703,16 @@ class _ShellState extends State<Shell> {
                 CircleAvatar(
                   radius: 33,
                   backgroundColor: pal.sel,
-                  child: user != null
-                      ? Text(
-                          user.displayName.isNotEmpty
-                              ? user.displayName.characters.first
-                              : 'س',
-                          style: TextStyle(
-                            color: pal.bg,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        )
-                      : Icon(LucideIcons.user, color: pal.bg, size: 32),
+                  child: Icon(LucideIcons.user, color: pal.bg, size: 32),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user?.displayName ?? 'مهمان',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: pal.ink,
-                        ),
-                      ),
+                      Text('نمایهٔ محلی', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
                       const SizedBox(height: 4),
-                      Text(
-                        user != null ? '@${user.username}' : 'وارد شوید تا نشان‌شده‌ها و پسندیده‌هایتان روی سرور هم نگه داشته شود',
-                        style: TextStyle(
-                          color: pal.muted,
-                          fontSize: 13,
-                          height: 1.7,
-                        ),
-                      ),
+                      Text('اطلاعات و پیشرفت شما فقط روی همین دستگاه نگهداری می‌شود.', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
                     ],
                   ),
                 ),
@@ -3816,66 +3721,33 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 22),
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: pal.cardC,
-                borderRadius: BorderRadius.circular(24),
-              ),
+              decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'امتیاز شما',
-                        style: TextStyle(fontSize: 14.5, color: pal.muted),
-                      ),
-                      Text(
-                        'سطح: ${levelFor(score)}',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: pal.ink,
-                        ),
-                      ),
+                      Text('امتیاز شما', style: TextStyle(fontSize: 14.5, color: pal.muted)),
+                      Text('سطح: ${currentLevel.$2}', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: pal.ink)),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: AnimatedValue(
-                      value: score.toDouble(),
-                      builder: (v) => Text(
-                        faNum(v.round()),
-                        style: TextStyle(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w700,
-                          color: pal.ink,
-                        ),
-                      ),
-                    ),
+                    child: AnimatedValue(value: score.toDouble(), builder: (v) => Text(faNum(v.round()), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, color: pal.ink))),
                   ),
                   const SizedBox(height: 10),
                   AnimatedValue(
                     value: progress,
                     builder: (v) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: v,
-                        minHeight: 9,
-                        backgroundColor: pal.div,
-                        color: pal.sel,
-                      ),
+                      borderRadius: BorderRadius.circular(capR(18)),
+                      child: LinearProgressIndicator(value: v, minHeight: 9, backgroundColor: pal.div, color: pal.sel),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text(
-                      next == null
-                          ? 'به بالاترین سطح رسیده‌اید'
-                          : 'تا سطح بعد ${faNum(next - score)} امتیاز دیگر',
-                      style: TextStyle(fontSize: 12.5, color: pal.muted),
-                    ),
+                    child: Text(next == null ? 'به بالاترین سطح رسیده‌اید' : 'تا سطح بعد ${faNum(next - score)} امتیاز دیگر', style: TextStyle(fontSize: 12.5, color: pal.muted)),
                   ),
                 ],
               ),
@@ -3905,17 +3777,8 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'بج‌ها',
-              style: TextStyle(
-                fontSize: 16.5,
-                fontWeight: FontWeight.w700,
-                color: pal.ink,
-              ),
-            ),
+            Text('نشان‌ها', style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: pal.ink)),
             const SizedBox(height: 12),
-            // Full-width rows, two badges per row (three rows) —
-            // no guide list underneath; tap a badge for its description.
             Column(
               children: [
                 for (var r = 0; r < 3; r++)
@@ -3923,27 +3786,9 @@ class _ShellState extends State<Shell> {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: _badgeTile(
-                            badgeIds[r * 2],
-                            loggedIn: user != null,
-                            favorites: favorites.length,
-                            likes: liked.length,
-                            corrections: learnedCorrections,
-                            score: score,
-                          ),
-                        ),
+                        Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
                         const SizedBox(width: 10),
-                        Expanded(
-                          child: _badgeTile(
-                            badgeIds[r * 2 + 1],
-                            loggedIn: user != null,
-                            favorites: favorites.length,
-                            likes: liked.length,
-                            corrections: learnedCorrections,
-                            score: score,
-                          ),
-                        ),
+                        Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
                       ],
                     ),
                   ),
@@ -3952,106 +3797,21 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: pal.cardC,
-                borderRadius: BorderRadius.circular(24),
-              ),
+              decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))),
               child: Column(
                 children: [
                   _statRow('واژه‌های نشان‌شده', favorites.length),
                   _statRow('واژه‌های پسندیده', liked.length),
                   _statRow('واژه‌های آموختهٔ کیبورد', learnedWords),
-                  _statRow(
-                    'اصلاح‌های پذیرفته‌شده',
-                    learnedCorrections,
-                    last: true,
-                  ),
+                  _statRow('اصلاح‌های پذیرفته‌شده', learnedCorrections, last: true),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            if (user == null) ...[
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: pal.pillC,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.lock, color: pal.muted, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'امتیاز، بج‌ها و همگام‌سازی از امکانات اصلی نمایه‌اند و با ورود فعال می‌شوند. به‌عنوان مهمان، واژه‌نامه، کیبورد و نشان‌شده‌های روی گوشی در دسترس‌تان است.',
-                        style: TextStyle(
-                          color: pal.muted,
-                          fontSize: 13,
-                          height: 1.8,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-            if (user == null)
-              AnimatedSwitcher(
-                duration: Motion.base,
-                transitionBuilder: enterTransition,
-                child: showAuthForm
-                    ? KeyedSubtree(
-                        key: const ValueKey('form'),
-                        child: _authForm(),
-                      )
-                    : KeyedSubtree(
-                        key: const ValueKey('buttons'),
-                        child: _authButtons(),
-                      ),
-              ),
-            if (user != null) ...[
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: pal.div),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () async {
-                    await AuthService.pushProfile(favorites, liked);
-                    await _syncAfterLogin();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('همگام‌سازی انجام شد')),
-                      );
-                    }
-                  },
-                  child: const Text('همگام‌سازی اکنون'),
-                ),
-              ),
-              const SizedBox(height: 11),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: pal.accent,
-                    side: BorderSide(color: pal.div),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () async {
-                    await AuthService.logout();
-                    if (mounted) setState(() {});
-                  },
-                  child: const Text('خروج از نمایه'),
-                ),
-              ),
-            ],
-            const SizedBox(height: 10),
             ListTile(
               leading: Icon(LucideIcons.award, color: pal.ink),
               title: const Text('آموخته‌های کیبورد'),
-              subtitle: const Text('آنچه کیبورد سورن از شما آموخته است'),
+              subtitle: const Text('آنچه کیبورد سورن روی همین دستگاه آموخته است'),
               onTap: () => _pushPage(_learningPage()),
             ),
           ],
@@ -4112,147 +3872,6 @@ class _ShellState extends State<Shell> {
               fontWeight: FontWeight.w700,
               color: pal.ink,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Login + create-profile in ONE row (round 3 §18).
-  Widget _authButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: pal.sel,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(capR(50)),
-              ),
-            ),
-            onPressed: () => setState(() {
-              showAuthForm = true;
-              authRegister = false;
-              authError = null;
-            }),
-            child: const Text('ورود به نمایه'),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: pal.div),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(capR(50)),
-              ),
-            ),
-            onPressed: () => setState(() {
-              showAuthForm = true;
-              authRegister = true;
-              authError = null;
-            }),
-            child: const Text('ساخت نمایهٔ تازه'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _authForm() {
-    InputDecoration deco(String hint) => InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: pal.muted, fontSize: 14),
-      filled: true,
-      fillColor: pal.cardC,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(capR(50)),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-    );
-    return AnimatedSize(
-      duration: Motion.base,
-      curve: Motion.curve,
-      child: Column(
-        children: [
-          Text(
-            authRegister ? 'ساخت نمایهٔ تازه' : 'ورود به نمایه',
-            style: TextStyle(
-              fontSize: 16.5,
-              fontWeight: FontWeight.w700,
-              color: pal.ink,
-            ),
-          ),
-          const SizedBox(height: 14),
-          if (authRegister)
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: Motion.fast,
-              builder: (_, v, c) => Opacity(opacity: v, child: c),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _nameCtl,
-                    decoration: deco('نام نمایشی (مانند: سورن)'),
-                  ),
-                  const SizedBox(height: 11),
-                ],
-              ),
-            ),
-          TextField(controller: _userCtl, decoration: deco('نام کاربری')),
-          const SizedBox(height: 11),
-          TextField(
-            controller: _passCtl,
-            obscureText: true,
-            decoration: deco('گذرواژه (دست‌کم ۶ نویسه)'),
-          ),
-          if (authError != null) ...[
-            const SizedBox(height: 11),
-            Text(
-              authError!,
-              style: TextStyle(color: pal.accent, fontSize: 13.5),
-            ),
-          ],
-          const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: pal.sel,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(capR(50)),
-                ),
-              ),
-              onPressed: authBusy ? null : _authSubmit,
-              child: authBusy
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(authRegister ? 'ساختن نمایه' : 'ورود'),
-            ),
-          ),
-          TextButton(
-            onPressed: () => setState(() {
-              authRegister = !authRegister;
-              authError = null;
-            }),
-            child: Text(
-              authRegister
-                  ? 'نمایه دارید؟ وارد شوید'
-                  : 'نمایه ندارید؟ یکی بسازید',
-              style: TextStyle(color: pal.muted),
-            ),
-          ),
-          TextButton(
-            onPressed: () => setState(() => showAuthForm = false),
-            child: Text('پس‌نمایش', style: TextStyle(color: pal.muted)),
           ),
         ],
       ),
@@ -4464,8 +4083,6 @@ class _ShellState extends State<Shell> {
               ),
             ),
             const Divider(height: 32),
-            const ArioActivationTile(),
-            const Divider(height: 32),
             ListTile(
               leading: const Icon(LucideIcons.keyboard),
               title: const Text('فعال‌کردن کیبورد سورن'),
@@ -4487,21 +4104,6 @@ class _ShellState extends State<Shell> {
               onTap: () => _importDb(),
             ),
             ListTile(
-              leading: const Icon(LucideIcons.download),
-              title: const Text('به‌روزرسانی آنلاین از سرور'),
-              subtitle: Text(
-                'نسخهٔ کنونی: ${faNum(d.version)}${d.fromUpdate ? ' (به‌روزشده)' : ' (همراه برنامه)'} — با اینترنت، تازه‌ترین پایگاه از سرور گرفته می‌شود؛ آفلاین، آرشیو روی گوشی به کار می‌رود',
-              ),
-              trailing: dbSyncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : null,
-              onTap: dbSyncing ? null : () => _syncDbNow(d),
-            ),
-            ListTile(
               leading: const Icon(LucideIcons.share2),
               title: const Text('خروجی از پایگاه واژه‌ها'),
               subtitle: const Text(
@@ -4513,7 +4115,7 @@ class _ShellState extends State<Shell> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'درباره: سورن دیکشنری عربی به فارسی است با کیبوردی برای درست‌نویسی فارسی. فونت برنامه: آراد. یادگیری روی همین دستگاه انجام می‌شود؛ فقط اگر گزینهٔ «کمک به بهبود هوشمند سورن» را روشن کنید، نمونه‌های ناشناسِ واژه و معادل انتخابی برای بهبود مدل مشترک ارسال می‌شوند. متن کامل، کلیپ‌بورد و اطلاعات حساب ارسال نمی‌شوند.',
+                'درباره: سورن دیکشنری عربی به فارسی با کیبوردی برای درست‌نویسی فارسی است. داده‌های نمایه، پسندیده‌ها، نشان‌شده‌ها و یادگیری کیبورد فقط روی دستگاه نگهداری می‌شوند و به سرور ارسال نمی‌شوند.',
                 style: TextStyle(color: pal.muted, height: 1.9, fontSize: 13),
               ),
             ),
@@ -4521,27 +4123,6 @@ class _ShellState extends State<Shell> {
         ),
       ),
     );
-  }
-
-  Future<void> _syncDbNow(Dictionary d) async {
-    setState(() => dbSyncing = true);
-    final updated = await DictionarySync.syncFromServer(d);
-    if (updated) {
-      final d2 = await Dictionary.load();
-      if (mounted) setState(() => dict = d2);
-    }
-    if (mounted) {
-      setState(() => dbSyncing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            updated
-                ? 'پایگاه واژه‌ها به‌روز شد'
-                : 'پایگاه به‌روز است یا ارتباط با سرور برقرار نشد',
-          ),
-        ),
-      );
-    }
   }
 
   Future<void> _importDb() async {
@@ -7219,87 +6800,6 @@ class KeyboardGuidePage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-
-/// Toggles only Ario's launcher alias. Disabling it hides the Ario icon;
-/// it does not uninstall Souren or clear Ario-owned data.
-class ArioActivationTile extends StatefulWidget {
-  const ArioActivationTile({super.key});
-
-  @override
-  State<ArioActivationTile> createState() => _ArioActivationTileState();
-}
-
-class _ArioActivationTileState extends State<ArioActivationTile> {
-  bool _enabled = false;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final enabled = await SharedFiles.isArioLauncherEnabled();
-    if (!mounted) return;
-    setState(() {
-      _enabled = enabled;
-      _loading = false;
-    });
-  }
-
-  Future<void> _setEnabled(bool value) async {
-    setState(() => _loading = true);
-    try {
-      final enabled = await SharedFiles.setArioLauncherEnabled(value);
-      if (!mounted) return;
-      setState(() {
-        _enabled = enabled;
-        _loading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            enabled
-                ? 'آیکون Ario به فهرست برنامه‌ها اضافه شد'
-                : 'آیکون Ario غیرفعال شد؛ اطلاعات آن باقی می‌ماند',
-          ),
-        ),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تغییر وضعیت Ario انجام نشد')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.apps_rounded, color: pal.muted),
-      title: const Text('فعال‌سازی Ario'),
-      subtitle: Text(
-        _enabled
-            ? 'آیکون Ario در فهرست برنامه‌ها نمایش داده می‌شود'
-            : 'با فعال‌سازی، آیکون مستقل Ario اضافه می‌شود؛ داده‌ها جدا می‌مانند',
-      ),
-      trailing: _loading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Switch.adaptive(
-              value: _enabled,
-              onChanged: _setEnabled,
-            ),
-      onTap: _loading ? null : () => _setEnabled(!_enabled),
     );
   }
 }
