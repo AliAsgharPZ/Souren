@@ -13,7 +13,7 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 - **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem. A downloadable, chunked Zstandard pack enables on-device reading without extracting the full corpus; online access remains the fallback.
 - **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
 - **Categories:** explore dictionary entries through subject-based categories.
-- **Favorites and likes:** available locally as a guest; when signed in, favorites and likes synchronize with the same Souren account used by the website and Ario.
+- **Favorites and likes:** remain local to the Android device; website favorites and likes are stored with the website account.
 - **Sharing and export cards:** share or save word and proverb details as formatted text or images.
 - **User profile:** one shared account identity across the website, Souren, and Ario, with email OTP sign-in and verified email; the app also shows device-local score and badges.
 - **Learning:** keyboard corrections and Ario lesson progress remain local to the device; they are not uploaded to the account.
@@ -56,6 +56,6 @@ After installing Souren, open Android's keyboard/input-method settings, enable *
 
 ## Shared account and email delivery
 
-The website and Android app use the same Cloudflare Worker account records. New website registrations verify an email with a one-time code; both the website and Android app can sign in with an email OTP. Existing password accounts can add and verify an email from the website profile. Favorites and likes synchronize for signed-in accounts; keyboard learning and Ario lesson progress remain device-local.
+The website and Android app use the same Cloudflare Worker account identity. New website registrations verify an email with a one-time code; both the website and Android app can sign in with an email OTP. Existing password accounts can add and verify an email from the website profile. Android favorites, likes, keyboard learning and Ario lesson progress remain device-local and are not uploaded.
 
 The Worker sends OTP email through Resend. Configure the Worker secret `RESEND_API_KEY` and the `EMAIL_FROM` variable with a sender address verified in Resend. Until those values are configured and the updated Worker is deployed, the OTP endpoints return `email_service_not_configured`.
