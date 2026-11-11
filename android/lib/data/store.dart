@@ -86,7 +86,8 @@ class SharedFiles {
 class Entry {
   final String ar;
   final List<String> fa;
-  const Entry(this.ar, this.fa);
+  final String concept;
+  const Entry(this.ar, this.fa, {this.concept = ''});
   bool get hasFa => fa.isNotEmpty;
 }
 
@@ -104,8 +105,11 @@ class Dictionary {
   static Dictionary _parse(Map<String, dynamic> j, bool fromUpdate) {
     final list = (j['entries'] as List).map((e) {
       final m = e as Map<String, dynamic>;
-      return Entry(m['ar'] as String,
-          ((m['fa'] as List?) ?? const []).map((x) => x.toString()).toList());
+      return Entry(
+        m['ar'] as String,
+        ((m['fa'] as List?) ?? const []).map((x) => x.toString()).toList(),
+        concept: (m['concept'] as String?) ?? '',
+      );
     }).toList();
     return Dictionary(list, (j['version'] as num?)?.toInt() ?? 1, fromUpdate);
   }
