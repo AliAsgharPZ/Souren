@@ -73,7 +73,7 @@ jobs:
           sudo apt-get install -y python3-pil
           python3 - <<'PY'
           from PIL import Image
-          path = "android/android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
+          path = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
           with Image.open(path) as source:
               source.load()
               image = source.convert("RGBA")
