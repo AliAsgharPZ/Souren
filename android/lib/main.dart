@@ -4005,7 +4005,7 @@ class _ShellState extends State<Shell> {
               padding: const EdgeInsets.all(17),
               decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(44))),
               child: Row(children: [
-                Container(width: 42, height: 42, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(40))), child: Icon(accountUser == null ? LucideIcons.userRound : LucideIcons.userCheck, color: pal.ink, size: 20)),
+                Container(width: 42, height: 42, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(40))), child: Icon(accountUser == null ? LucideIcons.user : LucideIcons.circleCheck, color: pal.ink, size: 20)),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(accountUser == null ? 'حساب مشترک سورن' : 'حساب متصل است', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
@@ -4624,7 +4624,7 @@ class _ShellState extends State<Shell> {
                     ],
                   ),
                 ),
-                _arioMiniStat(LucideIcons.flame, faNum(arioCompletedLessons.length), 'درس'),
+                _arioMiniStat(LucideIcons.zap, faNum(arioCompletedLessons.length), 'درس'),
                 const SizedBox(width: 8),
                 _arioMiniStat(LucideIcons.star, faNum(arioKnownWords.length), 'واژه'),
               ],
@@ -4665,7 +4665,7 @@ class _ShellState extends State<Shell> {
                   padding: const EdgeInsets.all(17),
                   decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
                   child: Row(children: [
-                    Container(width: 46, height: 46, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(42))), child: Icon(LucideIcons.calendarDays, color: pal.ink, size: 21)),
+                    Container(width: 46, height: 46, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(42))), child: Icon(LucideIcons.calendar, color: pal.ink, size: 21)),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('تمرین روزانه', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
@@ -4678,7 +4678,7 @@ class _ShellState extends State<Shell> {
               ),
             const SizedBox(height: 12),
             _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 3)),
-            _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی در پایگاه مشترک سورن', LucideIcons.bookOpen, () => _open(_ganjoorPage(d))),
+            _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی در پایگاه مشترک سورن', LucideIcons.notebookPen, () => _open(_ganjoorPage(d))),
           ],
         ),
       ),
