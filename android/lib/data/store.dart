@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -273,6 +274,34 @@ class Proverbs {
 class DictionarySync {
   static const base = 'https://souren.aliasgharpanahizare.workers.dev';
   static bool _running = false;
+  static const _weeklyStateFile = 'dictionary_sync.json';
+  static const _weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  /// One conditional dictionary check per randomized weekly window.
+  /// Persist the next attempt before networking to prevent duplicate requests.
+  static Future<bool> syncWeekly(Dictionary current) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final state = await SharedFiles.readJson(_weeklyStateFile);
+    final nextAt = (state?['nextAt'] as num?)?.toInt();
+    final random = Random.secure();
+    if (nextAt == null) {
+      final firstDelay = random.nextInt(_weekMs);
+      await SharedFiles.writeJson(_weeklyStateFile, {
+        'nextAt': now + firstDelay,
+        'lastScheduledAt': now,
+      });
+      if (firstDelay > 0) return false;
+    } else if (now < nextAt) {
+      return false;
+    }
+
+    final nextDelay = _weekMs + random.nextInt(24 * 60 * 60 * 1000);
+    await SharedFiles.writeJson(_weeklyStateFile, {
+      'nextAt': now + nextDelay,
+      'lastScheduledAt': now,
+    });
+    return syncFromServer(current);
+  }
 
   static Future<bool> syncFromServer(Dictionary current) async {
     if (_running) return false;
