@@ -71,7 +71,7 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='21' versionName='0.4.6.9'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='22' versionName='0.4.7.0'"
           cp "$APK" Souren-v0.4.7.0.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
@@ -81,10 +81,10 @@ jobs:
         with:
           name: Souren-v0.4.7.0-APK
           path: android/Souren-v0.4.7.0.apk
-      - name: Publish Souren v0.4.6.9
+      - name: Publish Souren v0.4.7.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            gh release create v0.4.6.9 Souren-v0.4.6.9.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.6.9" --notes "Ganjoor on-demand offline pack; Ario optional launcher module with isolated data; bundled Abar FaNum font. Verified with dataset, pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.0 (22)."
+            gh release create v0.4.7.0 Souren-v0.4.7.0.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.0" --notes "Ario local notes workspace; app-side account/profile sync and learning uploads removed; home edge fades and capsule geometry unified; graphic profile share card. Verified with dataset, Ganjoor pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.0 (22)."
           fi
