@@ -1,24 +1,11 @@
-# Souren v0.4.1.1
+# Souren v0.4.7.0
 
-A focused maintenance release based on the v0.4.1 line.
+- Ario now opens a functional local workspace with its own notes, search, settings and Souren-inspired floating navigation.
+- The existing third settings toggle now controls Ario activation; no duplicate Ario switch remains.
+- Removed app account/profile synchronization and app learning-data uploads. Personal favorites, likes and keyboard learning remain local.
+- Removed the Worker endpoint that accepted app learning samples; website account services remain available.
+- Unified the home collection edge fades and refined capsule/corner geometry.
+- Rebuilt the profile share image as a graphic card with a visual identity, level and score.
+- Grouped settings into clearer sections.
 
-## UI and interaction
-- Softer capsule geometry and custom press/motion feedback.
-- Floating opaque navigation bar with stable tab positions and balanced indicator insets.
-- Reworked home layout, including Word of the Day, aligned word/action columns and reserved logo/ad spaces.
-- Scroll-edge fades appear after scrolling and use longer, softer transitions.
-- Unified word and proverb detail presentation; like/bookmark changes update in place.
-- Outline like/bookmark controls with consistent active/inactive states.
-- Text, image and combined sharing, with share/save/copy actions.
-- Refined profile badges, profile actions and Sections navigation.
-
-## Keyboard and data
-- Keyboard settings refresh when the IME input view is shown.
-- Invalid imported dictionary data falls back to the bundled dataset.
-
-## Versioning
-- Android versionName: 0.4.1.1
-- Android versionCode: 9
-- Flutter package version: 0.4.1+9 (SemVer-compatible; build metadata maps to Android versionCode).
-
-The GitHub release is published only after dataset validation, Flutter analysis, tests, production APK signing and APK version verification succeed.
+Verified by dataset integrity, Ganjoor pack tests, Flutter analysis, Dart/widget tests, Kotlin unit tests, signed APK verification and package/version checks.
