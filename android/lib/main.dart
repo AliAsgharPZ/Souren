@@ -247,8 +247,8 @@ class _ScrollFadeState extends State<ScrollFade> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black,
               Color.fromRGBO(0, 0, 0, 1 - top),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.55),
               Colors.black,
               Colors.black,
               Color.fromRGBO(0, 0, 0, 1 - bottom),
@@ -4380,6 +4380,7 @@ class _ShellState extends State<Shell> {
         _arioAction('ادامهٔ مسیر یادگیری', 'درس ${faNum(currentLesson + 1)} · ${faNum(words.skip(currentLesson * 12).take(12).length)} واژه', LucideIcons.gitBranch, () => _openArioLesson(d, currentLesson)),
         _arioAction('تمرین کوتاه', 'چهارگزینه‌ای از واژه‌های سورن', LucideIcons.target, () => setState(() => tab = 2)),
         _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 3)),
+        _arioAction('کتابخانهٔ گنجور', 'خواندن شعر و متن ادبی از پایگاه مشترک سورن', LucideIcons.book, () => _open(_ganjoorPage(d))),
       ],
     )));
   }
