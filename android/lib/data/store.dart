@@ -112,7 +112,6 @@ class Dictionary {
 class Settings {
   bool replaceArabic;
   bool autoCorrect;
-  bool shareLearning;
 
   /// Keyboard height: 'short' | 'normal' | 'tall'
   String kbHeight;
@@ -128,7 +127,6 @@ class Settings {
   Settings({
     this.replaceArabic = true,
     this.autoCorrect = true,
-    this.shareLearning = false,
     this.kbHeight = 'tall',
     this.theme = 'light',
     this.textSize = 'normal',
@@ -145,7 +143,6 @@ class Settings {
     return Settings(
       replaceArabic: j['replaceArabic'] != false,
       autoCorrect: j['autoCorrect'] != false,
-      shareLearning: j['shareLearning'] == true,
       kbHeight: (j['kbHeight'] as String?) ?? 'tall',
       theme: (j['theme'] as String?) ?? 'light',
       textSize: (j['textSize'] as String?) ?? 'normal',
@@ -156,7 +153,6 @@ class Settings {
   Future<void> save() => SharedFiles.writeJson('souren_settings.json', {
         'replaceArabic': replaceArabic,
         'autoCorrect': autoCorrect,
-        'shareLearning': shareLearning,
         'kbHeight': kbHeight,
         'theme': theme,
         'textSize': textSize,
@@ -246,223 +242,7 @@ class Proverbs {
   }
 }
 
-// ---------------- Auth + likes (Worker API) ----------------
-
-class AuthUser {
-  final String username;
-  final String displayName;
-  const AuthUser(this.username, this.displayName);
-}
-
-/// Talks to the Souren Worker (same backend as the website login).
-/// The session cookie is kept only in the app's private filesDir.
-class AuthService {
-  static const base = 'https://souren.aliasgharpanahizare.workers.dev';
-  static String? _cookie;
-  static AuthUser? user;
-
-  static Future<void> restore() async {
-    final j = await SharedFiles.readJson('auth.json');
-    if (j == null) return;
-    _cookie = j['cookie'] as String?;
-    final u = j['username'] as String?;
-    if (_cookie != null && u != null) {
-      user = AuthUser(u, (j['displayName'] as String?) ?? u);
-    }
-  }
-
-  static Future<void> _persist() async {
-    if (_cookie == null || user == null) {
-      final f = await SharedFiles.file('auth.json');
-      if (await f.exists()) await f.delete();
-      return;
-    }
-    await SharedFiles.writeJson('auth.json', {
-      'cookie': _cookie,
-      'username': user!.username,
-      'displayName': user!.displayName,
-    });
-  }
-
-  static Future<HttpClientResponse> _send(
-      String method, String path, Map<String, dynamic>? body) async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 10);
-    final req = await client
-        .openUrl(method, Uri.parse('$base$path'))
-        .timeout(const Duration(seconds: 15));
-    req.headers.contentType = ContentType.json;
-    if (_cookie != null) req.headers.add('Cookie', _cookie!);
-    if (body != null) req.write(jsonEncode(body));
-    final res = await req.close();
-    final setCookie = res.headers['set-cookie'];
-    if (setCookie != null) {
-      for (final sc in setCookie) {
-        final pair = sc.split(';').first.trim();
-        if (pair.startsWith('souren_session=')) {
-          final v = pair.substring('souren_session='.length);
-          _cookie = v.isEmpty ? null : 'souren_session=$v';
-        }
-      }
-    }
-    return res;
-  }
-
-  static Future<Map<String, dynamic>> _json(HttpClientResponse res) async {
-    final text = await res.transform(utf8.decoder).join();
-    try {
-      return jsonDecode(text) as Map<String, dynamic>;
-    } catch (_) {
-      return {'error': 'پاسخ سرور خوانا نیست'};
-    }
-  }
-
-  static AuthUser _userFrom(Map<String, dynamic> j) {
-    final u = j['user'] as Map<String, dynamic>;
-    return AuthUser(u['username'] as String,
-        (u['displayName'] as String?) ?? u['username'] as String);
-  }
-
-  /// Returns (user, null) on success or (null, errorMessage).
-  static Future<(AuthUser?, String?)> register(
-      String username, String password, String displayName) async {
-    try {
-      final res = await _send('POST', '/api/auth/register', {
-        'username': username,
-        'password': password,
-        'displayName': displayName,
-      });
-      final j = await _json(res);
-      if (res.statusCode >= 400) return (null, j['error']?.toString() ?? 'خطا رخ داد');
-      user = _userFrom(j);
-      // register does not start a session on the server; log in right away.
-      return await login(username, password);
-    } catch (_) {
-      return (null, 'ارتباط با سرور برقرار نشد');
-    }
-  }
-
-  static Future<(AuthUser?, String?)> login(
-      String username, String password) async {
-    try {
-      final res = await _send(
-          'POST', '/api/auth/login', {'username': username, 'password': password});
-      final j = await _json(res);
-      if (res.statusCode >= 400) return (null, j['error']?.toString() ?? 'خطا رخ داد');
-      user = _userFrom(j);
-      await _persist();
-      return (user, null);
-    } catch (_) {
-      return (null, 'ارتباط با سرور برقرار نشد');
-    }
-  }
-
-  static Future<void> logout() async {
-    try {
-      await _send('POST', '/api/auth/logout', null);
-    } catch (_) {}
-    _cookie = null;
-    user = null;
-    await _persist();
-  }
-
-  /// Fetches the server profile: (favorites, likes) or null when offline.
-  static Future<(Set<String>, Set<String>)?> fetchProfile() async {
-    if (_cookie == null) return null;
-    try {
-      final res = await _send('GET', '/api/auth/me', null);
-      if (res.statusCode >= 400) return null;
-      final j = await _json(res);
-      final u = j['user'] as Map<String, dynamic>;
-      user = AuthUser(u['username'] as String,
-          (u['displayName'] as String?) ?? u['username'] as String);
-      await _persist();
-      Set<String> pick(String k) =>
-          ((u[k] as List?) ?? const []).map((e) => e.toString()).toSet();
-      return (pick('favorites'), pick('likes'));
-    } catch (_) {
-      return null;
-    }
-  }
-
-  static Future<void> pushProfile(Set<String> favorites, Set<String> likes) async {
-    if (_cookie == null) return;
-    try {
-      await _send('PUT', '/api/auth/profile',
-          {'favorites': favorites.toList(), 'likes': likes.toList()});
-    } catch (_) {}
-  }
-
-
-}
-
-// ---------------- Dictionary auto-update (Worker) ----------------
-
-/// Keeps the on-device dictionary in sync with the Worker dataset.
-/// Online: fetch /api/dictionary, transform the server shape
-/// ({dictionary: [{arabic, meanings}]}) into the app shape
-/// ({version, entries: [{ar, fa}]}) and, when the content differs,
-/// store it as dataset_updated.json (the archive Dictionary.load and
-/// the keyboard both prefer). Offline: nothing changes — the last
-/// downloaded archive (or the bundled dataset) keeps working.
-class DictionarySync {
-  static bool _running = false;
-
-  /// Returns true when a newer dataset was downloaded and stored.
-  static Future<bool> syncFromServer(Dictionary current) async {
-    if (_running) return false;
-    _running = true;
-    try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 10);
-      final req = await client
-          .getUrl(Uri.parse('${AuthService.base}/api/dictionary'))
-          .timeout(const Duration(seconds: 15));
-      final res = await req.close().timeout(const Duration(seconds: 20));
-      if (res.statusCode != 200) return false;
-      final text = await res.transform(utf8.decoder).join();
-      final j = jsonDecode(text) as Map<String, dynamic>;
-      final list = (j['dictionary'] as List?) ?? const [];
-      final entries = <Map<String, dynamic>>[
-        for (final e in list)
-          if (e is Map && e['arabic'] != null)
-            {
-              'ar': e['arabic'].toString(),
-              'fa': ((e['meanings'] as List?) ?? const [])
-                  .map((x) => x.toString())
-                  .toList(),
-            },
-      ];
-      if (entries.isEmpty) return false;
-      if (_sameAs(entries, current)) return false;
-      await SharedFiles.writeJson('dataset_updated.json', {
-        'version': current.version + 1,
-        'entries': entries,
-      });
-      return true;
-    } catch (_) {
-      return false; // offline: keep the archive on the device
-    } finally {
-      _running = false;
-    }
-  }
-
-  static bool _sameAs(List<Map<String, dynamic>> entries, Dictionary d) {
-    if (entries.length != d.entries.length) return false;
-    for (var i = 0; i < entries.length; i++) {
-      final a = entries[i];
-      final b = d.entries[i];
-      if (a['ar'] != b.ar) return false;
-      final fa = (a['fa'] as List).map((x) => x.toString()).toList();
-      if (fa.length != b.fa.length) return false;
-      for (var k = 0; k < fa.length; k++) {
-        if (fa[k] != b.fa[k]) return false;
-      }
-    }
-    return true;
-  }
-}
-
+// The bundled dictionary and optional user-imported file are local-only.
 // ---------------- Profile score & badges (pure logic) ----------------
 
 int profileScore({
