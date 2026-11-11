@@ -124,7 +124,11 @@ class Dictionary {
         final candidate = _parse(updated, true);
         // A previously imported v1/v2 dataset must not hide the newer
         // canonical 552-word v3 bundle after the app is upgraded.
-        if (candidate.version >= bundled.version) return candidate;
+        if (candidate.version > bundled.version ||
+            (candidate.version == bundled.version &&
+                candidate.entries.length >= bundled.entries.length)) {
+          return candidate;
+        }
       } catch (_) {}
     }
     return bundled;
