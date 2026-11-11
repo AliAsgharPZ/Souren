@@ -76,7 +76,7 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='22' versionName='0.4.7.0'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='23' versionName='0.4.7.1'"
           cp "$APK" Souren-v0.4.7.1.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
@@ -86,17 +86,17 @@ jobs:
         with:
           name: Souren-v0.4.7.1-APK
           path: android/Souren-v0.4.7.1.apk
-      - name: Publish or refresh Souren v0.4.7.0
+      - name: Publish or refresh Souren v0.4.7.1
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            NOTES="Ario rebuilt as an educational companion using Souren’s canonical 552-entry shared dictionary and Ganjoor data, Abar font and the exact Souren navigation shell; staged 12-word lessons, flashcards, multiple-choice practice, review and progress; Ganjoor offline pack download/remove controls added to settings; app profile and learning data remain local; restored the v0.4.6.9 switch geometry and refined strong scroll fades while preserving first/last rows. Verified with dataset, Ganjoor pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.0 (22)."
-            if gh release view v0.4.7.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              gh release upload v0.4.7.0 Souren-v0.4.7.0.apk --repo "$GITHUB_REPOSITORY" --clobber
-              gh release edit v0.4.7.0 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.0" --notes "$NOTES"
+            NOTES="Ario rebuilt as an educational companion using Souren’s canonical 552-entry shared dictionary and Ganjoor data, Abar font and the exact Souren navigation shell; staged 12-word lessons, flashcards, multiple-choice practice, review and progress; Ganjoor offline pack download/remove controls added to settings; app profile and learning data remain local; restored the v0.4.6.9 switch geometry and refined strong scroll fades while preserving first/last rows. Verified with dataset, Ganjoor pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.1 (23)."
+            if gh release view v0.4.7.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload v0.4.7.1 Souren-v0.4.7.1.apk --repo "$GITHUB_REPOSITORY" --clobber
+              gh release edit v0.4.7.1 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.1" --notes "$NOTES"
             else
-              gh release create v0.4.7.0 Souren-v0.4.7.0.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.0" --notes "$NOTES"
+              gh release create v0.4.7.1 Souren-v0.4.7.1.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.1" --notes "$NOTES"
             fi
           fi
