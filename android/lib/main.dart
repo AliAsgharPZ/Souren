@@ -2658,10 +2658,7 @@ class _ShellState extends State<Shell> {
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
         itemCount: items.length,
         separatorBuilder: (_, __) => Divider(height: 1, color: pal.div),
-        itemBuilder: (_, i) => Enter(
-          index: i,
-          child: _pairRow(items[i], singleLine: singleLine),
-        ),
+        itemBuilder: (_, i) => _pairRow(items[i], singleLine: singleLine),
       ),
     );
   }
