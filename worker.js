@@ -195,6 +195,8 @@ async function handleRequestOtp(request, env) {
         username: purpose === 'link' ? session.rec.username : null,
         createdAt: Date.now(),
     }), { expirationTtl: 600 });
+    // A freshly issued code starts a new five-attempt verification window.
+    await env.USERS.delete(`otp:attempt:${purpose}:${email}`);
 
     const subject = purpose === 'login'
         ? 'کد ورود به سورن'
