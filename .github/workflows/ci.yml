@@ -76,7 +76,7 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='23' versionName='0.4.7.1'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='24' versionName='0.4.7.1'"
           cp "$APK" Souren-v0.4.7.1.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
