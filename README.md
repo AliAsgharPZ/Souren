@@ -13,16 +13,16 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 - **Poetry library:** browse poets and books and search Ganjoor poems by title, poet, or words within the poem. A downloadable, chunked Zstandard pack enables on-device reading without extracting the full corpus; online access remains the fallback.
 - **Pandevazhe:** a separate collection of Persian proverbs with their meanings.
 - **Categories:** explore dictionary entries through subject-based categories.
-- **Favorites and likes:** save entries and like them; signed-in users can synchronize their profile data.
+- **Favorites and likes:** save entries and like them locally on the device; the Android app does not upload this data.
 - **Sharing and export cards:** share or save word and proverb details as formatted text or images.
-- **User profile:** sign in or register, view profile information, score, level, and earned badges.
-- **Learning:** keyboard corrections and choices are learned locally on the device. An optional, disabled-by-default improvement setting can send limited anonymous correction context; it does not send full text or clipboard contents.
+- **User profile:** view local progress, score, level, and earned badges; no app account or profile synchronization.
+- **Learning:** keyboard corrections and choices are learned locally on the device. Personal data and learning samples are not uploaded from the Android app.
 - **Database management:** refresh the dictionary online, continue using the bundled/offline copy, and import or export JSON/CSV data.
 - **Appearance:** cream/light and dark themes, adjustable text size, and RTL/LTR layout direction. The app uses Abar FaNum as its bundled interface font.
 
-## Ario module
+## Ario educational app
 
-Ario is kept in the same repository as a separate Android library module under `android/android/ario/`. Its launcher icon can be enabled or disabled from Souren settings; disabling it hides only the Ario icon and preserves its data. Ario has a separate Activity, preferences, database name and private storage directory, but it shares the installed Android package with Souren and cannot be uninstalled independently.
+Ario is an educational companion installed in the same APK as Souren. Its launcher icon can be enabled or disabled from Souren settings. The launcher opens the shared Flutter shell, so Ario uses the exact Souren navigation bar, Abar font, theme, colors, capsules, and motion. Its learning path, 12-word lessons, flashcards, multiple-choice practice, review list, and progress view use Souren's existing dictionary data and shared Ganjoor pack; Ario does not maintain a duplicate word database or a separate notes store. Learning progress is stored locally in the app's shared private files. Ario is not independently uninstallable from the Souren APK.
 
 ## Website
 
