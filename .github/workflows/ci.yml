@@ -94,7 +94,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
             NOTES="Ario local notes workspace; app-side account/profile sync and learning uploads removed; home edge fades and capsule geometry unified; graphic profile share card. Verified with dataset, Ganjoor pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.0 (22)."
             if gh release view v0.4.7.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              git tag -f v0.4.7.0 "$GITHUB_SHA"
+              git tag -f v0.4.7.0 7d59ae55a55d2a0e09543abb0ec0ba04cd8ad7cf
               git push --force origin refs/tags/v0.4.7.0
               gh release upload v0.4.7.0 Souren-v0.4.7.0.apk --repo "$GITHUB_REPOSITORY" --clobber
               gh release edit v0.4.7.0 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.0" --notes "$NOTES"
