@@ -4354,7 +4354,13 @@ class _ShellState extends State<Shell> {
     final lessonCount = (words.length + 11) ~/ 12;
     final completed = arioCompletedLessons.length;
     final progress = lessonCount == 0 ? 0.0 : (completed / lessonCount).clamp(0.0, 1.0).toDouble();
-    final currentLesson = arioLastLesson.clamp(0, lessonCount == 0 ? 0 : lessonCount - 1).toInt();
+    var currentLesson = arioLastLesson.clamp(0, lessonCount == 0 ? 0 : lessonCount - 1).toInt();
+    if (lessonCount > 0 && arioCompletedLessons.contains(currentLesson)) {
+      currentLesson = List<int>.generate(lessonCount, (i) => i).firstWhere(
+        (i) => !arioCompletedLessons.contains(i),
+        orElse: () => lessonCount - 1,
+      );
+    }
     final daily = words.isEmpty ? null : words[(DateTime.now().year * 372 + DateTime.now().month * 31 + DateTime.now().day) % words.length];
     return _arioPageShell('آریو', edgeFade(child: ListView(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 28 + kNavClearance),
