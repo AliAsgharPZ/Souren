@@ -1366,7 +1366,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
         ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: (index + (revealed ? 1 : 0)) / widget.words.length, minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
         const Spacer(),
         AnimatedSwitcher(duration: Motion.base, switchInCurve: Motion.curve, child: Container(
-          key: ValueKey('${index}_${revealed}'),
+          key: ValueKey('${index}_$revealed'),
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
           decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))),
