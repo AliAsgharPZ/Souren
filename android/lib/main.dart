@@ -2957,6 +2957,7 @@ class _ShellState extends State<Shell> {
         e.hasFa
             ? 'برابر فارسی: ${e.fa.join('، ')}'
             : 'برای این واژه هنوز برابر فارسی ثبت نشده است.',
+        if (e.concept.isNotEmpty) 'شرح: ${e.concept}',
       ],
       caption: catId == null ? null : 'دسته: ${catMeta[catId]?.$2 ?? catId}',
     );
