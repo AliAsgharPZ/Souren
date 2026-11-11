@@ -20,6 +20,7 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
     private var pendingPick: MethodChannel.Result? = null
+    private var arioChannel: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -104,12 +105,17 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/ario")
-            .setMethodCallHandler { call, result ->
+        arioChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/ario")
+        arioChannel?.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "open" -> {
                         startActivity(Intent(this, ArioActivity::class.java))
                         result.success(true)
+                    }
+                    "consumeArioLaunch" -> {
+                        val open = intent?.getBooleanExtra("souren_open_ario", false) == true
+                        intent?.removeExtra("souren_open_ario")
+                        result.success(open)
                     }
                     "launcherEnabled" -> {
                         result.success(isArioLauncherEnabled())
@@ -131,6 +137,15 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra("souren_open_ario", false)) {
+            intent.removeExtra("souren_open_ario")
+            arioChannel?.invokeMethod("openArio", null)
+        }
     }
 
     private fun isArioLauncherEnabled(): Boolean {
