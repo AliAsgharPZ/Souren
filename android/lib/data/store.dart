@@ -428,16 +428,6 @@ class AccountApi {
         'purpose': purpose,
       });
 
-  static Future<Map<String, dynamic>> updateProfile({
-    required String displayName,
-    required List<String> favorites,
-    required List<String> likes,
-  }) => _request('/api/auth/profile', method: 'PUT', body: {
-        'displayName': displayName,
-        'favorites': favorites,
-        'likes': likes,
-      });
-
   static Future<void> logout() async {
     try {
       await _request('/api/auth/logout', method: 'POST');
