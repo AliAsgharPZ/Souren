@@ -4041,7 +4041,7 @@ class _ShellState extends State<Shell> {
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text((accountUser?['displayName'] ?? 'نمایهٔ محلی').toString(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
                 const SizedBox(height: 4),
-                Text(accountUser == null ? 'برای اتصال حساب مشترک وب‌سایت، سورن و آریو با ایمیل وارد شوید.' : (accountUser?['email']?.toString() ?? 'حساب وارد شده') + ' · حساب مشترک سورن و آریو', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
+                Text(accountUser == null ? 'برای اتصال حساب مشترک وب‌سایت، سورن و آریو با ایمیل وارد شوید.' : '${accountUser?["email"]?.toString() ?? "حساب وارد شده"} · حساب مشترک سورن و آریو', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
               ])),
             ]),
             const SizedBox(height: 16),
