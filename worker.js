@@ -345,7 +345,7 @@ async function getSessionUser(request, env) {
 }
 
 function sessionCookie(token, maxAge) {
-    return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAge}`;
+    return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${maxAge}`;
 }
 
 async function handleRegister(request, env) {
