@@ -1681,6 +1681,8 @@ class _ShellState extends State<Shell> {
   final _searchCtl = TextEditingController();
   final _searchFocus = FocusNode();
   bool _searchFocused = false;
+  Map<String, dynamic>? accountUser;
+  bool accountBusy = false;
 
   bool arioEnabled = false;
   bool dbSyncing = false;
@@ -1773,6 +1775,7 @@ class _ShellState extends State<Shell> {
       }
     });
     _syncDictionary(d);
+    _restoreAccount();
   }
 
   bool _dictSyncDone = false;
@@ -1786,13 +1789,176 @@ class _ShellState extends State<Shell> {
     }
   }
 
+  Future<void> _restoreAccount() async {
+    try {
+      final user = await AccountApi.me();
+      if (user == null || !mounted) return;
+      await _applyAccountUser(user);
+    } catch (_) {
+      // Offline use remains available; the saved account session is retried
+      // the next time the app starts or the profile is opened.
+    }
+  }
+
+  Future<void> _applyAccountUser(Map<String, dynamic> user) async {
+    final owner = await SharedFiles.readJson('account_owner.json');
+    final previousUsername = owner?['username'] as String?;
+    final username = user['username']?.toString() ?? '';
+    final serverFavorites = ((user['favorites'] as List?) ?? const [])
+        .map((e) => e.toString()).toSet();
+    final serverLikes = ((user['likes'] as List?) ?? const [])
+        .map((e) => e.toString()).toSet();
+    final sameAccount = previousUsername == username;
+    final nextFavorites = sameAccount || previousUsername == null
+        ? {...serverFavorites, ...favorites}
+        : serverFavorites;
+    final nextLikes = sameAccount || previousUsername == null
+        ? {...serverLikes, ...liked}
+        : serverLikes;
+    final differs = nextFavorites.length != serverFavorites.length ||
+        nextFavorites.any((e) => !serverFavorites.contains(e)) ||
+        nextLikes.length != serverLikes.length ||
+        nextLikes.any((e) => !serverLikes.contains(e));
+    if (!mounted) return;
+    setState(() {
+      accountUser = Map<String, dynamic>.from(user);
+      favorites = nextFavorites;
+      liked = nextLikes;
+    });
+    await SharedFiles.writeJson('account_owner.json', {'username': username});
+    await SharedFiles.writeJson('favorites.json', {'words': favorites.toList()});
+    await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
+    if (differs) await _syncAccountProfile();
+  }
+
+  Future<void> _syncAccountProfile() async {
+    final user = accountUser;
+    if (user == null || accountBusy) return;
+    accountBusy = true;
+    try {
+      final result = await AccountApi.updateProfile(
+        displayName: (user['displayName'] ?? user['username'] ?? '').toString(),
+        favorites: favorites.toList(),
+        likes: liked.toList(),
+      );
+      if (result['status'] == 200 && result['user'] is Map && mounted) {
+        setState(() => accountUser = Map<String, dynamic>.from(result['user'] as Map));
+      }
+    } catch (_) {
+      // Keep local changes; the next explicit account sync can retry.
+    } finally {
+      accountBusy = false;
+    }
+  }
+
+  Future<void> _showAccountDialog() async {
+    final email = TextEditingController(text: accountUser?['email']?.toString() ?? '');
+    final code = TextEditingController();
+    var sent = false;
+    var busy = false;
+    var message = '';
+    var success = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: pal.cardC,
+          title: Text('ورود به حساب سورن', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('با کد یک‌بارمصرف ایمیل وارد شو؛ همین حساب در وب‌سایت، سورن و آریو مشترک است.',
+                  style: TextStyle(color: pal.muted, height: 1.7, fontSize: 13)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'ایمیل حساب'),
+              ),
+              if (sent) ...[
+                const SizedBox(height: 10),
+                TextField(
+                  controller: code,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  decoration: const InputDecoration(labelText: 'کد شش‌رقمی ایمیل'),
+                ),
+              ],
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(message, style: TextStyle(color: success ? pal.sel : pal.accent, fontSize: 12.5)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: busy ? null : () => Navigator.pop(dialogContext), child: const Text('بستن')),
+            if (!sent)
+              FilledButton(
+                onPressed: busy ? null : () async {
+                  setDialogState(() { busy = true; message = ''; });
+                  try {
+                    final result = await AccountApi.requestOtp(email.text);
+                    setDialogState(() {
+                      busy = false;
+                      sent = result['status'] == 200 && result['success'] == true;
+                      success = sent;
+                      message = sent ? 'کد ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کن.' : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
+                    });
+                  } catch (_) {
+                    setDialogState(() { busy = false; message = 'ارتباط با سرویس ایمیل برقرار نشد.'; });
+                  }
+                },
+                child: Text(busy ? 'در حال ارسال…' : 'ارسال کد'),
+              )
+            else
+              FilledButton(
+                onPressed: busy ? null : () async {
+                  setDialogState(() { busy = true; message = ''; });
+                  try {
+                    final result = await AccountApi.verifyOtp(email.text, code.text);
+                    if (result['status'] == 200 && result['user'] is Map) {
+                      await _applyAccountUser(Map<String, dynamic>.from(result['user'] as Map));
+                      if (dialogContext.mounted) Navigator.pop(dialogContext);
+                    } else {
+                      setDialogState(() {
+                        busy = false;
+                        message = result['error']?.toString() ?? 'کد تأیید معتبر نیست.';
+                      });
+                    }
+                  } catch (_) {
+                    setDialogState(() { busy = false; message = 'خطا در تأیید کد.'; });
+                  }
+                },
+                child: Text(busy ? 'در حال بررسی…' : 'تأیید و ورود'),
+              ),
+          ],
+        ),
+      ),
+    );
+    email.dispose();
+    code.dispose();
+  }
+
+  Future<void> _logoutAccount() async {
+    try { await AccountApi.logout(); } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      accountUser = null;
+      favorites.clear();
+      liked.clear();
+    });
+    await SharedFiles.writeJson('favorites.json', {'words': <String>[]});
+    await SharedFiles.writeJson('liked.json', {'words': <String>[]});
+    final owner = await SharedFiles.file('account_owner.json');
+    if (await owner.exists()) await owner.delete();
+  }
+
   Future<void> _toggleFav(String word) async {
     setState(() {
       favorites.contains(word) ? favorites.remove(word) : favorites.add(word);
     });
-    await SharedFiles.writeJson('favorites.json', {
-      'words': favorites.toList(),
-    });
+    await SharedFiles.writeJson('favorites.json', {'words': favorites.toList()});
+    await _syncAccountProfile();
   }
 
   Future<void> _toggleLike(String word) async {
@@ -1800,6 +1966,7 @@ class _ShellState extends State<Shell> {
       liked.contains(word) ? liked.remove(word) : liked.add(word);
     });
     await SharedFiles.writeJson('liked.json', {'words': liked.toList()});
+    await _syncAccountProfile();
   }
 
   void _go(int i) => setState(() => tab = i);
@@ -3812,7 +3979,7 @@ class _ShellState extends State<Shell> {
         'واژه‌های آموخته‌شده: ${faNum(learnedWords)}',
         'اصلاح‌های پذیرفته‌شده: ${faNum(learnedCorrections)}',
       ],
-      caption: 'نمایهٔ شخصی سورن · ذخیره‌شده فقط روی دستگاه',
+      caption: accountUser == null ? 'نمایهٔ شخصی سورن · داده‌های حساب در این دستگاه' : 'نمایهٔ حساب سورن · همگام با وب‌سایت',
       isProfile: true,
       profileScore: score,
       profileLevel: currentLevel.$2,
@@ -3828,12 +3995,31 @@ class _ShellState extends State<Shell> {
               CircleAvatar(radius: 33, backgroundColor: pal.sel, child: Icon(LucideIcons.user, color: pal.bg, size: 32)),
               const SizedBox(width: 16),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('نمایهٔ محلی', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
+                Text((accountUser?['displayName'] ?? 'نمایهٔ محلی').toString(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: pal.ink)),
                 const SizedBox(height: 4),
-                Text('اطلاعات و پیشرفت شما فقط روی همین دستگاه نگهداری می‌شود.', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
+                Text(accountUser == null ? 'برای اتصال حساب مشترک وب‌سایت، سورن و آریو با ایمیل وارد شوید.' : (accountUser?['email']?.toString() ?? 'حساب وارد شده') + ' · حساب مشترک سورن و آریو', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
               ])),
             ]),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(17),
+              decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(44))),
+              child: Row(children: [
+                Container(width: 42, height: 42, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(40))), child: Icon(accountUser == null ? LucideIcons.userRound : LucideIcons.userCheck, color: pal.ink, size: 20)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(accountUser == null ? 'حساب مشترک سورن' : 'حساب متصل است', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 3),
+                  Text(accountUser == null ? 'ورود با کد یک‌بارمصرف ایمیل' : (accountUser?['email']?.toString() ?? accountUser?['username']?.toString() ?? ''), style: TextStyle(color: pal.muted, fontSize: 12)),
+                ])),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: accountBusy ? null : (accountUser == null ? _showAccountDialog : _logoutAccount),
+                  child: Text(accountUser == null ? 'ورود' : 'خروج'),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))),
