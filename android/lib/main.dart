@@ -1989,9 +1989,9 @@ class _ShellState extends State<Shell> {
 
   // ---------- پیشگاه ----------
   Widget _home(Dictionary d) {
-    final frequent = d.entries.where((e) => e.hasFa).toList();
+    final allWords = d.entries.where((e) => e.hasFa).toList();
     final results = query.isEmpty
-        ? frequent
+        ? allWords
         : d.entries
             .where(
               (e) =>
