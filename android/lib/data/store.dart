@@ -279,8 +279,7 @@ int? nextLevelAt(int score) {
 
 /// Badge ids in display order; earned-ness is computed by [badgeEarned].
 const badgeIds = <String>[
-  'member',
-  'firstBookmark',
+    'firstBookmark',
   'liker',
   'keyboardStudent',
   'hundred',
@@ -297,7 +296,7 @@ bool badgeEarned(
 }) {
   switch (id) {
     case 'member':
-      return loggedIn;
+      return true;
     case 'firstBookmark':
       return favorites >= 1;
     case 'liker':
