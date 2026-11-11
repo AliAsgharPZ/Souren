@@ -1587,6 +1587,7 @@ class _ShellState extends State<Shell> {
   bool _searchFocused = false;
 
   bool arioEnabled = false;
+  bool dbSyncing = false;
 
   @override
   void initState() {
@@ -1646,8 +1647,19 @@ class _ShellState extends State<Shell> {
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
       }
     });
+    _syncDictionary(d);
   }
 
+  bool _dictSyncDone = false;
+  Future<void> _syncDictionary(Dictionary current) async {
+    if (_dictSyncDone) return;
+    _dictSyncDone = true;
+    final updated = await DictionarySync.syncFromServer(current);
+    if (updated && mounted) {
+      final refreshed = await Dictionary.load();
+      setState(() => dict = refreshed);
+    }
+  }
 
   Future<void> _toggleFav(String word) async {
     setState(() {
@@ -4029,6 +4041,17 @@ class _ShellState extends State<Shell> {
               onTap: () => _importDb(),
             ),
             ListTile(
+              leading: const Icon(LucideIcons.download),
+              title: const Text('به‌روزرسانی آنلاین پایگاه واژه‌ها'),
+              subtitle: Text(
+                'نسخهٔ کنونی: ${faNum(d.version)} — دریافت نسخهٔ تازه؛ هیچ دادهٔ شخصی ارسال نمی‌شود',
+              ),
+              trailing: dbSyncing
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : null,
+              onTap: dbSyncing ? null : () => _syncDbNow(d),
+            ),
+            ListTile(
               leading: const Icon(LucideIcons.share2),
               title: const Text('خروجی از پایگاه واژه‌ها'),
               subtitle: const Text(
@@ -4048,6 +4071,21 @@ class _ShellState extends State<Shell> {
         ),
       ),
     );
+  }
+
+  Future<void> _syncDbNow(Dictionary current) async {
+    setState(() => dbSyncing = true);
+    final updated = await DictionarySync.syncFromServer(current);
+    if (updated) {
+      final refreshed = await Dictionary.load();
+      if (mounted) setState(() => dict = refreshed);
+    }
+    if (mounted) {
+      setState(() => dbSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(updated ? 'پایگاه واژه‌ها به‌روز شد' : 'پایگاه به‌روز است یا دریافت آن ممکن نشد')),
+      );
+    }
   }
 
   Future<void> _importDb() async {
