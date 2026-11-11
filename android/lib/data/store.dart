@@ -116,14 +116,18 @@ class Dictionary {
 
   /// Updated dataset in filesDir wins over the bundled asset.
   static Future<Dictionary> load() async {
+    final raw = await rootBundle.loadString('assets/db/dataset.json');
+    final bundled = _parse(jsonDecode(raw) as Map<String, dynamic>, false);
     final updated = await SharedFiles.readJson('dataset_updated.json');
     if (updated != null) {
       try {
-        return _parse(updated, true);
+        final candidate = _parse(updated, true);
+        // A previously imported v1/v2 dataset must not hide the newer
+        // canonical 552-word v3 bundle after the app is upgraded.
+        if (candidate.version >= bundled.version) return candidate;
       } catch (_) {}
     }
-    final raw = await rootBundle.loadString('assets/db/dataset.json');
-    return _parse(jsonDecode(raw) as Map<String, dynamic>, false);
+    return bundled;
   }
 }
 
