@@ -296,7 +296,7 @@ bool badgeEarned(
 }) {
   switch (id) {
     case 'member':
-      return true;
+      return loggedIn;
     case 'firstBookmark':
       return favorites >= 1;
     case 'liker':
