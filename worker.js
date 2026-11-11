@@ -298,49 +298,6 @@ async function handleLike(request, env) {
     return json(request, { key, liked, likes: s.rec.likes });
 }
 
-// ---------- Opt-in anonymous correction learning ----------
-async function handleLearning(request, env) {
-    const declaredLength = Number(request.headers.get('Content-Length') || 0);
-    if (declaredLength > 32 * 1024) {
-        return json(request, { error: 'payload_too_large' }, 413);
-    }
-    let body;
-    try { body = await request.json(); }
-    catch { return json(request, { error: 'bad_json' }, 400); }
-
-    const samples = Array.isArray(body.samples) ? body.samples.slice(0, 20) : [];
-    if (samples.length === 0) return json(request, { accepted: 0 });
-
-    let accepted = 0;
-    for (const sample of samples) {
-        const clean = (value, max) => typeof value === 'string'
-            ? value.trim().replace(/[\r\n\t]/g, ' ').slice(0, max)
-            : '';
-        const from = clean(sample.from, 48);
-        const to = clean(sample.to, 64);
-        const left = clean(sample.left, 48);
-        const right = clean(sample.right, 48);
-        if (!from || !to || from === to || / {2,}/.test(from) || / {2,}/.test(to)) continue;
-
-        // Store only adjacent tokens and the user's selected equivalent.
-        // No full sentence, account identifier, clipboard or IP address is kept.
-        const canonical = [from, left, right, to].join('|');
-        const digest = await crypto.subtle.digest(
-            'SHA-256', new TextEncoder().encode(canonical));
-        const hash = [...new Uint8Array(digest)]
-            .map((b) => b.toString(16).padStart(2, '0')).join('');
-        const key = `learning:v1:${hash}`;
-        const previous = await env.USERS.get(key, 'json') || {
-            from, left, right, to, count: 0,
-        };
-        previous.count = Math.min((Number(previous.count) || 0) + 1, 1000000);
-        previous.updatedAt = Date.now();
-        await env.USERS.put(key, JSON.stringify(previous));
-        accepted++;
-    }
-    return json(request, { accepted });
-}
-
 async function handleLearningModel(request, env) {
     const cacheKey = new Request(new URL('/api/learning/model', request.url).toString());
     const cached = await caches.default.match(cacheKey);
@@ -397,8 +354,6 @@ export default {
                 ? handleProfile(request, env) : methodNotAllowed();
             case '/api/likes': return request.method === 'POST'
                 ? handleLike(request, env) : methodNotAllowed();
-            case '/api/learning': return request.method === 'POST'
-                ? handleLearning(request, env) : methodNotAllowed();
             case '/api/learning/model': return request.method === 'GET'
                 ? handleLearningModel(request, env) : methodNotAllowed();
             case '/api/health': return request.method === 'GET'
