@@ -45,7 +45,7 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.7+23' pubspec.yaml
+          grep -F 'version: 0.4.7+24' pubspec.yaml
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -70,7 +70,7 @@ jobs:
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --build-name=0.4.7.1 --build-number=23
+          flutter build apk --release --build-name=0.4.7.1 --build-number=24
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
@@ -92,7 +92,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            NOTES="Ario rebuilt as an educational companion using Souren’s canonical 552-entry shared dictionary and Ganjoor data, Abar font and the exact Souren navigation shell; staged 12-word lessons, flashcards, multiple-choice practice, review and progress; Ganjoor offline pack download/remove controls added to settings; app profile and learning data remain local; restored the v0.4.6.9 switch geometry and refined strong scroll fades while preserving first/last rows. Verified with dataset, Ganjoor pack-builder, Flutter, Dart/widget and Kotlin tests; signed APK package ir.souren.souren version 0.4.7.1 (23)."
+            NOTES="Ario learning home redesigned as a winding, Duolingo-style lesson path with stateful lesson nodes and dedicated iconography; supplied Souren and Ario launcher artwork applied; randomized weekly dictionary refresh prevents unnecessary Worker requests; bottom content fade now extends behind the navigation bar; shared Cloudflare account session added to Android and Ario; website registration and email OTP login/profile verification added through the Worker (Resend provider). Canonical 552-entry dataset, Ganjoor offline pack, Abar font and restored v0.4.6.9 switch geometry retained. Signed APK package ir.souren.souren version 0.4.7.1 (24)."
             if gh release view v0.4.7.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               gh release upload v0.4.7.1 Souren-v0.4.7.1.apk --repo "$GITHUB_REPOSITORY" --clobber
               gh release edit v0.4.7.1 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.1" --notes "$NOTES"
