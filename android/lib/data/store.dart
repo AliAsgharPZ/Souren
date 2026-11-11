@@ -354,6 +354,97 @@ class DictionarySync {
   }
 }
 
+/// Shared account session for Souren and Ario. The same Worker account
+/// is used by the website; only the opaque HttpOnly session cookie is stored
+/// locally on this Android installation.
+class AccountApi {
+  static const base = 'https://souren.aliasgharpanahizare.workers.dev';
+  static String? _cookie;
+  static bool _loaded = false;
+
+  static Future<void> _loadCookie() async {
+    if (_loaded) return;
+    _loaded = true;
+    final saved = await SharedFiles.readJson('account_session.json');
+    _cookie = saved?['cookie'] as String?;
+  }
+
+  static Future<Map<String, dynamic>> _request(
+    String path, {
+    String method = 'GET',
+    Map<String, dynamic>? body,
+  }) async {
+    await _loadCookie();
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
+    try {
+      final request = await client.openUrl(method, Uri.parse('$base$path'))
+          .timeout(const Duration(seconds: 15));
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      if (body != null) {
+        request.headers.contentType = ContentType.json;
+        request.write(jsonEncode(body));
+      }
+      if (_cookie != null && _cookie!.isNotEmpty) {
+        request.headers.set(HttpHeaders.cookieHeader, _cookie!);
+      }
+      final response = await request.close().timeout(const Duration(seconds: 20));
+      final setCookies = response.headers[HttpHeaders.setCookieHeader] ?? const [];
+      if (setCookies.isNotEmpty) {
+        final first = setCookies.first;
+        if (first.contains('Max-Age=0')) {
+          _cookie = null;
+          await SharedFiles.writeJson('account_session.json', {'cookie': null});
+        } else {
+          _cookie = first.split(';').first.trim();
+          await SharedFiles.writeJson('account_session.json', {'cookie': _cookie});
+        }
+      }
+      final text = await response.transform(utf8.decoder).join();
+      final decoded = text.isEmpty ? <String, dynamic>{}
+          : (jsonDecode(text) as Map<String, dynamic>);
+      return {'status': response.statusCode, ...decoded};
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  static Future<Map<String, dynamic>?> me() async {
+    final result = await _request('/api/auth/me');
+    return result['status'] == 200 && result['user'] is Map
+        ? Map<String, dynamic>.from(result['user'] as Map)
+        : null;
+  }
+
+  static Future<Map<String, dynamic>> requestOtp(String email, {String purpose = 'login'}) =>
+      _request('/api/auth/request-otp', method: 'POST', body: {
+        'email': email.trim().toLowerCase(),
+        'purpose': purpose,
+      });
+
+  static Future<Map<String, dynamic>> verifyOtp(String email, String code, {String purpose = 'login'}) =>
+      _request('/api/auth/verify-otp', method: 'POST', body: {
+        'email': email.trim().toLowerCase(),
+        'code': code.trim(),
+        'purpose': purpose,
+      });
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String displayName,
+    required List<String> favorites,
+    required List<String> likes,
+  }) => _request('/api/auth/profile', method: 'PUT', body: {
+        'displayName': displayName,
+        'favorites': favorites,
+        'likes': likes,
+      });
+
+  static Future<void> logout() async {
+    await _request('/api/auth/logout', method: 'POST');
+    _cookie = null;
+    await SharedFiles.writeJson('account_session.json', {'cookie': null});
+  }
+}
+
 // ---------------- Profile score & badges (pure logic) ----------------
 
 int profileScore({
