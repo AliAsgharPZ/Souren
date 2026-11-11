@@ -3864,6 +3864,11 @@ class _ShellState extends State<Shell> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 22 + kNavClearance),
           children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text('قابلیت‌ها', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+            ),
+            const SizedBox(height: 8),
             _toggleRow(
               title: 'جایگزینی حروف و اعداد عربی با فارسی',
               subtitle: 'حروف عربی و رقم‌های عربی‌هندی هنگام تایپ به شکل فارسی تبدیل می‌شوند',
