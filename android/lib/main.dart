@@ -1430,6 +1430,50 @@ class _ArioPathPainter extends CustomPainter {
       oldDelegate.positions != positions || oldDelegate.color != color;
 }
 
+class ArioLogo extends StatelessWidget {
+  final double width;
+  final Color? color;
+  const ArioLogo({super.key, required this.width, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    const ratio = 646.29 / 432.87;
+    return SizedBox(
+      width: width,
+      height: width / ratio,
+      child: CustomPaint(painter: _ArioLogoPainter(color ?? pal.ink)),
+    );
+  }
+}
+
+class _ArioLogoPainter extends CustomPainter {
+  final Color color;
+  _ArioLogoPainter(this.color);
+
+  static const Size _viewBox = Size(646.29, 432.87);
+  static final List<Path> _paths = [
+    parseSvgPathData('M646.29,0v54.94l-18.46,4.38c-16.76,3.98-39.64,7.98-63.93,7.98-9.12,0-18.45-.57-27.73-1.91-9.88-1.43-20.93-1.76-32.85-1-12.56.81-22.4,11.33-22.4,23.95v7.87h-48v-7.87c0-37.87,29.58-69.43,67.33-71.85,15.23-.97,29.62-.51,42.79,1.4,19.13,2.76,39.39.99,55.25-1.59V0h48Z'),
+    parseSvgPathData('M522.36,83.28h48v253.48h-48z'),
+    parseSvgPathData('M312.67,235.62c0,9.45-5.56,18.04-14.17,21.89-31.73,14.22-84.25,31.15-154.24,31.15h-.05v-89.56c0-14.89-6.73-28.68-18.46-37.84-11.74-9.16-26.75-12.34-41.18-8.73l-29.95,7.49C22.46,168.06,0,196.82,0,229.97v58.69c0,26.47,21.53,48,48,48h48.21v31.71c-.16.33-.44.74-.68,1-15.06,5.91-43.77,15.5-71.53,15.5v48c34.33,0,67.81-10.4,89.85-19.13,17.59-6.96,30.36-25.73,30.36-44.64v-32.44h.05c78.47,0,137.86-19.22,173.86-35.34,25.85-11.57,42.55-37.36,42.55-65.7v-57.99h-48v57.99ZM96.21,288.66h-48.21v-58.69c0-11.08,7.51-20.7,18.26-23.39l29.95-7.48v89.56Z'),
+    parseSvgPathData('M432.92,168.36h48v200.74c0,19.82-11.91,37.34-30.35,44.64-22.05,8.73-55.53,19.13-89.85,19.13v-48c28.17,0,57.31-9.88,72.18-15.76l.02-200.75Z'),
+    parseSvgPathData('M332.31,331.09l19.62,43.8c-36,16.13-95.39,35.35-173.87,35.35v-48c70,0,122.52-16.94,154.25-31.15Z'),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / _viewBox.width, size.height / _viewBox.height);
+    final paint = Paint()..color = color..style = PaintingStyle.fill..isAntiAlias = true;
+    for (final path in _paths) {
+      canvas.drawPath(path, paint);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArioLogoPainter oldDelegate) => oldDelegate.color != color;
+}
+
 class SourenApp extends StatefulWidget {
   const SourenApp({super.key});
   @override
@@ -4573,7 +4617,12 @@ class _ShellState extends State<Shell> {
       Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 20, 8),
         child: Row(children: [
-          Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700))),
+          Expanded(
+            child: title == 'آریو'
+                ? Align(alignment: Alignment.centerRight, child: ArioLogo(width: 82, color: pal.ink))
+                : Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
+          ),
           Pressable(onTap: () => setState(() { arioMode = false; tab = 0; }), child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
             decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(42))),
