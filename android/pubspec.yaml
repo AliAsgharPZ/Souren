@@ -24,6 +24,7 @@ flutter:
     - assets/db/categories.json
     - assets/db/proverbs.json
     - assets/branding/souren-logo.svg
+    - assets/branding/ario-logo.svg
   fonts:
     - family: Abar
       fonts:
