@@ -1678,10 +1678,14 @@ class _ShellState extends State<Shell> {
     _loadArioState();
     _loadGanjoorPackState();
     SharedFiles.setArioLaunchHandler(() {
+      _searchFocus.unfocus();
       if (mounted) setState(() { arioMode = true; tab = 0; });
     });
     SharedFiles.consumeArioLaunch().then((open) {
-      if (open && mounted) setState(() { arioMode = true; tab = 0; });
+      if (open && mounted) {
+        _searchFocus.unfocus();
+        setState(() { arioMode = true; tab = 0; });
+      }
     });
   }
 
@@ -1793,7 +1797,7 @@ class _ShellState extends State<Shell> {
           child: pages[tab],
         ),
       ),
-      bottomNavigationBar: _searchFocused
+      bottomNavigationBar: _searchFocused && !arioMode
           ? const SizedBox.shrink()
           : Container(
               color: Colors.transparent,
