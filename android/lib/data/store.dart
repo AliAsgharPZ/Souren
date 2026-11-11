@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -243,6 +246,62 @@ class Proverbs {
 }
 
 // The bundled dictionary and optional user-imported file are local-only.
+// Read-only dictionary pull. It never uploads profile, keyboard or learning data.
+class DictionarySync {
+  static const base = 'https://souren.aliasgharpanahizare.workers.dev';
+  static bool _running = false;
+
+  static Future<bool> syncFromServer(Dictionary current) async {
+    if (_running) return false;
+    _running = true;
+    HttpClient? client;
+    try {
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+      final req = await client.getUrl(Uri.parse('$base/api/dictionary')).timeout(const Duration(seconds: 15));
+      req.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      final res = await req.close().timeout(const Duration(seconds: 20));
+      if (res.statusCode != 200) return false;
+      final text = await res.transform(utf8.decoder).join();
+      final json = jsonDecode(text) as Map<String, dynamic>;
+      final list = (json['dictionary'] as List?) ?? const [];
+      final entries = <Map<String, dynamic>>[
+        for (final item in list)
+          if (item is Map && item['arabic'] != null)
+            {
+              'ar': item['arabic'].toString(),
+              'fa': ((item['meanings'] as List?) ?? const []).map((x) => x.toString()).toList(),
+            },
+      ];
+      if (entries.isEmpty || _sameAs(entries, current)) return false;
+      await SharedFiles.writeJson('dataset_updated.json', {
+        'version': current.version + 1,
+        'entries': entries,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      client?.close(force: true);
+      _running = false;
+    }
+  }
+
+  static bool _sameAs(List<Map<String, dynamic>> entries, Dictionary dictionary) {
+    if (entries.length != dictionary.entries.length) return false;
+    for (var i = 0; i < entries.length; i++) {
+      final a = entries[i];
+      final b = dictionary.entries[i];
+      if (a['ar'] != b.ar) return false;
+      final fa = (a['fa'] as List).map((x) => x.toString()).toList();
+      if (fa.length != b.fa.length) return false;
+      for (var k = 0; k < fa.length; k++) {
+        if (fa[k] != b.fa[k]) return false;
+      }
+    }
+    return true;
+  }
+}
+
 // ---------------- Profile score & badges (pure logic) ----------------
 
 int profileScore({
