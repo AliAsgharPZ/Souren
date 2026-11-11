@@ -12,6 +12,20 @@ class SharedFiles {
   static const _channel = MethodChannel('souren/files');
   static const _arioChannel = MethodChannel('souren/ario');
 
+  static Future<bool> consumeArioLaunch() async {
+    try {
+      return await _arioChannel.invokeMethod<bool>('consumeArioLaunch') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static void setArioLaunchHandler(VoidCallback onOpen) {
+    _arioChannel.setMethodCallHandler((call) async {
+      if (call.method == 'openArio') onOpen();
+    });
+  }
+
   static Future<bool> isArioLauncherEnabled() async {
     try {
       return await _arioChannel.invokeMethod<bool>('launcherEnabled') ?? false;
