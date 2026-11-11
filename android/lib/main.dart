@@ -4380,7 +4380,7 @@ class _ShellState extends State<Shell> {
         _arioAction('ادامهٔ مسیر یادگیری', 'درس ${faNum(currentLesson + 1)} · ${faNum(words.skip(currentLesson * 12).take(12).length)} واژه', LucideIcons.gitBranch, () => _openArioLesson(d, currentLesson)),
         _arioAction('تمرین کوتاه', 'چهارگزینه‌ای از واژه‌های سورن', LucideIcons.target, () => setState(() => tab = 2)),
         _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 3)),
-        _arioAction('کتابخانهٔ گنجور', 'خواندن شعر و متن ادبی از پایگاه مشترک سورن', LucideIcons.book, () => _open(_ganjoorPage(d))),
+        _arioAction('کتابخانهٔ گنجور', 'خواندن شعر و متن ادبی از پایگاه مشترک سورن', LucideIcons.notebookPen, () => _open(_ganjoorPage(d))),
       ],
     )));
   }
@@ -4487,7 +4487,7 @@ class _ShellState extends State<Shell> {
     final words = d.entries.where((e) => e.hasFa && arioKnownWords.contains(e.ar)).toList();
     return _arioPageShell('مرور آموخته‌ها', words.isEmpty
       ? Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(LucideIcons.book, size: 38, color: pal.muted),
+          Icon(LucideIcons.notebookPen, size: 38, color: pal.muted),
           const SizedBox(height: 12),
           Text('هنوز واژه‌ای برای مرور نداری', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
