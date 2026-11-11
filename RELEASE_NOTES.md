@@ -1,17 +1,10 @@
-# Souren v0.4.7.1
+# Souren v0.4.7.2
 
-- Rebuilt Ario as an educational companion using Souren's shared 552-entry dictionary and Ganjoor data, Abar font, and the exact Souren navigation shell.
-- Added staged 12-word lessons, flashcards, multiple-choice practice, review, and learning progress.
-- Added Ganjoor offline pack download/removal controls in Souren settings.
-- Restored the original v0.4.6.9 switch geometry for Ario activation.
-- Strengthened scroll fades while preserving the first and last list rows.
-- Account identity and verified email are shared across website and Android; Android favorites, likes, keyboard data and Ario learning progress remain local to the device.
-- Synchronized the Android bundled dictionary with the canonical 552-entry website dataset, including the six missing words and their meanings.
+- Replaced the Souren launcher artwork with the exact supplied 1024×1024 design, rasterized directly to a square PNG with no added padding, zoom, repositioning, or adaptive-icon foreground crop.
+- Removed adaptive and vector launcher overrides so Android resolves the supplied full-canvas PNG as the Souren app icon.
+- Kept Ario's own supplied icon and educational flow. Ario remains a launcher alias inside the Souren APK, not a separately installed Android application; independent installation requires a separate application module/package and APK.
+- Retained the 552-entry canonical dictionary, Ganjoor offline pack, Abar font, weekly randomized update schedule, shared email-OTP account identity, and device-local learning/favorites data.
 
-- Applied the supplied Souren and Ario launcher icon artwork.
-- Redesigned Ario's home screen as a winding, Duolingo-style lesson path with progress states and lesson icons.
-- Added a persisted randomized weekly schedule for dictionary refresh requests to reduce Worker traffic.
-- Added a lower-edge fade beneath the floating navigation bar and retained the home-list scroll fade.
-- Added email OTP registration, email login and email linking endpoints to the Cloudflare Worker, plus website UI and Android shared account sessions. Email delivery uses Resend and requires Worker secrets/vars `RESEND_API_KEY` and `EMAIL_FROM`.
-
-- Release APK refreshed with Android versionCode 24 under the existing v0.4.7.1 tag.
+Android package: `ir.souren.souren`  
+Version name: `0.4.7.2`  
+Version code: `25`
