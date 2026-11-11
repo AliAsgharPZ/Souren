@@ -1,4 +1,4 @@
-# Souren v0.4.7.0
+# Souren v0.4.7.1
 
 - Rebuilt Ario as an educational companion using Souren's shared 552-entry dictionary and Ganjoor data, Abar font, and the exact Souren navigation shell.
 - Added staged 12-word lessons, flashcards, multiple-choice practice, review, and learning progress.
