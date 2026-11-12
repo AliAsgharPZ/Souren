@@ -183,93 +183,15 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Long, soft TOP-ONLY scroll fade shared by every scrollable list.
-/// The fade starts at the viewport's top edge, remains fully clear while
-/// the page is at rest, then gradually masks content as it scrolls upward.
-/// There is deliberately no bottom fade and no fixed header backing block.
-class ScrollFade extends StatefulWidget {
-  final Widget child;
-  final bool alwaysVisible;
-  final double fadeExtent;
-  final double fadeStrength;
-  const ScrollFade({
-    super.key,
-    required this.child,
-    this.alwaysVisible = false,
-    this.fadeExtent = 0.34,
-    this.fadeStrength = 0.94,
-  });
-  @override
-  State<ScrollFade> createState() => _ScrollFadeState();
-}
-
-class _ScrollFadeState extends State<ScrollFade> {
-  double _top = 0;
-  
-
-  void _onScroll(ScrollNotification n) {
-    if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      // Build the fade gradually over 120 logical pixels of scroll.
-      // Smoothstep avoids a hard threshold or abrupt opacity change.
-      final progress = (n.metrics.pixels / 120).clamp(0.0, 1.0);
-      final top = progress * progress * (3 - 2 * progress);
-      if ((top - _top).abs() > 0.003) {
-        setState(() => _top = top);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (n) {
-        _onScroll(n);
-        return false;
-      },
-      child: ShaderMask(
-        shaderCallback: (rect) {
-          final top = widget.alwaysVisible ? widget.fadeStrength : _top;
-          final fade = widget.fadeExtent;
-          // Multi-stop eased alpha ramp: long, gradual and top-only.
-          return LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromRGBO(0, 0, 0, 1 - top),
-              Color.fromRGBO(0, 0, 0, 1 - top * 0.82),
-              Color.fromRGBO(0, 0, 0, 1 - top * 0.48),
-              Color.fromRGBO(0, 0, 0, 1 - top * 0.16),
-              Colors.black,
-            ],
-            stops: [
-              0,
-              fade * 0.22,
-              fade * 0.48,
-              fade * 0.76,
-              fade,
-            ],
-          ).createShader(rect);
-        },
-        blendMode: BlendMode.dstIn,
-        child: widget.child,
-      ),
-    );
-  }
-}
-
-/// The name every scrollable in the app already wraps in; the
-/// implementation is now the scroll-aware ScrollFade.
+/// Scroll content is rendered without edge masks or fade overlays.
+/// Kept as an identity wrapper so every existing page in Souren and Ario
+/// receives the same behavior without changing its scroll physics.
 Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
   double fadeExtent = 0.34,
   double fadeStrength = 0.94,
-}) => ScrollFade(
-  alwaysVisible: alwaysVisible,
-  fadeExtent: fadeExtent,
-  fadeStrength: fadeStrength,
-  child: child,
-);
+}) => child;
 
 /// Apple-like press feedback for every custom button: the control
 /// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
