@@ -195,8 +195,29 @@ async function getGmailAccessToken(env) {
 async function sendOtpEmail(env, to, subject, code) {
     if (!env.EMAIL_FROM) throw new Error('email_from_not_configured');
     const accessToken = await getGmailAccessToken(env);
-    const html = `<div dir="rtl" style="font-family:Arial,sans-serif"><h2>سورن</h2><p>کد یک‌بارمصرف شما:</p><div style="font-size:30px;font-weight:bold;letter-spacing:8px">${code}</div><p>این کد تا ۱۰ دقیقه معتبر است.</p><p>اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.</p></div>`;
-    const plain = `کد یک‌بارمصرف شما: ${code}
+    const safeCode = String(code).replace(/[^0-9]/g, '');
+    const html = `<!doctype html>
+<html lang="fa" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${subject}</title></head>
+<body style="margin:0;padding:32px 12px;background:#f7f1e3;font-family:Tahoma,Arial,sans-serif;color:#2b2620">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#fffdf7;border:1px solid #e2d8c2;border-radius:28px;overflow:hidden">
+<tr><td style="padding:30px 28px 22px;text-align:center;background:#2b2620">
+<div style="display:inline-block;padding:9px 22px;border:1px solid #766d5e;border-radius:22px;color:#f7f1e3;font-size:24px;font-weight:800;letter-spacing:-1px">سورن</div>
+<p style="margin:12px 0 0;color:#d7cbb2;font-size:12px">واژه‌ها، یادگیری و نوشتار فارسی</p>
+</td></tr>
+<tr><td style="padding:34px 28px 30px;text-align:center">
+<h1 style="margin:0 0 12px;font-size:21px;line-height:1.7;color:#2b2620">${subject}</h1>
+<p style="margin:0 0 24px;font-size:14px;line-height:2;color:#746b5d">برای ادامهٔ کار در سورن، کد زیر را در برنامه یا وب‌سایت وارد کنید.</p>
+<div style="display:inline-block;min-width:220px;padding:18px 24px;border-radius:18px;background:#efe7d4;border:1px solid #e2d8c2;color:#2b2620;font-size:34px;font-weight:800;letter-spacing:9px;direction:ltr">${safeCode}</div>
+<p style="margin:18px 0 0;color:#8a8172;font-size:12px">این کد تا ۱۰ دقیقه معتبر است.</p>
+<div style="height:1px;background:#e8dfcd;margin:28px 0 18px"></div>
+<p style="margin:0;color:#8a8172;font-size:12px;line-height:2">اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید. برای امنیت حساب، این کد را با هیچ‌کس به اشتراک نگذارید.</p>
+</td></tr>
+<tr><td style="padding:16px 20px;text-align:center;background:#efe7d4;color:#8a8172;font-size:11px">سورن · همراه نوشتار و یادگیری شما</td></tr>
+</table>
+</body></html>`;
+    const plain = `کد یک‌بارمصرف سورن: ${safeCode}
 این کد تا ۱۰ دقیقه معتبر است. اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.`;
     const mime = [
         `From: ${env.EMAIL_FROM}`,
@@ -217,7 +238,7 @@ async function sendOtpEmail(env, to, subject, code) {
         wrapBase64(base64Bytes(new TextEncoder().encode(html))),
         '--souren-otp-boundary--',
         '',
-    ].join('\r\n');
+    ].join('\\r\\n');
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
         method: 'POST',
         headers: {
@@ -235,8 +256,8 @@ async function handleRequestOtp(request, env) {
     catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
 
     const email = normalizeEmail(body.email);
-    const purpose = ['register', 'login', 'link'].includes(body.purpose)
-        ? body.purpose : 'login';
+    const purpose = ['register', 'login', 'link', 'reset'].includes(body.purpose)
+        ? body.purpose : 'register';
     if (!validEmail(email)) return json(request, { error: 'نشانی ایمیل معتبر نیست' }, 400);
     if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN || !env.EMAIL_FROM) {
         return json(request, { error: 'email_service_not_configured' }, 503);
@@ -246,6 +267,13 @@ async function handleRequestOtp(request, env) {
     if (purpose === 'link') {
         session = await getSessionUser(request, env);
         if (!session) return json(request, { error: 'وارد نشده‌اید' }, 401);
+    }
+    if (purpose === 'reset') {
+        const username = await env.USERS.get(`email:${email}`);
+        const user = username ? await env.USERS.get(`user:${username}`, 'json') : null;
+        if (!user || user.email !== email || user.emailVerified !== true) {
+            return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
+        }
     }
     if (purpose === 'register' && await env.USERS.get(`email:${email}`)) {
         return json(request, { error: 'این ایمیل قبلاً به یک حساب متصل شده است' }, 409);
@@ -277,7 +305,8 @@ async function handleRequestOtp(request, env) {
 
     const subject = purpose === 'login'
         ? 'کد ورود به سورن'
-        : purpose === 'register' ? 'تأیید ایمیل برای سورن' : 'تأیید ایمیل حساب سورن';
+        : purpose === 'register' ? 'تأیید ایمیل برای ساخت حساب سورن'
+        : purpose === 'reset' ? 'کد بازیابی گذرواژهٔ سورن' : 'تأیید ایمیل حساب سورن';
     try {
         await sendOtpEmail(env, email, subject, code);
     } catch (error) {
@@ -332,6 +361,17 @@ async function handleVerifyOtp(request, env) {
         const verificationToken = randomToken();
         await env.USERS.put(`email-verified:${verificationToken}`, JSON.stringify({ email }), { expirationTtl: 900 });
         return json(request, { success: true, verificationToken });
+    }
+
+    if (purpose === 'reset') {
+        const username = await env.USERS.get(`email:${email}`);
+        const user = username ? await env.USERS.get(`user:${username}`, 'json') : null;
+        if (!user || user.email !== email || user.emailVerified !== true) {
+            return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
+        }
+        const resetToken = randomToken();
+        await env.USERS.put(`password-reset:${resetToken}`, JSON.stringify({ username, email }), { expirationTtl: 900 });
+        return json(request, { success: true, passwordResetToken: resetToken });
     }
 
     if (purpose === 'link') {
@@ -434,7 +474,7 @@ async function registerInner(request, env) {
     const verificationToken = typeof body.emailVerificationToken === 'string'
         ? body.emailVerificationToken : '';
     if (!validUsername(username)) return json(request, { error: 'نام کاربری باید ۳ تا ۲۴ نویسه و بدون فاصله باشد' }, 400);
-    if (typeof password !== 'string' || password.length < 6) {
+    if (password && (typeof password !== 'string' || password.length < 6)) {
         return json(request, { error: 'گذرواژه باید دست‌کم ۶ نویسه باشد' }, 400);
     }
     if (!validEmail(email) || !verificationToken) {
@@ -448,21 +488,55 @@ async function registerInner(request, env) {
     if (await env.USERS.get(key)) return json(request, { error: 'این نام کاربری گرفته شده است' }, 409);
     if (await env.USERS.get(`email:${email}`)) return json(request, { error: 'این ایمیل قبلاً استفاده شده است' }, 409);
     const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+    // New OTP registrations receive a random undisclosed password. They set
+    // their own password later through the dedicated email recovery flow.
+    const initialPassword = password || randomToken();
     const rec = {
         username,
         displayName,
         email,
         emailVerified: true,
         salt,
-        pw: await hashPassword(password, salt),
+        pw: await hashPassword(initialPassword, salt),
         favorites: [],
         likes: [],
         createdAt: Date.now(),
+        passwordSetupRequired: !password,
     };
     await env.USERS.put(key, JSON.stringify(rec));
     await env.USERS.put(`email:${email}`, username);
     await env.USERS.delete(`email-verified:${verificationToken}`);
-    return json(request, { user: publicUser(rec) }, 201);
+    const token = randomToken();
+    await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
+    return json(request, { user: publicUser(rec), passwordSetupRequired: !password }, 201,
+        { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
+}
+
+async function handlePasswordReset(request, env) {
+    let body;
+    try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    const email = normalizeEmail(body.email);
+    const token = typeof body.passwordResetToken === 'string' ? body.passwordResetToken : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (!validEmail(email) || !token || password.length < 6 || password.length > 256) {
+        return json(request, { error: 'ایمیل، کد بازیابی یا گذرواژه نامعتبر است' }, 400);
+    }
+    const verified = await env.USERS.get(`password-reset:${token}`, 'json');
+    if (!verified || verified.email !== email) {
+        return json(request, { error: 'مهلت بازیابی پایان یافته است؛ دوباره کد بگیرید' }, 401);
+    }
+    const rec = await env.USERS.get(`user:${verified.username}`, 'json');
+    if (!rec || rec.email !== email) {
+        await env.USERS.delete(`password-reset:${token}`);
+        return json(request, { error: 'حساب کاربری پیدا نشد' }, 404);
+    }
+    const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+    rec.salt = salt;
+    rec.pw = await hashPassword(password, salt);
+    delete rec.passwordSetupRequired;
+    await env.USERS.put(`user:${verified.username}`, JSON.stringify(rec));
+    await env.USERS.delete(`password-reset:${token}`);
+    return json(request, { success: true, message: 'گذرواژه با موفقیت تغییر کرد' });
 }
 
 async function handleLogin(request, env) {
@@ -473,15 +547,21 @@ async function handleLogin(request, env) {
 async function loginInner(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
-    const username = (body.username || '').trim();
+    const identifier = (body.username || body.email || '').trim();
     const password = body.password || '';
-    const rec = await env.USERS.get(`user:${username}`, 'json');
-    if (!rec) return json(request, { error: 'نام کاربری یا گذرواژه نادرست است' }, 401);
+    const username = identifier.includes('@')
+        ? await env.USERS.get(`email:${normalizeEmail(identifier)}`)
+        : identifier;
+    const rec = username ? await env.USERS.get(`user:${username}`, 'json') : null;
+    if (!rec || typeof password !== 'string' || !password) {
+        return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
+    }
     const hash = await hashPassword(password, rec.salt);
-    if (hash !== rec.pw) return json(request, { error: 'نام کاربری یا گذرواژه نادرست است' }, 401);
+    if (hash !== rec.pw) return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
     const token = randomToken();
     await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
-    return json(request, { user: publicUser(rec) }, 200, { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
+    return json(request, { user: publicUser(rec), passwordSetupRequired: rec.passwordSetupRequired === true }, 200,
+        { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
 async function handleLogout(request, env) {
@@ -594,6 +674,8 @@ export default {
                 ? handleVerifyOtp(request, env) : methodNotAllowed();
             case '/api/auth/login': return request.method === 'POST'
                 ? handleLogin(request, env) : methodNotAllowed();
+            case '/api/auth/reset-password': return request.method === 'POST'
+                ? handlePasswordReset(request, env) : methodNotAllowed();
             case '/api/auth/logout': return request.method === 'POST'
                 ? handleLogout(request, env) : methodNotAllowed();
             case '/api/auth/me': return request.method === 'GET'
