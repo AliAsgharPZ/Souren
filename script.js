@@ -759,7 +759,7 @@ async function verifyProfileEmailOtp() {
             body: JSON.stringify({ email, code, purpose: 'link' })
         });
         if (res.ok && data.user) {
-            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email, emailVerified: data.user.emailVerified };
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email, emailVerified: data.user.emailVerified, passwordSetupRequired: data.user.passwordSetupRequired === true };
             document.getElementById('profileEmail').value = data.user.email || '';
             updateAccountUi();
             showMsg('profileMsg', 'ایمیل با موفقیت به حساب متصل شد.', true);
@@ -881,7 +881,7 @@ async function saveProfile(e) {
             body: JSON.stringify({ displayName, favorites, likes })
         });
         if (res.ok && data && data.user) {
-            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true };
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true, passwordSetupRequired: data.user.passwordSetupRequired === true };
             updateAccountUi();
             showMsg('profileMsg', 'پروفایل ذخیره شد.', true);
         } else {
