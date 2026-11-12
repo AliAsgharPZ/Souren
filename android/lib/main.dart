@@ -183,9 +183,8 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Long, feathered top and bottom masks for scrollable content.
-/// The top edge stays soft beneath fixed page titles; the bottom edge
-/// fades out as the final content approaches the viewport boundary.
+/// Scroll-edge masks: fully opaque at the edge, fading to transparent.
+/// The top mask is absent at scroll position zero and eases in as content moves.
 class ScrollFade extends StatefulWidget {
   final Widget child;
   final bool alwaysVisible;
@@ -195,9 +194,9 @@ class ScrollFade extends StatefulWidget {
   const ScrollFade({
     super.key,
     required this.child,
-    this.alwaysVisible = true,
-    this.fadeExtent = 0.30,
-    this.fadeStrength = 0.94,
+    this.alwaysVisible = false,
+    this.fadeExtent = 0.15,
+    this.fadeStrength = 1.0,
   });
 
   @override
@@ -205,7 +204,7 @@ class ScrollFade extends StatefulWidget {
 }
 
 class _ScrollFadeState extends State<ScrollFade> {
-  double _top = 1;
+  double _top = 0;
   double _bottom = 0;
 
   double _smooth(double value) {
@@ -231,7 +230,7 @@ class _ScrollFadeState extends State<ScrollFade> {
 
   @override
   Widget build(BuildContext context) {
-    final extent = widget.fadeExtent.clamp(0.08, 0.46);
+    final extent = widget.fadeExtent.clamp(0.06, 0.30);
     final strength = widget.fadeStrength.clamp(0.0, 1.0);
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: (n) {
@@ -288,12 +287,82 @@ class _ScrollFadeState extends State<ScrollFade> {
   }
 }
 
-/// Shared edge treatment for the scrollable lists in both Souren and Ario.
+/// Shared page scaffold: its header retracts on downward scroll and returns
+/// on upward scroll, with a short threshold to prevent direction jitter.
+class ScrollAwarePageShell extends StatefulWidget {
+  final Widget header;
+  final Widget body;
+  final double headerHeight;
+
+  const ScrollAwarePageShell({
+    super.key,
+    required this.header,
+    required this.body,
+    this.headerHeight = 56,
+  });
+
+  @override
+  State<ScrollAwarePageShell> createState() => _ScrollAwarePageShellState();
+}
+
+class _ScrollAwarePageShellState extends State<ScrollAwarePageShell> {
+  bool _headerVisible = true;
+  double _directionDistance = 0;
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth != 0 || n is! ScrollUpdateNotification) return false;
+    final delta = n.scrollDelta ?? 0;
+    if (delta == 0) return false;
+    final toward = delta > 0; // down hides; up reveals
+    if (toward == _headerVisible) {
+      _directionDistance = 0;
+      return false;
+    }
+    _directionDistance += delta.abs();
+    if (_directionDistance >= 7) {
+      setState(() {
+        _headerVisible = toward ? false : true;
+        _directionDistance = 0;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      ClipRect(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 190),
+          curve: Curves.easeInOutCubic,
+          height: _headerVisible ? widget.headerHeight : 0,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOut,
+            opacity: _headerVisible ? 1 : 0,
+            child: Transform.translate(
+              offset: Offset(0, _headerVisible ? 0 : -8),
+              child: widget.header,
+            ),
+          ),
+        ),
+      ),
+      Expanded(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          child: widget.body,
+        ),
+      ),
+    ],
+  );
+}
+
+/// Shared edge treatment for scrollable lists in both Souren and Ario.
 Widget edgeFade({
   required Widget child,
-  bool alwaysVisible = true,
-  double fadeExtent = 0.30,
-  double fadeStrength = 0.94,
+  bool alwaysVisible = false,
+  double fadeExtent = 0.15,
+  double fadeStrength = 1.0,
 }) => ScrollFade(
   alwaysVisible: alwaysVisible,
   fadeExtent: fadeExtent,
@@ -2660,7 +2729,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
-                    fadeExtent: 0.34,
+                    fadeExtent: 0.17,
           fadeStrength: 0.94,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -2746,7 +2815,7 @@ class _ShellState extends State<Shell> {
         );
       }
       return edgeFade(
-                fadeExtent: 0.34,
+                fadeExtent: 0.17,
         fadeStrength: 0.94,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -2799,7 +2868,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
-                    fadeExtent: 0.34,
+                    fadeExtent: 0.17,
           fadeStrength: 0.94,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -3077,7 +3146,7 @@ class _ShellState extends State<Shell> {
       );
     }
     return edgeFade(
-            fadeExtent: 0.34,
+            fadeExtent: 0.17,
       fadeStrength: 0.94,
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
@@ -4657,8 +4726,9 @@ class _ShellState extends State<Shell> {
 
   Widget _arioPageShell(String title, Widget body) => Directionality(
     textDirection: TextDirection.rtl,
-    child: Column(children: [
-      Padding(
+    child: ScrollAwarePageShell(
+      headerHeight: 56,
+      header: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 20, 8),
         child: Row(children: [
           Expanded(
@@ -4669,8 +4739,8 @@ class _ShellState extends State<Shell> {
           ),
         ]),
       ),
-      Expanded(child: body),
-    ]),
+      body: body,
+    ),
   );
 
   Widget _arioHome(Dictionary d) {
@@ -5017,31 +5087,30 @@ class _ShellState extends State<Shell> {
   Widget _pageShell(String title, Widget body, {bool back = false}) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-            child: Row(
-              children: [
-                if (back) ...[const BackIconButton(), const SizedBox(width: 4)],
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w700,
-                    ),
+      child: ScrollAwarePageShell(
+        headerHeight: 56,
+        header: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+          child: Row(
+            children: [
+              if (back) ...[const BackIconButton(), const SizedBox(width: 4)],
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Expanded(child: body),
-        ],
+        ),
+        body: body,
       ),
     );
   }
@@ -5074,31 +5143,36 @@ Widget subScaffold(String title, Widget body) {
         textDirection: TextDirection.rtl,
         child: Column(
           children: [
-            SizedBox(
-              height: 58,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Row(
-                  children: [
-                    const BackIconButton(),
-                    const SizedBox(width: 2),
-                    Expanded(
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.right,
-                        textDirection: TextDirection.rtl,
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
-                          color: pal.ink,
+            Expanded(
+              child: ScrollAwarePageShell(
+                headerHeight: 58,
+                header: SizedBox(
+                  height: 58,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Row(
+                      children: [
+                        const BackIconButton(),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            title,
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                              color: pal.ink,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
+                body: body,
               ),
             ),
-            Expanded(child: body),
           ],
         ),
       ),
