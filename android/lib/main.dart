@@ -190,6 +190,7 @@ class ScrollFade extends StatefulWidget {
   final Widget child;
   final bool alwaysVisible;
   final double fadeExtent;
+  final double bottomFadeExtent;
   final double fadeStrength;
 
   const ScrollFade({
@@ -197,6 +198,7 @@ class ScrollFade extends StatefulWidget {
     required this.child,
     this.alwaysVisible = false,
     this.fadeExtent = 0.12,
+    this.bottomFadeExtent = 0.12,
     this.fadeStrength = 1.0,
   });
 
@@ -233,6 +235,7 @@ class _ScrollFadeState extends State<ScrollFade> {
   @override
   Widget build(BuildContext context) {
     final extent = widget.fadeExtent.clamp(0.06, 0.30);
+    final bottomExtent = widget.bottomFadeExtent.clamp(0.06, 0.30);
     final strength = widget.fadeStrength.clamp(0.0, 1.0);
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: (n) {
@@ -254,7 +257,7 @@ class _ScrollFadeState extends State<ScrollFade> {
             final top = _top * strength;
             final bottom = _bottom * strength;
             final topEnd = extent;
-            final bottomStart = 1 - extent;
+            final bottomStart = 1 - bottomExtent;
             final colors = <Color>[
               Color.fromRGBO(0, 0, 0, 1 - top),
               Color.fromRGBO(0, 0, 0, 1 - top * 0.82),
@@ -271,8 +274,8 @@ class _ScrollFadeState extends State<ScrollFade> {
               topEnd * 0.52,
               topEnd,
               bottomStart,
-              bottomStart + extent * 0.48,
-              bottomStart + extent * 0.78,
+              bottomStart + bottomExtent * 0.48,
+              bottomStart + bottomExtent * 0.78,
               1,
             ];
             return LinearGradient(
@@ -368,10 +371,12 @@ Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
   double fadeExtent = 0.12,
+  double bottomFadeExtent = 0.12,
   double fadeStrength = 1.0,
 }) => ScrollFade(
   alwaysVisible: alwaysVisible,
   fadeExtent: fadeExtent,
+  bottomFadeExtent: bottomFadeExtent,
   fadeStrength: fadeStrength,
   child: child,
 );
@@ -1439,8 +1444,15 @@ void arioMain() {
 class ArioLessonPage extends StatefulWidget {
   final int lesson;
   final List<Entry> words;
+  final List<Entry> exercisePool;
   final Future<void> Function() onComplete;
-  const ArioLessonPage({super.key, required this.lesson, required this.words, required this.onComplete});
+  const ArioLessonPage({
+    super.key,
+    required this.lesson,
+    required this.words,
+    required this.exercisePool,
+    required this.onComplete,
+  });
   @override
   State<ArioLessonPage> createState() => _ArioLessonPageState();
 }
@@ -1448,10 +1460,24 @@ class ArioLessonPage extends StatefulWidget {
 class _ArioLessonPageState extends State<ArioLessonPage> {
   int index = 0;
   bool revealed = false;
+  bool exerciseMode = false;
+  int exerciseIndex = 0;
+  String? selectedAnswer;
+  bool? exerciseCorrect;
 
   @override
   Widget build(BuildContext context) {
     final entry = widget.words[index];
+    final exerciseCount = widget.words.length.clamp(1, 3).toInt();
+    final exerciseEntry = widget.words[(exerciseIndex * 2) % widget.words.length];
+    final exerciseOptions = <String>{exerciseEntry.fa.first};
+    for (final candidate in widget.exercisePool) {
+      if (candidate.fa.isNotEmpty) exerciseOptions.add(candidate.fa.first);
+      if (exerciseOptions.length >= 4) break;
+    }
+    final progress = exerciseMode
+        ? 0.5 + (exerciseIndex + (selectedAnswer == null ? 0 : 1)) / (exerciseCount * 2)
+        : (index + (revealed ? 1 : 0)) / (widget.words.length * 2);
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: pal.bg,
       body: SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(22, 12, 22, 24), child: Column(children: [
@@ -1459,45 +1485,103 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
           Pressable(onTap: () => Navigator.of(context).pop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 24)),
           const SizedBox(width: 12),
           Expanded(child: Text('واحد ${faNum((widget.lesson - 1) ~/ 10 + 1)} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 17))),
-          Text('${faNum(index + 1)} از ${faNum(widget.words.length)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+          Text(
+            exerciseMode
+                ? 'تمرین ${faNum(exerciseIndex + 1)} از ${faNum(exerciseCount)}'
+                : '${faNum(index + 1)} از ${faNum(widget.words.length)}',
+            style: TextStyle(color: pal.muted, fontSize: 12),
+          ),
         ]),
         const SizedBox(height: 14),
-        ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: (index + (revealed ? 1 : 0)) / widget.words.length, minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
+        ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0), minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
         const Spacer(),
-        AnimatedSwitcher(duration: Motion.base, switchInCurve: Motion.curve, child: Container(
-          key: ValueKey('${index}_$revealed'),
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
-          decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))),
-          child: Column(children: [
-            Text('بخش ${faNum(index ~/ 2 + 1)} از ${faNum((widget.words.length + 1) ~/ 2)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 5),
-            Text('واژهٔ عربی', style: TextStyle(color: pal.muted, fontSize: 13)),
-            const SizedBox(height: 14),
-            Text(entry.ar, style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 20),
-            AnimatedSize(duration: Motion.base, curve: Motion.curve, child: revealed
-              ? Column(children: [
-                  Divider(color: pal.div),
-                  const SizedBox(height: 12),
-                  Text('برابر فارسی', style: TextStyle(color: pal.muted, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  Text(entry.fa.join('، '), textAlign: TextAlign.center, style: TextStyle(color: pal.sel, fontSize: 20, fontWeight: FontWeight.w700, height: 1.6)),
-                ])
-              : Text('پیش از دیدن پاسخ، خودت معنی واژه را به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7))),
-          ]),
+        if (!exerciseMode)
+          AnimatedSwitcher(duration: Motion.base, switchInCurve: Motion.curve, child: Container(
+            key: ValueKey('word_${index}_$revealed'),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
+            decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))),
+            child: Column(children: [
+              Text('بخش ${faNum(index ~/ 2 + 1)} از ${faNum((widget.words.length + 1) ~/ 2)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 5),
+              Text('واژهٔ عربی', style: TextStyle(color: pal.muted, fontSize: 13)),
+              const SizedBox(height: 14),
+              Text(entry.ar, style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 20),
+              AnimatedSize(duration: Motion.base, curve: Motion.curve, child: revealed
+                ? Column(children: [
+                    Divider(color: pal.div),
+                    const SizedBox(height: 12),
+                    Text('برابر فارسی', style: TextStyle(color: pal.muted, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Text(entry.fa.join('، '), textAlign: TextAlign.center, style: TextStyle(color: pal.sel, fontSize: 20, fontWeight: FontWeight.w700, height: 1.6)),
+                  ])
+                : Text('پیش از دیدن پاسخ، خودت معنی واژه را به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7))),
+            ]),
+          ))
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+            decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))),
+            child: Column(children: [
+              Text('تمرین بخش ${faNum(exerciseIndex + 1)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Text('معنی درست این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+              const SizedBox(height: 8),
+              Text(exerciseEntry.ar, style: TextStyle(color: pal.ink, fontSize: 32, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 18),
+              for (final choice in exerciseOptions)
+                Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
+                  onTap: selectedAnswer == null ? () => setState(() {
+                    selectedAnswer = choice;
+                    exerciseCorrect = exerciseEntry.fa.contains(choice);
+                  }) : null,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                    decoration: BoxDecoration(
+                      color: selectedAnswer == choice
+                          ? (exerciseCorrect == true ? pal.sel : pal.accent)
+                          : pal.pillC,
+                      borderRadius: BorderRadius.circular(capR(28)),
+                      border: Border.all(color: pal.div),
+                    ),
+                    child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600)),
+                  ),
+                )),
+              if (selectedAnswer != null)
+                Text(
+                  exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ${exerciseEntry.fa.join('، ')}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700),
+                ),
+            ]),
+          ),
+        const Spacer(),
+        SizedBox(width: double.infinity, child: FilledButton(
+          onPressed: exerciseMode && selectedAnswer == null ? null : () async {
+            if (!exerciseMode) {
+              if (!revealed) {
+                setState(() => revealed = true);
+              } else if (index + 1 < widget.words.length) {
+                setState(() { index++; revealed = false; });
+              } else {
+                setState(() { exerciseMode = true; exerciseIndex = 0; selectedAnswer = null; exerciseCorrect = null; });
+              }
+            } else if (exerciseIndex + 1 < exerciseCount) {
+              setState(() { exerciseIndex++; selectedAnswer = null; exerciseCorrect = null; });
+            } else {
+              await widget.onComplete();
+              if (context.mounted) Navigator.of(context).pop();
+            }
+          },
+          child: Text(
+            !exerciseMode
+                ? (!revealed ? 'نمایش پاسخ' : index + 1 < widget.words.length ? 'واژهٔ بعدی' : 'شروع تمرین درس')
+                : (selectedAnswer == null ? 'یک پاسخ را انتخاب کنید' : exerciseIndex + 1 < exerciseCount ? 'سؤال بعدی' : 'پایان درس'),
+          ),
         )),
-        const Spacer(),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: () async {
-          if (!revealed) {
-            setState(() => revealed = true);
-          } else if (index + 1 < widget.words.length) {
-            setState(() { index++; revealed = false; });
-          } else {
-            await widget.onComplete();
-            if (context.mounted) Navigator.of(context).pop();
-          }
-        }, child: Text(!revealed ? 'نمایش پاسخ' : index + 1 < widget.words.length ? 'واژهٔ بعدی' : 'پایان درس'))),
       ]))),
     ));
   }
@@ -4944,7 +5028,7 @@ class _ShellState extends State<Shell> {
     if (words.isEmpty) return;
     setState(() => arioLastLesson = lesson);
     _saveArioProgress();
-    _open(ArioLessonPage(lesson: lesson + 1, words: words, onComplete: () async {
+    _open(ArioLessonPage(lesson: lesson + 1, words: words, exercisePool: allWords, onComplete: () async {
       setState(() { arioCompletedLessons.add(lesson); arioKnownWords.addAll(words.map((e) => e.ar)); });
       await _saveArioProgress();
     }));
