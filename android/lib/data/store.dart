@@ -164,8 +164,8 @@ class Settings {
   double get textScale =>
       textSize == 'small' ? 0.92 : (textSize == 'large' ? 1.13 : 1.0);
 
-  static Future<Settings> load() async {
-    final j = await SharedFiles.readJson('souren_settings.json');
+  static Future<Settings> load({String fileName = 'souren_settings.json'}) async {
+    final j = await SharedFiles.readJson(fileName);
     if (j == null) return Settings();
     return Settings(
       replaceArabic: j['replaceArabic'] != false,
@@ -177,7 +177,7 @@ class Settings {
     );
   }
 
-  Future<void> save() => SharedFiles.writeJson('souren_settings.json', {
+  Future<void> save({String fileName = 'souren_settings.json'}) => SharedFiles.writeJson(fileName, {
         'replaceArabic': replaceArabic,
         'autoCorrect': autoCorrect,
         'kbHeight': kbHeight,
@@ -193,10 +193,11 @@ class SettingsStore {
   static Settings current = Settings();
   static final revision = ValueNotifier<int>(0);
   static bool _loaded = false;
+  static String fileName = 'souren_settings.json';
 
   static Future<Settings> ensureLoaded() async {
     if (!_loaded) {
-      current = await Settings.load();
+      current = await Settings.load(fileName: fileName);
       _loaded = true;
     }
     return current;
@@ -204,7 +205,7 @@ class SettingsStore {
 
   static Future<void> update(Settings s) async {
     current = s;
-    await s.save();
+    await s.save(fileName: fileName);
     revision.value++;
   }
 }
