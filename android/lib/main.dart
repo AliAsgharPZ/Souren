@@ -1502,34 +1502,6 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
   }
 }
 
-class _ArioPathPainter extends CustomPainter {
-  final List<double> positions;
-  final Color color;
-  const _ArioPathPainter({required this.positions, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (positions.length < 2) return;
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
-      ..strokeCap = StrokeCap.round;
-    final path = Path();
-    for (var i = 0; i < positions.length - 1; i++) {
-      final start = Offset(size.width * positions[i], i * 104.0 + 38);
-      final end = Offset(size.width * positions[i + 1], (i + 1) * 104.0 + 38);
-      path.moveTo(start.dx, start.dy);
-      path.cubicTo(start.dx, start.dy + 34, end.dx, end.dy - 34, end.dx, end.dy);
-    }
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ArioPathPainter oldDelegate) =>
-      oldDelegate.positions != positions || oldDelegate.color != color;
-}
-
 class ArioLogo extends StatelessWidget {
   final double width;
   final Color? color;
