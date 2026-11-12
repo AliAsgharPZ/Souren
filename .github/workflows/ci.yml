@@ -23,8 +23,10 @@ jobs:
         working-directory: android
     steps:
       - uses: actions/checkout@v4
-      - name: Validate Cloudflare Worker syntax
-        run: node --check ../worker.js
+      - name: Validate website and Worker JavaScript syntax
+        run: |
+          node --check ../worker.js
+          node --check ../script.js
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -45,7 +47,7 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.7+27' pubspec.yaml
+          grep -F 'version: 0.4.7+28' pubspec.yaml
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -58,7 +60,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && { [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/tags/v0.4.7.5" ]; }; then
             test -n "$KS_B64" && test -n "$KS_PW" && test -n "$KEY_PW" && test -n "$KEY_ALIAS"
           fi
           if [ -n "$KS_B64" ] && [ -n "$KS_PW" ] && [ -n "$KEY_PW" ] && [ -n "$KEY_ALIAS" ]; then
@@ -91,33 +93,33 @@ jobs:
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --build-name=0.4.7.4 --build-number=27
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.5 --build-number=28
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='27' versionName='0.4.7.4'"
-          cp "$APK" Souren-v0.4.7.4.apk
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='28' versionName='0.4.7.5'"
+          for ABI in armeabi-v7a arm64-v8a x86_64; do unzip -l "$APK" | grep -q "lib/$ABI/"; done
+          cp "$APK" Souren-v0.4.7.5.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Souren-v0.4.7.4-APK
-          path: android/Souren-v0.4.7.4.apk
-      - name: Publish or refresh Souren v0.4.7.4
+          name: Souren-v0.4.7.5-Universal-APK
+          path: android/Souren-v0.4.7.5.apk
+      - name: Publish Souren v0.4.7.5
+        if: github.event_name == 'push' && github.ref == 'refs/tags/v0.4.7.5'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
-            NOTES="Ario learning home redesigned as a winding, Duolingo-style lesson path with stateful lesson nodes and dedicated iconography; supplied Souren and Ario launcher artwork applied; randomized weekly dictionary refresh prevents unnecessary Worker requests; bottom content fade now extends behind the navigation bar; shared Cloudflare account session added to Android and Ario; website registration and email OTP login/profile verification added through the Worker (Gmail API provider). Canonical 552-entry dataset, Ganjoor offline pack, Abar font and restored v0.4.6.9 switch geometry retained. Signed APK package ir.souren.souren version 0.4.7.4 (27)."
-            if gh release view v0.4.7.4 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              gh release upload v0.4.7.4 Souren-v0.4.7.4.apk --repo "$GITHUB_REPOSITORY" --clobber
-              gh release edit v0.4.7.4 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.4" --notes "$NOTES"
-            else
-              gh release create v0.4.7.4 Souren-v0.4.7.4.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.4" --notes "$NOTES"
-            fi
+          NOTES="Souren v0.4.7.5. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; 100-level unit and lesson organization with sections and exercises; padded learned-word review list. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
+          if gh release view v0.4.7.5 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload v0.4.7.5 Souren-v0.4.7.5.apk --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit v0.4.7.5 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.5" --notes "$NOTES"
+          else
+            gh release create v0.4.7.5 Souren-v0.4.7.5.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.5" --notes "$NOTES"
           fi
