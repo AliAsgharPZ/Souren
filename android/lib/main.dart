@@ -2015,6 +2015,9 @@ class _ShellState extends State<Shell> {
                 final user = result['user'];
                 if ((result['status'] == 200) && user is Map) {
                   _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (result['passwordSetupRequired'] == true && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حساب ساخته شد؛ برای ورودهای بعدی از بازیابی گذرواژه، گذرواژه تعیین کنید.')));
+                  }
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                 } else if (dialogContext.mounted) {
                   setDialogState(() { busy = false; message = result['error']?.toString() ?? 'نام کاربری یا گذرواژه نادرست است.'; success = false; });
