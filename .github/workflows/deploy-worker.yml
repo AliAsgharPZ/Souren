@@ -1,0 +1,37 @@
+name: Deploy Souren Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Souren
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Cloudflare deployment credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: test -n "$CF_TOKEN"
+      - name: Deploy the production Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 2d8ecd559d50face3d08dfa151e9376c
+        run: npx --yes wrangler@4 deploy --keep-vars
+      - name: Verify live OTP and password recovery routes
+        run: |
+          set -euo pipefail
+          BASE=https://souren.aliasgharpanahizare.workers.dev
+          OTP_STATUS=$(curl -sS -o /tmp/souren-otp-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/request-otp" -H 'Content-Type: application/json' --data '{"email":"invalid-email","purpose":"register"}')
+          test "$OTP_STATUS" = "400"
+          node -e "const x=require('/tmp/souren-otp-probe.json'); if (!x.error) process.exit(1)"
+          RESET_STATUS=$(curl -sS -o /tmp/souren-reset-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/reset-password" -H 'Content-Type: application/json' --data '{}')
+          test "$RESET_STATUS" = "400"
+          node -e "const x=require('/tmp/souren-reset-probe.json'); if (!x.error) process.exit(1)"
