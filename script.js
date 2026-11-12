@@ -628,7 +628,7 @@ async function loadSession() {
     try {
         const { res, data } = await api('/api/auth/me');
         if (res.ok && data && data.user) {
-            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true };
+            currentUser = { username: data.user.username, displayName: data.user.displayName, email: data.user.email || null, emailVerified: data.user.emailVerified === true, passwordSetupRequired: data.user.passwordSetupRequired === true };
             const serverFavs = Array.isArray(data.user.favorites) ? data.user.favorites : [];
             // یکی‌کردن نشان‌شده‌های سرور با نسخهٔ محلی تا چیزی از دست نرود
             favorites = [...new Set([...serverFavs, ...favorites])];
@@ -671,7 +671,7 @@ async function loadSession() {
 }
 
 function afterAuth(user) {
-    currentUser = { username: user.username, displayName: user.displayName, email: user.email || null, emailVerified: user.emailVerified === true };
+    currentUser = { username: user.username, displayName: user.displayName, email: user.email || null, emailVerified: user.emailVerified === true, passwordSetupRequired: user.passwordSetupRequired === true };
     sessionExpiredNotified = false;
     updateAccountUi();
     // نشان‌شده‌های حساب را تازه می‌خوانیم و با محلی یکی می‌کنیم
@@ -864,7 +864,10 @@ function openProfile() {
     const likeCountEl = document.getElementById('profileLikeCount');
     if (likeCountEl) likeCountEl.textContent = faNum(likes.length);
     const msg = document.getElementById('profileMsg');
-    if (msg) msg.hidden = true;
+    if (msg) {
+        msg.hidden = true;
+        if (currentUser.passwordSetupRequired) showMsg('profileMsg', 'برای ورودهای بعدی، با گزینهٔ بازیابی گذرواژه یک گذرواژه تعیین کنید.', true);
+    }
     showModal('profileModal');
 }
 
