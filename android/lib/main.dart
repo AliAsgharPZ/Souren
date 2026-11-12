@@ -2630,7 +2630,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
-                    fadeExtent: 0.22,
+                    fadeExtent: 0.34,
           fadeStrength: 0.94,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -2716,7 +2716,7 @@ class _ShellState extends State<Shell> {
         );
       }
       return edgeFade(
-                fadeExtent: 0.22,
+                fadeExtent: 0.34,
         fadeStrength: 0.94,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -2769,7 +2769,7 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
-                    fadeExtent: 0.22,
+                    fadeExtent: 0.34,
           fadeStrength: 0.94,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
@@ -3047,7 +3047,7 @@ class _ShellState extends State<Shell> {
       );
     }
     return edgeFade(
-            fadeExtent: 0.22,
+            fadeExtent: 0.34,
       fadeStrength: 0.94,
       child: ListView.separated(
         padding: EdgeInsets.only(top: 6, bottom: bottomPad),
