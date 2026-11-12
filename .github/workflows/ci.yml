@@ -1,7 +1,7 @@
 name: CI
 
 concurrency:
-  group: souren-main-ci-release-${{ github.ref }}
+  group: souren-otp-gmail-release-${{ github.ref }}
   cancel-in-progress: true
 
 on:
