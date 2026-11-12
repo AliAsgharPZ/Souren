@@ -4970,6 +4970,44 @@ class _ShellState extends State<Shell> {
         _statCard('درس‌های کامل‌شده', arioCompletedLessons.length),
         _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
         _statCard('تمرین‌های انجام‌شده', arioQuizIndex),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: pal.cardC,
+            borderRadius: BorderRadius.circular(capR(42)),
+            border: Border.all(color: pal.div),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('حساب مشترک سورن و آریو',
+                  style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 5),
+              Text(
+                accountUser == null
+                    ? 'برای ورود، ثبت‌نام یا همگام‌سازی حساب، ایمیل خود را تأیید کنید.'
+                    : (accountUser?['email']?.toString() ?? accountUser?['username']?.toString() ?? 'حساب متصل است'),
+                style: TextStyle(color: pal.muted, fontSize: 12.5, height: 1.6),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: accountBusy ? null : _showAccountDialog,
+                    child: Text(accountUser == null ? 'ورود / ثبت‌نام' : 'اتصال یا تغییر ایمیل'),
+                  ),
+                  if (accountUser != null)
+                    TextButton(
+                      onPressed: accountBusy ? null : _logoutAccount,
+                      child: const Text('خروج'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ],
     )));
   }
