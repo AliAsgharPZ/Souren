@@ -429,6 +429,30 @@ class AccountApi {
         'purpose': purpose,
       });
 
+  /// Creates an account after OTP verification, then establishes its session.
+  static Future<Map<String, dynamic>> registerAndLogin({
+    required String username,
+    required String password,
+    required String displayName,
+    required String email,
+    required String emailVerificationToken,
+  }) async {
+    final registered = await _request('/api/auth/register', method: 'POST', body: {
+      'username': username.trim(),
+      'password': password,
+      'displayName': displayName.trim(),
+      'email': email.trim().toLowerCase(),
+      'emailVerificationToken': emailVerificationToken,
+    });
+    if (registered['status'] != 201 && registered['status'] != 200) {
+      return registered;
+    }
+    return _request('/api/auth/login', method: 'POST', body: {
+      'username': username.trim(),
+      'password': password,
+    });
+  }
+
   static Future<void> logout() async {
     try {
       await _request('/api/auth/logout', method: 'POST');
