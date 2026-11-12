@@ -1875,7 +1875,7 @@ class _ShellState extends State<Shell> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تغییر وضعیت Ario انجام نشد')),
+        const SnackBar(content: Text('تغییر وضعیت آریو انجام نشد')),
       );
     }
   }
@@ -4450,8 +4450,8 @@ class _ShellState extends State<Shell> {
               },
             ),
             _toggleRow(
-              title: 'فعال‌سازی Ario',
-              subtitle: 'نمایش آیکون مستقل Ario در فهرست برنامه‌ها؛ داده‌های آن جدا نگهداری می‌شوند',
+              title: 'فعال‌سازی آریو',
+              subtitle: 'نمایش آیکون مستقل آریو در فهرست برنامه‌ها؛ داده‌های آن جدا نگهداری می‌شوند',
               value: arioEnabled,
               onChanged: _setArioState,
             ),
@@ -5167,7 +5167,6 @@ class _ShellState extends State<Shell> {
           const SizedBox(height: 10),
           Text('گزینه‌های زیر با پوستهٔ سورن هماهنگ هستند.', style: TextStyle(color: pal.muted, fontSize: 12, height: 1.7)),
         ])),
-        const SizedBox(height: 12),
         const SizedBox(height: 12),
         Text('پوستهٔ برنامه', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
