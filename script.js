@@ -685,33 +685,45 @@ async function requestEmailOtp(email, purpose) {
     });
 }
 
-async function requestLoginOtp() {
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    if (!email) return showMsg('loginMsg', 'ایمیل حساب را وارد کنید.', false);
+async function requestResetOtp() {
+    const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    if (!email) return showMsg('resetMsg', 'ایمیل حساب را وارد کنید.', false);
     try {
-        const { res, data } = await requestEmailOtp(email, 'login');
-        showMsg('loginMsg', res.ok ? 'کد ورود ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کنید.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
+        const { res, data } = await requestEmailOtp(email, 'reset');
+        showMsg('resetMsg', res.ok ? 'کد بازیابی فرستاده شد.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
     } catch (_) {
-        showMsg('loginMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
+        showMsg('resetMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
     }
 }
 
-async function verifyLoginOtp() {
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const code = document.getElementById('loginOtp').value.trim();
+async function doResetPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    const code = document.getElementById('resetOtp').value.trim();
+    const password = document.getElementById('resetPassword').value;
+    if (password.length < 6) return showMsg('resetMsg', 'گذرواژه باید دست‌کم ۶ نویسه باشد.', false);
     try {
-        const { res, data } = await api('/api/auth/verify-otp', {
+        const verified = await api('/api/auth/verify-otp', {
             method: 'POST',
-            body: JSON.stringify({ email, code, purpose: 'login' })
+            body: JSON.stringify({ email, code, purpose: 'reset' })
         });
-        if (res.ok && data.user) {
-            hideModal('authModal');
-            afterAuth(data.user);
+        if (!verified.res.ok || !verified.data.passwordResetToken) {
+            return showMsg('resetMsg', errText(verified.data, 'کد بازیابی معتبر نیست.'), false);
+        }
+        const changed = await api('/api/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ email, password, passwordResetToken: verified.data.passwordResetToken })
+        });
+        if (changed.res.ok && changed.data.success) {
+            document.getElementById('loginUsername').value = email;
+            document.getElementById('loginPassword').value = '';
+            switchAuthTab(false);
+            showMsg('loginMsg', 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.', true);
         } else {
-            showMsg('loginMsg', errText(data, 'ورود با کد ناموفق بود.'), false);
+            showMsg('resetMsg', errText(changed.data, 'تغییر گذرواژه انجام نشد.'), false);
         }
     } catch (_) {
-        showMsg('loginMsg', 'خطا در تأیید کد ایمیل.', false);
+        showMsg('resetMsg', 'خطا در ارتباط با سرویس حساب.', false);
     }
 }
 
@@ -726,25 +738,6 @@ async function requestRegisterOtp() {
     }
 }
 
-async function verifyRegisterOtp() {
-    const email = document.getElementById('registerEmail').value.trim().toLowerCase();
-    const code = document.getElementById('registerOtp').value.trim();
-    try {
-        const { res, data } = await api('/api/auth/verify-otp', {
-            method: 'POST',
-            body: JSON.stringify({ email, code, purpose: 'register' })
-        });
-        if (res.ok && data.verificationToken) {
-            document.getElementById('registerEmailVerificationToken').value = data.verificationToken;
-            document.getElementById('registerSubmitBtn').disabled = false;
-            showMsg('registerMsg', 'ایمیل تأیید شد؛ اکنون ثبت‌نام را کامل کنید.', true);
-        } else {
-            showMsg('registerMsg', errText(data, 'تأیید ایمیل ناموفق بود.'), false);
-        }
-    } catch (_) {
-        showMsg('registerMsg', 'خطا در تأیید کد ایمیل.', false);
-    }
-}
 
 async function requestProfileEmailOtp() {
     const email = document.getElementById('profileEmail').value.trim().toLowerCase();
@@ -791,7 +784,7 @@ async function doLogin(e) {
             hideModal('authModal');
             afterAuth(data.user);
         } else {
-            showMsg('loginMsg', errText(data, 'ورود ناموفق بود. نام کاربری و گذرواژه را بررسی کنید.'), false);
+            showMsg('loginMsg', errText(data, 'ورود ناموفق بود. نام کاربری، ایمیل و گذرواژه را بررسی کنید.'), false);
         }
     } catch (err) {
         showMsg('loginMsg', 'خطا در ارتباط با سرور. دوباره تلاش کنید.', false);
@@ -802,33 +795,37 @@ async function doRegister(e) {
     e.preventDefault();
     const displayName = document.getElementById('registerDisplayName').value.trim();
     const username = document.getElementById('registerUsername').value.trim();
-    const password = document.getElementById('registerPassword').value;
     const email = document.getElementById('registerEmail').value.trim().toLowerCase();
-    const emailVerificationToken = document.getElementById('registerEmailVerificationToken').value;
-    if (!emailVerificationToken) {
-        showMsg('registerMsg', 'ابتدا ایمیل را با کد یک‌بارمصرف تأیید کنید.', false);
+    const code = document.getElementById('registerOtp').value.trim();
+    if (!/^[^\\s]{3,24}$/.test(username)) {
+        showMsg('registerMsg', 'نام کاربری باید ۳ تا ۲۴ نویسه و بدون فاصله باشد.', false);
         return;
     }
     try {
+        const verified = await api('/api/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, purpose: 'register' })
+        });
+        if (!verified.res.ok || !verified.data.verificationToken) {
+            showMsg('registerMsg', errText(verified.data, 'کد تأیید معتبر نیست.'), false);
+            return;
+        }
         const { res, data } = await api('/api/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ username, password, displayName, email, emailVerificationToken })
+            body: JSON.stringify({
+                username,
+                displayName,
+                email,
+                emailVerificationToken: verified.data.verificationToken
+            })
         });
         if ((res.status === 201 || res.ok) && data && data.user) {
-            // باگ الف: register کوکیِ نشست نمی‌دهد؛ بلافاصله با همان مشخصات
-            // وارد می‌شویم تا نشست ساخته شود (دقیقاً مانند برنامهٔ اندروید).
-            let sessionUser = data.user;
-            try {
-                const login = await api('/api/auth/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ username, password })
-                });
-                if (login.res.ok && login.data && login.data.user) {
-                    sessionUser = login.data.user;
-                }
-            } catch (e) { /* اگر ورودِ بی‌درنگ نشد، کاربر می‌تواند دستی وارد شود */ }
             hideModal('authModal');
-            afterAuth(sessionUser);
+            afterAuth(data.user);
+            if (data.passwordSetupRequired) {
+                const profileMsg = document.getElementById('profileMsg');
+                if (profileMsg) showMsg('profileMsg', 'حساب ساخته شد. برای ورودهای بعدی، از گزینهٔ بازیابی گذرواژه یک گذرواژه تعیین کنید.', true);
+            }
         } else {
             showMsg('registerMsg', errText(data, 'ثبت‌نام ناموفق بود. دوباره تلاش کنید.'), false);
         }
@@ -897,6 +894,7 @@ function switchAuthTab(register) {
     document.getElementById('tabRegister').classList.toggle('active', register);
     document.getElementById('loginForm').hidden = register;
     document.getElementById('registerForm').hidden = !register;
+    document.getElementById('resetForm').hidden = true;
 }
 
 function initAuth() {
@@ -914,14 +912,22 @@ function initAuth() {
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
-    document.getElementById('requestLoginOtpBtn')?.addEventListener('click', requestLoginOtp);
-    document.getElementById('verifyLoginOtpBtn')?.addEventListener('click', verifyLoginOtp);
+    document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => {
+        document.getElementById('resetEmail').value = document.getElementById('loginUsername').value.includes('@')
+            ? document.getElementById('loginUsername').value.trim() : '';
+        document.getElementById('loginForm').hidden = true;
+        document.getElementById('registerForm').hidden = true;
+        document.getElementById('resetForm').hidden = false;
+    });
+    document.getElementById('backToLoginBtn')?.addEventListener('click', () => switchAuthTab(false));
+    document.getElementById('requestResetOtpBtn')?.addEventListener('click', requestResetOtp);
     document.getElementById('requestRegisterOtpBtn')?.addEventListener('click', requestRegisterOtp);
-    document.getElementById('verifyRegisterOtpBtn')?.addEventListener('click', verifyRegisterOtp);
     document.getElementById('requestProfileOtpBtn')?.addEventListener('click', requestProfileEmailOtp);
     document.getElementById('verifyProfileOtpBtn')?.addEventListener('click', verifyProfileEmailOtp);
     if (loginForm) loginForm.addEventListener('submit', doLogin);
     if (registerForm) registerForm.addEventListener('submit', doRegister);
+    const resetForm = document.getElementById('resetForm');
+    if (resetForm) resetForm.addEventListener('submit', doResetPassword);
 
     const profileBtn = document.getElementById('profileOpenBtn');
     if (profileBtn) profileBtn.addEventListener('click', openProfile);
