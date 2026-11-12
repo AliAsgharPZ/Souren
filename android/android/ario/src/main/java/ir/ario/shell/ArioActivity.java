@@ -1,11 +1,14 @@
-package ir.ario.shell
+package ir.ario.shell;
 
-import ir.souren.souren.MainActivity
+import ir.souren.souren.MainActivity;
 
 /**
- * Ario is a first-class launcher Activity inside the Souren package.
- * It owns a dedicated Android task and Flutter engine/entrypoint.
+ * Ario's real launcher Activity. It inherits the native file/share bridges
+ * but runs its own Flutter engine and Dart entrypoint in a separate task.
  */
-class ArioActivity : MainActivity() {
-    override fun getDartEntrypointFunctionName(): String = "arioMain"
+public final class ArioActivity extends MainActivity {
+    @Override
+    public String getDartEntrypointFunctionName() {
+        return "arioMain";
+    }
 }
