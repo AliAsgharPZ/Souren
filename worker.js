@@ -161,6 +161,10 @@ function base64UrlUtf8(value) {
         .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
+function wrapBase64(value) {
+    return value.match(/.{1,76}/g)?.join('\\r\\n') || '';
+}
+
 function encodeMimeHeader(value) {
     const bytes = new TextEncoder().encode(value);
     return `=?UTF-8?B?${base64Bytes(bytes)}?=`;
@@ -205,12 +209,12 @@ async function sendOtpEmail(env, to, subject, code) {
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
         '',
-        base64Bytes(new TextEncoder().encode(plain)),
+        wrapBase64(base64Bytes(new TextEncoder().encode(plain))),
         '--souren-otp-boundary',
         'Content-Type: text/html; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
         '',
-        base64Bytes(new TextEncoder().encode(html)),
+        wrapBase64(base64Bytes(new TextEncoder().encode(html))),
         '--souren-otp-boundary--',
         '',
     ].join('\r\n');
