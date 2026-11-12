@@ -210,26 +210,16 @@
 
             <form id="loginForm" class="auth-form">
                 <label class="field">
-                    <span>نام کاربری</span>
+                    <span>نام کاربری یا ایمیل</span>
                     <input type="text" id="loginUsername" autocomplete="username" required>
                 </label>
                 <label class="field">
                     <span>گذرواژه</span>
                     <input type="password" id="loginPassword" autocomplete="current-password" required>
                 </label>
+                <button class="btn-ghost btn-block" id="forgotPasswordBtn" type="button">گذرواژه را فراموش کرده‌اید؟</button>
                 <p class="form-msg" id="loginMsg" hidden></p>
-                <button class="btn-primary btn-block" type="submit">ورود با گذرواژه</button>
-                <div class="auth-otp-divider">یا ورود با کد یک‌بارمصرف ایمیل</div>
-                <label class="field">
-                    <span>ایمیل حساب</span>
-                    <input type="email" id="loginEmail" autocomplete="email">
-                </label>
-                <button class="btn-ghost btn-block" id="requestLoginOtpBtn" type="button">ارسال کد ورود</button>
-                <label class="field">
-                    <span>کد شش‌رقمی</span>
-                    <input type="text" id="loginOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
-                </label>
-                <button class="btn-primary btn-block" id="verifyLoginOtpBtn" type="button">ورود با کد ایمیل</button>
+                <button class="btn-primary btn-block" type="submit">ورود</button>
             </form>
 
             <form id="registerForm" class="auth-form" hidden>
@@ -247,17 +237,30 @@
                 </label>
                 <button class="btn-ghost btn-block" id="requestRegisterOtpBtn" type="button">ارسال کد تأیید ایمیل</button>
                 <label class="field">
-                    <span>کد تأیید ایمیل</span>
+                    <span>کد شش‌رقمی</span>
                     <input type="text" id="registerOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
                 </label>
-                <button class="btn-ghost btn-block" id="verifyRegisterOtpBtn" type="button">تأیید کد</button>
-                <input type="hidden" id="registerEmailVerificationToken">
-                <label class="field">
-                    <span>گذرواژه</span>
-                    <input type="password" id="registerPassword" autocomplete="new-password" required>
-                </label>
                 <p class="form-msg" id="registerMsg" hidden></p>
-                <button class="btn-primary btn-block" id="registerSubmitBtn" type="submit" disabled>ثبت‌نام</button>
+                <button class="btn-primary btn-block" id="registerSubmitBtn" type="submit">تأیید کد و ساخت حساب</button>
+            </form>
+
+            <form id="resetForm" class="auth-form" hidden>
+                <label class="field">
+                    <span>ایمیل حساب</span>
+                    <input type="email" id="resetEmail" autocomplete="email" required>
+                </label>
+                <button class="btn-ghost btn-block" id="requestResetOtpBtn" type="button">ارسال کد بازیابی</button>
+                <label class="field">
+                    <span>کد شش‌رقمی</span>
+                    <input type="text" id="resetOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+                </label>
+                <label class="field">
+                    <span>گذرواژهٔ تازه</span>
+                    <input type="password" id="resetPassword" autocomplete="new-password" minlength="6" required>
+                </label>
+                <p class="form-msg" id="resetMsg" hidden></p>
+                <button class="btn-primary btn-block" type="submit">تأیید کد و تغییر گذرواژه</button>
+                <button class="btn-ghost btn-block" id="backToLoginBtn" type="button">بازگشت به ورود</button>
             </form>
         </div>
     </div>
