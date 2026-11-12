@@ -1928,7 +1928,9 @@ class _ShellState extends State<Shell> {
           arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99);
         }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
-        arioLastLesson = (ario['lastLesson'] as num?)?.toInt() ?? 0;
+        if (ario['curriculumVersion'] == 2) {
+          arioLastLesson = (ario['lastLesson'] as num?)?.toInt() ?? 0;
+        }
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
       }
     });
@@ -4116,9 +4118,9 @@ class _ShellState extends State<Shell> {
   // ---------- نمایهٔ کاربری ----------
   static const _badgeMeta = <String, (IconData, String, String)>{
     'member': (LucideIcons.badgeCheck, 'عضو سورن', 'با نمایه وارد شده‌اید'),
-    'firstLike': (LucideIcons.heartHandshake, 'نخستین پسند', 'نخستین واژه را بپسندید'),
-    'tenBookmarks': (LucideIcons.bookMarked, 'نشان‌گذار حرفه‌ای', '۱۰ واژه را نشان کنید'),
-    'threeHundred': (LucideIcons.trophy, 'نشان سیصد امتیاز', 'به ۳۰۰ امتیاز برسید'),
+    'firstLike': (LucideIcons.heart, 'نخستین پسند', 'نخستین واژه را بپسندید'),
+    'tenBookmarks': (LucideIcons.bookmark, 'نشان‌گذار حرفه‌ای', '۱۰ واژه را نشان کنید'),
+    'threeHundred': (LucideIcons.award, 'نشان سیصد امتیاز', 'به ۳۰۰ امتیاز برسید'),
     'firstBookmark': (LucideIcons.bookmark, 'نخستین نشان', 'یک واژه نشان کنید'),
     'liker': (LucideIcons.heart, 'دل‌باختهٔ واژه', '۱۰ واژه را بپسندید'),
     'keyboardStudent': (
@@ -5141,7 +5143,7 @@ class _ShellState extends State<Shell> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))),
           child: Column(children: [
-            CircleAvatar(radius: 30, backgroundColor: pal.sel, child: Icon(LucideIcons.graduationCap, color: pal.bg, size: 28)),
+            CircleAvatar(radius: 30, backgroundColor: pal.sel, child: Icon(LucideIcons.award, color: pal.bg, size: 28)),
             const SizedBox(height: 10),
             Text(accountUser?['displayName']?.toString() ?? 'نمایهٔ یادگیری', style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
