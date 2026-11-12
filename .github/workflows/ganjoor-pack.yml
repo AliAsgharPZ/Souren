@@ -9,7 +9,6 @@ on:
       - '.github/workflows/ganjoor-pack.yml'
       - 'android/tools/build_ganjoor_seekable_pack.py'
       - 'android/lib/data/ganjoor_pack.dart'
-      - 'android/lib/main.dart'
       - 'android/pubspec.yaml'
       - 'android/tools/test_ganjoor_seekable_pack.py'
 
