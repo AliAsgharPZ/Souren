@@ -8,3 +8,11 @@
 Android package: `ir.souren.souren`  
 Version name: `0.4.7.2`  
 Version code: `25`
+
+
+## v0.4.7.4
+- Replaced Resend delivery with Gmail API using server-side OAuth refresh-token exchange.
+- Completed email OTP login, registration and account email linking in the Android app and Ario.
+- Kept website login, registration and profile email linking on the Worker OTP endpoints.
+- Added the privacy policy page required for Google OAuth app publishing.
+- Preserved the existing Workers KV binding and Worker API paths.
