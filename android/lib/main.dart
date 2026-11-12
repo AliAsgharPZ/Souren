@@ -183,15 +183,123 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Scroll content is rendered without edge masks or fade overlays.
-/// Kept as an identity wrapper so every existing page in Souren and Ario
-/// receives the same behavior without changing its scroll physics.
+/// Long, feathered top and bottom masks for scrollable content.
+/// The top edge stays soft beneath fixed page titles; the bottom edge
+/// fades out as the final content approaches the viewport boundary.
+class ScrollFade extends StatefulWidget {
+  final Widget child;
+  final bool alwaysVisible;
+  final double fadeExtent;
+  final double fadeStrength;
+
+  const ScrollFade({
+    super.key,
+    required this.child,
+    this.alwaysVisible = true,
+    this.fadeExtent = 0.30,
+    this.fadeStrength = 0.94,
+  });
+
+  @override
+  State<ScrollFade> createState() => _ScrollFadeState();
+}
+
+class _ScrollFadeState extends State<ScrollFade> {
+  double _top = 1;
+  double _bottom = 0;
+
+  double _smooth(double value) {
+    final p = value.clamp(0.0, 1.0);
+    return p * p * (3 - 2 * p);
+  }
+
+  void _update(ScrollMetrics metrics) {
+    const transition = 120.0;
+    final top = widget.alwaysVisible
+        ? 1.0
+        : _smooth(metrics.pixels / transition);
+    final bottom = metrics.maxScrollExtent <= 0
+        ? 0.0
+        : _smooth(metrics.extentAfter / transition);
+    if ((top - _top).abs() > 0.003 || (bottom - _bottom).abs() > 0.003) {
+      setState(() {
+        _top = top;
+        _bottom = bottom;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final extent = widget.fadeExtent.clamp(0.08, 0.46);
+    final strength = widget.fadeStrength.clamp(0.0, 1.0);
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) {
+        _update(n.metrics);
+        return false;
+      },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n is ScrollUpdateNotification ||
+              n is OverscrollNotification ||
+              n is ScrollEndNotification) {
+            _update(n.metrics);
+          }
+          return false;
+        },
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final top = _top * strength;
+            final bottom = _bottom * strength;
+            final topEnd = extent;
+            final bottomStart = 1 - extent;
+            final colors = <Color>[
+              Color.fromRGBO(0, 0, 0, 1 - top),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.82),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.48),
+              Colors.black,
+              Colors.black,
+              Color.fromRGBO(0, 0, 0, 1 - bottom * 0.48),
+              Color.fromRGBO(0, 0, 0, 1 - bottom * 0.82),
+              Color.fromRGBO(0, 0, 0, 1 - bottom),
+            ];
+            final stops = <double>[
+              0,
+              topEnd * 0.22,
+              topEnd * 0.52,
+              topEnd,
+              bottomStart,
+              bottomStart + extent * 0.48,
+              bottomStart + extent * 0.78,
+              1,
+            ];
+            return LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: colors,
+              stops: stops,
+            ).createShader(rect);
+          },
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Shared edge treatment for the scrollable lists in both Souren and Ario.
 Widget edgeFade({
   required Widget child,
-  bool alwaysVisible = false,
-  double fadeExtent = 0.34,
+  bool alwaysVisible = true,
+  double fadeExtent = 0.30,
   double fadeStrength = 0.94,
-}) => child;
+}) => ScrollFade(
+  alwaysVisible: alwaysVisible,
+  fadeExtent: fadeExtent,
+  fadeStrength: fadeStrength,
+  child: child,
+);
 
 /// Apple-like press feedback for every custom button: the control
 /// dips subtly (scale 0.975 + slight dim) the moment the finger lands and
