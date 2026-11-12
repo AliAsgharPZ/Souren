@@ -1925,7 +1925,7 @@ class _ShellState extends State<Shell> {
             if (fullyCovered) arioCompletedLessons.add(level);
           }
           final oldLast = (ario['lastLesson'] as num?)?.toInt() ?? 0;
-          arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99);
+          arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99).toInt();
         }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
         if (ario['curriculumVersion'] == 2) {
