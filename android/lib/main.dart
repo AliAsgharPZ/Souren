@@ -314,7 +314,7 @@ class _ScrollAwarePageShellState extends State<ScrollAwarePageShell> {
     final delta = n.scrollDelta ?? 0;
     if (delta == 0) return false;
     final toward = delta > 0; // down hides; up reveals
-    if (toward == _headerVisible) {
+    if ((!toward) == _headerVisible) {
       _directionDistance = 0;
       return false;
     }
