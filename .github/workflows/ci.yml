@@ -145,13 +145,32 @@ jobs:
         with:
           name: Souren-v0.4.7.5-Universal-APK
           path: android/Souren-v0.4.7.5.apk
-      - name: Publish Souren v0.4.7.5
-        if: github.event_name == 'push' && github.ref == 'refs/tags/v0.4.7.5'
+      - name: Create v0.4.7.5 tag after successful main validation
+        id: create_release_tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="Souren v0.4.7.5. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; padded learned-word review list. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
+          if TAG_JSON=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.7.5" 2>/dev/null); then
+            TAG_SHA=$(printf '%s' "$TAG_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).object.sha))")
+            if [ "$TAG_SHA" = "$GITHUB_SHA" ]; then
+              echo "created=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "created=false" >> "$GITHUB_OUTPUT"
+              echo "Existing v0.4.7.5 tag points to a different commit; refusing to move it."
+            fi
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref='refs/tags/v0.4.7.5' -f sha="$GITHUB_SHA"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish Souren v0.4.7.5
+        if: github.event_name == 'push' && (github.ref == 'refs/tags/v0.4.7.5' || (github.ref == 'refs/heads/main' && steps.create_release_tag.outputs.created == 'true'))
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES="Souren v0.4.7.5. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; padded learned-word review list; all 552 shared dictionary entries levelled 1-100 using difficulty and estimated frequency; Ario 100-stage progression with units, lessons, learning/review/practice sections and linked exercises. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
           if gh release view v0.4.7.5 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload v0.4.7.5 Souren-v0.4.7.5.apk --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit v0.4.7.5 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.5" --notes "$NOTES"
