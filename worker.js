@@ -163,7 +163,7 @@ function base64UrlUtf8(value) {
 
 function encodeMimeHeader(value) {
     const bytes = new TextEncoder().encode(value);
-    return \`=?UTF-8?B?\${base64Bytes(bytes)}?=\`;
+    return `=?UTF-8?B?${base64Bytes(bytes)}?=`;
 }
 
 async function getGmailAccessToken(env) {
@@ -183,7 +183,7 @@ async function getGmailAccessToken(env) {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || typeof payload.access_token !== 'string') {
-        throw new Error(\`gmail_token_exchange_failed_\${response.status}\`);
+        throw new Error(`gmail_token_exchange_failed_${response.status}`);
     }
     return payload.access_token;
 }
@@ -191,13 +191,13 @@ async function getGmailAccessToken(env) {
 async function sendOtpEmail(env, to, subject, code) {
     if (!env.EMAIL_FROM) throw new Error('email_from_not_configured');
     const accessToken = await getGmailAccessToken(env);
-    const html = \`<div dir="rtl" style="font-family:Arial,sans-serif"><h2>سورن</h2><p>کد یک‌بارمصرف شما:</p><div style="font-size:30px;font-weight:bold;letter-spacing:8px">\${code}</div><p>این کد تا ۱۰ دقیقه معتبر است.</p><p>اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.</p></div>\`;
-    const plain = \`کد یک‌بارمصرف شما: \${code}
-این کد تا ۱۰ دقیقه معتبر است. اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.\`;
+    const html = `<div dir="rtl" style="font-family:Arial,sans-serif"><h2>سورن</h2><p>کد یک‌بارمصرف شما:</p><div style="font-size:30px;font-weight:bold;letter-spacing:8px">${code}</div><p>این کد تا ۱۰ دقیقه معتبر است.</p><p>اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.</p></div>`;
+    const plain = `کد یک‌بارمصرف شما: ${code}
+این کد تا ۱۰ دقیقه معتبر است. اگر این درخواست از طرف شما نبوده، این پیام را نادیده بگیرید.`;
     const mime = [
-        \`From: \${env.EMAIL_FROM}\`,
-        \`To: \${to}\`,
-        \`Subject: \${encodeMimeHeader(subject)}\`,
+        `From: ${env.EMAIL_FROM}`,
+        `To: ${to}`,
+        `Subject: ${encodeMimeHeader(subject)}`,
         'MIME-Version: 1.0',
         'Content-Type: multipart/alternative; boundary="souren-otp-boundary"',
         '',
@@ -217,12 +217,12 @@ async function sendOtpEmail(env, to, subject, code) {
     const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
         method: 'POST',
         headers: {
-            'Authorization': \`Bearer \${accessToken}\`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ raw: base64UrlUtf8(mime) }),
     });
-    if (!response.ok) throw new Error(\`gmail_send_failed_\${response.status}\`);
+    if (!response.ok) throw new Error(`gmail_send_failed_${response.status}`);
 }
 
 async function handleRequestOtp(request, env) {
@@ -243,17 +243,17 @@ async function handleRequestOtp(request, env) {
         session = await getSessionUser(request, env);
         if (!session) return json(request, { error: 'وارد نشده‌اید' }, 401);
     }
-    if (purpose === 'register' && await env.USERS.get(\`email:\${email}\`)) {
+    if (purpose === 'register' && await env.USERS.get(`email:${email}`)) {
         return json(request, { error: 'این ایمیل قبلاً به یک حساب متصل شده است' }, 409);
     }
     if (purpose === 'link') {
-        const owner = await env.USERS.get(\`email:\${email}\`);
+        const owner = await env.USERS.get(`email:${email}`);
         if (owner && owner !== session.rec.username) {
             return json(request, { error: 'این ایمیل به حساب دیگری متصل است' }, 409);
         }
     }
 
-    const rateKey = \`otp:rate:\${purpose}:\${email}\`;
+    const rateKey = `otp:rate:${purpose}:${email}`;
     if (await env.USERS.get(rateKey)) {
         return json(request, { error: 'برای ارسال کد جدید کمی صبر کنید' }, 429);
     }
@@ -262,14 +262,14 @@ async function handleRequestOtp(request, env) {
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
     const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
     const codeHash = await hashPassword(code, salt);
-    const otpKey = \`otp:\${purpose}:\${email}\`;
+    const otpKey = `otp:${purpose}:${email}`;
     await env.USERS.put(otpKey, JSON.stringify({
         salt,
         codeHash,
         username: purpose === 'link' ? session.rec.username : null,
         createdAt: Date.now(),
     }), { expirationTtl: 600 });
-    await env.USERS.delete(\`otp:attempt:\${purpose}:\${email}\`);
+    await env.USERS.delete(`otp:attempt:${purpose}:${email}`);
 
     const subject = purpose === 'login'
         ? 'کد ورود به سورن'
