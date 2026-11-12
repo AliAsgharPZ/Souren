@@ -40,6 +40,30 @@ void main() {
               score: 0),
           isTrue);
       expect(
+          badgeEarned('firstLike',
+              loggedIn: false,
+              favorites: 0,
+              likes: 1,
+              corrections: 0,
+              score: 2),
+          isTrue);
+      expect(
+          badgeEarned('tenBookmarks',
+              loggedIn: false,
+              favorites: 10,
+              likes: 0,
+              corrections: 0,
+              score: 30),
+          isTrue);
+      expect(
+          badgeEarned('threeHundred',
+              loggedIn: false,
+              favorites: 0,
+              likes: 0,
+              corrections: 0,
+              score: 300),
+          isTrue);
+      expect(
           badgeEarned('liker',
               loggedIn: false,
               favorites: 0,
