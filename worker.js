@@ -327,7 +327,7 @@ async function handleVerifyOtp(request, env) {
     try { body = await request.json(); }
     catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
     const email = normalizeEmail(body.email);
-    const purpose = ['register', 'login', 'link'].includes(body.purpose)
+    const purpose = ['register', 'login', 'link', 'reset'].includes(body.purpose)
         ? body.purpose : 'login';
     const code = typeof body.code === 'string' ? body.code.trim() : '';
     if (!validEmail(email) || !/^\d{6}$/.test(code)) {
