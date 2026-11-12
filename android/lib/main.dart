@@ -1912,7 +1912,21 @@ class _ShellState extends State<Shell> {
         learnedCorrections = ((learned['history'] as List?) ?? []).length;
       }
       if (ario != null) {
-        arioCompletedLessons..clear()..addAll(((ario['completedLessons'] as List?) ?? []).map((e) => (e as num).toInt()));
+        arioCompletedLessons.clear();
+        final savedLessons = ((ario['completedLessons'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
+        if (ario['curriculumVersion'] == 2) {
+          arioCompletedLessons.addAll(savedLessons.where((level) => level >= 0 && level < 100));
+        } else {
+          final totalWords = d.entries.where((entry) => entry.hasFa).length;
+          for (var level = 0; level < 100; level++) {
+            final start = (level * totalWords / 100).floor();
+            final end = ((level + 1) * totalWords / 100).ceil();
+            final fullyCovered = start < end && List<int>.generate(end - start, (i) => start + i).every((wordIndex) => savedLessons.contains(wordIndex ~/ 12));
+            if (fullyCovered) arioCompletedLessons.add(level);
+          }
+          final oldLast = (ario['lastLesson'] as num?)?.toInt() ?? 0;
+          arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99);
+        }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
         arioLastLesson = (ario['lastLesson'] as num?)?.toInt() ?? 0;
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
@@ -2762,8 +2776,8 @@ class _ShellState extends State<Shell> {
           );
         }
         return edgeFade(
-                    fadeExtent: 0.17,
-          fadeStrength: 0.94,
+          fadeExtent: 0.17,
+          fadeStrength: 1.0,
           child: ListView.separated(
             padding: const EdgeInsets.only(top: 4, bottom: 12),
             itemCount: rows.length,
@@ -2848,8 +2862,8 @@ class _ShellState extends State<Shell> {
         );
       }
       return edgeFade(
-                fadeExtent: 0.17,
-        fadeStrength: 0.94,
+        fadeExtent: 0.17,
+        fadeStrength: 1.0,
         child: ListView.separated(
           padding: const EdgeInsets.only(top: 4, bottom: 12),
           itemCount: rows.length,
@@ -4731,6 +4745,7 @@ class _ShellState extends State<Shell> {
 
 
   Future<void> _saveArioProgress() async => SharedFiles.writeJson('ario_learning.json', {
+    'curriculumVersion': 2,
     'completedLessons': arioCompletedLessons.toList()..sort(),
     'knownWords': arioKnownWords.toList(),
     'lastLesson': arioLastLesson,
