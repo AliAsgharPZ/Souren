@@ -27,6 +27,16 @@ jobs:
         run: |
           node --check ../worker.js
           node --check ../script.js
+      - name: Verify live Worker OTP and password-reset routes
+        run: |
+          set -euo pipefail
+          BASE=https://souren.aliasgharpanahizare.workers.dev
+          OTP_STATUS=$(curl -sS -o /tmp/souren-otp-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/request-otp" -H 'Content-Type: application/json' --data '{"email":"invalid-email","purpose":"register"}')
+          test "$OTP_STATUS" = "400"
+          node -e "const x=require('/tmp/souren-otp-probe.json'); if (!x.error) process.exit(1)"
+          RESET_STATUS=$(curl -sS -o /tmp/souren-reset-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/reset-password" -H 'Content-Type: application/json' --data '{}')
+          test "$RESET_STATUS" = "400"
+          node -e "const x=require('/tmp/souren-reset-probe.json'); if (!x.error) process.exit(1)"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -116,7 +126,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="Souren v0.4.7.5. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; 100-level unit and lesson organization with sections and exercises; padded learned-word review list. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
+          NOTES="Souren v0.4.7.5. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; padded learned-word review list. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
           if gh release view v0.4.7.5 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload v0.4.7.5 Souren-v0.4.7.5.apk --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit v0.4.7.5 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.5" --notes "$NOTES"
