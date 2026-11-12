@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_drawing/path_drawing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'lucide.dart';
