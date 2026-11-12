@@ -106,18 +106,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Souren-v0.4.7.3-APK
-          path: android/Souren-v0.4.7.2.apk
-      - name: Publish or refresh Souren v0.4.7.2
+          path: android/Souren-v0.4.7.3.apk
+      - name: Publish or refresh Souren v0.4.7.3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
             NOTES="Ario learning home redesigned as a winding, Duolingo-style lesson path with stateful lesson nodes and dedicated iconography; supplied Souren and Ario launcher artwork applied; randomized weekly dictionary refresh prevents unnecessary Worker requests; bottom content fade now extends behind the navigation bar; shared Cloudflare account session added to Android and Ario; website registration and email OTP login/profile verification added through the Worker (Resend provider). Canonical 552-entry dataset, Ganjoor offline pack, Abar font and restored v0.4.6.9 switch geometry retained. Signed APK package ir.souren.souren version 0.4.7.3 (26)."
-            if gh release view v0.4.7.2 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              gh release upload v0.4.7.2 Souren-v0.4.7.2.apk --repo "$GITHUB_REPOSITORY" --clobber
-              gh release edit v0.4.7.2 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.2" --notes "$NOTES"
+            if gh release view v0.4.7.3 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              gh release upload v0.4.7.3 Souren-v0.4.7.3.apk --repo "$GITHUB_REPOSITORY" --clobber
+              gh release edit v0.4.7.3 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.3" --notes "$NOTES"
             else
-              gh release create v0.4.7.2 Souren-v0.4.7.2.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.2" --notes "$NOTES"
+              gh release create v0.4.7.3 Souren-v0.4.7.3.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.3" --notes "$NOTES"
             fi
           fi
