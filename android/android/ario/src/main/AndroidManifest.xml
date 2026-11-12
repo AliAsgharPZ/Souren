@@ -5,7 +5,13 @@
             android:name="ir.ario.shell.ArioActivity"
             android:exported="false"
             android:label="Ario"
-            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+            android:launchMode="singleTask"
+            android:taskAffinity="ir.souren.souren.ario"
+            android:theme="@style/LaunchTheme">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+        </activity>
 
         <!-- Disabled until Souren explicitly activates Ario. -->
         <activity-alias
