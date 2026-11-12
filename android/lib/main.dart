@@ -2240,7 +2240,7 @@ class _ShellState extends State<Shell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final pages = arioMode
-        ? <Widget>[_arioHome(d), _arioPractice(d), _arioReview(d), _arioProfile(d), _arioSettings(d)]
+        ? <Widget>[_arioHome(d), _arioPractice(d), _arioReview(d), _arioProfile(d), _arioSettings()]
         : <Widget>[_home(d), _likedPage(d), _sectionsPage(d), _favoritesPage(d), _profilePage(d), _settingsPage(d)];
     return Scaffold(
       extendBody: true,
@@ -5130,7 +5130,7 @@ class _ShellState extends State<Shell> {
     )));
   }
 
-  Widget _arioSettings(Dictionary d) {
+  Widget _arioSettings() {
     return _arioPageShell('پیکربندی', edgeFade(child: ListView(
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
       children: [
