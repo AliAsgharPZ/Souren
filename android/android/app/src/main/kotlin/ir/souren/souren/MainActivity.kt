@@ -18,7 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 import ir.ario.shell.ArioActivity
 import java.io.File
 
-class MainActivity : FlutterActivity() {
+open class MainActivity : FlutterActivity() {
     private var pendingPick: MethodChannel.Result? = null
     private var arioChannel: MethodChannel? = null
 
