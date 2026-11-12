@@ -1336,6 +1336,14 @@ String faNum(Object n) {
 
 void main() => runApp(const SourenApp());
 
+/// Independent Ario application entrypoint. Android launches this in a
+/// dedicated FlutterActivity/FlutterEngine and task, not inside Souren.
+@pragma('vm:entry-point')
+void arioMain() {
+  SettingsStore.fileName = 'ario_settings.json';
+  runApp(const SourenApp(initialArioMode: true));
+}
+
 
 class ArioLessonPage extends StatefulWidget {
   final int lesson;
@@ -1475,7 +1483,8 @@ class _ArioLogoPainter extends CustomPainter {
 }
 
 class SourenApp extends StatefulWidget {
-  const SourenApp({super.key});
+  final bool initialArioMode;
+  const SourenApp({super.key, this.initialArioMode = false});
   @override
   State<SourenApp> createState() => _SourenAppState();
 }
@@ -1547,7 +1556,7 @@ class _SourenAppState extends State<SourenApp> {
         duration: Motion.base,
         transitionBuilder: enterTransition,
         child: ready
-            ? const KeyedSubtree(key: ValueKey('shell'), child: Shell())
+            ? KeyedSubtree(key: const ValueKey('shell'), child: Shell(initialArioMode: widget.initialArioMode))
             : const KeyedSubtree(
                 key: ValueKey('loading'),
                 child: Scaffold(
@@ -1691,7 +1700,8 @@ class Enter extends StatelessWidget {
 }
 
 class Shell extends StatefulWidget {
-  const Shell({super.key});
+  final bool initialArioMode;
+  const Shell({super.key, this.initialArioMode = false});
   @override
   State<Shell> createState() => _ShellState();
 }
@@ -1745,22 +1755,13 @@ class _ShellState extends State<Shell> {
   @override
   void initState() {
     super.initState();
+    arioMode = widget.initialArioMode;
     _searchFocus.addListener(() {
       if (mounted) setState(() => _searchFocused = _searchFocus.hasFocus);
     });
     _load();
     _loadArioState();
     _loadGanjoorPackState();
-    SharedFiles.setArioLaunchHandler(() {
-      _searchFocus.unfocus();
-      if (mounted) setState(() { arioMode = true; tab = 0; });
-    });
-    SharedFiles.consumeArioLaunch().then((open) {
-      if (open && mounted) {
-        _searchFocus.unfocus();
-        setState(() { arioMode = true; tab = 0; });
-      }
-    });
   }
 
   Future<void> _loadArioState() async {
@@ -4571,15 +4572,6 @@ class _ShellState extends State<Shell> {
                 : Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
           ),
-          Pressable(onTap: () => setState(() { arioMode = false; tab = 0; }), child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-            decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(42))),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.arrowRight, size: 16, color: pal.ink),
-              const SizedBox(width: 6),
-              Text('سورن', style: TextStyle(fontSize: 13, color: pal.ink, fontWeight: FontWeight.w600)),
-            ]),
-          )),
         ]),
       ),
       Expanded(child: body),
@@ -4859,7 +4851,7 @@ class _ShellState extends State<Shell> {
       : _pairList(words, bottomPad: kNavClearance, singleLine: true));
   }
 
-  Widget _arioWords(Dictionary d) => _arioPageShell('واژه‌های سورن', _pairList(d.entries.where((e) => e.hasFa).toList(), bottomPad: kNavClearance, singleLine: true));
+  Widget _arioWords(Dictionary d) => _arioPageShell('واژه‌ها', _pairList(d.entries.where((e) => e.hasFa).toList(), bottomPad: kNavClearance, singleLine: true));
 
   Widget _arioProgress(Dictionary d) {
     final total = (d.entries.where((e) => e.hasFa).length + 11) ~/ 12;
