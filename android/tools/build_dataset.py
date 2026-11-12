@@ -59,6 +59,7 @@ for a0, p0, anchor_a, anchor_p in BLOCKS:
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "data"))
 from supplement_fa import PAIRS as SUPPLEMENT  # noqa: E402
+from ario_curriculum import level_dictionary, build_curriculum  # noqa: E402
 missing = [w for w in a if w not in pairs]
 assert len(missing) == 216, len(missing)
 assert [w for w, _ in SUPPLEMENT] == missing, "supplement order mismatch"
@@ -72,9 +73,26 @@ for item in canonical:
 entries = []
 for w in a:
     entries.append({"ar": w, "fa": pairs.get(w, []), "concept": concepts.get(w, "")})
+
+with open("assets/db/categories.json", encoding="utf-8") as category_file:
+    categories = json.load(category_file)["cats"]
+entries = level_dictionary(entries, categories)
+level_by_word = {entry["ar"]: entry for entry in entries}
+for item in canonical:
+    levelled = level_by_word[item["arabic"]]
+    for field in ("level", "frequencyRankEstimate", "difficultyScore", "frequencyMethod", "frequencyBand"):
+        assert item.get(field) == levelled[field], (item["arabic"], field, item.get(field), levelled[field])
+
+curriculum = build_curriculum(entries)
+assert len(entries) == 552 and {entry["level"] for entry in entries} == set(range(1, 101))
+assert len(curriculum["stages"]) == 100
+covered = [word for stage in curriculum["stages"] for unit in stage["units"] for lesson in unit["lessons"] for section in lesson["sections"] if section["type"] == "learn" for word in section["entryIds"]]
+assert len(covered) == 552 and len(set(covered)) == 552
+
 out = {
-    "version": 3,
-    "source": "Canonical 552-entry dictionary.json + Arabic_All v1.5 + Persian_All v1.6 + 216 supplement equivalents",
+    "version": 4,
+    "levelingVersion": 1,
+    "source": "Canonical 552-entry dictionary with estimated frequency and lexical-difficulty levels; Ario uses the same entries.",
     "arabicCount": len(a),
     "pairCount": len(pairs),
     "entries": entries,
@@ -82,6 +100,8 @@ out = {
 for output_path in ("data/dataset.json", "assets/db/dataset.json"):
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
-print(f"OK: {len(a)} Arabic words, {len(pairs)} with Persian equivalents, {len(a)-len(pairs)} without; wrote source and bundled datasets")
+with open("assets/db/ario_curriculum.json", "w", encoding="utf-8") as curriculum_file:
+    json.dump(curriculum, curriculum_file, ensure_ascii=False, indent=1)
+print(f"OK: {len(a)} Arabic words leveled 1-100; {len(curriculum['stages'])} stages; all entries covered exactly once")
 for w, eq in pairs.items():
     print(w, "->", ", ".join(eq))

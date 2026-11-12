@@ -1,6 +1,7 @@
 {
- "version": 3,
- "source": "Canonical 552-entry dictionary.json + Arabic_All v1.5 + Persian_All v1.6 + 216 supplement equivalents",
+ "version": 4,
+ "levelingVersion": 1,
+ "source": "Canonical 552-entry dictionary with estimated frequency and lexical-difficulty levels; Ario uses the same entries.",
  "arabicCount": 552,
  "pairCount": 552,
  "entries": [
@@ -9,7 +10,12 @@
    "fa": [
     "آغاز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "اتفاق",
@@ -17,28 +23,48 @@
     "رویداد",
     "پیشامد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 69
   },
   {
    "ar": "اجازه",
    "fa": [
     "پروانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 122,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 3
   },
   {
    "ar": "اجرا",
    "fa": [
     "انجام"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 30
   },
   {
    "ar": "احتمال",
    "fa": [
     "گمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 123,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 15
   },
   {
    "ar": "احترام",
@@ -46,14 +72,24 @@
     "گرامیداشت",
     "ارج"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "احتیاج",
    "fa": [
     "نیاز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "احساس",
@@ -61,28 +97,48 @@
     "دریافت",
     "حس‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 124,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "اختلاف",
    "fa": [
     "ناهمسانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 125,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "اختیار",
    "fa": [
     "گزینش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "ارتباط",
    "fa": [
     "پیوند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 121,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 13
   },
   {
    "ar": "اساس",
@@ -90,7 +146,12 @@
     "بنیاد",
     "پایه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 127,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "استعداد",
@@ -98,7 +159,12 @@
     "توانایی",
     "نیرومندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 50,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 98
   },
   {
    "ar": "اشتباه",
@@ -106,7 +172,12 @@
     "لغزش",
     "کژی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 80
   },
   {
    "ar": "اصل",
@@ -114,35 +185,60 @@
     "بن",
     "ریشه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 128,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "اصول",
    "fa": [
     "بنیادها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "اطراف",
    "fa": [
     "پیرامون"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "اطلاع",
    "fa": [
     "آگاهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 129,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 9
   },
   {
    "ar": "اطلاعات",
    "fa": [
     "آگاهی‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 130,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "اعتبار",
@@ -150,14 +246,24 @@
     "ارزش",
     "آبرو"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 80
   },
   {
    "ar": "اعتراض",
    "fa": [
     "ناخرسندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 82
   },
   {
    "ar": "اعتماد",
@@ -165,7 +271,12 @@
     "باور",
     "پشتگرمی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 131,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "افتخار",
@@ -173,7 +284,12 @@
     "بالیدن",
     "سربلندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 88
   },
   {
    "ar": "افراد",
@@ -181,7 +297,12 @@
     "کسان",
     "مردمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 132,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "اقدام",
@@ -189,14 +310,24 @@
     "کوشش",
     "دست‌به‌کار شدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 133,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 13
   },
   {
    "ar": "امتحان",
    "fa": [
     "آزمون"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 134,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "امکان",
@@ -204,21 +335,36 @@
     "توانایی",
     "شدنی‌بودن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 135,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 9
   },
   {
    "ar": "انتخاب",
    "fa": [
     "گزینش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 136,
+   "difficultyScore": 45,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "انتظار",
    "fa": [
     "چشم‌داشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 137,
+   "difficultyScore": 45,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "انسان",
@@ -226,14 +372,24 @@
     "آدمی",
     "مردم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 106,
+   "difficultyScore": 42,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "انواع",
    "fa": [
     "گونه‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 670,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 91
   },
   {
    "ar": "اهمیت",
@@ -241,28 +397,48 @@
     "ارزش",
     "بایستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 138,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 9
   },
   {
    "ar": "اولاد",
    "fa": [
     "فرزندان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 50
   },
   {
    "ar": "ایراد",
    "fa": [
     "خرده‌گیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 50
   },
   {
    "ar": "ایمان",
    "fa": [
     "باور"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "باطل",
@@ -270,14 +446,24 @@
     "پوچ",
     "بی‌پایه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "بحث",
    "fa": [
     "گفتگو"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 139,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "برکت",
@@ -285,14 +471,24 @@
     "خجستگی",
     "فرخندگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 42
   },
   {
    "ar": "بنا",
    "fa": [
     "ساختمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 140,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "بیان",
@@ -300,7 +496,12 @@
     "سخن",
     "گفتار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 141,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "بلا",
@@ -308,7 +509,12 @@
     "گزند",
     "آسیب"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "باقی",
@@ -316,7 +522,12 @@
     "باقی‌مانده",
     "پایدار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 44
   },
   {
    "ar": "بشر",
@@ -324,7 +535,12 @@
     "آدمیان",
     "مردم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "تاریخ",
@@ -332,14 +548,24 @@
     "سرگذشت",
     "پیشینه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 142,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 13
   },
   {
    "ar": "تجارت",
    "fa": [
     "بازرگانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 242,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 25
   },
   {
    "ar": "تحقیق",
@@ -347,14 +573,24 @@
     "پژوهش",
     "بررسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 143,
+   "difficultyScore": 41,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "تربیت",
    "fa": [
     "پرورش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "ترتیب",
@@ -362,7 +598,12 @@
     "سامان",
     "چینش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 144,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "تسلیم",
@@ -370,7 +611,12 @@
     "واگذاری",
     "تن‌دادن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "تشکر",
@@ -378,7 +624,12 @@
     "سپاس",
     "سپاسگزاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 145,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 7
   },
   {
    "ar": "تصمیم",
@@ -386,21 +637,36 @@
     "آهنگ",
     "اراده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 146,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "تصویر",
    "fa": [
     "نگاره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 147,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "تعجب",
    "fa": [
     "شگفتی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "تعریف",
@@ -408,28 +674,48 @@
     "بازگفتنِ چیستی",
     "ستایش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "تعطیل",
    "fa": [
     "روزِ بی‌کاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "تعلیم",
    "fa": [
     "آموزش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 148,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 19
   },
   {
    "ar": "تفاوت",
    "fa": [
     "ناهمسانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 149,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "تقسیم",
@@ -437,7 +723,12 @@
     "بخش‌کردن",
     "پخش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "تکلیف",
@@ -445,7 +736,12 @@
     "بایسته",
     "کارِ سپرده‌شده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 90
   },
   {
    "ar": "تمام",
@@ -453,14 +749,24 @@
     "همه",
     "سراسر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 150,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 7
   },
   {
    "ar": "تمرین",
    "fa": [
     "کارورزی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 151,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 19
   },
   {
    "ar": "توجه",
@@ -468,7 +774,12 @@
     "پروا",
     "نگرش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 152,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 7
   },
   {
    "ar": "توضیح",
@@ -476,14 +787,24 @@
     "روشن‌گری",
     "بازگویی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 153,
+   "difficultyScore": 37,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "توقع",
    "fa": [
     "چشم‌داشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 38
   },
   {
    "ar": "تولید",
@@ -491,7 +812,12 @@
     "پدیدآوردن",
     "ساختن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 154,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "ثابت",
@@ -499,21 +825,36 @@
     "استوار",
     "پابرجا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 44
   },
   {
    "ar": "ثروت",
    "fa": [
     "دارایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 243,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "ثانیه",
    "fa": [
     "دم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "جامعه",
@@ -521,14 +862,24 @@
     "همبود",
     "مردم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 155,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "جدول",
    "fa": [
     "نمودار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "جزء",
@@ -536,14 +887,24 @@
     "بخش",
     "پاره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "جلسه",
    "fa": [
     "نشست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 156,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "جماعت",
@@ -551,7 +912,12 @@
     "گروه",
     "انبوه مردم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 157,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "جمعیت",
@@ -559,14 +925,24 @@
     "انبوهی",
     "شمارِ مردم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 158,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 25
   },
   {
    "ar": "جنس",
    "fa": [
     "گونه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 159,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 3
   },
   {
    "ar": "جهت",
@@ -574,21 +950,36 @@
     "سو",
     "برای"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 160,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 5
   },
   {
    "ar": "جواب",
    "fa": [
     "پاسخ"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 111,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "جواهر",
    "fa": [
     "گوهرها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 53
   },
   {
    "ar": "حادثه",
@@ -596,7 +987,12 @@
     "رویداد",
     "پیشامد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "حال",
@@ -604,56 +1000,96 @@
     "اکنون",
     "چگونگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 115,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "حاضر",
    "fa": [
     "آماده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 38
   },
   {
    "ar": "حافظه",
    "fa": [
     "یاد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 78
   },
   {
    "ar": "حاکم",
    "fa": [
     "فرمانروا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 67
   },
   {
    "ar": "حرکت",
    "fa": [
     "جنبش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 161,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 5
   },
   {
    "ar": "حساب",
    "fa": [
     "شمارش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 162,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "حقیقت",
    "fa": [
     "راستی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 163,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "حکومت",
    "fa": [
     "فرمانروایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 164,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 21
   },
   {
    "ar": "حل",
@@ -661,28 +1097,48 @@
     "گشایش",
     "چاره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 356,
+   "difficultyScore": 19,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "حمایت",
    "fa": [
     "پشتیبانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 165,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "حیوان",
    "fa": [
     "جانور"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 166,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "حدود",
    "fa": [
     "کرانه‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "حرارت",
@@ -690,14 +1146,24 @@
     "گرما",
     "دما"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "حرف",
    "fa": [
     "سخن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 167,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "حق",
@@ -705,7 +1171,12 @@
     "سزاواری",
     "داد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 74,
+   "difficultyScore": 29,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج",
+   "level": 1
   },
   {
    "ar": "حکم",
@@ -713,7 +1184,12 @@
     "فرمان",
     "داوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 168,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 15
   },
   {
    "ar": "حمله",
@@ -721,42 +1197,72 @@
     "یورش",
     "تازش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 169,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 9
   },
   {
    "ar": "خبر",
    "fa": [
     "آگهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 113,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 3
   },
   {
    "ar": "ختم",
    "fa": [
     "به پایان رساندن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "خدمت",
    "fa": [
     "کارگزاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 170,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "خزانه",
    "fa": [
     "گنجینه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 78
   },
   {
    "ar": "خصوصیت",
    "fa": [
     "ویژگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "خطر",
@@ -764,21 +1270,36 @@
     "آسیب‌پذیری",
     "بیم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 25,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 30
   },
   {
    "ar": "خلاصه",
    "fa": [
     "چکیده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 171,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "دقیقه",
    "fa": [
     "دم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 61
   },
   {
    "ar": "دلیل",
@@ -786,7 +1307,12 @@
     "برهان",
     "چرایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 172,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "دنیا",
@@ -794,21 +1320,36 @@
     "جهان",
     "گیتی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 63
   },
   {
    "ar": "دین",
    "fa": [
     "آیین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 173,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 13
   },
   {
    "ar": "ذکر",
    "fa": [
     "یادآوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "ذوق",
@@ -816,7 +1357,12 @@
     "شوق",
     "پسند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 483,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 62
   },
   {
    "ar": "ذات",
@@ -824,14 +1370,24 @@
     "نهاد",
     "گوهر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 44
   },
   {
    "ar": "ذخیره",
    "fa": [
     "اندوخته"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 579,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "ذهن",
@@ -839,14 +1395,24 @@
     "اندیشه",
     "یاد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 174,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 15
   },
   {
    "ar": "راحت",
    "fa": [
     "آسوده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 175,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 7
   },
   {
    "ar": "رابطه",
@@ -854,7 +1420,12 @@
     "پیوند",
     "بستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 120,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "رسم",
@@ -862,7 +1433,12 @@
     "روش",
     "آیین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 176,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "رضایت",
@@ -870,35 +1446,60 @@
     "خرسندی",
     "خشنودی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 177,
+   "difficultyScore": 37,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 25
   },
   {
    "ar": "رقم",
    "fa": [
     "شماره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 56
   },
   {
    "ar": "رکود",
    "fa": [
     "ایستایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 46
   },
   {
    "ar": "زحمت",
    "fa": [
     "رنج"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "زیارت",
    "fa": [
     "دیدارِ نیایشگاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 86
   },
   {
    "ar": "ساعت",
@@ -906,7 +1507,12 @@
     "زمان‌سنج",
     "گاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 178,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 11
   },
   {
    "ar": "سبب",
@@ -914,7 +1520,12 @@
     "انگیزه",
     "چرایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 109,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 1
   },
   {
    "ar": "سرعت",
@@ -922,14 +1533,24 @@
     "شتاب",
     "تندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 179,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 11
   },
   {
    "ar": "سطح",
    "fa": [
     "رویه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 180,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "سعادت",
@@ -937,7 +1558,12 @@
     "نیک‌بختی",
     "خوشبختی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "سفر",
@@ -945,14 +1571,24 @@
     "رهسپاری",
     "گردش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 118,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "سلامت",
    "fa": [
     "تندرستی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 119,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "سلطنت",
@@ -960,14 +1596,24 @@
     "شهریاری",
     "پادشاهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 90
   },
   {
    "ar": "سوال",
    "fa": [
     "پرسش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 112,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 2
   },
   {
    "ar": "شخص",
@@ -975,7 +1621,12 @@
     "کس",
     "تن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 181,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "شرط",
@@ -983,7 +1634,12 @@
     "پیمان",
     "بایسته"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 182,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "شریک",
@@ -991,7 +1647,12 @@
     "انباز",
     "هم‌کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 42
   },
   {
    "ar": "شغل",
@@ -999,21 +1660,36 @@
     "پیشه",
     "کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 183,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 15
   },
   {
    "ar": "شکل",
    "fa": [
     "ریخت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 184,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "شهادت",
    "fa": [
     "گواهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "شهرت",
@@ -1021,14 +1697,24 @@
     "آوازه",
     "نام‌آوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 42
   },
   {
    "ar": "شهوت",
    "fa": [
     "کام‌جویی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 46
   },
   {
    "ar": "صبر",
@@ -1036,7 +1722,12 @@
     "شکیبایی",
     "بردباری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 185,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 11
   },
   {
    "ar": "صحبت",
@@ -1044,7 +1735,12 @@
     "گفتگو",
     "هم‌سخنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 186,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 17
   },
   {
    "ar": "صحت",
@@ -1052,7 +1748,12 @@
     "درستی",
     "تندرستی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 56
   },
   {
    "ar": "صداقت",
@@ -1060,35 +1761,60 @@
     "راستگویی",
     "یکرنگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "صنعت",
    "fa": [
     "پیشه‌وری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 46
   },
   {
    "ar": "صورت",
    "fa": [
     "چهره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 187,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 7
   },
   {
    "ar": "صفحه",
    "fa": [
     "برگ"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 188,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "صفت",
    "fa": [
     "ویژگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 189,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 5
   },
   {
    "ar": "ضرر",
@@ -1096,14 +1822,24 @@
     "زیان",
     "گزند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 190,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "ضرورت",
    "fa": [
     "بایستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 191,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "ضعیف",
@@ -1111,14 +1847,24 @@
     "ناتوان",
     "سست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 192,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "ضمانت",
    "fa": [
     "پشتوانه‌دادن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "ضمیر",
@@ -1126,21 +1872,36 @@
     "درون",
     "نام‌نشین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 69
   },
   {
    "ar": "طبع",
    "fa": [
     "سرشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "طبیعت",
    "fa": [
     "سرشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 193,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "طرف",
@@ -1148,7 +1909,12 @@
     "سو",
     "کناره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 194,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "طلب",
@@ -1156,14 +1922,24 @@
     "خواست",
     "بستانکاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 195,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "طول",
    "fa": [
     "درازا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 196,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 5
   },
   {
    "ar": "ظاهر",
@@ -1171,14 +1947,24 @@
     "نما",
     "پیدا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 197,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 17
   },
   {
    "ar": "ظرف",
    "fa": [
     "آوند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 28
   },
   {
    "ar": "ظلم",
@@ -1186,14 +1972,24 @@
     "ستم",
     "بیداد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 198,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 21
   },
   {
    "ar": "ظهور",
    "fa": [
     "پدیدارشدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 40
   },
   {
    "ar": "عادت",
@@ -1201,7 +1997,12 @@
     "خوگرفتگی",
     "خوی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 199,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 19
   },
   {
    "ar": "عالم",
@@ -1209,7 +2010,12 @@
     "جهان",
     "دانشور"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 116,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "عامل",
@@ -1217,7 +2023,12 @@
     "کارگزار",
     "انگیزه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 63
   },
   {
    "ar": "عبارت",
@@ -1225,7 +2036,12 @@
     "گفتار",
     "بندِ سخن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "عجیب",
@@ -1233,42 +2049,72 @@
     "شگفت",
     "شگفت‌انگیز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 42
   },
   {
    "ar": "عدالت",
    "fa": [
     "دادگری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 200,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 25
   },
   {
    "ar": "عدد",
    "fa": [
     "شماره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 201,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "عذر",
    "fa": [
     "پوزش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 28
   },
   {
    "ar": "عزت",
    "fa": [
     "ارجمندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 23
   },
   {
    "ar": "عشق",
    "fa": [
     "دل‌باختگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 202,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "عصر",
@@ -1276,14 +2122,24 @@
     "روزگار",
     "پسینِ روز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 203,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 8
   },
   {
    "ar": "عقل",
    "fa": [
     "خرد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 204,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 12
   },
   {
    "ar": "علاقه",
@@ -1291,7 +2147,12 @@
     "دلبستگی",
     "مهر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "علت",
@@ -1299,14 +2160,24 @@
     "انگیزه",
     "چرایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "علم",
    "fa": [
     "دانش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 205,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 17
   },
   {
    "ar": "عمر",
@@ -1314,7 +2185,12 @@
     "زیست",
     "زندگانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 206,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 10
   },
   {
    "ar": "عمل",
@@ -1322,7 +2198,12 @@
     "کار",
     "کردار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 38,
+   "difficultyScore": 23,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج",
+   "level": 1
   },
   {
    "ar": "عنوان",
@@ -1330,14 +2211,24 @@
     "نام",
     "سرنامه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 207,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "عید",
    "fa": [
     "جشن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 208,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 6
   },
   {
    "ar": "غریب",
@@ -1345,7 +2236,12 @@
     "ناآشنا",
     "بیگانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 209,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "غرض",
@@ -1353,49 +2249,84 @@
     "آهنگ",
     "کینه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 483,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 62
   },
   {
    "ar": "غصه",
    "fa": [
     "اندوه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "غلط",
    "fa": [
     "نادرست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 210,
+   "difficultyScore": 22,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 9
   },
   {
    "ar": "غنی",
    "fa": [
     "توانگر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 28
   },
   {
    "ar": "فرصت",
    "fa": [
     "گاهِ مناسب"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 211,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 11
   },
   {
    "ar": "فرض",
    "fa": [
     "پنداشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "فساد",
    "fa": [
     "تباهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 212,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 11
   },
   {
    "ar": "فصل",
@@ -1403,7 +2334,12 @@
     "بخش",
     "برههٔ سال"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 213,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "فضا",
@@ -1411,7 +2347,12 @@
     "جا",
     "پهنه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 214,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 18
   },
   {
    "ar": "فقط",
@@ -1419,7 +2360,12 @@
     "تنها",
     "بس"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 215,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 13
   },
   {
    "ar": "ابد",
@@ -1427,7 +2373,12 @@
     "جاودان",
     "همیشگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "ابدی",
@@ -1435,7 +2386,12 @@
     "جاودانه",
     "همیشگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "ابهام",
@@ -1443,7 +2399,12 @@
     "پیچیدگی",
     "ناروشنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 63
   },
   {
    "ar": "اتحاد",
@@ -1451,14 +2412,24 @@
     "یگانگی",
     "همبستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 63
   },
   {
    "ar": "اثاث",
    "fa": [
     "لوازم خانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 38
   },
   {
    "ar": "اثر",
@@ -1466,70 +2437,120 @@
     "نشان",
     "پی‌آیند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 216,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 14
   },
   {
    "ar": "اجابت",
    "fa": [
     "پذیرش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 48
   },
   {
    "ar": "اجتماع",
    "fa": [
     "گردهمایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 91
   },
   {
    "ar": "احاطه",
    "fa": [
     "فراگیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 48
   },
   {
    "ar": "احتراز",
    "fa": [
     "پرهیز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "احداث",
    "fa": [
     "پدیدآوردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "احساسات",
    "fa": [
     "دریافت‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 631,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 91
   },
   {
    "ar": "اخبار",
    "fa": [
     "آگهی‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "اختراع",
    "fa": [
     "نوآوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "اختصار",
    "fa": [
     "کوتاه‌سازی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "اخلاق",
@@ -1537,14 +2558,24 @@
     "خوی",
     "منش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 236,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 36
   },
   {
    "ar": "اداره",
    "fa": [
     "گرداندن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 217,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 24
   },
   {
    "ar": "ادامه",
@@ -1552,7 +2583,12 @@
     "پیگیری",
     "دنباله"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 218,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 20
   },
   {
    "ar": "ادب",
@@ -1560,7 +2596,12 @@
     "فرهیختگی",
     "نزاکت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 219,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 21
   },
   {
    "ar": "ادعا",
@@ -1568,126 +2609,216 @@
     "خواسته",
     "گمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 220,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 16
   },
   {
    "ar": "اذیت",
    "fa": [
     "آزار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 221,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 15
   },
   {
    "ar": "اراده",
    "fa": [
     "خواست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 222,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 17
   },
   {
    "ar": "ارث",
    "fa": [
     "میراث"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 223,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 17
   },
   {
    "ar": "ارقام",
    "fa": [
     "شماره‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 88
   },
   {
    "ar": "استثنا",
    "fa": [
     "بیرون از قاعده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "استدلال",
    "fa": [
     "برهان‌آوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "استراحت",
    "fa": [
     "آسودن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 238,
+   "difficultyScore": 55,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 88
   },
   {
    "ar": "استعمار",
    "fa": [
     "چیره‌جویی سرزمین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 100
   },
   {
    "ar": "استقبال",
    "fa": [
     "پیشواز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 239,
+   "difficultyScore": 49,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 76
   },
   {
    "ar": "استقلال",
    "fa": [
     "خودگردانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 240,
+   "difficultyScore": 57,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 91
   },
   {
    "ar": "استناد",
    "fa": [
     "تکیه‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "اسراف",
    "fa": [
     "ولخرجی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 71
   },
   {
    "ar": "اسم",
    "fa": [
     "نام"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 114,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 1
   },
   {
    "ar": "اشاره",
    "fa": [
     "نشان‌دادن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 224,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 19
   },
   {
    "ar": "اشتراک",
    "fa": [
     "همبخشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 75
   },
   {
    "ar": "اصالت",
    "fa": [
     "ریشه‌داری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "اصرار",
    "fa": [
     "پافشاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "اصطلاح",
@@ -1695,35 +2826,60 @@
     "واژه",
     "گفتار ویژه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 92
   },
   {
    "ar": "اضافه",
    "fa": [
     "افزوده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 225,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 23
   },
   {
    "ar": "اطاعت",
    "fa": [
     "فرمانبرداری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 226,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 19
   },
   {
    "ar": "اظهار",
    "fa": [
     "بیان‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 227,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 28
   },
   {
    "ar": "اعتدال",
    "fa": [
     "میانه‌روی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 75
   },
   {
    "ar": "اعتراف",
@@ -1731,42 +2887,72 @@
     "خستوشدن",
     "بازگفتن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 228,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 28
   },
   {
    "ar": "اعتصاب",
    "fa": [
     "دست‌کشیدن از کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 583,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 88
   },
   {
    "ar": "اعجاز",
    "fa": [
     "شگفت‌کاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 84
   },
   {
    "ar": "اعدام",
    "fa": [
     "کشتن به فرمان دادگاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "اعزام",
    "fa": [
     "گسیل‌داشتن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "اعصاب",
    "fa": [
     "رگ‌وپی‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "اعضا",
@@ -1774,56 +2960,96 @@
     "اندام‌ها",
     "هم‌وندان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "اعلام",
    "fa": [
     "آگهی‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 71
   },
   {
    "ar": "آفت",
    "fa": [
     "گزند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 21
   },
   {
    "ar": "افق",
    "fa": [
     "کرانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 36
   },
   {
    "ar": "اقامت",
    "fa": [
     "ماندگاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 59
   },
   {
    "ar": "اقتصاد",
    "fa": [
     "سامانِ دارایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 241,
+   "difficultyScore": 38,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 36
   },
   {
    "ar": "اقلیت",
    "fa": [
     "گروهِ کم‌شمار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "اقناع",
    "fa": [
     "باوراندن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 59
   },
   {
    "ar": "التماس",
@@ -1831,7 +3057,12 @@
     "زاری",
     "خواهش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 46,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 94
   },
   {
    "ar": "التهاب",
@@ -1839,7 +3070,12 @@
     "آماس",
     "سوزش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 54,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "الفت",
@@ -1847,28 +3083,48 @@
     "دوستی",
     "خوگیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "امارت",
    "fa": [
     "فرمانروایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "امانت",
    "fa": [
     "سپرده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 50
   },
   {
    "ar": "امتیاز",
    "fa": [
     "برتری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 76
   },
   {
    "ar": "امداد",
@@ -1876,21 +3132,36 @@
     "یاری",
     "کمک‌رسانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "ابتلا",
    "fa": [
     "گرفتاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 84
   },
   {
    "ar": "ابراز",
    "fa": [
     "بازگو کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "اثبات",
@@ -1898,28 +3169,48 @@
     "استواری",
     "درست‌نمایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "اجاره",
    "fa": [
     "کرایه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "احیا",
    "fa": [
     "زنده‌سازی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 30
   },
   {
    "ar": "اختتام",
    "fa": [
     "پایان‌دهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "ادراک",
@@ -1927,7 +3218,12 @@
     "دریافت",
     "فهم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "ارادت",
@@ -1935,77 +3231,132 @@
     "دلبستگی",
     "پیروی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 63
   },
   {
    "ar": "ارتجاع",
    "fa": [
     "واپس‌گرایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "ارتفاع",
    "fa": [
     "بلندا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "ارتکاب",
    "fa": [
     "دست‌زدن به کار بد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 75
   },
   {
    "ar": "ارزاق",
    "fa": [
     "روزی‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "استحقاق",
    "fa": [
     "شایستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 98
   },
   {
    "ar": "استدعا",
    "fa": [
     "درخواست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 92
   },
   {
    "ar": "استرداد",
    "fa": [
     "بازپس‌گیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 96
   },
   {
    "ar": "استفاده",
    "fa": [
     "بهره‌گیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 231,
+   "difficultyScore": 47,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 69
   },
   {
    "ar": "استمرار",
    "fa": [
     "پیوستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "استنتاج",
    "fa": [
     "نتیجه‌گیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 100
   },
   {
    "ar": "اسوه",
@@ -2013,7 +3364,12 @@
     "الگو",
     "سرمشق"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "اشباع",
@@ -2021,77 +3377,132 @@
     "پرکردن",
     "سیرکردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "اشتغال",
    "fa": [
     "سرگرمی به کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 605,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 90
   },
   {
    "ar": "اصابت",
    "fa": [
     "به‌هدف‌خوردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 48
   },
   {
    "ar": "اضطراب",
    "fa": [
     "دلواپسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 233,
+   "difficultyScore": 38,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 36
   },
   {
    "ar": "اطمینان",
    "fa": [
     "آسودگی خاطر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 234,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 40
   },
   {
    "ar": "اعانه",
    "fa": [
     "کمک مالی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 71
   },
   {
    "ar": "اعتنا",
    "fa": [
     "توجه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "اغراق",
    "fa": [
     "گزافه‌گویی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 579,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "افاده",
    "fa": [
     "خودنمایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 50
   },
   {
    "ar": "افتراق",
    "fa": [
     "جدایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 82
   },
   {
    "ar": "اقتباس",
    "fa": [
     "برگرفتن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 82
   },
   {
    "ar": "اقتدار",
@@ -2099,7 +3510,12 @@
     "چیرگی",
     "توانمندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 640,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 94
   },
   {
    "ar": "اقرار",
@@ -2107,476 +3523,816 @@
     "پذیرش",
     "اعتراف"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 70
   },
   {
    "ar": "التزام",
    "fa": [
     "پایبندی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "امتناع",
    "fa": [
     "خودداری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 76
   },
   {
    "ar": "انتساب",
    "fa": [
     "وابستگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "انتشار",
    "fa": [
     "پخش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 232,
+   "difficultyScore": 47,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 69
   },
   {
    "ar": "انتصاب",
    "fa": [
     "گماردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "انجماد",
    "fa": [
     "یخ‌بستن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 753,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "انضمام",
    "fa": [
     "پیوست‌شدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "انفصال",
    "fa": [
     "جدایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 94
   },
   {
    "ar": "انقباض",
    "fa": [
     "فشردگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 762,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "انقراض",
    "fa": [
     "نابودی نسل"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 762,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 96
   },
   {
    "ar": "ابتکار",
    "fa": [
     "نوآوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "اتلاف",
    "fa": [
     "تباه‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "اثاثیه",
    "fa": [
     "لوازم خانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 80
   },
   {
    "ar": "اجحاف",
    "fa": [
     "ستم در حق کسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 84
   },
   {
    "ar": "احکام",
    "fa": [
     "فرمان‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 84
   },
   {
    "ar": "اختلال",
    "fa": [
     "آشفتگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "ازدواج",
    "fa": [
     "همسرگزینی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 230,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 25
   },
   {
    "ar": "استحاله",
    "fa": [
     "دگردیسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 96
   },
   {
    "ar": "استحصال",
    "fa": [
     "به‌دست‌آوردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 96
   },
   {
    "ar": "استعاره",
    "fa": [
     "وام‌واژهٔ مجازی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 801,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "استعانت",
    "fa": [
     "یاری‌خواستن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "استقرار",
    "fa": [
     "جاگیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 98
   },
   {
    "ar": "استقراء",
    "fa": [
     "کل‌گیری از جزء"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 858,
+   "difficultyScore": 57,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 100
   },
   {
    "ar": "استلزام",
    "fa": [
     "بایستگی همراه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "استنکاف",
    "fa": [
     "خودداری از کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "اصطکاک",
    "fa": [
     "سایش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 75
   },
   {
    "ar": "اضمحلال",
    "fa": [
     "ازمیان‌رفتن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 98
   },
   {
    "ar": "اطناب",
    "fa": [
     "درازگویی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 71
   },
   {
    "ar": "اعتیاد",
    "fa": [
     "خوگرفتگی زیانبار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 229,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 40
   },
   {
    "ar": "افراط",
    "fa": [
     "زیاده‌روی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 50
   },
   {
    "ar": "افول",
    "fa": [
     "فروافتادن، غروب"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "التیام",
    "fa": [
     "بهبود زخم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "امتزاج",
    "fa": [
     "درآمیختگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 75
   },
   {
    "ar": "انتحار",
    "fa": [
     "خودکشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "انزجار",
    "fa": [
     "بیزاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 753,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "انصراف",
    "fa": [
     "بازگشتن از تصمیم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 94
   },
   {
    "ar": "انعطاف",
    "fa": [
     "خمش‌پذیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 235,
+   "difficultyScore": 43,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 55
   },
   {
    "ar": "اهتزاز",
    "fa": [
     "لرزش، در اهتزاز بودن پرچم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 76
   },
   {
    "ar": "باکره",
    "fa": [
     "دوشیزه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "بتول",
    "fa": [
     "پاکدامن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "بخیل",
    "fa": [
     "تنگ‌نظر در بخشش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 56
   },
   {
    "ar": "بذل",
    "fa": [
     "بخشش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "برائت",
    "fa": [
     "پاکی از گناه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "بهتان",
    "fa": [
     "دروغِ ناروا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "تاسیس",
    "fa": [
     "بنیادگذاری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "تباه",
    "fa": [
     "نابود، از فارسی اما جزو ترکیب عربی نیست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "تجرید",
    "fa": [
     "جداسازی از ماده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "تحریف",
    "fa": [
     "دگرگون‌ساختن ناروای سخن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "تخیل",
    "fa": [
     "پندارورزی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 57
   },
   {
    "ar": "تدبیر",
    "fa": [
     "چاره‌اندیشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "تسکین",
    "fa": [
     "آرام‌بخشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 86
   },
   {
    "ar": "تشییع",
    "fa": [
     "همراهی با مرده تا گورستان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "اتقان",
    "fa": [
     "استواری کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "اجلاس",
    "fa": [
     "نشست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 48
   },
   {
    "ar": "احتساب",
    "fa": [
     "به‌حساب‌آوردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 74
   },
   {
    "ar": "اختصاص",
    "fa": [
     "ویژه‌سازی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 81
   },
   {
    "ar": "ازل",
    "fa": [
     "آغاز بی‌آغاز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 21
   },
   {
    "ar": "استحسان",
    "fa": [
     "پسندیدن به‌گمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 96
   },
   {
    "ar": "استخراج",
    "fa": [
     "بیرون‌کشیدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 98
   },
   {
    "ar": "استشهاد",
    "fa": [
     "گواه‌آوردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 100
   },
   {
    "ar": "استعلام",
    "fa": [
     "جویاشدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "استقصا",
    "fa": [
     "کاوش ژرف"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 810,
+   "difficultyScore": 53,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 99
   },
   {
    "ar": "استهزاء",
    "fa": [
     "ریشخند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 97
   },
   {
    "ar": "اسقاط",
    "fa": [
     "ساقط‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "اعتلا",
    "fa": [
     "بلندپایگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 49
   },
   {
    "ar": "افاضه",
    "fa": [
     "فروریختن فیض"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "اقتضا",
    "fa": [
     "بایستگی حال"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 73
   },
   {
    "ar": "التفات",
@@ -2584,21 +4340,36 @@
     "روی‌آوری",
     "توجه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 46,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 94
   },
   {
    "ar": "امعان",
    "fa": [
     "ژرف‌نگری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 85
   },
   {
    "ar": "انجذاب",
    "fa": [
     "کشش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 95
   },
   {
    "ar": "اهتمام",
@@ -2606,7 +4377,12 @@
     "کوشش",
     "دلبستگی به کار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 80
   },
   {
    "ar": "برهه",
@@ -2614,84 +4390,144 @@
     "زمانه",
     "دورهٔ کوتاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "بلاهت",
    "fa": [
     "کودنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 71
   },
   {
    "ar": "تاویل",
    "fa": [
     "برگرداندنِ معنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "تجانس",
    "fa": [
     "همجنسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "تحیر",
    "fa": [
     "سرگشتگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "تخاصم",
    "fa": [
     "دشمنی متقابل"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 59
   },
   {
    "ar": "ترشح",
    "fa": [
     "تراوش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 32
   },
   {
    "ar": "تسامح",
    "fa": [
     "سهل‌گیری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "تشتت",
    "fa": [
     "پراکندگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 32
   },
   {
    "ar": "تعمق",
    "fa": [
     "ژرف‌اندیشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "تفرقه",
    "fa": [
     "جدایی‌افکنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 59
   },
   {
    "ar": "تلألؤ",
    "fa": [
     "درخشش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 53
   },
   {
    "ar": "تمکن",
@@ -2699,35 +4535,60 @@
     "توانگری",
     "جاافتادگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 42
   },
   {
    "ar": "تنعم",
    "fa": [
     "خوش‌گذرانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 32
   },
   {
    "ar": "تیقن",
    "fa": [
     "اطمینان‌یابی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 38
   },
   {
    "ar": "ثقل",
    "fa": [
     "سنگینی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 448,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 30
   },
   {
    "ar": "ثواب",
    "fa": [
     "پاداش نیک"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "جبروت",
@@ -2735,49 +4596,84 @@
     "بزرگی",
     "چیرگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "جزم",
    "fa": [
     "قطعیت‌بخشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "جلال",
    "fa": [
     "شکوه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 32
   },
   {
    "ar": "جنین",
    "fa": [
     "نوزاد در زهدان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "حدس",
    "fa": [
     "گمانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "حشر",
    "fa": [
     "گردآمدن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "حلاوت",
    "fa": [
     "شیرینی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 53
   },
   {
    "ar": "حیز",
@@ -2785,42 +4681,72 @@
     "شمار",
     "گستره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "خاتم",
    "fa": [
     "پایان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "خباثت",
    "fa": [
     "پلیدی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 73
   },
   {
    "ar": "خرافه",
    "fa": [
     "پندارِ بی‌پایه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "خصم",
    "fa": [
     "دشمن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "خلود",
    "fa": [
     "جاودانگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "دلالت",
@@ -2828,140 +4754,240 @@
     "راهنمایی",
     "نشانه‌داری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 79
   },
   {
    "ar": "دیانت",
    "fa": [
     "دین‌داری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 86
   },
   {
    "ar": "ذمه",
    "fa": [
     "پیمانِ نگهبانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 56
   },
   {
    "ar": "رسالت",
    "fa": [
     "فرستادگی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 86
   },
   {
    "ar": "زعیم",
    "fa": [
     "پیشوا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 67
   },
   {
    "ar": "سبات",
    "fa": [
     "خوابِ ژرف"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 34
   },
   {
    "ar": "ستر",
    "fa": [
     "پوشاندن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "سطوت",
    "fa": [
     "شکوهِ هراس‌انگیز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 34
   },
   {
    "ar": "سیادت",
    "fa": [
     "سروری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "شاکله",
    "fa": [
     "ساختار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 53
   },
   {
    "ar": "ضلالت",
    "fa": [
     "گمراهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 62
   },
   {
    "ar": "ضنک",
    "fa": [
     "تنگدستی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "طینت",
    "fa": [
     "سرشت"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "ظنین",
    "fa": [
     "بدگمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "ابدا",
    "fa": [
     "هرگز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 30
   },
   {
    "ar": "اتفاقا",
    "fa": [
     "از قضا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 80
   },
   {
    "ar": "احتمالا",
    "fa": [
     "شاید"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 596,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 88
   },
   {
    "ar": "اساسا",
    "fa": [
     "در بنیاد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 48
   },
   {
    "ar": "استیناف",
    "fa": [
     "درخواست بازبینی حکم"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 100
   },
   {
    "ar": "اصلا",
    "fa": [
     "به‌هیچ‌رو"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "البته",
@@ -2969,147 +4995,252 @@
     "ناگزیر",
     "بی‌گمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 64
   },
   {
    "ar": "اما",
    "fa": [
     "ولی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "انصافا",
    "fa": [
     "از روی دادگری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "اولا",
    "fa": [
     "نخست آنکه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "بالاخره",
    "fa": [
     "سرانجام"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 90
   },
   {
    "ar": "بحر",
    "fa": [
     "دریا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "بعضا",
    "fa": [
     "گاه‌گاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 38
   },
   {
    "ar": "تشبیه",
    "fa": [
     "همانندسازی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "تفتیش",
    "fa": [
     "بازرسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 52
   },
   {
    "ar": "تقریبا",
    "fa": [
     "نزدیک به"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 82
   },
   {
    "ar": "ثالثا",
    "fa": [
     "سوم آنکه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 59
   },
   {
    "ar": "ثانیا",
    "fa": [
     "دوم آنکه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "جدا",
    "fa": [
     "سواسو"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "جناس",
    "fa": [
     "همصدایی واژه‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "حتما",
    "fa": [
     "بی‌گمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "خصوصا",
    "fa": [
     "به‌ویژه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "خلیج",
    "fa": [
     "گودای دریا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 57
   },
   {
    "ar": "دایره",
    "fa": [
     "چنبره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 86
   },
   {
    "ar": "دعوی",
    "fa": [
     "دادخواهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 67
   },
   {
    "ar": "دقیقا",
    "fa": [
     "درست به‌همان‌گونه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 61
   },
   {
    "ar": "ذاتا",
    "fa": [
     "در نهاد خود"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "ذره",
@@ -3117,84 +5248,144 @@
     "خرده",
     "بسیار ریز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 44
   },
   {
    "ar": "رسما",
    "fa": [
     "آشکارا و قانونی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "ریه",
    "fa": [
     "شش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "صراحتا",
    "fa": [
     "آشکارا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 76
   },
   {
    "ar": "ضرورتا",
    "fa": [
     "به‌ناگزیر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "ضمنا",
    "fa": [
     "در ضمن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "طبعا",
    "fa": [
     "به‌خودیِ‌خود"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 34
   },
   {
    "ar": "طحال",
    "fa": [
     "سپرز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "ظاهرا",
    "fa": [
     "به‌ظاهر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 62
   },
   {
    "ar": "عائله",
    "fa": [
     "خانواده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   },
   {
    "ar": "عصب",
    "fa": [
     "رگ‌وپی، پی عصبی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "عضله",
    "fa": [
     "ماهیچه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "عمدتا",
@@ -3202,28 +5393,48 @@
     "بیشتر",
     "در اصل"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 65
   },
   {
    "ar": "عملا",
    "fa": [
     "در کردار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "عنصر",
    "fa": [
     "بن‌مایه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "غالبا",
    "fa": [
     "در بیشترِ هنگام‌ها"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 62
   },
   {
    "ar": "فورا",
@@ -3231,7 +5442,12 @@
     "بی‌درنگ",
     "هم‌اکنون"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "قطب",
@@ -3239,7 +5455,12 @@
     "کانون",
     "محورِ زمین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 69
   },
   {
    "ar": "کاملا",
@@ -3247,70 +5468,120 @@
     "یکسره",
     "سراسر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 65
   },
   {
    "ar": "کبد",
    "fa": [
     "جگر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "کلا",
    "fa": [
     "سراسر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 23
   },
   {
    "ar": "کنایه",
    "fa": [
     "اشارهٔ پوشیده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 73
   },
   {
    "ar": "لزوما",
    "fa": [
     "به‌ناگزیر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   },
   {
    "ar": "متغیر",
    "fa": [
     "دگرگون‌شونده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 90
   },
   {
    "ar": "مثلا",
    "fa": [
     "برای نمونه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 40
   },
   {
    "ar": "مثلث",
    "fa": [
     "سه‌گوش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 77
   },
   {
    "ar": "مجددا",
    "fa": [
     "دوباره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 55
   },
   {
    "ar": "محکمه",
    "fa": [
     "دادگاه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "محور",
@@ -3318,350 +5589,600 @@
     "کانون",
     "میله"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 76
   },
   {
    "ar": "مخصوصا",
    "fa": [
     "به‌ویژه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 83
   },
   {
    "ar": "مدار",
    "fa": [
     "چرخهٔ گردش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "مربع",
    "fa": [
     "چهارگوش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "مساوی",
    "fa": [
     "برابر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 55
   },
   {
    "ar": "نبض",
    "fa": [
     "تپش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 56
   },
   {
    "ar": "نسبتا",
    "fa": [
     "کمابیش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 55
   },
   {
    "ar": "نوعا",
    "fa": [
     "گونه‌وار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "اجتماعی",
    "fa": [
     "جامعه‌ای"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 666,
+   "difficultyScore": 44,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 92
   },
   {
    "ar": "اخلاقی",
    "fa": [
     "خویی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 237,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 41
   },
   {
    "ar": "اداری",
    "fa": [
     "دفتری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 84
   },
   {
    "ar": "ادبی",
    "fa": [
     "نگارشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 65
   },
   {
    "ar": "اصلی",
    "fa": [
     "بنیادین"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 31
   },
   {
    "ar": "اقتصادی",
    "fa": [
     "مالی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 653,
+   "difficultyScore": 42,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 92
   },
   {
    "ar": "الهی",
    "fa": [
     "خدایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 65
   },
   {
    "ar": "امن",
    "fa": [
     "ایمن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "انسانی",
    "fa": [
     "آدمی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 93
   },
   {
    "ar": "تاریخی",
    "fa": [
     "دیرینه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 82
   },
   {
    "ar": "جالب",
    "fa": [
     "گیرا"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 32
   },
   {
    "ar": "جسمی",
    "fa": [
     "تنی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "جمعی",
    "fa": [
     "گروهی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "جمله",
    "fa": [
     "بند سخن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "حقیقی",
    "fa": [
     "راست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "خارجی",
    "fa": [
     "برونی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 60
   },
   {
    "ar": "خصوصی",
    "fa": [
     "ویژه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 61
   },
   {
    "ar": "خیاط",
    "fa": [
     "جامه‌دوز"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 57
   },
   {
    "ar": "داخلی",
    "fa": [
     "اندرونی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 61
   },
   {
    "ar": "دنیوی",
    "fa": [
     "این‌جهانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 53
   },
   {
    "ar": "دینی",
    "fa": [
     "آیینی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 67
   },
   {
    "ar": "ذهنی",
    "fa": [
     "درونی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 57
   },
   {
    "ar": "رسمی",
    "fa": [
     "دیوانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 67
   },
   {
    "ar": "روحی",
    "fa": [
     "روانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "رئیس",
    "fa": [
     "سرپرست"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 39,
+   "difficultyScore": 28,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج",
+   "level": 1
   },
   {
    "ar": "سخی",
    "fa": [
     "بخشنده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "سریع",
    "fa": [
     "تند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 34
   },
   {
    "ar": "سیاسی",
    "fa": [
     "کشوری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 87
   },
   {
    "ar": "شجاع",
    "fa": [
     "دلیر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 34
   },
   {
    "ar": "شخصی",
    "fa": [
     "خودی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 39
   },
   {
    "ar": "صندوق",
    "fa": [
     "گنجه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 61
   },
   {
    "ar": "صیاد",
    "fa": [
     "شکارچی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "طبی",
    "fa": [
     "پزشکی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 43
   },
   {
    "ar": "طبیب",
    "fa": [
     "پزشک"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "طبیعی",
    "fa": [
     "سرشتی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   },
   {
    "ar": "عادی",
    "fa": [
     "روزمره"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "عرفانی",
    "fa": [
     "شهودی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 91
   },
   {
    "ar": "علمی",
    "fa": [
     "دانشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "عملی",
    "fa": [
     "کاربردی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "عمومی",
    "fa": [
     "همگانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   },
   {
    "ar": "عینی",
    "fa": [
     "بیرونی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "فاعل",
    "fa": [
     "کننده (در دستور زبان)"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 68
   },
   {
    "ar": "افسر",
@@ -3669,7 +6190,12 @@
     "سرگرد",
     "درجه‌دار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 62
   },
   {
    "ar": "امر",
@@ -3677,28 +6203,48 @@
     "کار",
     "فرمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "املا",
    "fa": [
     "درست‌نویسی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 65
   },
   {
    "ar": "انشا",
    "fa": [
     "نگارش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 692,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 92
   },
   {
    "ar": "بصری",
    "fa": [
     "دیداری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 44
   },
   {
    "ar": "بیت",
@@ -3706,21 +6252,36 @@
     "دو مصراع",
     "خانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 36
   },
   {
    "ar": "تجربی",
    "fa": [
     "آزمایشی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 51
   },
   {
    "ar": "جراح",
    "fa": [
     "چاقو-پزشک، برنده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 66
   },
   {
    "ar": "جمع",
@@ -3728,63 +6289,108 @@
     "گردآمده",
     "بیش از یک"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 26
   },
   {
    "ar": "جنسی",
    "fa": [
     "زیستی-جفتی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 33
   },
   {
    "ar": "حسی",
    "fa": [
     "دریافتی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 22
   },
   {
    "ar": "حمال",
    "fa": [
     "باربر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "دلال",
    "fa": [
     "میانجی خرید و فروش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 45
   },
   {
    "ar": "رباعی",
    "fa": [
     "چارگانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "روحانی",
    "fa": [
     "دینکار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 91
   },
   {
    "ar": "ریاضی",
    "fa": [
     "شمارورزی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "سمعی",
    "fa": [
     "شنیداری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 46
   },
   {
    "ar": "صرف",
@@ -3792,175 +6398,300 @@
     "ریخت‌شناسی واژه",
     "هزینه‌کردن"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 27
   },
   {
    "ar": "صوتی",
    "fa": [
     "آوایی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 46
   },
   {
    "ar": "طب",
    "fa": [
     "پزشکی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 29
   },
   {
    "ar": "عاطفی",
    "fa": [
     "دلی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "عقلی",
    "fa": [
     "خردی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 57
   },
   {
    "ar": "عمو",
    "fa": [
     "عموی پدری"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 23
   },
   {
    "ar": "عمه",
    "fa": [
     "خواهر پدر"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 23
   },
   {
    "ar": "غزل",
    "fa": [
     "چامهٔ عاشقانه"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 37
   },
   {
    "ar": "فقه",
    "fa": [
     "دین‌شناسی حقوقی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 56
   },
   {
    "ar": "فکری",
    "fa": [
     "اندیشه‌ای"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 47
   },
   {
    "ar": "قابله",
    "fa": [
     "مامای زایمان"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "قافیه",
    "fa": [
     "هم‌آوایی پایانی"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "قرائت",
    "fa": [
     "بازخوانی بلند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 89
   },
   {
    "ar": "قصاب",
    "fa": [
     "گوشت‌فروش"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "قصیده",
    "fa": [
     "چامهٔ بلند"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 78
   },
   {
    "ar": "کیفی",
    "fa": [
     "چگونگی‌محور"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 35
   },
   {
    "ar": "کیمیا",
    "fa": [
     "دگرگون‌سازی مواد"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 55
   },
   {
    "ar": "ماضی",
    "fa": [
     "گذشته"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 40
   },
   {
    "ar": "مبلغ",
    "fa": [
     "اندازهٔ پول"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 58
   },
   {
    "ar": "متاثر",
    "fa": [
     "دلگیرشده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 78
   },
   {
    "ar": "متحیر",
    "fa": [
     "سرگشته"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 72
   },
   {
    "ar": "متشکر",
    "fa": [
     "سپاسگزار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   },
   {
    "ar": "متعجب",
    "fa": [
     "شگفت‌زده"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 73
   },
   {
    "ar": "متنفر",
    "fa": [
     "بیزار"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 73
   },
   {
    "ar": "مثنوی",
    "fa": [
     "چامهٔ دوبیتی‌پیوسته"
    ],
-   "concept": ""
+   "concept": "",
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه",
+   "level": 78
   },
   {
    "ar": "كتاب",
@@ -3968,7 +6699,12 @@
     "کتاب",
     "دفتر"
    ],
-   "concept": "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند."
+   "concept": "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند.",
+   "frequencyRankEstimate": 71,
+   "difficultyScore": 27,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج",
+   "level": 1
   },
   {
    "ar": "مدرسة",
@@ -3976,7 +6712,12 @@
     "مدرسه",
     "آموزشگاه"
    ],
-   "concept": "محلی برای آموزش و یادگیری دانش‌آموزان."
+   "concept": "محلی برای آموزش و یادگیری دانش‌آموزان.",
+   "frequencyRankEstimate": 103,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 5
   },
   {
    "ar": "طالب",
@@ -3985,7 +6726,12 @@
     "محصل",
     "طلب‌کننده"
    ],
-   "concept": "شخصی که به دنبال علم یا چیزی می‌گردد."
+   "concept": "شخصی که به دنبال علم یا چیزی می‌گردد.",
+   "frequencyRankEstimate": 104,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 4
   },
   {
    "ar": "معلم",
@@ -3993,7 +6739,12 @@
     "معلم",
     "آموزگار"
    ],
-   "concept": "کسی که علم و دانش را به دیگران می‌آموزد."
+   "concept": "کسی که علم و دانش را به دیگران می‌آموزد.",
+   "frequencyRankEstimate": 105,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 3
   },
   {
    "ar": "سلام",
@@ -4002,14 +6753,24 @@
     "درود",
     "صلح"
    ],
-   "concept": "درود و تحیت، همچنین به معنای صلح و امنیت."
+   "concept": "درود و تحیت، همچنین به معنای صلح و امنیت.",
+   "frequencyRankEstimate": 101,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج",
+   "level": 3
   },
   {
    "ar": "طیاره",
    "fa": [
     "هواپیما"
    ],
-   "concept": "وسیله‌ای انسان ساخت برای پرواز"
+   "concept": "وسیله‌ای انسان ساخت برای پرواز",
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج",
+   "level": 54
   }
  ]
 }

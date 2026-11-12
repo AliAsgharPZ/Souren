@@ -88,7 +88,17 @@ class Entry {
   final String ar;
   final List<String> fa;
   final String concept;
-  const Entry(this.ar, this.fa, {this.concept = ''});
+  final int level;
+  final int frequencyRankEstimate;
+  final int difficultyScore;
+  final String frequencyMethod;
+  const Entry(this.ar, this.fa, {
+    this.concept = '',
+    this.level = 100,
+    this.frequencyRankEstimate = 5000,
+    this.difficultyScore = 100,
+    this.frequencyMethod = 'unranked',
+  });
   bool get hasFa => fa.isNotEmpty;
 }
 
@@ -110,6 +120,10 @@ class Dictionary {
         m['ar'] as String,
         ((m['fa'] as List?) ?? const []).map((x) => x.toString()).toList(),
         concept: (m['concept'] as String?) ?? '',
+        level: (m['level'] as num?)?.toInt() ?? 100,
+        frequencyRankEstimate: (m['frequencyRankEstimate'] as num?)?.toInt() ?? 5000,
+        difficultyScore: (m['difficultyScore'] as num?)?.toInt() ?? 100,
+        frequencyMethod: (m['frequencyMethod'] as String?) ?? 'unranked',
       );
     }).toList();
     return Dictionary(list, (j['version'] as num?)?.toInt() ?? 1, fromUpdate);
@@ -317,13 +331,22 @@ class DictionarySync {
       final text = await res.transform(utf8.decoder).join();
       final json = jsonDecode(text) as Map<String, dynamic>;
       final list = (json['dictionary'] as List?) ?? const [];
+      final existingByWord = {for (final entry in current.entries) entry.ar: entry};
       final entries = <Map<String, dynamic>>[
         for (final item in list)
           if (item is Map && item['arabic'] != null)
-            {
-              'ar': item['arabic'].toString(),
-              'fa': ((item['meanings'] as List?) ?? const []).map((x) => x.toString()).toList(),
-            },
+            () {
+              final word = item['arabic'].toString();
+              final previous = existingByWord[word];
+              return {
+                'ar': word,
+                'fa': ((item['meanings'] as List?) ?? const []).map((x) => x.toString()).toList(),
+                'level': previous?.level ?? 100,
+                'frequencyRankEstimate': previous?.frequencyRankEstimate ?? 5000,
+                'difficultyScore': previous?.difficultyScore ?? 100,
+                'frequencyMethod': previous?.frequencyMethod ?? 'unranked_update',
+              };
+            }(),
       ];
       if (entries.isEmpty || _sameAs(entries, current)) return false;
       await SharedFiles.writeJson('dataset_updated.json', {

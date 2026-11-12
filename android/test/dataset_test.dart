@@ -9,6 +9,8 @@ void main() {
 
     expect(dictionary.entries, hasLength(552));
     expect(dictionary.pairCount, 552);
+    expect(dictionary.entries.every((entry) => entry.level >= 1 && entry.level <= 100), isTrue);
+    expect(dictionary.entries.map((entry) => entry.ar).toSet(), hasLength(552));
 
     final byWord = {for (final entry in dictionary.entries) entry.ar: entry};
     expect(byWord['كتاب']?.fa, ['کتاب', 'دفتر']);

@@ -14,6 +14,7 @@ import 'lucide.dart';
 import 'share.dart';
 
 import 'data/store.dart';
+import 'data/ario_curriculum.dart';
 import 'data/ganjoor_pack.dart';
 import 'data/persian_roots.dart';
 import 'engine/corrector.dart';
@@ -1443,12 +1444,16 @@ void arioMain() {
 
 class ArioLessonPage extends StatefulWidget {
   final int lesson;
+  final String stageTitle;
+  final String unitTitle;
   final List<Entry> words;
   final List<Entry> exercisePool;
   final Future<void> Function() onComplete;
   const ArioLessonPage({
     super.key,
     required this.lesson,
+    required this.stageTitle,
+    required this.unitTitle,
     required this.words,
     required this.exercisePool,
     required this.onComplete,
@@ -1468,8 +1473,8 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
   @override
   Widget build(BuildContext context) {
     final entry = widget.words[index];
-    final exerciseCount = widget.words.length.clamp(1, 3).toInt();
-    final exerciseEntry = widget.words[(exerciseIndex * 2) % widget.words.length];
+    final exerciseCount = widget.words.length.clamp(1, widget.words.length).toInt();
+    final exerciseEntry = widget.words[exerciseIndex % widget.words.length];
     final exerciseOptions = <String>{exerciseEntry.fa.first};
     for (final candidate in widget.exercisePool) {
       if (candidate.fa.isNotEmpty) exerciseOptions.add(candidate.fa.first);
@@ -1484,7 +1489,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
         Row(children: [
           Pressable(onTap: () => Navigator.of(context).pop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 24)),
           const SizedBox(width: 12),
-          Expanded(child: Text('واحد ${faNum((widget.lesson - 1) ~/ 10 + 1)} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 17))),
+          Expanded(child: Text('${widget.stageTitle} · ${widget.unitTitle} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 17))),
           Text(
             exerciseMode
                 ? 'تمرین ${faNum(exerciseIndex + 1)} از ${faNum(exerciseCount)}'
@@ -1873,6 +1878,7 @@ class _ShellState extends State<Shell> {
   int ganjoorPackReceived = 0;
   int ganjoorPackTotal = 0;
   final Set<int> arioCompletedLessons = {};
+  ArioCurriculum? arioCurriculum;
   final Set<String> arioKnownWords = {};
   int arioLastLesson = 0;
   int arioQuizIndex = 0;
@@ -1917,6 +1923,7 @@ class _ShellState extends State<Shell> {
 
   Future<void> _load() async {
     final d = await Dictionary.load();
+    final curriculum = await ArioCurriculum.load();
     final s = await SettingsStore.ensureLoaded();
     final cats = await Categories.load();
     final loadedProverbs = await Proverbs.load();
@@ -1926,6 +1933,7 @@ class _ShellState extends State<Shell> {
     final ario = await SharedFiles.readJson('ario_learning.json');
     setState(() {
       dict = d;
+      arioCurriculum = curriculum;
       settings = s;
       categories = cats;
       proverbs = loadedProverbs;
@@ -1942,7 +1950,10 @@ class _ShellState extends State<Shell> {
       if (ario != null) {
         arioCompletedLessons.clear();
         final savedLessons = ((ario['completedLessons'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
-        if (ario['curriculumVersion'] == 2) {
+        if (ario['curriculumVersion'] == 3) {
+          final savedStages = ((ario['completedStages'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
+          arioCompletedLessons.addAll(savedStages.where((level) => level >= 1 && level <= 100).map((level) => level - 1));
+        } else if (ario['curriculumVersion'] == 2) {
           arioCompletedLessons.addAll(savedLessons.where((level) => level >= 0 && level < 100));
         } else {
           final totalWords = d.entries.where((entry) => entry.hasFa).length;
@@ -1956,7 +1967,7 @@ class _ShellState extends State<Shell> {
           arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99).toInt();
         }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
-        if (ario['curriculumVersion'] == 2) {
+        if (ario['curriculumVersion'] == 2 || ario['curriculumVersion'] == 3) {
           arioLastLesson = (ario['lastLesson'] as num?)?.toInt() ?? 0;
         }
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
@@ -4778,7 +4789,8 @@ class _ShellState extends State<Shell> {
 
 
   Future<void> _saveArioProgress() async => SharedFiles.writeJson('ario_learning.json', {
-    'curriculumVersion': 2,
+    'curriculumVersion': 3,
+    'completedStages': arioCompletedLessons.map((index) => index + 1).toList()..sort(),
     'completedLessons': arioCompletedLessons.toList()..sort(),
     'knownWords': arioKnownWords.toList(),
     'lastLesson': arioLastLesson,
@@ -4842,7 +4854,7 @@ class _ShellState extends State<Shell> {
 
   Widget _arioHome(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa).toList();
-    const lessonCount = 100;
+    final lessonCount = arioCurriculum?.stages.length ?? 100;
     final completed = arioCompletedLessons.length;
     final currentLesson = _nextArioLesson(lessonCount);
     final progress = lessonCount == 0
@@ -4898,7 +4910,7 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 22),
             Row(children: [
               Expanded(child: Text('برنامهٔ آموزشی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
-              Text('۱۰ واحد · ۱۰۰ درس', style: TextStyle(color: pal.muted, fontSize: 12)),
+              Text('۱۰۰ مرحله · ۱۰۰ درس', style: TextStyle(color: pal.muted, fontSize: 12)),
             ]),
             const SizedBox(height: 10),
             _arioCurriculum(d, currentLesson),
@@ -4953,53 +4965,49 @@ class _ShellState extends State<Shell> {
   );
 
   Widget _arioCurriculum(Dictionary d, int currentLesson) {
-    return Column(
-      children: [
-        for (var unit = 0; unit < 10; unit++)
-          Container(
+    final stages = arioCurriculum?.stages ?? const <ArioStagePlan>[];
+    return Column(children: [
+      for (var phase = 0; phase < 10; phase++)
+        Builder(builder: (context) {
+          final phaseStages = stages.where((stage) => stage.phase == phase + 1).toList();
+          if (phaseStages.isEmpty) return const SizedBox.shrink();
+          return Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(40))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Expanded(child: Text('واحد ${faNum(unit + 1)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 16))),
-                Text('درس‌های ${faNum(unit * 10 + 1)} تا ${faNum(unit * 10 + 10)}', style: TextStyle(color: pal.muted, fontSize: 11)),
+                Expanded(child: Text(phaseStages.first.phaseTitle, style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 16))),
+                Text('مرحله‌های ' + faNum(phase * 10 + 1) + ' تا ' + faNum(phase * 10 + 10), style: TextStyle(color: pal.muted, fontSize: 11)),
               ]),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (var offset = 0; offset < 10; offset++)
-                    Builder(builder: (context) {
-                      final lesson = unit * 10 + offset;
-                      final done = arioCompletedLessons.contains(lesson);
-                      final unlocked = lesson == 0 || arioCompletedLessons.contains(lesson - 1);
-                      final active = lesson == currentLesson;
-                      return Pressable(
-                        onTap: unlocked ? () => _openArioLesson(d, lesson) : null,
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: done ? pal.sel : active ? pal.accent : pal.pillC,
-                            borderRadius: BorderRadius.circular(capR(15)),
-                            border: Border.all(color: active ? pal.accent : pal.div, width: active ? 2 : 1),
-                          ),
-                          child: done
-                              ? Icon(LucideIcons.check, size: 17, color: pal.bg)
-                              : Text(faNum(lesson + 1), style: TextStyle(color: active ? pal.bg : unlocked ? pal.ink : pal.faint, fontSize: 12, fontWeight: FontWeight.w800)),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final stage in phaseStages)
+                  Builder(builder: (context) {
+                    final index = stage.level - 1;
+                    final done = arioCompletedLessons.contains(index);
+                    final unlocked = index == 0 || arioCompletedLessons.contains(index - 1);
+                    final active = index == currentLesson;
+                    return Pressable(
+                      onTap: unlocked ? () => _openArioLesson(d, index) : null,
+                      child: Container(
+                        width: 42, height: 42, alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: done ? pal.sel : active ? pal.accent : pal.pillC,
+                          borderRadius: BorderRadius.circular(capR(15)),
+                          border: Border.all(color: active ? pal.accent : pal.div, width: active ? 2 : 1),
                         ),
-                      );
-                    }),
-                ],
-              ),
+                        child: done ? Icon(LucideIcons.check, size: 17, color: pal.bg)
+                          : Text(faNum(stage.level), style: TextStyle(color: active ? pal.bg : unlocked ? pal.ink : pal.faint, fontSize: 12, fontWeight: FontWeight.w800)),
+                      ),
+                    );
+                  }),
+              ]),
             ]),
-          ),
-      ],
-    );
+          );
+        }),
+    ]);
   }
 
   Widget _arioAction(String title, String subtitle, IconData icon, VoidCallback onTap) => Padding(
@@ -5021,17 +5029,26 @@ class _ShellState extends State<Shell> {
   );
 
   void _openArioLesson(Dictionary d, int lesson) {
-    final allWords = d.entries.where((e) => e.hasFa).toList();
-    final start = (lesson * allWords.length / 100).floor();
-    final end = ((lesson + 1) * allWords.length / 100).ceil();
-    final words = allWords.skip(start).take(end - start).toList();
+    final stages = arioCurriculum?.stages ?? const <ArioStagePlan>[];
+    final stage = stages.firstWhere((item) => item.level == lesson + 1);
+    final allWords = d.entries.where((entry) => entry.hasFa).toList();
+    final byWord = {for (final entry in allWords) entry.ar: entry};
+    final words = stage.entryIds.map((word) => byWord[word]).whereType<Entry>().toList(growable: false);
     if (words.isEmpty) return;
+    final unit = stage.units.first;
     setState(() => arioLastLesson = lesson);
     _saveArioProgress();
-    _open(ArioLessonPage(lesson: lesson + 1, words: words, exercisePool: allWords, onComplete: () async {
-      setState(() { arioCompletedLessons.add(lesson); arioKnownWords.addAll(words.map((e) => e.ar)); });
-      await _saveArioProgress();
-    }));
+    _open(ArioLessonPage(
+      lesson: stage.level,
+      stageTitle: stage.title,
+      unitTitle: unit.title,
+      words: words,
+      exercisePool: allWords,
+      onComplete: () async {
+        setState(() { arioCompletedLessons.add(lesson); arioKnownWords.addAll(words.map((e) => e.ar)); });
+        await _saveArioProgress();
+      },
+    ));
   }
 
   Widget _arioPractice(Dictionary d) {

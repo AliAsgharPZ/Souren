@@ -34,9 +34,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Dataset integrity (anchors)
+      - name: Dataset integrity and Ario 1-100 curriculum
         shell: bash
-        run: set -o pipefail && python3 tools/build_dataset.py | sed -n '1p'
+        run: |
+          set -o pipefail
+          python3 tools/build_dataset.py | sed -n '1p'
+          python3 -m unittest discover -s tools -p 'test_ario_curriculum.py'
       - name: Install Zstandard CLI for Ganjoor pack tests
         run: |
           sudo apt-get update

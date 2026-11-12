@@ -23,6 +23,7 @@ flutter:
   uses-material-design: true # Material filled glyphs are used for selected navigation states
   assets:
     - assets/db/dataset.json
+    - assets/db/ario_curriculum.json
     - assets/db/categories.json
     - assets/db/proverbs.json
     - assets/branding/souren-logo.svg

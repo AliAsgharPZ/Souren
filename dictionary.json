@@ -4,3413 +4,6143 @@
    "arabic": "ابتدا",
    "meanings": [
     "آغاز"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اتفاق",
    "meanings": [
     "رویداد",
     "پیشامد"
-   ]
+   ],
+   "level": 69,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اجازه",
    "meanings": [
     "پروانه"
-   ]
+   ],
+   "level": 3,
+   "frequencyRankEstimate": 122,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اجرا",
    "meanings": [
     "انجام"
-   ]
+   ],
+   "level": 30,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "احتمال",
    "meanings": [
     "گمان"
-   ]
+   ],
+   "level": 15,
+   "frequencyRankEstimate": 123,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "احترام",
    "meanings": [
     "گرامیداشت",
     "ارج"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احتیاج",
    "meanings": [
     "نیاز"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احساس",
    "meanings": [
     "دریافت",
     "حس‌کردن"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 124,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اختلاف",
    "meanings": [
     "ناهمسانی"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 125,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اختیار",
    "meanings": [
     "گزینش"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ارتباط",
    "meanings": [
     "پیوند"
-   ]
+   ],
+   "level": 13,
+   "frequencyRankEstimate": 121,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اساس",
    "meanings": [
     "بنیاد",
     "پایه"
-   ]
+   ],
+   "level": 4,
+   "frequencyRankEstimate": 127,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استعداد",
    "meanings": [
     "توانایی",
     "نیرومندی"
-   ]
+   ],
+   "level": 98,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 50,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اشتباه",
    "meanings": [
     "لغزش",
     "کژی"
-   ]
+   ],
+   "level": 80,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصل",
    "meanings": [
     "بن",
     "ریشه"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 128,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اصول",
    "meanings": [
     "بنیادها"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اطراف",
    "meanings": [
     "پیرامون"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اطلاع",
    "meanings": [
     "آگاهی"
-   ]
+   ],
+   "level": 9,
+   "frequencyRankEstimate": 129,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اطلاعات",
    "meanings": [
     "آگاهی‌ها"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 130,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اعتبار",
    "meanings": [
     "ارزش",
     "آبرو"
-   ]
+   ],
+   "level": 80,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتراض",
    "meanings": [
     "ناخرسندی"
-   ]
+   ],
+   "level": 82,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتماد",
    "meanings": [
     "باور",
     "پشتگرمی"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 131,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افتخار",
    "meanings": [
     "بالیدن",
     "سربلندی"
-   ]
+   ],
+   "level": 88,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "افراد",
    "meanings": [
     "کسان",
     "مردمان"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 132,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اقدام",
    "meanings": [
     "کوشش",
     "دست‌به‌کار شدن"
-   ]
+   ],
+   "level": 13,
+   "frequencyRankEstimate": 133,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "امتحان",
    "meanings": [
     "آزمون"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 134,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "امکان",
    "meanings": [
     "توانایی",
     "شدنی‌بودن"
-   ]
+   ],
+   "level": 9,
+   "frequencyRankEstimate": 135,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انتخاب",
    "meanings": [
     "گزینش"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 136,
+   "difficultyScore": 45,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انتظار",
    "meanings": [
     "چشم‌داشت"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 137,
+   "difficultyScore": 45,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انسان",
    "meanings": [
     "آدمی",
     "مردم"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 106,
+   "difficultyScore": 42,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انواع",
    "meanings": [
     "گونه‌ها"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 670,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اهمیت",
    "meanings": [
     "ارزش",
     "بایستگی"
-   ]
+   ],
+   "level": 9,
+   "frequencyRankEstimate": 138,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اولاد",
    "meanings": [
     "فرزندان"
-   ]
+   ],
+   "level": 50,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ایراد",
    "meanings": [
     "خرده‌گیری"
-   ]
+   ],
+   "level": 50,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ایمان",
    "meanings": [
     "باور"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "باطل",
    "meanings": [
     "پوچ",
     "بی‌پایه"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بحث",
    "meanings": [
     "گفتگو"
-   ]
+   ],
+   "level": 4,
+   "frequencyRankEstimate": 139,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "برکت",
    "meanings": [
     "خجستگی",
     "فرخندگی"
-   ]
+   ],
+   "level": 42,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بنا",
    "meanings": [
     "ساختمان"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 140,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بیان",
    "meanings": [
     "سخن",
     "گفتار"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 141,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بلا",
    "meanings": [
     "گزند",
     "آسیب"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "باقی",
    "meanings": [
     "باقی‌مانده",
     "پایدار"
-   ]
+   ],
+   "level": 44,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بشر",
    "meanings": [
     "آدمیان",
     "مردم"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تاریخ",
    "meanings": [
     "سرگذشت",
     "پیشینه"
-   ]
+   ],
+   "level": 13,
+   "frequencyRankEstimate": 142,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تجارت",
    "meanings": [
     "بازرگانی"
-   ]
+   ],
+   "level": 25,
+   "frequencyRankEstimate": 242,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تحقیق",
    "meanings": [
     "پژوهش",
     "بررسی"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 143,
+   "difficultyScore": 41,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تربیت",
    "meanings": [
     "پرورش"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ترتیب",
    "meanings": [
     "سامان",
     "چینش"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 144,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تسلیم",
    "meanings": [
     "واگذاری",
     "تن‌دادن"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تشکر",
    "meanings": [
     "سپاس",
     "سپاسگزاری"
-   ]
+   ],
+   "level": 7,
+   "frequencyRankEstimate": 145,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تصمیم",
    "meanings": [
     "آهنگ",
     "اراده"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 146,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تصویر",
    "meanings": [
     "نگاره"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 147,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تعجب",
    "meanings": [
     "شگفتی"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تعریف",
    "meanings": [
     "بازگفتنِ چیستی",
     "ستایش"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تعطیل",
    "meanings": [
     "روزِ بی‌کاری"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تعلیم",
    "meanings": [
     "آموزش"
-   ]
+   ],
+   "level": 19,
+   "frequencyRankEstimate": 148,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تفاوت",
    "meanings": [
     "ناهمسانی"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 149,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تقسیم",
    "meanings": [
     "بخش‌کردن",
     "پخش"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تکلیف",
    "meanings": [
     "بایسته",
     "کارِ سپرده‌شده"
-   ]
+   ],
+   "level": 90,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تمام",
    "meanings": [
     "همه",
     "سراسر"
-   ]
+   ],
+   "level": 7,
+   "frequencyRankEstimate": 150,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تمرین",
    "meanings": [
     "کارورزی"
-   ]
+   ],
+   "level": 19,
+   "frequencyRankEstimate": 151,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "توجه",
    "meanings": [
     "پروا",
     "نگرش"
-   ]
+   ],
+   "level": 7,
+   "frequencyRankEstimate": 152,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "توضیح",
    "meanings": [
     "روشن‌گری",
     "بازگویی"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 153,
+   "difficultyScore": 37,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "توقع",
    "meanings": [
     "چشم‌داشت"
-   ]
+   ],
+   "level": 38,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تولید",
    "meanings": [
     "پدیدآوردن",
     "ساختن"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 154,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ثابت",
    "meanings": [
     "استوار",
     "پابرجا"
-   ]
+   ],
+   "level": 44,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ثروت",
    "meanings": [
     "دارایی"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 243,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ثانیه",
    "meanings": [
     "دم"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جامعه",
    "meanings": [
     "همبود",
     "مردم"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 155,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جدول",
    "meanings": [
     "نمودار"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جزء",
    "meanings": [
     "بخش",
     "پاره"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جلسه",
    "meanings": [
     "نشست"
-   ]
+   ],
+   "level": 4,
+   "frequencyRankEstimate": 156,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جماعت",
    "meanings": [
     "گروه",
     "انبوه مردم"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 157,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جمعیت",
    "meanings": [
     "انبوهی",
     "شمارِ مردم"
-   ]
+   ],
+   "level": 25,
+   "frequencyRankEstimate": 158,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جنس",
    "meanings": [
     "گونه"
-   ]
+   ],
+   "level": 3,
+   "frequencyRankEstimate": 159,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جهت",
    "meanings": [
     "سو",
     "برای"
-   ]
+   ],
+   "level": 5,
+   "frequencyRankEstimate": 160,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جواب",
    "meanings": [
     "پاسخ"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 111,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جواهر",
    "meanings": [
     "گوهرها"
-   ]
+   ],
+   "level": 53,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حادثه",
    "meanings": [
     "رویداد",
     "پیشامد"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حال",
    "meanings": [
     "اکنون",
     "چگونگی"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 115,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حاضر",
    "meanings": [
     "آماده"
-   ]
+   ],
+   "level": 38,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حافظه",
    "meanings": [
     "یاد"
-   ]
+   ],
+   "level": 78,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حاکم",
    "meanings": [
     "فرمانروا"
-   ]
+   ],
+   "level": 67,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حرکت",
    "meanings": [
     "جنبش"
-   ]
+   ],
+   "level": 5,
+   "frequencyRankEstimate": 161,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حساب",
    "meanings": [
     "شمارش"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 162,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حقیقت",
    "meanings": [
     "راستی"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 163,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حکومت",
    "meanings": [
     "فرمانروایی"
-   ]
+   ],
+   "level": 21,
+   "frequencyRankEstimate": 164,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حل",
    "meanings": [
     "گشایش",
     "چاره"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 356,
+   "difficultyScore": 19,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حمایت",
    "meanings": [
     "پشتیبانی"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 165,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حیوان",
    "meanings": [
     "جانور"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 166,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حدود",
    "meanings": [
     "کرانه‌ها"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حرارت",
    "meanings": [
     "گرما",
     "دما"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حرف",
    "meanings": [
     "سخن"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 167,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حق",
    "meanings": [
     "سزاواری",
     "داد"
-   ]
+   ],
+   "level": 1,
+   "frequencyRankEstimate": 74,
+   "difficultyScore": 29,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج"
   },
   {
    "arabic": "حکم",
    "meanings": [
     "فرمان",
     "داوری"
-   ]
+   ],
+   "level": 15,
+   "frequencyRankEstimate": 168,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حمله",
    "meanings": [
     "یورش",
     "تازش"
-   ]
+   ],
+   "level": 9,
+   "frequencyRankEstimate": 169,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خبر",
    "meanings": [
     "آگهی"
-   ]
+   ],
+   "level": 3,
+   "frequencyRankEstimate": 113,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ختم",
    "meanings": [
     "به پایان رساندن"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خدمت",
    "meanings": [
     "کارگزاری"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 170,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خزانه",
    "meanings": [
     "گنجینه"
-   ]
+   ],
+   "level": 78,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خصوصیت",
    "meanings": [
     "ویژگی"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خطر",
    "meanings": [
     "آسیب‌پذیری",
     "بیم"
-   ]
+   ],
+   "level": 30,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 25,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خلاصه",
    "meanings": [
     "چکیده"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 171,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دقیقه",
    "meanings": [
     "دم"
-   ]
+   ],
+   "level": 61,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دلیل",
    "meanings": [
     "برهان",
     "چرایی"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 172,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دنیا",
    "meanings": [
     "جهان",
     "گیتی"
-   ]
+   ],
+   "level": 63,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دین",
    "meanings": [
     "آیین"
-   ]
+   ],
+   "level": 13,
+   "frequencyRankEstimate": 173,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ذکر",
    "meanings": [
     "یادآوری"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ذوق",
    "meanings": [
     "شوق",
     "پسند"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 483,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ذات",
    "meanings": [
     "نهاد",
     "گوهر"
-   ]
+   ],
+   "level": 44,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ذخیره",
    "meanings": [
     "اندوخته"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 579,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ذهن",
    "meanings": [
     "اندیشه",
     "یاد"
-   ]
+   ],
+   "level": 15,
+   "frequencyRankEstimate": 174,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "راحت",
    "meanings": [
     "آسوده"
-   ]
+   ],
+   "level": 7,
+   "frequencyRankEstimate": 175,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رابطه",
    "meanings": [
     "پیوند",
     "بستگی"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 120,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رسم",
    "meanings": [
     "روش",
     "آیین"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 176,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رضایت",
    "meanings": [
     "خرسندی",
     "خشنودی"
-   ]
+   ],
+   "level": 25,
+   "frequencyRankEstimate": 177,
+   "difficultyScore": 37,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رقم",
    "meanings": [
     "شماره"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رکود",
    "meanings": [
     "ایستایی"
-   ]
+   ],
+   "level": 46,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "زحمت",
    "meanings": [
     "رنج"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "زیارت",
    "meanings": [
     "دیدارِ نیایشگاه"
-   ]
+   ],
+   "level": 86,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ساعت",
    "meanings": [
     "زمان‌سنج",
     "گاه"
-   ]
+   ],
+   "level": 11,
+   "frequencyRankEstimate": 178,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سبب",
    "meanings": [
     "انگیزه",
     "چرایی"
-   ]
+   ],
+   "level": 1,
+   "frequencyRankEstimate": 109,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سرعت",
    "meanings": [
     "شتاب",
     "تندی"
-   ]
+   ],
+   "level": 11,
+   "frequencyRankEstimate": 179,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سطح",
    "meanings": [
     "رویه"
-   ]
+   ],
+   "level": 4,
+   "frequencyRankEstimate": 180,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سعادت",
    "meanings": [
     "نیک‌بختی",
     "خوشبختی"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سفر",
    "meanings": [
     "رهسپاری",
     "گردش"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 118,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سلامت",
    "meanings": [
     "تندرستی"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 119,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سلطنت",
    "meanings": [
     "شهریاری",
     "پادشاهی"
-   ]
+   ],
+   "level": 90,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 39,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "سوال",
    "meanings": [
     "پرسش"
-   ]
+   ],
+   "level": 2,
+   "frequencyRankEstimate": 112,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شخص",
    "meanings": [
     "کس",
     "تن"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 181,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شرط",
    "meanings": [
     "پیمان",
     "بایسته"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 182,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شریک",
    "meanings": [
     "انباز",
     "هم‌کار"
-   ]
+   ],
+   "level": 42,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شغل",
    "meanings": [
     "پیشه",
     "کار"
-   ]
+   ],
+   "level": 15,
+   "frequencyRankEstimate": 183,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شکل",
    "meanings": [
     "ریخت"
-   ]
+   ],
+   "level": 4,
+   "frequencyRankEstimate": 184,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شهادت",
    "meanings": [
     "گواهی"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "شهرت",
    "meanings": [
     "آوازه",
     "نام‌آوری"
-   ]
+   ],
+   "level": 42,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شهوت",
    "meanings": [
     "کام‌جویی"
-   ]
+   ],
+   "level": 46,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صبر",
    "meanings": [
     "شکیبایی",
     "بردباری"
-   ]
+   ],
+   "level": 11,
+   "frequencyRankEstimate": 185,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صحبت",
    "meanings": [
     "گفتگو",
     "هم‌سخنی"
-   ]
+   ],
+   "level": 17,
+   "frequencyRankEstimate": 186,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صحت",
    "meanings": [
     "درستی",
     "تندرستی"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صداقت",
    "meanings": [
     "راستگویی",
     "یکرنگی"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "صنعت",
    "meanings": [
     "پیشه‌وری"
-   ]
+   ],
+   "level": 46,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صورت",
    "meanings": [
     "چهره"
-   ]
+   ],
+   "level": 7,
+   "frequencyRankEstimate": 187,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صفحه",
    "meanings": [
     "برگ"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 188,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صفت",
    "meanings": [
     "ویژگی"
-   ]
+   ],
+   "level": 5,
+   "frequencyRankEstimate": 189,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ضرر",
    "meanings": [
     "زیان",
     "گزند"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 190,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ضرورت",
    "meanings": [
     "بایستگی"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 191,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ضعیف",
    "meanings": [
     "ناتوان",
     "سست"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 192,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ضمانت",
    "meanings": [
     "پشتوانه‌دادن"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ضمیر",
    "meanings": [
     "درون",
     "نام‌نشین"
-   ]
+   ],
+   "level": 69,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "طبع",
    "meanings": [
     "سرشت"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طبیعت",
    "meanings": [
     "سرشت"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 193,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طرف",
    "meanings": [
     "سو",
     "کناره"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 194,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طلب",
    "meanings": [
     "خواست",
     "بستانکاری"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 195,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طول",
    "meanings": [
     "درازا"
-   ]
+   ],
+   "level": 5,
+   "frequencyRankEstimate": 196,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ظاهر",
    "meanings": [
     "نما",
     "پیدا"
-   ]
+   ],
+   "level": 17,
+   "frequencyRankEstimate": 197,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ظرف",
    "meanings": [
     "آوند"
-   ]
+   ],
+   "level": 28,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ظلم",
    "meanings": [
     "ستم",
     "بیداد"
-   ]
+   ],
+   "level": 21,
+   "frequencyRankEstimate": 198,
+   "difficultyScore": 33,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ظهور",
    "meanings": [
     "پدیدارشدن"
-   ]
+   ],
+   "level": 40,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عادت",
    "meanings": [
     "خوگرفتگی",
     "خوی"
-   ]
+   ],
+   "level": 19,
+   "frequencyRankEstimate": 199,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عالم",
    "meanings": [
     "جهان",
     "دانشور"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 116,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عامل",
    "meanings": [
     "کارگزار",
     "انگیزه"
-   ]
+   ],
+   "level": 63,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عبارت",
    "meanings": [
     "گفتار",
     "بندِ سخن"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عجیب",
    "meanings": [
     "شگفت",
     "شگفت‌انگیز"
-   ]
+   ],
+   "level": 42,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عدالت",
    "meanings": [
     "دادگری"
-   ]
+   ],
+   "level": 25,
+   "frequencyRankEstimate": 200,
+   "difficultyScore": 36,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عدد",
    "meanings": [
     "شماره"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 201,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عذر",
    "meanings": [
     "پوزش"
-   ]
+   ],
+   "level": 28,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عزت",
    "meanings": [
     "ارجمندی"
-   ]
+   ],
+   "level": 23,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عشق",
    "meanings": [
     "دل‌باختگی"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 202,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عصر",
    "meanings": [
     "روزگار",
     "پسینِ روز"
-   ]
+   ],
+   "level": 8,
+   "frequencyRankEstimate": 203,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عقل",
    "meanings": [
     "خرد"
-   ]
+   ],
+   "level": 12,
+   "frequencyRankEstimate": 204,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "علاقه",
    "meanings": [
     "دلبستگی",
     "مهر"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "علت",
    "meanings": [
     "انگیزه",
     "چرایی"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "علم",
    "meanings": [
     "دانش"
-   ]
+   ],
+   "level": 17,
+   "frequencyRankEstimate": 205,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عمر",
    "meanings": [
     "زیست",
     "زندگانی"
-   ]
+   ],
+   "level": 10,
+   "frequencyRankEstimate": 206,
+   "difficultyScore": 23,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عمل",
    "meanings": [
     "کار",
     "کردار"
-   ]
+   ],
+   "level": 1,
+   "frequencyRankEstimate": 38,
+   "difficultyScore": 23,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج"
   },
   {
    "arabic": "عنوان",
    "meanings": [
     "نام",
     "سرنامه"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 207,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عید",
    "meanings": [
     "جشن"
-   ]
+   ],
+   "level": 6,
+   "frequencyRankEstimate": 208,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غریب",
    "meanings": [
     "ناآشنا",
     "بیگانه"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 209,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غرض",
    "meanings": [
     "آهنگ",
     "کینه"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 483,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غصه",
    "meanings": [
     "اندوه"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غلط",
    "meanings": [
     "نادرست"
-   ]
+   ],
+   "level": 9,
+   "frequencyRankEstimate": 210,
+   "difficultyScore": 22,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غنی",
    "meanings": [
     "توانگر"
-   ]
+   ],
+   "level": 28,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فرصت",
    "meanings": [
     "گاهِ مناسب"
-   ]
+   ],
+   "level": 11,
+   "frequencyRankEstimate": 211,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فرض",
    "meanings": [
     "پنداشت"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فساد",
    "meanings": [
     "تباهی"
-   ]
+   ],
+   "level": 11,
+   "frequencyRankEstimate": 212,
+   "difficultyScore": 24,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فصل",
    "meanings": [
     "بخش",
     "برههٔ سال"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 213,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فضا",
    "meanings": [
     "جا",
     "پهنه"
-   ]
+   ],
+   "level": 18,
+   "frequencyRankEstimate": 214,
+   "difficultyScore": 29,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فقط",
    "meanings": [
     "تنها",
     "بس"
-   ]
+   ],
+   "level": 13,
+   "frequencyRankEstimate": 215,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ابد",
    "meanings": [
     "جاودان",
     "همیشگی"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ابدی",
    "meanings": [
     "جاودانه",
     "همیشگی"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ابهام",
    "meanings": [
     "پیچیدگی",
     "ناروشنی"
-   ]
+   ],
+   "level": 63,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اتحاد",
    "meanings": [
     "یگانگی",
     "همبستگی"
-   ]
+   ],
+   "level": 63,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اثاث",
    "meanings": [
     "لوازم خانه"
-   ]
+   ],
+   "level": 38,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اثر",
    "meanings": [
     "نشان",
     "پی‌آیند"
-   ]
+   ],
+   "level": 14,
+   "frequencyRankEstimate": 216,
+   "difficultyScore": 25,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اجابت",
    "meanings": [
     "پذیرش"
-   ]
+   ],
+   "level": 48,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اجتماع",
    "meanings": [
     "گردهمایی"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احاطه",
    "meanings": [
     "فراگیری"
-   ]
+   ],
+   "level": 48,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "احتراز",
    "meanings": [
     "پرهیز"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احداث",
    "meanings": [
     "پدیدآوردن"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احساسات",
    "meanings": [
     "دریافت‌ها"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 631,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اخبار",
    "meanings": [
     "آگهی‌ها"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اختراع",
    "meanings": [
     "نوآوری"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اختصار",
    "meanings": [
     "کوتاه‌سازی"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اخلاق",
    "meanings": [
     "خوی",
     "منش"
-   ]
+   ],
+   "level": 36,
+   "frequencyRankEstimate": 236,
+   "difficultyScore": 39,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اداره",
    "meanings": [
     "گرداندن"
-   ]
+   ],
+   "level": 24,
+   "frequencyRankEstimate": 217,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ادامه",
    "meanings": [
     "پیگیری",
     "دنباله"
-   ]
+   ],
+   "level": 20,
+   "frequencyRankEstimate": 218,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ادب",
    "meanings": [
     "فرهیختگی",
     "نزاکت"
-   ]
+   ],
+   "level": 21,
+   "frequencyRankEstimate": 219,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ادعا",
    "meanings": [
     "خواسته",
     "گمان"
-   ]
+   ],
+   "level": 16,
+   "frequencyRankEstimate": 220,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اذیت",
    "meanings": [
     "آزار"
-   ]
+   ],
+   "level": 15,
+   "frequencyRankEstimate": 221,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اراده",
    "meanings": [
     "خواست"
-   ]
+   ],
+   "level": 17,
+   "frequencyRankEstimate": 222,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ارث",
    "meanings": [
     "میراث"
-   ]
+   ],
+   "level": 17,
+   "frequencyRankEstimate": 223,
+   "difficultyScore": 26,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ارقام",
    "meanings": [
     "شماره‌ها"
-   ]
+   ],
+   "level": 88,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استثنا",
    "meanings": [
     "بیرون از قاعده"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استدلال",
    "meanings": [
     "برهان‌آوری"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استراحت",
    "meanings": [
     "آسودن"
-   ]
+   ],
+   "level": 88,
+   "frequencyRankEstimate": 238,
+   "difficultyScore": 55,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استعمار",
    "meanings": [
     "چیره‌جویی سرزمین"
-   ]
+   ],
+   "level": 100,
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استقبال",
    "meanings": [
     "پیشواز"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 239,
+   "difficultyScore": 49,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استقلال",
    "meanings": [
     "خودگردانی"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 240,
+   "difficultyScore": 57,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استناد",
    "meanings": [
     "تکیه‌کردن"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اسراف",
    "meanings": [
     "ولخرجی"
-   ]
+   ],
+   "level": 71,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اسم",
    "meanings": [
     "نام"
-   ]
+   ],
+   "level": 1,
+   "frequencyRankEstimate": 114,
+   "difficultyScore": 20,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اشاره",
    "meanings": [
     "نشان‌دادن"
-   ]
+   ],
+   "level": 19,
+   "frequencyRankEstimate": 224,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اشتراک",
    "meanings": [
     "همبخشی"
-   ]
+   ],
+   "level": 75,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصالت",
    "meanings": [
     "ریشه‌داری"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اصرار",
    "meanings": [
     "پافشاری"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اصطلاح",
    "meanings": [
     "واژه",
     "گفتار ویژه"
-   ]
+   ],
+   "level": 92,
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اضافه",
    "meanings": [
     "افزوده"
-   ]
+   ],
+   "level": 23,
+   "frequencyRankEstimate": 225,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اطاعت",
    "meanings": [
     "فرمانبرداری"
-   ]
+   ],
+   "level": 19,
+   "frequencyRankEstimate": 226,
+   "difficultyScore": 28,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اظهار",
    "meanings": [
     "بیان‌کردن"
-   ]
+   ],
+   "level": 28,
+   "frequencyRankEstimate": 227,
+   "difficultyScore": 34,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اعتدال",
    "meanings": [
     "میانه‌روی"
-   ]
+   ],
+   "level": 75,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتراف",
    "meanings": [
     "خستوشدن",
     "بازگفتن"
-   ]
+   ],
+   "level": 28,
+   "frequencyRankEstimate": 228,
+   "difficultyScore": 35,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اعتصاب",
    "meanings": [
     "دست‌کشیدن از کار"
-   ]
+   ],
+   "level": 88,
+   "frequencyRankEstimate": 583,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعجاز",
    "meanings": [
     "شگفت‌کاری"
-   ]
+   ],
+   "level": 84,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعدام",
    "meanings": [
     "کشتن به فرمان دادگاه"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعزام",
    "meanings": [
     "گسیل‌داشتن"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اعصاب",
    "meanings": [
     "رگ‌وپی‌ها"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعضا",
    "meanings": [
     "اندام‌ها",
     "هم‌وندان"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 37,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعلام",
    "meanings": [
     "آگهی‌کردن"
-   ]
+   ],
+   "level": 71,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "آفت",
    "meanings": [
     "گزند"
-   ]
+   ],
+   "level": 21,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افق",
    "meanings": [
     "کرانه"
-   ]
+   ],
+   "level": 36,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اقامت",
    "meanings": [
     "ماندگاری"
-   ]
+   ],
+   "level": 59,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقتصاد",
    "meanings": [
     "سامانِ دارایی"
-   ]
+   ],
+   "level": 36,
+   "frequencyRankEstimate": 241,
+   "difficultyScore": 38,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اقلیت",
    "meanings": [
     "گروهِ کم‌شمار"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقناع",
    "meanings": [
     "باوراندن"
-   ]
+   ],
+   "level": 59,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "التماس",
    "meanings": [
     "زاری",
     "خواهش"
-   ]
+   ],
+   "level": 94,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 46,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "التهاب",
    "meanings": [
     "آماس",
     "سوزش"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 54,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "الفت",
    "meanings": [
     "دوستی",
     "خوگیری"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "امارت",
    "meanings": [
     "فرمانروایی"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امانت",
    "meanings": [
     "سپرده"
-   ]
+   ],
+   "level": 50,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "امتیاز",
    "meanings": [
     "برتری"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امداد",
    "meanings": [
     "یاری",
     "کمک‌رسانی"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ابتلا",
    "meanings": [
     "گرفتاری"
-   ]
+   ],
+   "level": 84,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ابراز",
    "meanings": [
     "بازگو کردن"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اثبات",
    "meanings": [
     "استواری",
     "درست‌نمایی"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اجاره",
    "meanings": [
     "کرایه"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احیا",
    "meanings": [
     "زنده‌سازی"
-   ]
+   ],
+   "level": 30,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اختتام",
    "meanings": [
     "پایان‌دهی"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ادراک",
    "meanings": [
     "دریافت",
     "فهم"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ارادت",
    "meanings": [
     "دلبستگی",
     "پیروی"
-   ]
+   ],
+   "level": 63,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ارتجاع",
    "meanings": [
     "واپس‌گرایی"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ارتفاع",
    "meanings": [
     "بلندا"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ارتکاب",
    "meanings": [
     "دست‌زدن به کار بد"
-   ]
+   ],
+   "level": 75,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ارزاق",
    "meanings": [
     "روزی‌ها"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استحقاق",
    "meanings": [
     "شایستگی"
-   ]
+   ],
+   "level": 98,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استدعا",
    "meanings": [
     "درخواست"
-   ]
+   ],
+   "level": 92,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استرداد",
    "meanings": [
     "بازپس‌گیری"
-   ]
+   ],
+   "level": 96,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استفاده",
    "meanings": [
     "بهره‌گیری"
-   ]
+   ],
+   "level": 69,
+   "frequencyRankEstimate": 231,
+   "difficultyScore": 47,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استمرار",
    "meanings": [
     "پیوستگی"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استنتاج",
    "meanings": [
     "نتیجه‌گیری"
-   ]
+   ],
+   "level": 100,
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اسوه",
    "meanings": [
     "الگو",
     "سرمشق"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اشباع",
    "meanings": [
     "پرکردن",
     "سیرکردن"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اشتغال",
    "meanings": [
     "سرگرمی به کار"
-   ]
+   ],
+   "level": 90,
+   "frequencyRankEstimate": 605,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصابت",
    "meanings": [
     "به‌هدف‌خوردن"
-   ]
+   ],
+   "level": 48,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اضطراب",
    "meanings": [
     "دلواپسی"
-   ]
+   ],
+   "level": 36,
+   "frequencyRankEstimate": 233,
+   "difficultyScore": 38,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اطمینان",
    "meanings": [
     "آسودگی خاطر"
-   ]
+   ],
+   "level": 40,
+   "frequencyRankEstimate": 234,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اعانه",
    "meanings": [
     "کمک مالی"
-   ]
+   ],
+   "level": 71,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتنا",
    "meanings": [
     "توجه"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اغراق",
    "meanings": [
     "گزافه‌گویی"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 579,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "افاده",
    "meanings": [
     "خودنمایی"
-   ]
+   ],
+   "level": 50,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افتراق",
    "meanings": [
     "جدایی"
-   ]
+   ],
+   "level": 82,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقتباس",
    "meanings": [
     "برگرفتن"
-   ]
+   ],
+   "level": 82,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقتدار",
    "meanings": [
     "چیرگی",
     "توانمندی"
-   ]
+   ],
+   "level": 94,
+   "frequencyRankEstimate": 640,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقرار",
    "meanings": [
     "پذیرش",
     "اعتراف"
-   ]
+   ],
+   "level": 70,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "التزام",
    "meanings": [
     "پایبندی"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امتناع",
    "meanings": [
     "خودداری"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انتساب",
    "meanings": [
     "وابستگی"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انتشار",
    "meanings": [
     "پخش"
-   ]
+   ],
+   "level": 69,
+   "frequencyRankEstimate": 232,
+   "difficultyScore": 47,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انتصاب",
    "meanings": [
     "گماردن"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انجماد",
    "meanings": [
     "یخ‌بستن"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 753,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انضمام",
    "meanings": [
     "پیوست‌شدن"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انفصال",
    "meanings": [
     "جدایی"
-   ]
+   ],
+   "level": 94,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انقباض",
    "meanings": [
     "فشردگی"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 762,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انقراض",
    "meanings": [
     "نابودی نسل"
-   ]
+   ],
+   "level": 96,
+   "frequencyRankEstimate": 762,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ابتکار",
    "meanings": [
     "نوآوری"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اتلاف",
    "meanings": [
     "تباه‌کردن"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اثاثیه",
    "meanings": [
     "لوازم خانه"
-   ]
+   ],
+   "level": 80,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اجحاف",
    "meanings": [
     "ستم در حق کسی"
-   ]
+   ],
+   "level": 84,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احکام",
    "meanings": [
     "فرمان‌ها"
-   ]
+   ],
+   "level": 84,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اختلال",
    "meanings": [
     "آشفتگی"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ازدواج",
    "meanings": [
     "همسرگزینی"
-   ]
+   ],
+   "level": 25,
+   "frequencyRankEstimate": 230,
+   "difficultyScore": 32,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استحاله",
    "meanings": [
     "دگردیسی"
-   ]
+   ],
+   "level": 96,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استحصال",
    "meanings": [
     "به‌دست‌آوردن"
-   ]
+   ],
+   "level": 96,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استعاره",
    "meanings": [
     "وام‌واژهٔ مجازی"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 801,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استعانت",
    "meanings": [
     "یاری‌خواستن"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استقرار",
    "meanings": [
     "جاگیری"
-   ]
+   ],
+   "level": 98,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استقراء",
    "meanings": [
     "کل‌گیری از جزء"
-   ]
+   ],
+   "level": 100,
+   "frequencyRankEstimate": 858,
+   "difficultyScore": 57,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استلزام",
    "meanings": [
     "بایستگی همراه"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استنکاف",
    "meanings": [
     "خودداری از کار"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصطکاک",
    "meanings": [
     "سایش"
-   ]
+   ],
+   "level": 75,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اضمحلال",
    "meanings": [
     "ازمیان‌رفتن"
-   ]
+   ],
+   "level": 98,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اطناب",
    "meanings": [
     "درازگویی"
-   ]
+   ],
+   "level": 71,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتیاد",
    "meanings": [
     "خوگرفتگی زیانبار"
-   ]
+   ],
+   "level": 40,
+   "frequencyRankEstimate": 229,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افراط",
    "meanings": [
     "زیاده‌روی"
-   ]
+   ],
+   "level": 50,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افول",
    "meanings": [
     "فروافتادن، غروب"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "التیام",
    "meanings": [
     "بهبود زخم"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 51,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امتزاج",
    "meanings": [
     "درآمیختگی"
-   ]
+   ],
+   "level": 75,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انتحار",
    "meanings": [
     "خودکشی"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انزجار",
    "meanings": [
     "بیزاری"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 753,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انصراف",
    "meanings": [
     "بازگشتن از تصمیم"
-   ]
+   ],
+   "level": 94,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انعطاف",
    "meanings": [
     "خمش‌پذیری"
-   ]
+   ],
+   "level": 55,
+   "frequencyRankEstimate": 235,
+   "difficultyScore": 43,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اهتزاز",
    "meanings": [
     "لرزش، در اهتزاز بودن پرچم"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "باکره",
    "meanings": [
     "دوشیزه"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بتول",
    "meanings": [
     "پاکدامن"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "بخیل",
    "meanings": [
     "تنگ‌نظر در بخشش"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "بذل",
    "meanings": [
     "بخشش"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "برائت",
    "meanings": [
     "پاکی از گناه"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بهتان",
    "meanings": [
     "دروغِ ناروا"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تاسیس",
    "meanings": [
     "بنیادگذاری"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تباه",
    "meanings": [
     "نابود، از فارسی اما جزو ترکیب عربی نیست"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تجرید",
    "meanings": [
     "جداسازی از ماده"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تحریف",
    "meanings": [
     "دگرگون‌ساختن ناروای سخن"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تخیل",
    "meanings": [
     "پندارورزی"
-   ]
+   ],
+   "level": 57,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تدبیر",
    "meanings": [
     "چاره‌اندیشی"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تسکین",
    "meanings": [
     "آرام‌بخشی"
-   ]
+   ],
+   "level": 86,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تشییع",
    "meanings": [
     "همراهی با مرده تا گورستان"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اتقان",
    "meanings": [
     "استواری کار"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اجلاس",
    "meanings": [
     "نشست"
-   ]
+   ],
+   "level": 48,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "احتساب",
    "meanings": [
     "به‌حساب‌آوردن"
-   ]
+   ],
+   "level": 74,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اختصاص",
    "meanings": [
     "ویژه‌سازی"
-   ]
+   ],
+   "level": 81,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ازل",
    "meanings": [
     "آغاز بی‌آغاز"
-   ]
+   ],
+   "level": 21,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استحسان",
    "meanings": [
     "پسندیدن به‌گمان"
-   ]
+   ],
+   "level": 96,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استخراج",
    "meanings": [
     "بیرون‌کشیدن"
-   ]
+   ],
+   "level": 98,
+   "frequencyRankEstimate": 788,
+   "difficultyScore": 49,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استشهاد",
    "meanings": [
     "گواه‌آوردن"
-   ]
+   ],
+   "level": 100,
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استعلام",
    "meanings": [
     "جویاشدن"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استقصا",
    "meanings": [
     "کاوش ژرف"
-   ]
+   ],
+   "level": 99,
+   "frequencyRankEstimate": 810,
+   "difficultyScore": 53,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "استهزاء",
    "meanings": [
     "ریشخند"
-   ]
+   ],
+   "level": 97,
+   "frequencyRankEstimate": 766,
+   "difficultyScore": 47,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اسقاط",
    "meanings": [
     "ساقط‌کردن"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اعتلا",
    "meanings": [
     "بلندپایگی"
-   ]
+   ],
+   "level": 49,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "افاضه",
    "meanings": [
     "فروریختن فیض"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اقتضا",
    "meanings": [
     "بایستگی حال"
-   ]
+   ],
+   "level": 73,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "التفات",
    "meanings": [
     "روی‌آوری",
     "توجه"
-   ]
+   ],
+   "level": 94,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 46,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امعان",
    "meanings": [
     "ژرف‌نگری"
-   ]
+   ],
+   "level": 85,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انجذاب",
    "meanings": [
     "کشش"
-   ]
+   ],
+   "level": 95,
+   "frequencyRankEstimate": 740,
+   "difficultyScore": 45,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اهتمام",
    "meanings": [
     "کوشش",
     "دلبستگی به کار"
-   ]
+   ],
+   "level": 80,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "برهه",
    "meanings": [
     "زمانه",
     "دورهٔ کوتاه"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بلاهت",
    "meanings": [
     "کودنی"
-   ]
+   ],
+   "level": 71,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تاویل",
    "meanings": [
     "برگرداندنِ معنی"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تجانس",
    "meanings": [
     "همجنسی"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تحیر",
    "meanings": [
     "سرگشتگی"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تخاصم",
    "meanings": [
     "دشمنی متقابل"
-   ]
+   ],
+   "level": 59,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ترشح",
    "meanings": [
     "تراوش"
-   ]
+   ],
+   "level": 32,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تسامح",
    "meanings": [
     "سهل‌گیری"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تشتت",
    "meanings": [
     "پراکندگی"
-   ]
+   ],
+   "level": 32,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تعمق",
    "meanings": [
     "ژرف‌اندیشی"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تفرقه",
    "meanings": [
     "جدایی‌افکنی"
-   ]
+   ],
+   "level": 59,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تلألؤ",
    "meanings": [
     "درخشش"
-   ]
+   ],
+   "level": 53,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تمکن",
    "meanings": [
     "توانگری",
     "جاافتادگی"
-   ]
+   ],
+   "level": 42,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تنعم",
    "meanings": [
     "خوش‌گذرانی"
-   ]
+   ],
+   "level": 32,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تیقن",
    "meanings": [
     "اطمینان‌یابی"
-   ]
+   ],
+   "level": 38,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ثقل",
    "meanings": [
     "سنگینی"
-   ]
+   ],
+   "level": 30,
+   "frequencyRankEstimate": 448,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ثواب",
    "meanings": [
     "پاداش نیک"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جبروت",
    "meanings": [
     "بزرگی",
     "چیرگی"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جزم",
    "meanings": [
     "قطعیت‌بخشی"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جلال",
    "meanings": [
     "شکوه"
-   ]
+   ],
+   "level": 32,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جنین",
    "meanings": [
     "نوزاد در زهدان"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حدس",
    "meanings": [
     "گمانه"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حشر",
    "meanings": [
     "گردآمدن"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حلاوت",
    "meanings": [
     "شیرینی"
-   ]
+   ],
+   "level": 53,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حیز",
    "meanings": [
     "شمار",
     "گستره"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خاتم",
    "meanings": [
     "پایان"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خباثت",
    "meanings": [
     "پلیدی"
-   ]
+   ],
+   "level": 73,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خرافه",
    "meanings": [
     "پندارِ بی‌پایه"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خصم",
    "meanings": [
     "دشمن"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خلود",
    "meanings": [
     "جاودانگی"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دلالت",
    "meanings": [
     "راهنمایی",
     "نشانه‌داری"
-   ]
+   ],
+   "level": 79,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دیانت",
    "meanings": [
     "دین‌داری"
-   ]
+   ],
+   "level": 86,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ذمه",
    "meanings": [
     "پیمانِ نگهبانی"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رسالت",
    "meanings": [
     "فرستادگی"
-   ]
+   ],
+   "level": 86,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "زعیم",
    "meanings": [
     "پیشوا"
-   ]
+   ],
+   "level": 67,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "سبات",
    "meanings": [
     "خوابِ ژرف"
-   ]
+   ],
+   "level": 34,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ستر",
    "meanings": [
     "پوشاندن"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سطوت",
    "meanings": [
     "شکوهِ هراس‌انگیز"
-   ]
+   ],
+   "level": 34,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سیادت",
    "meanings": [
     "سروری"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "شاکله",
    "meanings": [
     "ساختار"
-   ]
+   ],
+   "level": 53,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ضلالت",
    "meanings": [
     "گمراهی"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ضنک",
    "meanings": [
     "تنگدستی"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 22,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طینت",
    "meanings": [
     "سرشت"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ظنین",
    "meanings": [
     "بدگمان"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ابدا",
    "meanings": [
     "هرگز"
-   ]
+   ],
+   "level": 30,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اتفاقا",
    "meanings": [
     "از قضا"
-   ]
+   ],
+   "level": 80,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "احتمالا",
    "meanings": [
     "شاید"
-   ]
+   ],
+   "level": 88,
+   "frequencyRankEstimate": 596,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اساسا",
    "meanings": [
     "در بنیاد"
-   ]
+   ],
+   "level": 48,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "استیناف",
    "meanings": [
     "درخواست بازبینی حکم"
-   ]
+   ],
+   "level": 100,
+   "frequencyRankEstimate": 836,
+   "difficultyScore": 55,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصلا",
    "meanings": [
     "به‌هیچ‌رو"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "البته",
    "meanings": [
     "ناگزیر",
     "بی‌گمان"
-   ]
+   ],
+   "level": 64,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اما",
    "meanings": [
     "ولی"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انصافا",
    "meanings": [
     "از روی دادگری"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اولا",
    "meanings": [
     "نخست آنکه"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بالاخره",
    "meanings": [
     "سرانجام"
-   ]
+   ],
+   "level": 90,
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "بحر",
    "meanings": [
     "دریا"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بعضا",
    "meanings": [
     "گاه‌گاه"
-   ]
+   ],
+   "level": 38,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تشبیه",
    "meanings": [
     "همانندسازی"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تفتیش",
    "meanings": [
     "بازرسی"
-   ]
+   ],
+   "level": 52,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تقریبا",
    "meanings": [
     "نزدیک به"
-   ]
+   ],
+   "level": 82,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ثالثا",
    "meanings": [
     "سوم آنکه"
-   ]
+   ],
+   "level": 59,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ثانیا",
    "meanings": [
     "دوم آنکه"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جدا",
    "meanings": [
     "سواسو"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جناس",
    "meanings": [
     "همصدایی واژه‌ها"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "حتما",
    "meanings": [
     "بی‌گمان"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "خصوصا",
    "meanings": [
     "به‌ویژه"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خلیج",
    "meanings": [
     "گودای دریا"
-   ]
+   ],
+   "level": 57,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دایره",
    "meanings": [
     "چنبره"
-   ]
+   ],
+   "level": 86,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دعوی",
    "meanings": [
     "دادخواهی"
-   ]
+   ],
+   "level": 67,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دقیقا",
    "meanings": [
     "درست به‌همان‌گونه"
-   ]
+   ],
+   "level": 61,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ذاتا",
    "meanings": [
     "در نهاد خود"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ذره",
    "meanings": [
     "خرده",
     "بسیار ریز"
-   ]
+   ],
+   "level": 44,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 29,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رسما",
    "meanings": [
     "آشکارا و قانونی"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ریه",
    "meanings": [
     "شش"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صراحتا",
    "meanings": [
     "آشکارا"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 548,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ضرورتا",
    "meanings": [
     "به‌ناگزیر"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ضمنا",
    "meanings": [
     "در ضمن"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طبعا",
    "meanings": [
     "به‌خودیِ‌خود"
-   ]
+   ],
+   "level": 34,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طحال",
    "meanings": [
     "سپرز"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ظاهرا",
    "meanings": [
     "به‌ظاهر"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عائله",
    "meanings": [
     "خانواده"
-   ]
+   ],
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عصب",
    "meanings": [
     "رگ‌وپی، پی عصبی"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عضله",
    "meanings": [
     "ماهیچه"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عمدتا",
    "meanings": [
     "بیشتر",
     "در اصل"
-   ]
+   ],
+   "level": 65,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عملا",
    "meanings": [
     "در کردار"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عنصر",
    "meanings": [
     "بن‌مایه"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غالبا",
    "meanings": [
     "در بیشترِ هنگام‌ها"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "فورا",
    "meanings": [
     "بی‌درنگ",
     "هم‌اکنون"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "قطب",
    "meanings": [
     "کانون",
     "محورِ زمین"
-   ]
+   ],
+   "level": 69,
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 33,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "کاملا",
    "meanings": [
     "یکسره",
     "سراسر"
-   ]
+   ],
+   "level": 65,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "کبد",
    "meanings": [
     "جگر"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "کلا",
    "meanings": [
     "سراسر"
-   ]
+   ],
+   "level": 23,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "کنایه",
    "meanings": [
     "اشارهٔ پوشیده"
-   ]
+   ],
+   "level": 73,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "لزوما",
    "meanings": [
     "به‌ناگزیر"
-   ]
+   ],
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "متغیر",
    "meanings": [
     "دگرگون‌شونده"
-   ]
+   ],
+   "level": 90,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مثلا",
    "meanings": [
     "برای نمونه"
-   ]
+   ],
+   "level": 40,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "مثلث",
    "meanings": [
     "سه‌گوش"
-   ]
+   ],
+   "level": 77,
+   "frequencyRankEstimate": 544,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مجددا",
    "meanings": [
     "دوباره"
-   ]
+   ],
+   "level": 55,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "محکمه",
    "meanings": [
     "دادگاه"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "محور",
    "meanings": [
     "کانون",
     "میله"
-   ]
+   ],
+   "level": 76,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 35,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مخصوصا",
    "meanings": [
     "به‌ویژه"
-   ]
+   ],
+   "level": 83,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مدار",
    "meanings": [
     "چرخهٔ گردش"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مربع",
    "meanings": [
     "چهارگوش"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مساوی",
    "meanings": [
     "برابر"
-   ]
+   ],
+   "level": 55,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "نبض",
    "meanings": [
     "تپش"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "نسبتا",
    "meanings": [
     "کمابیش"
-   ]
+   ],
+   "level": 55,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "نوعا",
    "meanings": [
     "گونه‌وار"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اجتماعی",
    "meanings": [
     "جامعه‌ای"
-   ]
+   ],
+   "level": 92,
+   "frequencyRankEstimate": 666,
+   "difficultyScore": 44,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اخلاقی",
    "meanings": [
     "خویی"
-   ]
+   ],
+   "level": 41,
+   "frequencyRankEstimate": 237,
+   "difficultyScore": 40,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اداری",
    "meanings": [
     "دفتری"
-   ]
+   ],
+   "level": 84,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ادبی",
    "meanings": [
     "نگارشی"
-   ]
+   ],
+   "level": 65,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "اصلی",
    "meanings": [
     "بنیادین"
-   ]
+   ],
+   "level": 31,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "اقتصادی",
    "meanings": [
     "مالی"
-   ]
+   ],
+   "level": 92,
+   "frequencyRankEstimate": 653,
+   "difficultyScore": 42,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "الهی",
    "meanings": [
     "خدایی"
-   ]
+   ],
+   "level": 65,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "امن",
    "meanings": [
     "ایمن"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "انسانی",
    "meanings": [
     "آدمی"
-   ]
+   ],
+   "level": 93,
+   "frequencyRankEstimate": 718,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "تاریخی",
    "meanings": [
     "دیرینه"
-   ]
+   ],
+   "level": 82,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جالب",
    "meanings": [
     "گیرا"
-   ]
+   ],
+   "level": 32,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جسمی",
    "meanings": [
     "تنی"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جمعی",
    "meanings": [
     "گروهی"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جمله",
    "meanings": [
     "بند سخن"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حقیقی",
    "meanings": [
     "راست"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خارجی",
    "meanings": [
     "برونی"
-   ]
+   ],
+   "level": 60,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خصوصی",
    "meanings": [
     "ویژه"
-   ]
+   ],
+   "level": 61,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "خیاط",
    "meanings": [
     "جامه‌دوز"
-   ]
+   ],
+   "level": 57,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "داخلی",
    "meanings": [
     "اندرونی"
-   ]
+   ],
+   "level": 61,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "دنیوی",
    "meanings": [
     "این‌جهانی"
-   ]
+   ],
+   "level": 53,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دینی",
    "meanings": [
     "آیینی"
-   ]
+   ],
+   "level": 67,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ذهنی",
    "meanings": [
     "درونی"
-   ]
+   ],
+   "level": 57,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "رسمی",
    "meanings": [
     "دیوانی"
-   ]
+   ],
+   "level": 67,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "روحی",
    "meanings": [
     "روانی"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رئیس",
    "meanings": [
     "سرپرست"
-   ]
+   ],
+   "level": 1,
+   "frequencyRankEstimate": 39,
+   "difficultyScore": 28,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج"
   },
   {
    "arabic": "سخی",
    "meanings": [
     "بخشنده"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سریع",
    "meanings": [
     "تند"
-   ]
+   ],
+   "level": 34,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سیاسی",
    "meanings": [
     "کشوری"
-   ]
+   ],
+   "level": 87,
+   "frequencyRankEstimate": 570,
+   "difficultyScore": 36,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "شجاع",
    "meanings": [
     "دلیر"
-   ]
+   ],
+   "level": 34,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "شخصی",
    "meanings": [
     "خودی"
-   ]
+   ],
+   "level": 39,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صندوق",
    "meanings": [
     "گنجه"
-   ]
+   ],
+   "level": 61,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "صیاد",
    "meanings": [
     "شکارچی"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طبی",
    "meanings": [
     "پزشکی"
-   ]
+   ],
+   "level": 43,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طبیب",
    "meanings": [
     "پزشک"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "طبیعی",
    "meanings": [
     "سرشتی"
-   ]
+   ],
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عادی",
    "meanings": [
     "روزمره"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عرفانی",
    "meanings": [
     "شهودی"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "علمی",
    "meanings": [
     "دانشی"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عملی",
    "meanings": [
     "کاربردی"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عمومی",
    "meanings": [
     "همگانی"
-   ]
+   ],
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عینی",
    "meanings": [
     "بیرونی"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فاعل",
    "meanings": [
     "کننده (در دستور زبان)"
-   ]
+   ],
+   "level": 68,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "افسر",
    "meanings": [
     "سرگرد",
     "درجه‌دار"
-   ]
+   ],
+   "level": 62,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 31,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "امر",
    "meanings": [
     "کار",
     "فرمان"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "املا",
    "meanings": [
     "درست‌نویسی"
-   ]
+   ],
+   "level": 65,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "انشا",
    "meanings": [
     "نگارش"
-   ]
+   ],
+   "level": 92,
+   "frequencyRankEstimate": 692,
+   "difficultyScore": 43,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "بصری",
    "meanings": [
     "دیداری"
-   ]
+   ],
+   "level": 44,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "بیت",
    "meanings": [
     "دو مصراع",
     "خانه"
-   ]
+   ],
+   "level": 36,
+   "frequencyRankEstimate": 439,
+   "difficultyScore": 27,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "تجربی",
    "meanings": [
     "آزمایشی"
-   ]
+   ],
+   "level": 51,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جراح",
    "meanings": [
     "چاقو-پزشک، برنده"
-   ]
+   ],
+   "level": 66,
+   "frequencyRankEstimate": 522,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "جمع",
    "meanings": [
     "گردآمده",
     "بیش از یک"
-   ]
+   ],
+   "level": 26,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "جنسی",
    "meanings": [
     "زیستی-جفتی"
-   ]
+   ],
+   "level": 33,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حسی",
    "meanings": [
     "دریافتی"
-   ]
+   ],
+   "level": 22,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "حمال",
    "meanings": [
     "باربر"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "دلال",
    "meanings": [
     "میانجی خرید و فروش"
-   ]
+   ],
+   "level": 45,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "رباعی",
    "meanings": [
     "چارگانی"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "روحانی",
    "meanings": [
     "دینکار"
-   ]
+   ],
+   "level": 91,
+   "frequencyRankEstimate": 618,
+   "difficultyScore": 40,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "ریاضی",
    "meanings": [
     "شمارورزی"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "سمعی",
    "meanings": [
     "شنیداری"
-   ]
+   ],
+   "level": 46,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صرف",
    "meanings": [
     "ریخت‌شناسی واژه",
     "هزینه‌کردن"
-   ]
+   ],
+   "level": 27,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 23,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "صوتی",
    "meanings": [
     "آوایی"
-   ]
+   ],
+   "level": 46,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طب",
    "meanings": [
     "پزشکی"
-   ]
+   ],
+   "level": 29,
+   "frequencyRankEstimate": 426,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عاطفی",
    "meanings": [
     "دلی"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عقلی",
    "meanings": [
     "خردی"
-   ]
+   ],
+   "level": 57,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "عمو",
    "meanings": [
     "عموی پدری"
-   ]
+   ],
+   "level": 23,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "عمه",
    "meanings": [
     "خواهر پدر"
-   ]
+   ],
+   "level": 23,
+   "frequencyRankEstimate": 404,
+   "difficultyScore": 20,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "غزل",
    "meanings": [
     "چامهٔ عاشقانه"
-   ]
+   ],
+   "level": 37,
+   "frequencyRankEstimate": 461,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فقه",
    "meanings": [
     "دین‌شناسی حقوقی"
-   ]
+   ],
+   "level": 56,
+   "frequencyRankEstimate": 496,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "فکری",
    "meanings": [
     "اندیشه‌ای"
-   ]
+   ],
+   "level": 47,
+   "frequencyRankEstimate": 487,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "قابله",
    "meanings": [
     "مامای زایمان"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "قافیه",
    "meanings": [
     "هم‌آوایی پایانی"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "قرائت",
    "meanings": [
     "بازخوانی بلند"
-   ]
+   ],
+   "level": 89,
+   "frequencyRankEstimate": 592,
+   "difficultyScore": 38,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "قصاب",
    "meanings": [
     "گوشت‌فروش"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "قصیده",
    "meanings": [
     "چامهٔ بلند"
-   ]
+   ],
+   "level": 78,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "کیفی",
    "meanings": [
     "چگونگی‌محور"
-   ]
+   ],
+   "level": 35,
+   "frequencyRankEstimate": 452,
+   "difficultyScore": 24,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "کیمیا",
    "meanings": [
     "دگرگون‌سازی مواد"
-   ]
+   ],
+   "level": 55,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "ماضی",
    "meanings": [
     "گذشته"
-   ]
+   ],
+   "level": 40,
+   "frequencyRankEstimate": 474,
+   "difficultyScore": 26,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "مبلغ",
    "meanings": [
     "اندازهٔ پول"
-   ]
+   ],
+   "level": 58,
+   "frequencyRankEstimate": 509,
+   "difficultyScore": 30,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "متاثر",
    "meanings": [
     "دلگیرشده"
-   ]
+   ],
+   "level": 78,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "متحیر",
    "meanings": [
     "سرگشته"
-   ]
+   ],
+   "level": 72,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "متشکر",
    "meanings": [
     "سپاسگزار"
-   ]
+   ],
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "متعجب",
    "meanings": [
     "شگفت‌زده"
-   ]
+   ],
+   "level": 73,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "متنفر",
    "meanings": [
     "بیزار"
-   ]
+   ],
+   "level": 73,
+   "frequencyRankEstimate": 535,
+   "difficultyScore": 32,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "مثنوی",
    "meanings": [
     "چامهٔ دوبیتی‌پیوسته"
-   ]
+   ],
+   "level": 78,
+   "frequencyRankEstimate": 557,
+   "difficultyScore": 34,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "میانه"
   },
   {
    "arabic": "كتاب",
@@ -3418,7 +6148,12 @@
     "کتاب",
     "دفتر"
    ],
-   "concept": "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند."
+   "concept": "مجموعه‌ای از برگه‌های نوشته شده که به هم صحافی شده‌اند.",
+   "level": 1,
+   "frequencyRankEstimate": 71,
+   "difficultyScore": 27,
+   "frequencyMethod": "riyadh_top100",
+   "frequencyBand": "بسیار رایج"
   },
   {
    "arabic": "مدرسة",
@@ -3426,7 +6161,12 @@
     "مدرسه",
     "آموزشگاه"
    ],
-   "concept": "محلی برای آموزش و یادگیری دانش‌آموزان."
+   "concept": "محلی برای آموزش و یادگیری دانش‌آموزان.",
+   "level": 5,
+   "frequencyRankEstimate": 103,
+   "difficultyScore": 31,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طالب",
@@ -3435,7 +6175,12 @@
     "محصل",
     "طلب‌کننده"
    ],
-   "concept": "شخصی که به دنبال علم یا چیزی می‌گردد."
+   "concept": "شخصی که به دنبال علم یا چیزی می‌گردد.",
+   "level": 4,
+   "frequencyRankEstimate": 104,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "معلم",
@@ -3443,7 +6188,12 @@
     "معلم",
     "آموزگار"
    ],
-   "concept": "کسی که علم و دانش را به دیگران می‌آموزد."
+   "concept": "کسی که علم و دانش را به دیگران می‌آموزد.",
+   "level": 3,
+   "frequencyRankEstimate": 105,
+   "difficultyScore": 27,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "سلام",
@@ -3452,14 +6202,24 @@
     "درود",
     "صلح"
    ],
-   "concept": "درود و تحیت، همچنین به معنای صلح و امنیت."
+   "concept": "درود و تحیت، همچنین به معنای صلح و امنیت.",
+   "level": 3,
+   "frequencyRankEstimate": 101,
+   "difficultyScore": 30,
+   "frequencyMethod": "curated_core",
+   "frequencyBand": "رایج"
   },
   {
    "arabic": "طیاره",
    "meanings": [
     "هواپیما"
    ],
-   "concept": "وسیله‌ای انسان ساخت برای پرواز"
+   "concept": "وسیله‌ای انسان ساخت برای پرواز",
+   "level": 54,
+   "frequencyRankEstimate": 500,
+   "difficultyScore": 28,
+   "frequencyMethod": "lexical_estimate",
+   "frequencyBand": "رایج"
   }
  ]
 }
