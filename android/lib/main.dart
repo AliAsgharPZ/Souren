@@ -1952,11 +1952,13 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _showAccountDialog() async {
+    final identifier = TextEditingController();
     final email = TextEditingController(text: accountUser?['email']?.toString() ?? '');
     final code = TextEditingController();
     final displayName = TextEditingController();
     final username = TextEditingController();
     final password = TextEditingController();
+    final newPassword = TextEditingController();
     var mode = accountUser == null ? 'login' : 'link';
     var sent = false;
     var busy = false;
@@ -1966,178 +1968,199 @@ class _ShellState extends State<Shell> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: pal.cardC,
-          title: Text(
-            mode == 'register' ? 'ساخت حساب سورن' : mode == 'link' ? 'اتصال ایمیل به حساب' : 'ورود به حساب سورن',
-            style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800),
-          ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: 360,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+        builder: (context, setDialogState) {
+          Future<void> requestCode() async {
+            if (email.text.trim().isEmpty) {
+              setDialogState(() { message = 'نشانی ایمیل را وارد کنید.'; success = false; });
+              return;
+            }
+            setDialogState(() { busy = true; message = ''; });
+            try {
+              final purpose = mode == 'register' ? 'register' : mode == 'reset' ? 'reset' : 'link';
+              final result = await AccountApi.requestOtp(email.text, purpose: purpose);
+              if (!dialogContext.mounted) return;
+              setDialogState(() {
+                busy = false;
+                sent = result['status'] == 200 && result['success'] == true;
+                success = sent;
+                message = sent ? 'کد به ایمیل شما فرستاده شد؛ صندوق ورودی و هرزنامه را بررسی کنید.' : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
+              });
+            } catch (_) {
+              if (!dialogContext.mounted) return;
+              setDialogState(() { busy = false; message = 'ارتباط با سرویس حساب برقرار نشد.'; success = false; });
+            }
+          }
+
+          Future<void> submit() async {
+            setDialogState(() { busy = true; message = ''; });
+            try {
+              if (mode == 'login') {
+                final result = await AccountApi.login(identifier: identifier.text, password: password.text);
+                final user = result['user'];
+                if ((result['status'] == 200) && user is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() { busy = false; message = result['error']?.toString() ?? 'نام کاربری یا گذرواژه نادرست است.'; success = false; });
+                }
+                return;
+              }
+
+              if (!sent || code.text.trim().length != 6) {
+                setDialogState(() { busy = false; message = 'کد شش‌رقمی را وارد کنید.'; success = false; });
+                return;
+              }
+
+              if (mode == 'register') {
+                if (displayName.text.trim().isEmpty || username.text.trim().length < 3) {
+                  setDialogState(() { busy = false; message = 'نام نمایشی و نام کاربری معتبر را وارد کنید.'; success = false; });
+                  return;
+                }
+                final verified = await AccountApi.verifyOtp(email.text, code.text, purpose: 'register');
+                if (verified['status'] != 200 || verified['verificationToken'] is! String) {
+                  if (dialogContext.mounted) setDialogState(() { busy = false; message = verified['error']?.toString() ?? 'کد تأیید معتبر نیست.'; success = false; });
+                  return;
+                }
+                final result = await AccountApi.register(
+                  username: username.text,
+                  displayName: displayName.text,
+                  email: email.text,
+                  emailVerificationToken: verified['verificationToken'] as String,
+                );
+                final user = result['user'];
+                if ((result['status'] == 201 || result['status'] == 200) && user is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() { busy = false; message = result['error']?.toString() ?? 'ساخت حساب انجام نشد.'; success = false; });
+                }
+                return;
+              }
+
+              if (mode == 'link') {
+                final result = await AccountApi.verifyOtp(email.text, code.text, purpose: 'link');
+                final user = result['user'];
+                if (result['status'] == 200 && user is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() { busy = false; message = result['error']?.toString() ?? 'تأیید ایمیل انجام نشد.'; success = false; });
+                }
+                return;
+              }
+
+              if (newPassword.text.length < 6) {
+                setDialogState(() { busy = false; message = 'گذرواژهٔ تازه باید دست‌کم ۶ نویسه باشد.'; success = false; });
+                return;
+              }
+              final verified = await AccountApi.verifyOtp(email.text, code.text, purpose: 'reset');
+              if (verified['status'] != 200 || verified['passwordResetToken'] is! String) {
+                if (dialogContext.mounted) setDialogState(() { busy = false; message = verified['error']?.toString() ?? 'کد بازیابی معتبر نیست.'; success = false; });
+                return;
+              }
+              final result = await AccountApi.resetPassword(
+                email: email.text,
+                passwordResetToken: verified['passwordResetToken'] as String,
+                password: newPassword.text,
+              );
+              if (dialogContext.mounted) {
+                setDialogState(() {
+                  busy = false;
+                  success = result['status'] == 200 && result['success'] == true;
+                  message = success ? 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.' : (result['error']?.toString() ?? 'تغییر گذرواژه انجام نشد.');
+                  if (success) { mode = 'login'; sent = false; identifier.text = email.text; password.clear(); }
+                });
+              }
+            } catch (_) {
+              if (!dialogContext.mounted) return;
+              setDialogState(() { busy = false; message = 'ارتباط با سرویس حساب برقرار نشد.'; success = false; });
+            }
+          }
+
+          Widget field(TextEditingController controller, String label, {bool obscure = false, TextInputType? keyboard}) =>
+              Padding(
+                padding: const EdgeInsets.only(top: 9),
+                child: TextField(
+                  controller: controller,
+                  obscureText: obscure,
+                  keyboardType: keyboard,
+                  autocorrect: false,
+                  decoration: InputDecoration(labelText: label),
+                ),
+              );
+
+          return AlertDialog(
+            backgroundColor: pal.cardC,
+            title: Text(
+              mode == 'register' ? 'ساخت حساب سورن' : mode == 'link' ? 'اتصال ایمیل به حساب' : mode == 'reset' ? 'بازیابی گذرواژه' : 'ورود به حساب سورن',
+              style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800),
+            ),
+            content: SingleChildScrollView(
+              child: SizedBox(
+                width: 360,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(
-                    'حساب وب‌سایت، سورن و آریو مشترک است. کد یک‌بارمصرف از طریق ایمیل فرستاده می‌شود.',
+                    mode == 'login'
+                        ? 'با نام کاربری یا ایمیل و گذرواژه وارد شوید.'
+                        : mode == 'register'
+                            ? 'برای ساخت حساب، ایمیل را تأیید کنید؛ هنگام ثبت‌نام گذرواژه لازم نیست.'
+                            : mode == 'reset'
+                                ? 'برای تغییر گذرواژه، کد تأیید به ایمیل حساب فرستاده می‌شود.'
+                                : 'برای اتصال یا تغییر ایمیل حساب، کد را به نشانی تازه می‌فرستیم.',
                     style: TextStyle(color: pal.muted, height: 1.7, fontSize: 13),
                   ),
                   const SizedBox(height: 12),
-                  if (accountUser == null)
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        ChoiceChip(
-                          label: const Text('ورود'),
-                          selected: mode == 'login',
-                          onSelected: busy ? null : (_) => setDialogState(() {
-                            mode = 'login'; sent = false; message = ''; code.clear();
-                          }),
-                        ),
-                        ChoiceChip(
-                          label: const Text('ثبت‌نام'),
-                          selected: mode == 'register',
-                          onSelected: busy ? null : (_) => setDialogState(() {
-                            mode = 'register'; sent = false; message = ''; code.clear();
-                          }),
-                        ),
-                      ],
-                    )
-                  else
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text('برای اتصال یا تغییر ایمیل حساب، کد را به نشانی تازه می‌فرستیم.',
-                          style: TextStyle(color: pal.muted, fontSize: 12)),
-                    ),
-                  if (mode == 'register') ...[
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: displayName,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(labelText: 'نام نمایشی'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: username,
-                      textInputAction: TextInputAction.next,
-                      autocorrect: false,
-                      decoration: const InputDecoration(labelText: 'نام کاربری (۳ تا ۲۴ نویسه)'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: password,
-                      obscureText: true,
-                      decoration: const InputDecoration(labelText: 'گذرواژه (دست‌کم ۶ نویسه)'),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: email,
-                    keyboardType: TextInputType.emailAddress,
-                    autocorrect: false,
-                    decoration: const InputDecoration(labelText: 'نشانی ایمیل'),
-                  ),
-                  if (sent) ...[
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: code,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      decoration: const InputDecoration(labelText: 'کد شش‌رقمی ایمیل'),
-                    ),
+                  if (accountUser == null && (mode == 'login' || mode == 'register'))
+                    Wrap(spacing: 8, children: [
+                      ChoiceChip(label: const Text('ورود'), selected: mode == 'login', onSelected: busy ? null : (_) => setDialogState(() { mode = 'login'; sent = false; message = ''; code.clear(); })),
+                      ChoiceChip(label: const Text('ثبت‌نام'), selected: mode == 'register', onSelected: busy ? null : (_) => setDialogState(() { mode = 'register'; sent = false; message = ''; code.clear(); })),
+                    ]),
+                  if (mode == 'login') ...[
+                    field(identifier, 'نام کاربری یا ایمیل'),
+                    field(password, 'گذرواژه', obscure: true),
+                    Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: busy ? null : () => setDialogState(() { mode = 'reset'; sent = false; message = ''; }), child: const Text('گذرواژه را فراموش کرده‌اید؟'))),
+                  ] else if (mode == 'register') ...[
+                    field(displayName, 'نام نمایشی'),
+                    field(username, 'نام کاربری (۳ تا ۲۴ نویسه)'),
+                    field(email, 'نشانی ایمیل', keyboard: TextInputType.emailAddress),
+                    if (sent) field(code, 'کد شش‌رقمی ایمیل', keyboard: TextInputType.number),
+                  ] else if (mode == 'link') ...[
+                    field(email, 'نشانی ایمیل', keyboard: TextInputType.emailAddress),
+                    if (sent) field(code, 'کد شش‌رقمی ایمیل', keyboard: TextInputType.number),
+                  ] else ...[
+                    field(email, 'نشانی ایمیل حساب', keyboard: TextInputType.emailAddress),
+                    if (sent) ...[
+                      field(code, 'کد شش‌رقمی بازیابی', keyboard: TextInputType.number),
+                      field(newPassword, 'گذرواژهٔ تازه (دست‌کم ۶ نویسه)', obscure: true),
+                    ],
                   ],
                   if (message.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(message, textAlign: TextAlign.center,
-                        style: TextStyle(color: success ? pal.sel : pal.accent, fontSize: 12.5)),
+                    const SizedBox(height: 10),
+                    Text(message, textAlign: TextAlign.center, style: TextStyle(color: success ? pal.sel : pal.accent, fontSize: 12.5, height: 1.6)),
                   ],
-                ],
+                ]),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: busy ? null : () => Navigator.pop(dialogContext),
-              child: const Text('بستن'),
-            ),
-            if (!sent)
-              FilledButton(
-                onPressed: busy ? null : () async {
-                  if (mode == 'register' &&
-                      (displayName.text.trim().isEmpty ||
-                       username.text.trim().length < 3 ||
-                       password.text.length < 6)) {
-                    setDialogState(() {
-                      message = 'نام نمایشی، نام کاربری معتبر و گذرواژهٔ دست‌کم ۶ نویسه‌ای را وارد کنید.';
-                      success = false;
-                    });
-                    return;
-                  }
-                  setDialogState(() { busy = true; message = ''; });
-                  try {
-                    final result = await AccountApi.requestOtp(email.text, purpose: mode);
-                    if (!dialogContext.mounted) return;
-                    setDialogState(() {
-                      busy = false;
-                      sent = result['status'] == 200 && result['success'] == true;
-                      success = sent;
-                      message = sent
-                          ? 'کد ارسال شد؛ صندوق ورودی و هرزنامه را بررسی کنید.'
-                          : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
-                    });
-                  } catch (_) {
-                    if (!dialogContext.mounted) return;
-                    setDialogState(() { busy = false; message = 'ارتباط با سرویس حساب برقرار نشد.'; });
-                  }
-                },
-                child: Text(busy ? 'در حال ارسال…' : 'ارسال کد'),
-              )
-            else
-              FilledButton(
-                onPressed: busy ? null : () async {
-                  setDialogState(() { busy = true; message = ''; });
-                  try {
-                    final verified = await AccountApi.verifyOtp(email.text, code.text, purpose: mode);
-                    Map<String, dynamic> result = verified;
-                    if (mode == 'register' &&
-                        verified['status'] == 200 &&
-                        verified['verificationToken'] is String) {
-                      result = await AccountApi.registerAndLogin(
-                        username: username.text,
-                        password: password.text,
-                        displayName: displayName.text,
-                        email: email.text,
-                        emailVerificationToken: verified['verificationToken'] as String,
-                      );
-                    }
-                    final user = result['user'];
-                    if ((result['status'] == 200 || result['status'] == 201) && user is Map) {
-                      _applyAccountUser(Map<String, dynamic>.from(user));
-                      if (dialogContext.mounted) Navigator.pop(dialogContext);
-                    } else {
-                      if (!dialogContext.mounted) return;
-                      setDialogState(() {
-                        busy = false;
-                        message = result['error']?.toString() ??
-                            (mode == 'register' ? 'ثبت‌نام کامل نشد.' : 'کد تأیید معتبر نیست.');
-                      });
-                    }
-                  } catch (_) {
-                    if (!dialogContext.mounted) return;
-                    setDialogState(() { busy = false; message = 'خطا در تأیید کد ایمیل.'; });
-                  }
-                },
-                child: Text(busy ? 'در حال بررسی…' : mode == 'register' ? 'تأیید و ساخت حساب' : mode == 'link' ? 'تأیید و اتصال' : 'تأیید و ورود'),
-              ),
-          ],
-        ),
+            actions: [
+              TextButton(onPressed: busy ? null : () => Navigator.pop(dialogContext), child: const Text('بستن')),
+              if (mode == 'login')
+                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال ورود…' : 'ورود'))
+              else if (!sent)
+                FilledButton(onPressed: busy ? null : requestCode, child: Text(busy ? 'در حال ارسال…' : 'ارسال کد'))
+              else
+                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال بررسی…' : mode == 'register' ? 'تأیید و ساخت حساب' : mode == 'link' ? 'تأیید و اتصال' : 'تأیید و تغییر گذرواژه')),
+            ],
+          );
+        },
       ),
     );
+    identifier.dispose();
     email.dispose();
     code.dispose();
     displayName.dispose();
     username.dispose();
     password.dispose();
+    newPassword.dispose();
   }
 
   Future<void> _logoutAccount() async {
