@@ -67,19 +67,32 @@ jobs:
             test -s android/souren-release.keystore
             printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
           fi
-      - name: Normalize launcher PNG for Android AAPT2
+      - name: Rebuild launcher PNG from canonical Souren SVG
         run: |
           set -euo pipefail
-          sudo apt-get install -y python3-pil
+          sudo apt-get update
+          sudo apt-get install -y python3-pil librsvg2-bin
           python3 - <<'PY'
+          from pathlib import Path
+          source = Path("assets/branding/souren-logo.svg").read_text(encoding="utf-8")
+          source = source.replace("<svg ", '<svg fill="#f7f1e3" ', 1)
+          Path("/tmp/souren-logo-icon.svg").write_text(source, encoding="utf-8")
+          PY
+          rsvg-convert --width 980 --height 292 /tmp/souren-logo-icon.svg > /tmp/souren-logo-icon.png
+          python3 - <<'PY'
+          from pathlib import Path
           from PIL import Image
-          path = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
-          with Image.open(path) as source:
+          logo_path = "/tmp/souren-logo-icon.png"
+          target = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
+          with Image.open(logo_path) as source:
               source.load()
-              image = source.convert("RGBA")
-              image.save(path, format="PNG", optimize=False)
-          with Image.open(path) as check:
+              logo = source.convert("RGBA")
+          canvas = Image.new("RGBA", (1024, 1024), "#6f6657")
+          canvas.alpha_composite(logo, ((1024 - logo.width) // 2, (1024 - logo.height) // 2))
+          canvas.save(target, format="PNG", optimize=True)
+          with Image.open(target) as check:
               check.verify()
+          assert Image.open(target).size == (1024, 1024)
           PY
       - name: Build release APK
         run: |
