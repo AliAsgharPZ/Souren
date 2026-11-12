@@ -183,12 +183,10 @@ class _AnimatedValueState extends State<AnimatedValue>
   }
 }
 
-/// Scroll-aware top+bottom fade, shared by every scrollable list in
-/// the app. The fade zones are long and soft (16% of the viewport,
-/// eased multi-stop gradient) and start right at the viewport's top
-/// and bottom edges. The TOP fade is hidden at offset 0 and fades in
-/// smoothly over the first ~48px of scrolling, so a fresh page shows
-/// its first rows at full strength.
+/// Long, soft TOP-ONLY scroll fade shared by every scrollable list.
+/// The fade starts at the viewport's top edge, remains fully clear while
+/// the page is at rest, then gradually masks content as it scrolls upward.
+/// There is deliberately no bottom fade and no fixed header backing block.
 class ScrollFade extends StatefulWidget {
   final Widget child;
   final bool alwaysVisible;
@@ -198,7 +196,7 @@ class ScrollFade extends StatefulWidget {
     super.key,
     required this.child,
     this.alwaysVisible = false,
-    this.fadeExtent = 0.22,
+    this.fadeExtent = 0.34,
     this.fadeStrength = 0.94,
   });
   @override
@@ -207,24 +205,16 @@ class ScrollFade extends StatefulWidget {
 
 class _ScrollFadeState extends State<ScrollFade> {
   double _top = 0;
-  double _bottom = 0;
+  
 
   void _onScroll(ScrollNotification n) {
     if (n is ScrollUpdateNotification || n is OverscrollNotification) {
-      final topProgress = (n.metrics.pixels / 48).clamp(0.0, 1.0);
-      final bottomProgress = n.metrics.maxScrollExtent > 1
-          ? (1 - n.metrics.extentAfter / 48).clamp(0.0, 1.0)
-          : 0.0;
-      // Smoothstep keeps both edge fades tied to the actual scroll edges.
-      double smooth(double value) => value * value * (3 - 2 * value);
-      final top = smooth(topProgress);
-      final bottom = smooth(bottomProgress);
-      if ((top - _top).abs() > 0.005 ||
-          (bottom - _bottom).abs() > 0.005) {
-        setState(() {
-          _top = top;
-          _bottom = bottom;
-        });
+      // Build the fade gradually over 120 logical pixels of scroll.
+      // Smoothstep avoids a hard threshold or abrupt opacity change.
+      final progress = (n.metrics.pixels / 120).clamp(0.0, 1.0);
+      final top = progress * progress * (3 - 2 * progress);
+      if ((top - _top).abs() > 0.003) {
+        setState(() => _top = top);
       }
     }
   }
@@ -239,28 +229,24 @@ class _ScrollFadeState extends State<ScrollFade> {
       child: ShaderMask(
         shaderCallback: (rect) {
           final top = widget.alwaysVisible ? widget.fadeStrength : _top;
-          final bottom = widget.alwaysVisible ? widget.fadeStrength : _bottom;
           final fade = widget.fadeExtent;
-          // Preserve the first and last rows; fade the next rows as
-          // scrolling brings them to the viewport edges.
+          // Multi-stop eased alpha ramp: long, gradual and top-only.
           return LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               Color.fromRGBO(0, 0, 0, 1 - top),
-              Color.fromRGBO(0, 0, 0, 1 - top * 0.55),
-              Colors.black,
-              Colors.black,
-              Color.fromRGBO(0, 0, 0, 1 - bottom),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.82),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.48),
+              Color.fromRGBO(0, 0, 0, 1 - top * 0.16),
               Colors.black,
             ],
             stops: [
               0,
-              fade * 0.45,
-              fade * 0.9,
-              1 - fade * 0.9,
-              1 - fade * 0.45,
-              1,
+              fade * 0.22,
+              fade * 0.48,
+              fade * 0.76,
+              fade,
             ],
           ).createShader(rect);
         },
@@ -276,7 +262,7 @@ class _ScrollFadeState extends State<ScrollFade> {
 Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
-  double fadeExtent = 0.22,
+  double fadeExtent = 0.34,
   double fadeStrength = 0.94,
 }) => ScrollFade(
   alwaysVisible: alwaysVisible,
@@ -2086,27 +2072,6 @@ class _ShellState extends State<Shell> {
                 '${tab}_${settings.direction}_${settings.textSize}',
               ),
               child: pages[tab],
-            ),
-            // Fade the content behind the floating navigation, not over it.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 132,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        pal.bg.withValues(alpha: 0),
-                        pal.bg.withValues(alpha: 0.72),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
