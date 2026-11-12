@@ -416,20 +416,51 @@ class AccountApi {
         : null;
   }
 
-  static Future<Map<String, dynamic>> requestOtp(String email, {String purpose = 'login'}) =>
+  static Future<Map<String, dynamic>> requestOtp(String email, {String purpose = 'register'}) =>
       _request('/api/auth/request-otp', method: 'POST', body: {
         'email': email.trim().toLowerCase(),
         'purpose': purpose,
       });
 
-  static Future<Map<String, dynamic>> verifyOtp(String email, String code, {String purpose = 'login'}) =>
+  static Future<Map<String, dynamic>> verifyOtp(String email, String code, {String purpose = 'register'}) =>
       _request('/api/auth/verify-otp', method: 'POST', body: {
         'email': email.trim().toLowerCase(),
         'code': code.trim(),
         'purpose': purpose,
       });
 
-  /// Creates an account after OTP verification, then establishes its session.
+  static Future<Map<String, dynamic>> login({
+    required String identifier,
+    required String password,
+  }) => _request('/api/auth/login', method: 'POST', body: {
+        'username': identifier.trim(),
+        'password': password,
+      });
+
+  /// OTP registration creates a session immediately; no password is requested.
+  static Future<Map<String, dynamic>> register({
+    required String username,
+    required String displayName,
+    required String email,
+    required String emailVerificationToken,
+  }) => _request('/api/auth/register', method: 'POST', body: {
+        'username': username.trim(),
+        'displayName': displayName.trim(),
+        'email': email.trim().toLowerCase(),
+        'emailVerificationToken': emailVerificationToken,
+      });
+
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String passwordResetToken,
+    required String password,
+  }) => _request('/api/auth/reset-password', method: 'POST', body: {
+        'email': email.trim().toLowerCase(),
+        'passwordResetToken': passwordResetToken,
+        'password': password,
+      });
+
+  /// Kept for compatibility with clients that registered with a password.
   static Future<Map<String, dynamic>> registerAndLogin({
     required String username,
     required String password,
@@ -444,13 +475,10 @@ class AccountApi {
       'email': email.trim().toLowerCase(),
       'emailVerificationToken': emailVerificationToken,
     });
-    if (registered['status'] != 201 && registered['status'] != 200) {
-      return registered;
-    }
-    return _request('/api/auth/login', method: 'POST', body: {
-      'username': username.trim(),
-      'password': password,
-    });
+    if (registered['status'] != 201 && registered['status'] != 200) return registered;
+    return registered['user'] is Map
+        ? registered
+        : login(identifier: username, password: password);
   }
 
   static Future<void> logout() async {
