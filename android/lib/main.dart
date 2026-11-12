@@ -4979,7 +4979,7 @@ class _ShellState extends State<Shell> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text(phaseStages.first.phaseTitle, style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 16))),
-                Text('مرحله‌های ' + faNum(phase * 10 + 1) + ' تا ' + faNum(phase * 10 + 10), style: TextStyle(color: pal.muted, fontSize: 11)),
+                Text('مرحله‌های ${faNum(phase * 10 + 1)} تا ${faNum(phase * 10 + 10)}', style: TextStyle(color: pal.muted, fontSize: 11)),
               ]),
               const SizedBox(height: 12),
               Wrap(spacing: 8, runSpacing: 8, children: [
