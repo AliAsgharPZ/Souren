@@ -528,11 +528,15 @@ int? nextLevelAt(int score) {
 
 /// Badge ids in display order; earned-ness is computed by [badgeEarned].
 const badgeIds = <String>[
-    'firstBookmark',
+  'member',
+  'firstBookmark',
+  'firstLike',
   'liker',
   'keyboardStudent',
   'hundred',
   'collector',
+  'tenBookmarks',
+  'threeHundred',
 ];
 
 bool badgeEarned(
@@ -548,6 +552,8 @@ bool badgeEarned(
       return loggedIn;
     case 'firstBookmark':
       return favorites >= 1;
+    case 'firstLike':
+      return likes >= 1;
     case 'liker':
       return likes >= 10;
     case 'keyboardStudent':
@@ -556,6 +562,10 @@ bool badgeEarned(
       return score >= 100;
     case 'collector':
       return favorites >= 25;
+    case 'tenBookmarks':
+      return favorites >= 10;
+    case 'threeHundred':
+      return score >= 300;
     default:
       return false;
   }
