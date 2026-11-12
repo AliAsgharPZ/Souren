@@ -162,7 +162,7 @@ function base64UrlUtf8(value) {
 }
 
 function wrapBase64(value) {
-    return value.match(/.{1,76}/g)?.join('\\r\\n') || '';
+    return value.match(/.{1,76}/g)?.join('\r\n') || '';
 }
 
 function encodeMimeHeader(value) {
