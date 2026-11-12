@@ -442,6 +442,7 @@ function publicUser(rec) {
         emailVerified: rec.emailVerified === true,
         favorites: rec.favorites || [],
         likes: rec.likes || [],
+        passwordSetupRequired: rec.passwordSetupRequired === true,
     };
 }
 
