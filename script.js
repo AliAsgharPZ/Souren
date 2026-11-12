@@ -797,7 +797,7 @@ async function doRegister(e) {
     const username = document.getElementById('registerUsername').value.trim();
     const email = document.getElementById('registerEmail').value.trim().toLowerCase();
     const code = document.getElementById('registerOtp').value.trim();
-    if (!/^[^\\s]{3,24}$/.test(username)) {
+    if (!/^[^\s]{3,24}$/.test(username)) {
         showMsg('registerMsg', 'نام کاربری باید ۳ تا ۲۴ نویسه و بدون فاصله باشد.', false);
         return;
     }
