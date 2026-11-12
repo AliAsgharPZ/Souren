@@ -8,6 +8,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_drawing/path_drawing.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'lucide.dart';
 import 'share.dart';
@@ -195,7 +196,7 @@ class ScrollFade extends StatefulWidget {
     super.key,
     required this.child,
     this.alwaysVisible = false,
-    this.fadeExtent = 0.15,
+    this.fadeExtent = 0.12,
     this.fadeStrength = 1.0,
   });
 
@@ -213,13 +214,14 @@ class _ScrollFadeState extends State<ScrollFade> {
   }
 
   void _update(ScrollMetrics metrics) {
-    const transition = 120.0;
+    const topTransition = 120.0;
+    const bottomTransition = 88.0;
     final top = widget.alwaysVisible
         ? 1.0
-        : _smooth(metrics.pixels / transition);
+        : _smooth(metrics.pixels / topTransition);
     final bottom = metrics.maxScrollExtent <= 0
         ? 0.0
-        : _smooth(metrics.extentAfter / transition);
+        : _smooth(metrics.extentAfter / bottomTransition);
     if ((top - _top).abs() > 0.003 || (bottom - _bottom).abs() > 0.003) {
       setState(() {
         _top = top;
@@ -293,12 +295,14 @@ class ScrollAwarePageShell extends StatefulWidget {
   final Widget header;
   final Widget body;
   final double headerHeight;
+  final bool autoHide;
 
   const ScrollAwarePageShell({
     super.key,
     required this.header,
     required this.body,
     this.headerHeight = 56,
+    this.autoHide = true,
   });
 
   @override
@@ -310,7 +314,7 @@ class _ScrollAwarePageShellState extends State<ScrollAwarePageShell> {
   double _directionDistance = 0;
 
   bool _onScroll(ScrollNotification n) {
-    if (n.depth != 0 || n is! ScrollUpdateNotification) return false;
+    if (!widget.autoHide || n.depth != 0 || n is! ScrollUpdateNotification) return false;
     final delta = n.scrollDelta ?? 0;
     if (delta == 0) return false;
     final toward = delta > 0; // down hides; up reveals
@@ -333,15 +337,17 @@ class _ScrollAwarePageShellState extends State<ScrollAwarePageShell> {
     children: [
       ClipRect(
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 190),
-          curve: Curves.easeInOutCubic,
+          duration: const Duration(milliseconds: 360),
+          curve: Curves.easeInOutQuart,
           height: _headerVisible ? widget.headerHeight : 0,
           child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOut,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
             opacity: _headerVisible ? 1 : 0,
-            child: Transform.translate(
-              offset: Offset(0, _headerVisible ? 0 : -8),
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 360),
+              curve: Curves.easeInOutQuart,
+              offset: Offset(0, _headerVisible ? 0 : -0.08),
               child: widget.header,
             ),
           ),
@@ -361,7 +367,7 @@ class _ScrollAwarePageShellState extends State<ScrollAwarePageShell> {
 Widget edgeFade({
   required Widget child,
   bool alwaysVisible = false,
-  double fadeExtent = 0.15,
+  double fadeExtent = 0.12,
   double fadeStrength = 1.0,
 }) => ScrollFade(
   alwaysVisible: alwaysVisible,
@@ -1534,7 +1540,13 @@ class ArioLogo extends StatelessWidget {
     return SizedBox(
       width: width,
       height: width / ratio,
-      child: CustomPaint(painter: _ArioLogoPainter(color ?? pal.ink)),
+      child: SvgPicture.asset(
+        'assets/branding/ario-logo.svg',
+        width: width,
+        height: width / ratio,
+        fit: BoxFit.contain,
+        colorFilter: ColorFilter.mode(color ?? pal.ink, BlendMode.srcIn),
+      ),
     );
   }
 }
@@ -2156,7 +2168,7 @@ class _ShellState extends State<Shell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final pages = arioMode
-        ? <Widget>[_arioHome(d), _arioPath(d), _arioPractice(d), _arioReview(d), _arioWords(d), _arioProgress(d)]
+        ? <Widget>[_arioHome(d), _arioPractice(d), _arioReview(d), _arioProfile(d), _arioSettings(d)]
         : <Widget>[_home(d), _likedPage(d), _sectionsPage(d), _favoritesPage(d), _profilePage(d), _settingsPage(d)];
     return Scaffold(
       extendBody: true,
@@ -2219,12 +2231,11 @@ class _ShellState extends State<Shell> {
   Widget _navBar() {
     final items = arioMode
         ? <(IconData, String)>[
-            (Symbols.home_rounded, 'خانه'),
-            (Symbols.grid_view_rounded, 'مسیر'),
-            (Symbols.favorite_rounded, 'تمرین'),
-            (Symbols.bookmark_rounded, 'مرور'),
-            (Symbols.person_rounded, 'واژه‌ها'),
-            (Symbols.settings_rounded, 'پیشرفت'),
+            (Symbols.home_rounded, 'پیشگاه'),
+            (Symbols.quiz_rounded, 'تمرین'),
+            (Symbols.history_edu_rounded, 'مرور'),
+            (Symbols.person_rounded, 'نمایه'),
+            (Symbols.settings_rounded, 'پیکربندی'),
           ]
         : <(IconData, String)>[
             (Symbols.home_rounded, 'پیشگاه'),
@@ -2347,15 +2358,12 @@ class _ShellState extends State<Shell> {
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        navItem(1),
-                        navItem(2),
-                        navItem(3),
-                        navItem(4),
-                      ],
+                      children: arioMode
+                          ? [navItem(1), navItem(2), navItem(3)]
+                          : [navItem(1), navItem(2), navItem(3), navItem(4)],
                     ),
                   ),
-                  navItem(5),
+                  navItem(arioMode ? 4 : 5),
                 ],
               ),
             ],
@@ -3431,7 +3439,13 @@ class _ShellState extends State<Shell> {
 
     return _pageShell(
       'پسندیده‌ها',
-      Padding(
+      GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() < 180) return;
+          setState(() => _likedFilter = (_likedFilter + (velocity < 0 ? 1 : 4)) % 5);
+        },
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
@@ -3469,7 +3483,7 @@ class _ShellState extends State<Shell> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 
@@ -3497,7 +3511,13 @@ class _ShellState extends State<Shell> {
 
     return _pageShell(
       'نشان‌شده',
-      Padding(
+      GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity.abs() < 180) return;
+          setState(() => _favoritesFilter = (_favoritesFilter + (velocity < 0 ? 1 : 4)) % 5);
+        },
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
@@ -3535,7 +3555,7 @@ class _ShellState extends State<Shell> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 
@@ -4724,9 +4744,10 @@ class _ShellState extends State<Shell> {
     }
   }
 
-  Widget _arioPageShell(String title, Widget body) => Directionality(
+  Widget _arioPageShell(String title, Widget body, {bool hideHeaderOnScroll = true}) => Directionality(
     textDirection: TextDirection.rtl,
     child: ScrollAwarePageShell(
+      autoHide: hideHeaderOnScroll,
       headerHeight: 56,
       header: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 20, 8),
@@ -4745,7 +4766,7 @@ class _ShellState extends State<Shell> {
 
   Widget _arioHome(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa).toList();
-    final lessonCount = (words.length + 11) ~/ 12;
+    const lessonCount = 100;
     final completed = arioCompletedLessons.length;
     final currentLesson = _nextArioLesson(lessonCount);
     final progress = lessonCount == 0
@@ -4755,15 +4776,9 @@ class _ShellState extends State<Shell> {
     final daily = words.isEmpty
         ? null
         : words[(today.year * 372 + today.month * 31 + today.day) % words.length];
-    final positions = List<double>.generate(
-      lessonCount,
-      (i) => const [0.50, 0.76, 0.50, 0.24][i % 4],
-    );
-
     return _arioPageShell(
       'آریو',
-      edgeFade(
-        child: ListView(
+      ListView(
           padding: const EdgeInsets.fromLTRB(22, 10, 22, 24 + kNavClearance),
           children: [
             Row(
@@ -4806,15 +4821,15 @@ class _ShellState extends State<Shell> {
             ),
             const SizedBox(height: 22),
             Row(children: [
-              Expanded(child: Text('مسیر پایه', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
-              Text('${faNum(lessonCount)} مرحله', style: TextStyle(color: pal.muted, fontSize: 12)),
+              Expanded(child: Text('برنامهٔ آموزشی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
+              Text('۱۰ واحد · ۱۰۰ درس', style: TextStyle(color: pal.muted, fontSize: 12)),
             ]),
             const SizedBox(height: 10),
-            _arioPathNodes(d, lessonCount, currentLesson, positions),
+            _arioCurriculum(d, currentLesson),
             const SizedBox(height: 18),
             if (daily != null)
               Pressable(
-                onTap: () => setState(() => tab = 2),
+                onTap: () => setState(() => tab = 1),
                 child: Container(
                   padding: const EdgeInsets.all(17),
                   decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
@@ -4831,11 +4846,12 @@ class _ShellState extends State<Shell> {
                 ),
               ),
             const SizedBox(height: 12),
-            _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 3)),
+            _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 2)),
             _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی در پایگاه مشترک سورن', LucideIcons.notebookPen, () => _open(_ganjoorPage(d))),
           ],
         ),
       ),
+      hideHeaderOnScroll: false,
     );
   }
 
@@ -4860,6 +4876,56 @@ class _ShellState extends State<Shell> {
       Text(label, style: TextStyle(color: pal.muted, fontSize: 10)),
     ]),
   );
+
+  Widget _arioCurriculum(Dictionary d, int currentLesson) {
+    return Column(
+      children: [
+        for (var unit = 0; unit < 10; unit++)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(40))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text('واحد ${faNum(unit + 1)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 16))),
+                Text('درس‌های ${faNum(unit * 10 + 1)} تا ${faNum(unit * 10 + 10)}', style: TextStyle(color: pal.muted, fontSize: 11)),
+              ]),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var offset = 0; offset < 10; offset++)
+                    Builder(builder: (context) {
+                      final lesson = unit * 10 + offset;
+                      final done = arioCompletedLessons.contains(lesson);
+                      final unlocked = lesson == 0 || arioCompletedLessons.contains(lesson - 1);
+                      final active = lesson == currentLesson;
+                      return Pressable(
+                        onTap: unlocked ? () => _openArioLesson(d, lesson) : null,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: done ? pal.sel : active ? pal.accent : pal.pillC,
+                            borderRadius: BorderRadius.circular(capR(15)),
+                            border: Border.all(color: active ? pal.accent : pal.div, width: active ? 2 : 1),
+                          ),
+                          child: done
+                              ? Icon(LucideIcons.check, size: 17, color: pal.bg)
+                              : Text(faNum(lesson + 1), style: TextStyle(color: active ? pal.bg : unlocked ? pal.ink : pal.faint, fontSize: 12, fontWeight: FontWeight.w800)),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ]),
+          ),
+      ],
+    );
+  }
 
   Widget _arioPathNodes(Dictionary d, int count, int currentLesson, List<double> positions) {
     if (count == 0) return const SizedBox.shrink();
@@ -4953,7 +5019,10 @@ class _ShellState extends State<Shell> {
   }
 
   void _openArioLesson(Dictionary d, int lesson) {
-    final words = d.entries.where((e) => e.hasFa).skip(lesson * 12).take(12).toList();
+    final allWords = d.entries.where((e) => e.hasFa).toList();
+    final start = (lesson * allWords.length / 100).floor();
+    final end = ((lesson + 1) * allWords.length / 100).ceil();
+    final words = allWords.skip(start).take(end - start).toList();
     if (words.isEmpty) return;
     setState(() => arioLastLesson = lesson);
     _saveArioProgress();
@@ -5013,28 +5082,72 @@ class _ShellState extends State<Shell> {
           const SizedBox(height: 8),
           Text('با گذراندن درس‌ها یا پاسخ درست به تمرین‌ها، واژه‌ها اینجا جمع می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
         ])))
-      : _pairList(words, bottomPad: kNavClearance, singleLine: true));
+      : Padding(padding: const EdgeInsets.symmetric(horizontal: 22), child: _pairList(words, bottomPad: kNavClearance, singleLine: true)));
   }
 
-  Widget _arioWords(Dictionary d) => _arioPageShell('واژه‌ها', _pairList(d.entries.where((e) => e.hasFa).toList(), bottomPad: kNavClearance, singleLine: true));
+  // The former word catalogue tab is now the learner profile.
 
-  Widget _arioProgress(Dictionary d) {
-    final total = (d.entries.where((e) => e.hasFa).length + 11) ~/ 12;
-    final ratio = total == 0 ? 0.0 : (arioCompletedLessons.length / total).clamp(0.0, 1.0).toDouble();
-    return _arioPageShell('پیشرفت یادگیری', edgeFade(child: ListView(
+
+  Widget _arioProfile(Dictionary d) {
+    final words = d.entries.where((e) => e.hasFa).length;
+    final completed = arioCompletedLessons.length;
+    return _arioPageShell('نمایه', edgeFade(child: ListView(
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))),
+          child: Column(children: [
+            CircleAvatar(radius: 30, backgroundColor: pal.sel, child: Icon(LucideIcons.graduationCap, color: pal.bg, size: 28)),
+            const SizedBox(height: 10),
+            Text(accountUser?['displayName']?.toString() ?? 'نمایهٔ یادگیری', style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(accountUser?['email']?.toString() ?? 'پیشرفت آموزشی روی همین دستگاه نگهداری می‌شود', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, fontSize: 12, height: 1.7)),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        _statCard('درس‌های گذرانده‌شده', completed),
+        _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
+        _statCard('درصد پیشرفت', completed),
+        _statCard('واژه‌های پایگاه آموزشی', words),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('حساب مشترک سورن و آریو', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text(accountUser == null ? 'برای اتصال حساب، وارد شوید یا حساب بسازید.' : (accountUser?['email']?.toString() ?? accountUser?['username']?.toString() ?? 'حساب متصل است'), style: TextStyle(color: pal.muted, fontSize: 12, height: 1.6)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, children: [
+              TextButton(onPressed: accountBusy ? null : _showAccountDialog, child: Text(accountUser == null ? 'ورود یا ثبت‌نام' : 'مدیریت حساب')),
+              if (accountUser != null) TextButton(onPressed: accountBusy ? null : _logoutAccount, child: const Text('خروج')),
+            ]),
+          ]),
+        ),
+      ],
+    )));
+  }
+
+  Widget _arioSettings(Dictionary d) {
+    return _arioPageShell('پیکربندی', edgeFade(child: ListView(
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
       children: [
         Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(52))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('پیشرفت مسیر', style: TextStyle(color: pal.muted, fontSize: 13)),
+          Text('تنظیمات یادگیری و ظاهر', style: TextStyle(color: pal.muted, fontSize: 13)),
           const SizedBox(height: 8),
-          Text('${faNum((ratio * 100).round())}٪', style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
+          Text('پیکربندی آریو', style: TextStyle(color: pal.ink, fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: ratio, minHeight: 9, backgroundColor: pal.div, color: pal.sel)),
+          Text('گزینه‌های زیر با پوستهٔ سورن هماهنگ هستند.', style: TextStyle(color: pal.muted, fontSize: 12, height: 1.7)),
         ])),
         const SizedBox(height: 12),
-        _statCard('درس‌های کامل‌شده', arioCompletedLessons.length),
-        _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
-        _statCard('تمرین‌های انجام‌شده', arioQuizIndex),
+        const SizedBox(height: 12),
+        Text('پوستهٔ برنامه', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        capsuleGroup<String>(options: const [('light', 'روشن'), ('dark', 'تیره')], value: settings.theme, onChanged: (v) async { setState(() => settings.theme = v); await SettingsStore.update(settings); }),
+        const SizedBox(height: 18),
+        Text('اندازهٔ نوشته‌ها', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        capsuleGroup<String>(options: const [('small', 'کوچک'), ('normal', 'معمولی'), ('large', 'بزرگ')], value: settings.textSize, onChanged: (v) async { setState(() => settings.textSize = v); await SettingsStore.update(settings); }),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(18),
