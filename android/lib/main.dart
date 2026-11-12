@@ -1493,7 +1493,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
           ),
         ]),
         const SizedBox(height: 14),
-        ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0), minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
+        ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0).toDouble(), minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
         const Spacer(),
         if (!exerciseMode)
           AnimatedSwitcher(duration: Motion.base, switchInCurve: Motion.curve, child: Container(
