@@ -1458,7 +1458,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
         Row(children: [
           Pressable(onTap: () => Navigator.of(context).pop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 24)),
           const SizedBox(width: 12),
-          Expanded(child: Text('درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 18))),
+          Expanded(child: Text('واحد ${faNum((widget.lesson - 1) ~/ 10 + 1)} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 17))),
           Text('${faNum(index + 1)} از ${faNum(widget.words.length)}', style: TextStyle(color: pal.muted, fontSize: 12)),
         ]),
         const SizedBox(height: 14),
@@ -1470,6 +1470,8 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
           decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))),
           child: Column(children: [
+            Text('بخش ${faNum(index ~/ 2 + 1)} از ${faNum((widget.words.length + 1) ~/ 2)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 5),
             Text('واژهٔ عربی', style: TextStyle(color: pal.muted, fontSize: 13)),
             const SizedBox(height: 14),
             Text(entry.ar, style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
@@ -4077,6 +4079,9 @@ class _ShellState extends State<Shell> {
   // ---------- نمایهٔ کاربری ----------
   static const _badgeMeta = <String, (IconData, String, String)>{
     'member': (LucideIcons.badgeCheck, 'عضو سورن', 'با نمایه وارد شده‌اید'),
+    'firstLike': (LucideIcons.heartHandshake, 'نخستین پسند', 'نخستین واژه را بپسندید'),
+    'tenBookmarks': (LucideIcons.bookMarked, 'نشان‌گذار حرفه‌ای', '۱۰ واژه را نشان کنید'),
+    'threeHundred': (LucideIcons.trophy, 'نشان سیصد امتیاز', 'به ۳۰۰ امتیاز برسید'),
     'firstBookmark': (LucideIcons.bookmark, 'نخستین نشان', 'یک واژه نشان کنید'),
     'liker': (LucideIcons.heart, 'دل‌باختهٔ واژه', '۱۰ واژه را بپسندید'),
     'keyboardStudent': (
@@ -4233,7 +4238,7 @@ class _ShellState extends State<Shell> {
             Column(children: [
               for (var r = 0; r < (badgeIds.length + 1) ~/ 2; r++)
                 Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
-                  Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
+                  Expanded(child: _badgeTile(badgeIds[r * 2], loggedIn: accountUser != null, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score)),
                   const SizedBox(width: 10),
                   if (r * 2 + 1 < badgeIds.length)
                     Expanded(child: _badgeTile(badgeIds[r * 2 + 1], loggedIn: false, favorites: favorites.length, likes: liked.length, corrections: learnedCorrections, score: score))
