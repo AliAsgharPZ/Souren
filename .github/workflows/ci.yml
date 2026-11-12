@@ -109,12 +109,34 @@ jobs:
         run: |
           set -euo pipefail
           BASE=https://souren.aliasgharpanahizare.workers.dev
-          OTP_STATUS=$(curl -sS -o /tmp/souren-otp-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/request-otp" -H 'Content-Type: application/json' --data '{"email":"invalid-email","purpose":"register"}')
-          test "$OTP_STATUS" = "400"
-          node -e "const x=require('/tmp/souren-otp-probe.json'); if (!x.error) process.exit(1)"
-          RESET_STATUS=$(curl -sS -o /tmp/souren-reset-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/reset-password" -H 'Content-Type: application/json' --data '{}')
-          test "$RESET_STATUS" = "400"
-          node -e "const x=require('/tmp/souren-reset-probe.json'); if (!x.error) process.exit(1)"
+          probe() {
+            local path="$1" payload="$2" label="$3" output="/tmp/souren-${3}-probe.json"
+            local status
+            status=$(curl --silent --show-error --max-redirs 0 -o "$output" -w '%{http_code}' \
+              -X POST "$BASE$path" -H 'Content-Type: application/json' --data "$payload")
+            echo "$label route returned HTTP $status"
+            node - "$output" "$status" "$label" <<'NODE'
+          const fs = require('node:fs');
+          const [file, statusText, label] = process.argv.slice(2);
+          const status = Number(statusText);
+          const raw = fs.readFileSync(file, 'utf8');
+          let body;
+          try { body = JSON.parse(raw); }
+          catch {
+            console.error(label + ' route did not return JSON:', raw.slice(0, 500));
+            process.exit(1);
+          }
+          if (status < 400 || status >= 500 || !body || typeof body !== 'object' || typeof body.error !== 'string') {
+            console.error(label + ' route returned an unexpected response:', status, body);
+            process.exit(1);
+          }
+          NODE
+          }
+          HEALTH_STATUS=$(curl --silent --show-error --max-redirs 0 -o /tmp/souren-health.json -w '%{http_code}' "$BASE/api/health")
+          test "$HEALTH_STATUS" = "200"
+          node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/souren-health.json','utf8'));if(x.service!=='souren-worker'||x.status!=='ok')process.exit(1)"
+          probe /api/auth/request-otp '{"email":"invalid-email","purpose":"register"}' otp
+          probe /api/auth/reset-password '{}' reset
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
