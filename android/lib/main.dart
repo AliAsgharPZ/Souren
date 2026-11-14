@@ -1694,8 +1694,8 @@ class _SourenAppState extends State<SourenApp> {
                 child: Scaffold(
                   body: Center(
                     child: widget.initialArioMode
-                        ? ArioLogo(width: 190, color: pal.ink)
-                        : SourenLogo(width: 190),
+                        ? const ArioLogo(width: 190, color: pal.ink)
+                        : const SourenLogo(width: 190),
                   ),
                 ),
               ),
