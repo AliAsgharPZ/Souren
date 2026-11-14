@@ -2177,9 +2177,21 @@ class _ShellState extends State<Shell> {
                 password: newPassword.text,
               );
               final resetUser = result['user'];
-              if (result['status'] == 200 && result['success'] == true && resetUser is Map) {
-                _applyAccountUser(Map<String, dynamic>.from(resetUser));
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              if (result['status'] == 200 && result['success'] == true) {
+                if (resetUser is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(resetUser));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() {
+                    busy = false;
+                    success = true;
+                    message = 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.';
+                    mode = 'login';
+                    sent = false;
+                    identifier.text = email.text;
+                    password.clear();
+                  });
+                }
                 return;
               }
               if (dialogContext.mounted) {

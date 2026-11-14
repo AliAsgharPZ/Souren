@@ -690,7 +690,9 @@ async function requestResetOtp() {
     if (!email) return showMsg('resetMsg', 'ایمیل حساب را وارد کنید.', false);
     try {
         const { res, data } = await requestEmailOtp(email, 'reset');
-        showMsg('resetMsg', res.ok ? 'کد بازیابی فرستاده شد.' : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
+        showMsg('resetMsg', res.ok
+            ? 'اگر این ایمیل به حساب تأییدشده‌ای متصل باشد، کد بازیابی ارسال می‌شود.'
+            : errText(data, 'ارسال کد ناموفق بود.'), res.ok);
     } catch (_) {
         showMsg('resetMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
     }
@@ -714,11 +716,19 @@ async function doResetPassword(e) {
             method: 'POST',
             body: JSON.stringify({ email, password, passwordResetToken: verified.data.passwordResetToken })
         });
-        if (changed.res.ok && changed.data.success && changed.data.user) {
-            afterAuth(changed.data.user);
-            hideModal('authModal');
-            openProfile();
-            showMsg('profileMsg', 'گذرواژه تغییر کرد و نشست شما با گذرواژهٔ تازه تمدید شد.', true);
+        if (changed.res.ok && changed.data.success) {
+            if (changed.data.user) {
+                afterAuth(changed.data.user);
+                hideModal('authModal');
+                openProfile();
+                showMsg('profileMsg', 'گذرواژه تغییر کرد و نشست شما با گذرواژهٔ تازه تمدید شد.', true);
+            } else {
+                // Backward compatibility while the production Worker is being deployed.
+                document.getElementById('loginUsername').value = email;
+                document.getElementById('loginPassword').value = '';
+                switchAuthTab(false);
+                showMsg('loginMsg', 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.', true);
+            }
         } else {
             showMsg('resetMsg', errText(changed.data, 'تغییر گذرواژه انجام نشد.'), false);
         }
