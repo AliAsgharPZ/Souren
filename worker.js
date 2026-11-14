@@ -604,7 +604,12 @@ async function loginInner(request, env) {
         return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
     }
     const normalizedIdentifier = identifier.toLowerCase();
-    const rateKey = `login:attempt:${encodeURIComponent(normalizedIdentifier)}`;
+    const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const fingerprint = b64(await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(`${clientIp}\\0${normalizedIdentifier}`)
+    )).replace(/[+/=]/g, '_');
+    const rateKey = `login:attempt:${fingerprint}`;
     const attempts = Number(await env.USERS.get(rateKey) || 0);
     if (attempts >= 8) {
         return json(request, { error: 'تلاش‌های ورود بیش از حد مجاز است؛ ۱۵ دقیقه دیگر دوباره امتحان کنید' }, 429);
