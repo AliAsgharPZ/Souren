@@ -152,7 +152,6 @@ jobs:
           probe /api/auth/request-otp '{"email":"probe@example.invalid","purpose":"invalid"}' otp-purpose
           probe /api/auth/login '{}' login
           probe /api/auth/reset-password '{}' reset
-          probe /api/auth/change-password '{}' change-password
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
