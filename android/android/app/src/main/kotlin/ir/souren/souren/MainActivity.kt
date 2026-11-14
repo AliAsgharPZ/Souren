@@ -11,7 +11,15 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
 import android.view.inputmethod.InputMethodManager
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -26,6 +34,24 @@ open class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/files")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "secureRead" -> {
+                        val key = call.argument<String>("key")
+                        if (key.isNullOrBlank()) result.error("SECURE_KEY", "Missing secure key", null)
+                        else try { result.success(readSecureValue(key)) }
+                        catch (error: Exception) { result.error("SECURE_READ", "Could not decrypt secure value", null) }
+                    }
+                    "secureWrite" -> {
+                        val key = call.argument<String>("key")
+                        val value = call.argument<String>("value")
+                        if (key.isNullOrBlank() || value == null) result.error("SECURE_VALUE", "Missing secure value", null)
+                        else try { writeSecureValue(key, value); result.success(true) }
+                        catch (error: Exception) { result.error("SECURE_WRITE", "Could not encrypt secure value", null) }
+                    }
+                    "secureDelete" -> {
+                        val key = call.argument<String>("key")
+                        if (key.isNullOrBlank()) result.error("SECURE_KEY", "Missing secure key", null)
+                        else { getSharedPreferences("souren_secure", Context.MODE_PRIVATE).edit().remove(key).apply(); result.success(true) }
+                    }
                     "filesDir" -> result.success(filesDir.absolutePath)
                     "openInputSettings" -> {
                         startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
@@ -136,6 +162,46 @@ open class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun secureKey(): SecretKey {
+        val alias = "souren.account.session.aes"
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val existing = keyStore.getKey(alias, null) as? SecretKey
+        if (existing != null) return existing
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                alias,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build()
+        )
+        return generator.generateKey()
+    }
+
+    private fun readSecureValue(name: String): String? {
+        val encoded = getSharedPreferences("souren_secure", Context.MODE_PRIVATE).getString(name, null)
+            ?: return null
+        val packed = Base64.decode(encoded, Base64.NO_WRAP)
+        require(packed.size > 12) { "Invalid encrypted value" }
+        val iv = packed.copyOfRange(0, 12)
+        val encrypted = packed.copyOfRange(12, packed.size)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, secureKey(), GCMParameterSpec(128, iv))
+        return String(cipher.doFinal(encrypted), Charsets.UTF_8)
+    }
+
+    private fun writeSecureValue(name: String, value: String) {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, secureKey())
+        val packed = cipher.iv + cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+        val encoded = Base64.encodeToString(packed, Base64.NO_WRAP)
+        check(getSharedPreferences("souren_secure", Context.MODE_PRIVATE)
+            .edit().putString(name, encoded).commit())
     }
 
     override fun onNewIntent(intent: Intent) {

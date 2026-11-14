@@ -50,7 +50,9 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.7+30' pubspec.yaml
+          grep -F 'version: 0.4.7+31' pubspec.yaml
+      - name: Account and session security regression tests
+        run: python3 -m unittest discover -s tools -p 'test_auth_security.py'
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
@@ -63,7 +65,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && { [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/tags/v0.4.7.7" ]; }; then
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && { [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/tags/v0.4.7.8" ]; }; then
             test -n "$KS_B64" && test -n "$KS_PW" && test -n "$KEY_PW" && test -n "$KEY_ALIAS"
           fi
           if [ -n "$KS_B64" ] && [ -n "$KS_PW" ] && [ -n "$KEY_PW" ] && [ -n "$KEY_ALIAS" ]; then
@@ -80,48 +82,39 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pil librsvg2-bin
           SOURCE="assets/branding/souren-app-icon.svg"
-          TARGET="android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
-          test -s "$SOURCE"
-          rsvg-convert --width 1024 --height 1024 "$SOURCE" > /tmp/souren-app-icon.png
-          python3 - <<'PY'
-          from PIL import Image
-          source = "/tmp/souren-app-icon.png"
-          target = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
-          with Image.open(source) as image:
-              image.load()
-              assert image.size == (1024, 1024), image.size
-              image.convert("RGBA").save(target, format="PNG", optimize=False)
-          with Image.open(target) as check:
-              check.verify()
-              assert check.size == (1024, 1024)
           ARIO_SOURCE="assets/branding/ario-app-icon.svg"
+          TARGET="android/app/src/main/res/mipmap-nodpi/ic_launcher.png"
           ARIO_TARGET="android/app/src/main/res/mipmap-nodpi/ario_launcher.png"
+          test -s "$SOURCE"
           test -s "$ARIO_SOURCE"
+          rsvg-convert --width 1024 --height 1024 "$SOURCE" > /tmp/souren-app-icon.png
           rsvg-convert --width 1024 --height 1024 "$ARIO_SOURCE" > /tmp/ario-app-icon.png
           python3 - <<'PY'
           from PIL import Image
-          source = "/tmp/ario-app-icon.png"
-          target = "android/app/src/main/res/mipmap-nodpi/ario_launcher.png"
-          with Image.open(source) as image:
-              image.load()
-              assert image.size == (1024, 1024), image.size
-              image.convert("RGBA").save(target, format="PNG", optimize=False)
-          with Image.open(target) as check:
-              check.verify()
-              assert check.size == (1024, 1024)
+          for source, target in [
+              ("/tmp/souren-app-icon.png", "android/app/src/main/res/mipmap-nodpi/ic_launcher.png"),
+              ("/tmp/ario-app-icon.png", "android/app/src/main/res/mipmap-nodpi/ario_launcher.png"),
+          ]:
+              with Image.open(source) as image:
+                  image.load()
+                  assert image.size == (1024, 1024), image.size
+                  image.convert("RGBA").save(target, format="PNG", optimize=False)
+              with Image.open(target) as check:
+                  check.verify()
+                  assert check.size == (1024, 1024)
           PY
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.7 --build-number=30
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.8 --build-number=31
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='30' versionName='0.4.7.7'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='30' versionName='0.4.7.8'"
           for ABI in armeabi-v7a arm64-v8a x86_64; do unzip -l "$APK" | grep -q "lib/$ABI/"; done
-          cp "$APK" Souren-v0.4.7.7.apk
+          cp "$APK" Souren-v0.4.7.8.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
@@ -160,37 +153,37 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Souren-v0.4.7.7-Universal-APK
-          path: android/Souren-v0.4.7.7.apk
-      - name: Create v0.4.7.7 tag after successful main validation
+          name: Souren-v0.4.7.8-Universal-APK
+          path: android/Souren-v0.4.7.8.apk
+      - name: Create v0.4.7.8 tag after successful main validation
         id: create_release_tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if TAG_JSON=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.7.7" 2>/dev/null); then
+          if TAG_JSON=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v0.4.7.8" 2>/dev/null); then
             TAG_SHA=$(printf '%s' "$TAG_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).object.sha))")
             if [ "$TAG_SHA" = "$GITHUB_SHA" ]; then
               echo "created=true" >> "$GITHUB_OUTPUT"
             else
               echo "created=false" >> "$GITHUB_OUTPUT"
-              echo "Existing v0.4.7.7 tag points to a different commit; refusing to move it."
+              echo "Existing v0.4.7.8 tag points to a different commit; refusing to move it."
             fi
           else
-            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref='refs/tags/v0.4.7.7' -f sha="$GITHUB_SHA"
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref='refs/tags/v0.4.7.8' -f sha="$GITHUB_SHA"
             echo "created=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Publish Souren v0.4.7.7
-        if: github.event_name == 'push' && (github.ref == 'refs/tags/v0.4.7.7' || (github.ref == 'refs/heads/main' && steps.create_release_tag.outputs.created == 'true'))
+      - name: Publish Souren v0.4.7.8
+        if: github.event_name == 'push' && (github.ref == 'refs/tags/v0.4.7.8' || (github.ref == 'refs/heads/main' && steps.create_release_tag.outputs.created == 'true'))
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES="Souren v0.4.7.7. Ario receives the exact supplied SVG mark as an Android adaptive launcher icon with a legacy PNG fallback, distinct Recent Apps identity and matching Ario startup branding; Souren retains its own app icon. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; padded learned-word review list; all 552 shared dictionary entries levelled 1-100 using difficulty and estimated frequency; Ario content-scaled progression with no 100-stage cap with units, lessons, learning/review/practice sections and linked exercises. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
-          if gh release view v0.4.7.7 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload v0.4.7.7 Souren-v0.4.7.7.apk --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit v0.4.7.7 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.7" --notes "$NOTES"
+          NOTES="Souren v0.4.7.8. Ario receives the exact supplied SVG mark as an Android adaptive launcher icon with a legacy PNG fallback, distinct Recent Apps identity and matching Ario startup branding; Souren retains its own app icon. Smoother and longer page-header transitions; shorter bottom scroll fade; full-strength home scroll fade; swipe navigation inside liked and bookmarked collections; expanded account badges including Souren member; branded Souren OTP email; password-based login with email OTP registration and password recovery; updated Ario logo and launcher artwork; Persian-only Ario navigation with learner profile and settings; padded learned-word review list; all 552 shared dictionary entries levelled 1-100 using difficulty and estimated frequency; Ario content-scaled progression with no 100-stage cap with units, lessons, learning/review/practice sections and linked exercises. Flutter analyze, Flutter tests, Kotlin tests, signed universal APK build, and ABI verification are required before publication."
+          if gh release view v0.4.7.8 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload v0.4.7.8 Souren-v0.4.7.8.apk --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit v0.4.7.8 --repo "$GITHUB_REPOSITORY" --title "Souren v0.4.7.8" --notes "$NOTES"
           else
-            gh release create v0.4.7.7 Souren-v0.4.7.7.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.7" --notes "$NOTES"
+            gh release create v0.4.7.8 Souren-v0.4.7.8.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Souren v0.4.7.8" --notes "$NOTES"
           fi

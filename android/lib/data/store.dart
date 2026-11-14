@@ -71,6 +71,19 @@ class SharedFiles {
     await f.writeAsString(jsonEncode(data));
   }
 
+  /// Sensitive account credentials are encrypted by Android Keystore-backed
+  /// AES-GCM in the native layer; never write session tokens as plain JSON.
+  static Future<String?> readSecureString(String key) async =>
+      _channel.invokeMethod<String>('secureRead', {'key': key});
+
+  static Future<void> writeSecureString(String key, String value) async {
+    await _channel.invokeMethod<bool>('secureWrite', {'key': key, 'value': value});
+  }
+
+  static Future<void> deleteSecureString(String key) async {
+    await _channel.invokeMethod<bool>('secureDelete', {'key': key});
+  }
+
   static Future<void> openInputSettings() async {
     try {
       await _channel.invokeMethod('openInputSettings');
@@ -386,11 +399,26 @@ class AccountApi {
   static String? _cookie;
   static bool _loaded = false;
 
+  static const _secureCookieKey = 'account_session_cookie';
+
   static Future<void> _loadCookie() async {
     if (_loaded) return;
+    final secure = await SharedFiles.readSecureString(_secureCookieKey);
+    if (secure != null && secure.isNotEmpty) {
+      _cookie = secure;
+      _loaded = true;
+      return;
+    }
+    // One-time migration from older app builds that stored the opaque token
+    // in filesDir. Remove the plaintext copy immediately after encryption.
+    final legacy = await SharedFiles.readJson('account_session.json');
+    final oldCookie = legacy?['cookie'] as String?;
+    if (oldCookie != null && oldCookie.isNotEmpty) {
+      await SharedFiles.writeSecureString(_secureCookieKey, oldCookie);
+      _cookie = oldCookie;
+      await SharedFiles.writeJson('account_session.json', {'cookie': null});
+    }
     _loaded = true;
-    final saved = await SharedFiles.readJson('account_session.json');
-    _cookie = saved?['cookie'] as String?;
   }
 
   static Future<Map<String, dynamic>> _request(
@@ -417,10 +445,12 @@ class AccountApi {
         final first = setCookies.first;
         if (first.contains('Max-Age=0')) {
           _cookie = null;
+          await SharedFiles.deleteSecureString(_secureCookieKey);
           await SharedFiles.writeJson('account_session.json', {'cookie': null});
         } else {
           _cookie = first.split(';').first.trim();
-          await SharedFiles.writeJson('account_session.json', {'cookie': _cookie});
+          await SharedFiles.writeSecureString(_secureCookieKey, _cookie!);
+          await SharedFiles.writeJson('account_session.json', {'cookie': null});
         }
       }
       final text = await response.transform(utf8.decoder).join();
@@ -504,12 +534,21 @@ class AccountApi {
         : login(identifier: username, password: password);
   }
 
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => _request('/api/auth/change-password', method: 'POST', body: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+
   static Future<void> logout() async {
     try {
       await _request('/api/auth/logout', method: 'POST');
     } finally {
       _cookie = null;
       _loaded = true;
+      await SharedFiles.deleteSecureString(_secureCookieKey);
       await SharedFiles.writeJson('account_session.json', {'cookie': null});
     }
   }

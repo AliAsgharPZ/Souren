@@ -255,9 +255,12 @@ async function handleRequestOtp(request, env) {
     try { body = await request.json(); }
     catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
 
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
     const email = normalizeEmail(body.email);
-    const purpose = ['register', 'login', 'link', 'reset'].includes(body.purpose)
-        ? body.purpose : 'register';
+    const purpose = body.purpose;
+    if (!['register', 'login', 'link', 'reset'].includes(purpose)) {
+        return json(request, { error: 'نوع درخواست تأیید نامعتبر است' }, 400);
+    }
     if (!validEmail(email)) return json(request, { error: 'نشانی ایمیل معتبر نیست' }, 400);
     if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN || !env.EMAIL_FROM) {
         return json(request, { error: 'email_service_not_configured' }, 503);
@@ -268,11 +271,13 @@ async function handleRequestOtp(request, env) {
         session = await getSessionUser(request, env);
         if (!session) return json(request, { error: 'وارد نشده‌اید' }, 401);
     }
-    if (purpose === 'reset') {
+    if (purpose === 'reset' || purpose === 'login') {
         const username = await env.USERS.get(`email:${email}`);
         const user = username ? await env.USERS.get(`user:${username}`, 'json') : null;
+        // Avoid disclosing whether an email is registered. For an unknown
+        // address, keep the response shape identical but do not send a code.
         if (!user || user.email !== email || user.emailVerified !== true) {
-            return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
+            return json(request, { success: true, message: 'اگر این ایمیل به حساب تأییدشده‌ای متصل باشد، کد ارسال خواهد شد.' });
         }
     }
     if (purpose === 'register' && await env.USERS.get(`email:${email}`)) {
@@ -326,9 +331,12 @@ async function handleVerifyOtp(request, env) {
     let body;
     try { body = await request.json(); }
     catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
     const email = normalizeEmail(body.email);
-    const purpose = ['register', 'login', 'link', 'reset'].includes(body.purpose)
-        ? body.purpose : 'login';
+    const purpose = body.purpose;
+    if (!['register', 'login', 'link', 'reset'].includes(purpose)) {
+        return json(request, { error: 'نوع درخواست تأیید نامعتبر است' }, 400);
+    }
     const code = typeof body.code === 'string' ? body.code.trim() : '';
     if (!validEmail(email) || !/^\d{6}$/.test(code)) {
         return json(request, { error: 'ایمیل یا کد تأیید نامعتبر است' }, 400);
@@ -398,8 +406,7 @@ async function handleVerifyOtp(request, env) {
     if (!user || user.email !== email || user.emailVerified !== true) {
         return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
     }
-    const token = randomToken();
-    await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
+    const token = await createSession(env, user);
     return json(request, { user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
@@ -448,12 +455,23 @@ function publicUser(rec) {
 
 async function getSessionUser(request, env) {
     const cookie = request.headers.get('Cookie') || '';
-    const m = cookie.match(new RegExp(`${SESSION_COOKIE}=([0-9a-f]{64})`));
+    const m = cookie.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([0-9a-f]{64})(?:;|$)`));
     if (!m) return null;
     const data = await env.USERS.get(`sess:${m[1]}`, 'json');
     if (!data || !data.username) return null;
     const rec = await env.USERS.get(`user:${data.username}`, 'json');
-    return rec ? { token: m[1], rec } : null;
+    if (!rec || Number(data.authVersion || 0) !== Number(rec.authVersion || 0)) return null;
+    return { token: m[1], rec };
+}
+
+async function createSession(env, rec) {
+    const token = randomToken();
+    await env.USERS.put(`sess:${token}`, JSON.stringify({
+        username: rec.username,
+        authVersion: Number(rec.authVersion || 0),
+        createdAt: Date.now(),
+    }), { expirationTtl: SESSION_TTL });
+    return token;
 }
 
 function sessionCookie(token, maxAge) {
@@ -462,21 +480,22 @@ function sessionCookie(token, maxAge) {
 
 async function handleRegister(request, env) {
   try { return await registerInner(request, env); }
-  catch (e) { return json(request, { error: 'server_error', detail: String((e && e.message) || e) }, 500); }
+  catch (_) { return json(request, { error: 'خطای داخلی سرویس حساب؛ دوباره تلاش کنید' }, 500); }
 }
 
 async function registerInner(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
-    const username = (body.username || '').trim();
-    const password = body.password || '';
-    const displayName = (body.displayName || '').trim() || username;
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
+    const username = typeof body.username === 'string' ? body.username.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const displayName = (typeof body.displayName === 'string' ? body.displayName.trim() : '') || username;
     const email = normalizeEmail(body.email);
     const verificationToken = typeof body.emailVerificationToken === 'string'
         ? body.emailVerificationToken : '';
     if (!validUsername(username)) return json(request, { error: 'نام کاربری باید ۳ تا ۲۴ نویسه و بدون فاصله باشد' }, 400);
-    if (password && (typeof password !== 'string' || password.length < 6)) {
-        return json(request, { error: 'گذرواژه باید دست‌کم ۶ نویسه باشد' }, 400);
+    if (password && (password.length < 8 || password.length > 256)) {
+        return json(request, { error: 'گذرواژه باید بین ۸ تا ۲۵۶ نویسه باشد' }, 400);
     }
     if (!validEmail(email) || !verificationToken) {
         return json(request, { error: 'ابتدا ایمیل خود را با کد یک‌بارمصرف تأیید کنید' }, 400);
@@ -503,13 +522,39 @@ async function registerInner(request, env) {
         likes: [],
         createdAt: Date.now(),
         passwordSetupRequired: !password,
+        authVersion: 0,
     };
     await env.USERS.put(key, JSON.stringify(rec));
     await env.USERS.put(`email:${email}`, username);
     await env.USERS.delete(`email-verified:${verificationToken}`);
-    const token = randomToken();
-    await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
+    const token = await createSession(env, rec);
     return json(request, { user: publicUser(rec), passwordSetupRequired: !password }, 201,
+        { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
+}
+
+async function handleChangePassword(request, env) {
+    const session = await getSessionUser(request, env);
+    if (!session) return json(request, { error: 'نشست معتبر نیست؛ دوباره وارد شوید' }, 401);
+    let body;
+    try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
+    const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+    if (newPassword.length < 8 || newPassword.length > 256) {
+        return json(request, { error: 'گذرواژهٔ تازه باید بین ۸ تا ۲۵۶ نویسه باشد' }, 400);
+    }
+    const currentHash = await hashPassword(currentPassword, session.rec.salt);
+    if (!currentPassword || currentHash !== session.rec.pw) {
+        return json(request, { error: 'گذرواژهٔ فعلی نادرست است' }, 401);
+    }
+    const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+    session.rec.salt = salt;
+    session.rec.pw = await hashPassword(newPassword, salt);
+    session.rec.authVersion = Number(session.rec.authVersion || 0) + 1;
+    delete session.rec.passwordSetupRequired;
+    await env.USERS.put(`user:${session.rec.username}`, JSON.stringify(session.rec));
+    await env.USERS.delete(`sess:${session.token}`);
+    const token = await createSession(env, session.rec);
+    return json(request, { success: true, user: publicUser(session.rec) }, 200,
         { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
@@ -519,8 +564,8 @@ async function handlePasswordReset(request, env) {
     const email = normalizeEmail(body.email);
     const token = typeof body.passwordResetToken === 'string' ? body.passwordResetToken : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    if (!validEmail(email) || !token || password.length < 6 || password.length > 256) {
-        return json(request, { error: 'ایمیل، کد بازیابی یا گذرواژه نامعتبر است' }, 400);
+    if (!validEmail(email) || !token || password.length < 8 || password.length > 256) {
+        return json(request, { error: 'ایمیل، کد بازیابی یا گذرواژه نامعتبر است؛ گذرواژه باید دست‌کم ۸ نویسه باشد' }, 400);
     }
     const verified = await env.USERS.get(`password-reset:${token}`, 'json');
     if (!verified || verified.email !== email) {
@@ -534,6 +579,7 @@ async function handlePasswordReset(request, env) {
     const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
     rec.salt = salt;
     rec.pw = await hashPassword(password, salt);
+    rec.authVersion = Number(rec.authVersion || 0) + 1;
     delete rec.passwordSetupRequired;
     await env.USERS.put(`user:${verified.username}`, JSON.stringify(rec));
     await env.USERS.delete(`password-reset:${token}`);
@@ -542,25 +588,37 @@ async function handlePasswordReset(request, env) {
 
 async function handleLogin(request, env) {
   try { return await loginInner(request, env); }
-  catch (e) { return json(request, { error: 'server_error', detail: String((e && e.message) || e) }, 500); }
+  catch (_) { return json(request, { error: 'خطای داخلی سرویس حساب؛ دوباره تلاش کنید' }, 500); }
 }
 
 async function loginInner(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
-    const identifier = (body.username || body.email || '').trim();
-    const password = body.password || '';
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
+    const rawIdentifier = typeof body.username === 'string' ? body.username : (typeof body.email === 'string' ? body.email : '');
+    const identifier = rawIdentifier.trim();
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (!identifier || identifier.length > 254 || !password || password.length > 256) {
+        return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
+    }
+    const normalizedIdentifier = identifier.toLowerCase();
+    const rateKey = `login:attempt:${encodeURIComponent(normalizedIdentifier)}`;
+    const attempts = Number(await env.USERS.get(rateKey) || 0);
+    if (attempts >= 8) {
+        return json(request, { error: 'تلاش‌های ورود بیش از حد مجاز است؛ ۱۵ دقیقه دیگر دوباره امتحان کنید' }, 429);
+    }
     const username = identifier.includes('@')
         ? await env.USERS.get(`email:${normalizeEmail(identifier)}`)
         : identifier;
     const rec = username ? await env.USERS.get(`user:${username}`, 'json') : null;
-    if (!rec || typeof password !== 'string' || !password) {
+    const salt = rec?.salt || 'MDEyMzQ1Njc4OWFiY2RlZg==';
+    const hash = await hashPassword(password, salt);
+    if (!rec || hash !== rec.pw) {
+        await env.USERS.put(rateKey, String(attempts + 1), { expirationTtl: 900 });
         return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
     }
-    const hash = await hashPassword(password, rec.salt);
-    if (hash !== rec.pw) return json(request, { error: 'نام کاربری، ایمیل یا گذرواژه نادرست است' }, 401);
-    const token = randomToken();
-    await env.USERS.put(`sess:${token}`, JSON.stringify({ username }), { expirationTtl: SESSION_TTL });
+    await env.USERS.delete(rateKey);
+    const token = await createSession(env, rec);
     return json(request, { user: publicUser(rec), passwordSetupRequired: rec.passwordSetupRequired === true }, 200,
         { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
@@ -677,6 +735,8 @@ export default {
                 ? handleLogin(request, env) : methodNotAllowed();
             case '/api/auth/reset-password': return request.method === 'POST'
                 ? handlePasswordReset(request, env) : methodNotAllowed();
+            case '/api/auth/change-password': return request.method === 'POST'
+                ? handleChangePassword(request, env) : methodNotAllowed();
             case '/api/auth/logout': return request.method === 'POST'
                 ? handleLogout(request, env) : methodNotAllowed();
             case '/api/auth/me': return request.method === 'GET'

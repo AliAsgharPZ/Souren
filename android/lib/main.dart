@@ -1689,8 +1689,8 @@ class _SourenAppState extends State<SourenApp> {
         transitionBuilder: enterTransition,
         child: ready
             ? KeyedSubtree(key: const ValueKey('shell'), child: Shell(initialArioMode: widget.initialArioMode))
-            : const KeyedSubtree(
-                key: ValueKey('loading'),
+            : KeyedSubtree(
+                key: const ValueKey('loading'),
                 child: Scaffold(
                   body: Center(
                     child: widget.initialArioMode
@@ -2021,15 +2021,16 @@ class _ShellState extends State<Shell> {
     setState(() => accountUser = Map<String, dynamic>.from(user));
   }
 
-  Future<void> _showAccountDialog() async {
+  Future<void> _showAccountDialog({String? initialMode}) async {
     final identifier = TextEditingController();
     final email = TextEditingController(text: accountUser?['email']?.toString() ?? '');
     final code = TextEditingController();
     final displayName = TextEditingController();
     final username = TextEditingController();
     final password = TextEditingController();
+    final currentPassword = TextEditingController();
     final newPassword = TextEditingController();
-    var mode = accountUser == null ? 'login' : 'link';
+    var mode = initialMode ?? (accountUser == null ? 'login' : 'link');
     var sent = false;
     var busy = false;
     var message = '';
@@ -2046,7 +2047,7 @@ class _ShellState extends State<Shell> {
             }
             setDialogState(() { busy = true; message = ''; });
             try {
-              final purpose = mode == 'register' ? 'register' : mode == 'reset' ? 'reset' : 'link';
+              final purpose = mode == 'loginOtp' ? 'login' : mode == 'register' ? 'register' : mode == 'reset' ? 'reset' : 'link';
               final result = await AccountApi.requestOtp(email.text, purpose: purpose);
               if (!dialogContext.mounted) return;
               setDialogState(() {
@@ -2064,6 +2065,41 @@ class _ShellState extends State<Shell> {
           Future<void> submit() async {
             setDialogState(() { busy = true; message = ''; });
             try {
+              if (mode == 'loginOtp') {
+                if (!sent || code.text.trim().length != 6) {
+                  setDialogState(() { busy = false; message = 'کد شش‌رقمی را وارد کنید.'; success = false; });
+                  return;
+                }
+                final result = await AccountApi.verifyOtp(email.text, code.text, purpose: 'login');
+                final user = result['user'];
+                if (result['status'] == 200 && user is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() { busy = false; message = result['error']?.toString() ?? 'ورود با کد انجام نشد.'; success = false; });
+                }
+                return;
+              }
+
+              if (mode == 'changePassword') {
+                if (newPassword.text.length < 8) {
+                  setDialogState(() { busy = false; message = 'گذرواژهٔ تازه باید دست‌کم ۸ نویسه باشد.'; success = false; });
+                  return;
+                }
+                final result = await AccountApi.changePassword(
+                  currentPassword: currentPassword.text,
+                  newPassword: newPassword.text,
+                );
+                final user = result['user'];
+                if (result['status'] == 200 && result['success'] == true && user is Map) {
+                  _applyAccountUser(Map<String, dynamic>.from(user));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                } else if (dialogContext.mounted) {
+                  setDialogState(() { busy = false; message = result['error']?.toString() ?? 'تغییر گذرواژه انجام نشد.'; success = false; });
+                }
+                return;
+              }
+
               if (mode == 'login') {
                 final result = await AccountApi.login(identifier: identifier.text, password: password.text);
                 final user = result['user'];
@@ -2165,7 +2201,7 @@ class _ShellState extends State<Shell> {
           return AlertDialog(
             backgroundColor: pal.cardC,
             title: Text(
-              mode == 'register' ? 'ساخت حساب سورن' : mode == 'link' ? 'اتصال ایمیل به حساب' : mode == 'reset' ? 'بازیابی گذرواژه' : 'ورود به حساب سورن',
+              mode == 'register' ? 'ساخت حساب سورن' : mode == 'link' ? 'اتصال ایمیل به حساب' : mode == 'reset' ? 'بازیابی گذرواژه' : mode == 'changePassword' ? 'تغییر گذرواژه' : mode == 'loginOtp' ? 'ورود با کد یک‌بارمصرف' : 'ورود به حساب سورن',
               style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800),
             ),
             content: SingleChildScrollView(
@@ -2175,7 +2211,11 @@ class _ShellState extends State<Shell> {
                   Text(
                     mode == 'login'
                         ? 'با نام کاربری یا ایمیل و گذرواژه وارد شوید.'
-                        : mode == 'register'
+                        : mode == 'loginOtp'
+                            ? 'کد یک‌بارمصرف به ایمیل حساب شما فرستاده می‌شود.'
+                            : mode == 'changePassword'
+                                ? 'برای امنیت بیشتر، گذرواژهٔ فعلی و گذرواژهٔ تازه را وارد کنید.'
+                                : mode == 'register'
                             ? 'برای ساخت حساب، ایمیل را تأیید کنید؛ هنگام ثبت‌نام گذرواژه لازم نیست.'
                             : mode == 'reset'
                                 ? 'برای تغییر گذرواژه، کد تأیید به ایمیل حساب فرستاده می‌شود.'
@@ -2183,15 +2223,22 @@ class _ShellState extends State<Shell> {
                     style: TextStyle(color: pal.muted, height: 1.7, fontSize: 13),
                   ),
                   const SizedBox(height: 12),
-                  if (accountUser == null && (mode == 'login' || mode == 'register'))
+                  if (accountUser == null && (mode == 'login' || mode == 'loginOtp' || mode == 'register'))
                     Wrap(spacing: 8, children: [
-                      ChoiceChip(label: const Text('ورود'), selected: mode == 'login', onSelected: busy ? null : (_) => setDialogState(() { mode = 'login'; sent = false; message = ''; code.clear(); })),
+                      ChoiceChip(label: const Text('ورود با گذرواژه'), selected: mode == 'login', onSelected: busy ? null : (_) => setDialogState(() { mode = 'login'; sent = false; message = ''; code.clear(); })),
+                      ChoiceChip(label: const Text('ورود با کد'), selected: mode == 'loginOtp', onSelected: busy ? null : (_) => setDialogState(() { mode = 'loginOtp'; sent = false; message = ''; code.clear(); })),
                       ChoiceChip(label: const Text('ثبت‌نام'), selected: mode == 'register', onSelected: busy ? null : (_) => setDialogState(() { mode = 'register'; sent = false; message = ''; code.clear(); })),
                     ]),
                   if (mode == 'login') ...[
                     field(identifier, 'نام کاربری یا ایمیل'),
                     field(password, 'گذرواژه', obscure: true),
                     Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: busy ? null : () => setDialogState(() { mode = 'reset'; sent = false; message = ''; }), child: const Text('گذرواژه را فراموش کرده‌اید؟'))),
+                  ] else if (mode == 'loginOtp') ...[
+                    field(email, 'نشانی ایمیل حساب', keyboard: TextInputType.emailAddress),
+                    if (sent) field(code, 'کد شش‌رقمی ایمیل', keyboard: TextInputType.number),
+                  ] else if (mode == 'changePassword') ...[
+                    field(currentPassword, 'گذرواژهٔ فعلی', obscure: true),
+                    field(newPassword, 'گذرواژهٔ تازه (حداقل ۸ نویسه)', obscure: true),
                   ] else if (mode == 'register') ...[
                     field(displayName, 'نام نمایشی'),
                     field(username, 'نام کاربری (۳ تا ۲۴ نویسه)'),
@@ -2216,8 +2263,8 @@ class _ShellState extends State<Shell> {
             ),
             actions: [
               TextButton(onPressed: busy ? null : () => Navigator.pop(dialogContext), child: const Text('بستن')),
-              if (mode == 'login')
-                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال ورود…' : 'ورود'))
+              if (mode == 'login' || mode == 'changePassword')
+                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال بررسی…' : mode == 'changePassword' ? 'تغییر گذرواژه' : 'ورود'))
               else if (!sent)
                 FilledButton(onPressed: busy ? null : requestCode, child: Text(busy ? 'در حال ارسال…' : 'ارسال کد'))
               else
@@ -2233,6 +2280,7 @@ class _ShellState extends State<Shell> {
     displayName.dispose();
     username.dispose();
     password.dispose();
+    currentPassword.dispose();
     newPassword.dispose();
   }
 
@@ -4291,7 +4339,12 @@ class _ShellState extends State<Shell> {
                   Text(accountUser == null ? 'ورود با کد یک‌بارمصرف ایمیل' : (accountUser?['email']?.toString() ?? accountUser?['username']?.toString() ?? ''), style: TextStyle(color: pal.muted, fontSize: 12)),
                 ])),
                 const SizedBox(width: 8),
+                if (accountUser != null)
                 TextButton(
+                  onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: 'changePassword'),
+                  child: const Text('تغییر گذرواژه'),
+                ),
+              TextButton(
                   onPressed: accountBusy ? null : (accountUser == null ? _showAccountDialog : _logoutAccount),
                   child: Text(accountUser == null ? 'ورود' : 'خروج'),
                 ),
@@ -5181,6 +5234,7 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 10),
             Wrap(spacing: 8, children: [
               TextButton(onPressed: accountBusy ? null : _showAccountDialog, child: Text(accountUser == null ? 'ورود یا ثبت‌نام' : 'مدیریت حساب')),
+              if (accountUser != null) TextButton(onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: 'changePassword'), child: const Text('تغییر گذرواژه')),
               if (accountUser != null) TextButton(onPressed: accountBusy ? null : _logoutAccount, child: const Text('خروج')),
             ]),
           ]),
