@@ -5,6 +5,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORKER = (ROOT.parent / "worker.js").read_text()
 STORE = (ROOT / "lib" / "data" / "store.dart").read_text()
 MAIN = (ROOT / "lib" / "main.dart").read_text()
+WEB = (ROOT.parent / "script.js").read_text()
+HTML = (ROOT.parent / "index.html").read_text()
 KOTLIN = (ROOT / "android" / "app" / "src" / "main" / "kotlin" / "ir" / "souren" / "souren" / "MainActivity.kt").read_text()
 
 class AccountSecurityTests(unittest.TestCase):
@@ -28,6 +30,14 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn("purpose: 'login'", MAIN)
         self.assertIn("mode == 'loginOtp'", MAIN)
         self.assertIn("ورود با کد", MAIN)
+
+    def test_website_has_otp_login_and_authenticated_password_change(self):
+        self.assertIn("async function doLoginOtp", WEB)
+        self.assertIn("purpose: 'login'", WEB)
+        self.assertIn("/api/auth/change-password", WEB)
+        self.assertIn('id="loginOtpForm"', HTML)
+        self.assertIn('id="changePasswordPanel"', HTML)
+        self.assertIn("password.length < 8", WEB)
 
     def test_session_cookie_is_migrated_to_keystore_encryption(self):
         self.assertIn("readSecureString(_secureCookieKey)", STORE)

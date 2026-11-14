@@ -701,7 +701,7 @@ async function doResetPassword(e) {
     const email = document.getElementById('resetEmail').value.trim().toLowerCase();
     const code = document.getElementById('resetOtp').value.trim();
     const password = document.getElementById('resetPassword').value;
-    if (password.length < 6) return showMsg('resetMsg', 'گذرواژه باید دست‌کم ۶ نویسه باشد.', false);
+    if (password.length < 8) return showMsg('resetMsg', 'گذرواژه باید دست‌کم ۸ نویسه باشد.', false);
     try {
         const verified = await api('/api/auth/verify-otp', {
             method: 'POST',
@@ -714,16 +714,50 @@ async function doResetPassword(e) {
             method: 'POST',
             body: JSON.stringify({ email, password, passwordResetToken: verified.data.passwordResetToken })
         });
-        if (changed.res.ok && changed.data.success) {
-            document.getElementById('loginUsername').value = email;
-            document.getElementById('loginPassword').value = '';
-            switchAuthTab(false);
-            showMsg('loginMsg', 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.', true);
+        if (changed.res.ok && changed.data.success && changed.data.user) {
+            afterAuth(changed.data.user);
+            hideModal('authModal');
+            openProfile();
+            showMsg('profileMsg', 'گذرواژه تغییر کرد و نشست شما با گذرواژهٔ تازه تمدید شد.', true);
         } else {
             showMsg('resetMsg', errText(changed.data, 'تغییر گذرواژه انجام نشد.'), false);
         }
     } catch (_) {
         showMsg('resetMsg', 'خطا در ارتباط با سرویس حساب.', false);
+    }
+}
+
+async function requestLoginOtp() {
+    const email = document.getElementById('loginOtpEmail').value.trim().toLowerCase();
+    if (!email) return showMsg('loginOtpMsg', 'ایمیل حساب را وارد کنید.', false);
+    try {
+        const { res, data } = await requestEmailOtp(email, 'login');
+        showMsg('loginOtpMsg', res.ok
+            ? 'اگر این ایمیل به حساب تأییدشده‌ای متصل باشد، کد ورود ارسال می‌شود.'
+            : errText(data, 'ارسال کد ورود ناموفق بود.'), res.ok);
+    } catch (_) {
+        showMsg('loginOtpMsg', 'ارتباط با سرویس ایمیل برقرار نشد.', false);
+    }
+}
+
+async function doLoginOtp(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginOtpEmail').value.trim().toLowerCase();
+    const code = document.getElementById('loginOtpCode').value.trim();
+    if (!/^\\d{6}$/.test(code)) return showMsg('loginOtpMsg', 'کد باید شش‌رقمی باشد.', false);
+    try {
+        const { res, data } = await api('/api/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, purpose: 'login' })
+        });
+        if (res.ok && data && data.user) {
+            hideModal('authModal');
+            afterAuth(data.user);
+        } else {
+            showMsg('loginOtpMsg', errText(data, 'ورود با کد ناموفق بود.'), false);
+        }
+    } catch (_) {
+        showMsg('loginOtpMsg', 'خطا در ارتباط با سرویس حساب.', false);
     }
 }
 
@@ -856,6 +890,10 @@ async function doLogout() {
 
 function openProfile() {
     if (!currentUser) return;
+    const passwordButton = document.getElementById('changePasswordToggleBtn');
+    if (passwordButton) passwordButton.textContent = currentUser.passwordSetupRequired ? 'تنظیم گذرواژه' : 'تغییر گذرواژه';
+    const passwordPanel = document.getElementById('changePasswordPanel');
+    if (passwordPanel) passwordPanel.hidden = true;
     document.getElementById('profileUsername').value = currentUser.username;
     document.getElementById('profileDisplayName').value = currentUser.displayName || '';
     const profileEmail = document.getElementById('profileEmail');
@@ -869,6 +907,30 @@ function openProfile() {
         if (currentUser.passwordSetupRequired) showMsg('profileMsg', 'برای ورودهای بعدی، با گزینهٔ بازیابی گذرواژه یک گذرواژه تعیین کنید.', true);
     }
     showModal('profileModal');
+}
+
+async function doChangePassword() {
+    if (!currentUser) return;
+    const currentPassword = document.getElementById('currentAccountPassword').value;
+    const newPassword = document.getElementById('newAccountPassword').value;
+    if (newPassword.length < 8) return showMsg('changePasswordMsg', 'گذرواژهٔ تازه باید دست‌کم ۸ نویسه باشد.', false);
+    try {
+        const { res, data } = await api('/api/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        if (res.ok && data && data.success && data.user) {
+            afterAuth(data.user);
+            document.getElementById('currentAccountPassword').value = '';
+            document.getElementById('newAccountPassword').value = '';
+            document.getElementById('changePasswordPanel').hidden = true;
+            showMsg('profileMsg', 'گذرواژه تغییر کرد؛ نشست‌های قبلی حساب باطل شدند.', true);
+        } else {
+            showMsg('changePasswordMsg', errText(data, 'تغییر گذرواژه ناموفق بود.'), false);
+        }
+    } catch (_) {
+        showMsg('changePasswordMsg', 'خطا در ارتباط با سرویس حساب.', false);
+    }
 }
 
 async function saveProfile(e) {
@@ -896,6 +958,7 @@ function switchAuthTab(register) {
     document.getElementById('tabLogin').classList.toggle('active', !register);
     document.getElementById('tabRegister').classList.toggle('active', register);
     document.getElementById('loginForm').hidden = register;
+    document.getElementById('loginOtpForm').hidden = true;
     document.getElementById('registerForm').hidden = !register;
     document.getElementById('resetForm').hidden = true;
 }
@@ -912,9 +975,19 @@ function initAuth() {
     const tabRegister = document.getElementById('tabRegister');
     if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab(false));
     if (tabRegister) tabRegister.addEventListener('click', () => switchAuthTab(true));
+    document.getElementById('loginOtpToggleBtn')?.addEventListener('click', () => {
+        document.getElementById('loginForm').hidden = true;
+        document.getElementById('loginOtpForm').hidden = false;
+        document.getElementById('registerForm').hidden = true;
+        document.getElementById('resetForm').hidden = true;
+    });
+    document.getElementById('loginPasswordToggleBtn')?.addEventListener('click', () => switchAuthTab(false));
 
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const loginOtpForm = document.getElementById('loginOtpForm');
+    document.getElementById('requestLoginOtpBtn')?.addEventListener('click', requestLoginOtp);
+    if (loginOtpForm) loginOtpForm.addEventListener('submit', doLoginOtp);
     document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => {
         document.getElementById('resetEmail').value = document.getElementById('loginUsername').value.includes('@')
             ? document.getElementById('loginUsername').value.trim() : '';
@@ -940,6 +1013,22 @@ function initAuth() {
     if (profileLogoutBtn) profileLogoutBtn.addEventListener('click', doLogout);
     const profileForm = document.getElementById('profileForm');
     if (profileForm) profileForm.addEventListener('submit', saveProfile);
+    document.getElementById('changePasswordToggleBtn')?.addEventListener('click', () => {
+        if (!currentUser) return;
+        if (currentUser.passwordSetupRequired) {
+            document.getElementById('resetEmail').value = currentUser.email || '';
+            hideModal('profileModal');
+            document.getElementById('loginForm').hidden = true;
+            document.getElementById('loginOtpForm').hidden = true;
+            document.getElementById('registerForm').hidden = true;
+            document.getElementById('resetForm').hidden = false;
+            showModal('authModal');
+            return;
+        }
+        document.getElementById('changePasswordPanel').hidden = !document.getElementById('changePasswordPanel').hidden;
+        document.getElementById('changePasswordMsg').hidden = true;
+    });
+    document.getElementById('savePasswordBtn')?.addEventListener('click', doChangePassword);
 
     document.querySelectorAll('[data-close-auth]').forEach((b) =>
         b.addEventListener('click', () => hideModal('authModal')));

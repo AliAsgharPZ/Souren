@@ -643,7 +643,7 @@ async function handleLogout(request, env) {
 
 async function handleMe(request, env) {
     const s = await getSessionUser(request, env);
-    if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401);
+    if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401, { 'Set-Cookie': sessionCookie('', 0) });
     return json(request, { user: publicUser(s.rec) });
 }
 
