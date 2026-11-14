@@ -2176,12 +2176,17 @@ class _ShellState extends State<Shell> {
                 passwordResetToken: verified['passwordResetToken'] as String,
                 password: newPassword.text,
               );
+              final resetUser = result['user'];
+              if (result['status'] == 200 && result['success'] == true && resetUser is Map) {
+                _applyAccountUser(Map<String, dynamic>.from(resetUser));
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                return;
+              }
               if (dialogContext.mounted) {
                 setDialogState(() {
                   busy = false;
-                  success = result['status'] == 200 && result['success'] == true;
-                  message = success ? 'گذرواژه تغییر کرد؛ اکنون با گذرواژهٔ تازه وارد شوید.' : (result['error']?.toString() ?? 'تغییر گذرواژه انجام نشد.');
-                  if (success) { mode = 'login'; sent = false; identifier.text = email.text; password.clear(); }
+                  success = false;
+                  message = result['error']?.toString() ?? 'تغییر گذرواژه انجام نشد.';
                 });
               }
             } catch (_) {
@@ -4345,8 +4350,8 @@ class _ShellState extends State<Shell> {
                 const SizedBox(width: 8),
                 if (accountUser != null)
                 TextButton(
-                  onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: 'changePassword'),
-                  child: const Text('تغییر گذرواژه'),
+                  onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: accountUser?['passwordSetupRequired'] == true ? 'reset' : 'changePassword'),
+                  child: Text(accountUser?['passwordSetupRequired'] == true ? 'تنظیم گذرواژه' : 'تغییر گذرواژه'),
                 ),
               TextButton(
                   onPressed: accountBusy ? null : (accountUser == null ? _showAccountDialog : _logoutAccount),
@@ -5238,7 +5243,7 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 10),
             Wrap(spacing: 8, children: [
               TextButton(onPressed: accountBusy ? null : _showAccountDialog, child: Text(accountUser == null ? 'ورود یا ثبت‌نام' : 'مدیریت حساب')),
-              if (accountUser != null) TextButton(onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: 'changePassword'), child: const Text('تغییر گذرواژه')),
+              if (accountUser != null) TextButton(onPressed: accountBusy ? null : () => _showAccountDialog(initialMode: accountUser?['passwordSetupRequired'] == true ? 'reset' : 'changePassword'), child: Text(accountUser?['passwordSetupRequired'] == true ? 'تنظیم گذرواژه' : 'تغییر گذرواژه')),
               if (accountUser != null) TextButton(onPressed: accountBusy ? null : _logoutAccount, child: const Text('خروج')),
             ]),
           ]),

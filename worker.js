@@ -585,7 +585,12 @@ async function handlePasswordReset(request, env) {
     delete rec.passwordSetupRequired;
     await env.USERS.put(`user:${verified.username}`, JSON.stringify(rec));
     await env.USERS.delete(`password-reset:${token}`);
-    return json(request, { success: true, message: 'گذرواژه با موفقیت تغییر کرد' });
+    const sessionToken = await createSession(env, rec);
+    return json(request, {
+        success: true,
+        message: 'گذرواژه با موفقیت تغییر کرد',
+        user: publicUser(rec),
+    }, 200, { 'Set-Cookie': sessionCookie(sessionToken, SESSION_TTL) });
 }
 
 async function handleLogin(request, env) {

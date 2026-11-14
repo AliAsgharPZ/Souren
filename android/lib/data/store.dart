@@ -469,6 +469,11 @@ class AccountApi {
 
   static Future<Map<String, dynamic>?> me() async {
     final result = await _request('/api/auth/me');
+    if (result['status'] == 401) {
+      _cookie = null;
+      await SharedFiles.deleteSecureString(_secureCookieKey);
+      await SharedFiles.writeJson('account_session.json', {'cookie': null});
+    }
     return result['status'] == 200 && result['user'] is Map
         ? Map<String, dynamic>.from(result['user'] as Map)
         : null;
