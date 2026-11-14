@@ -35,3 +35,6 @@ jobs:
           RESET_STATUS=$(curl -sS -o /tmp/souren-reset-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/reset-password" -H 'Content-Type: application/json' --data '{}')
           test "$RESET_STATUS" = "400"
           node -e "const x=require('/tmp/souren-reset-probe.json'); if (!x.error) process.exit(1)"
+          CHANGE_STATUS=$(curl -sS -o /tmp/souren-change-password-probe.json -w '%{http_code}' -X POST "$BASE/api/auth/change-password" -H 'Content-Type: application/json' --data '{}')
+          test "$CHANGE_STATUS" = "401"
+          node -e "const x=require('/tmp/souren-change-password-probe.json'); if (!x.error) process.exit(1)"
