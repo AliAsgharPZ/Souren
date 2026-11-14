@@ -89,9 +89,21 @@ function trustedAdminOrigin(request) {
 async function readJsonBody(request, maxBytes) {
     if (!(request.headers.get('Content-Type') || '').toLowerCase().startsWith('application/json')) return { error: 'content_type_required' };
     if (Number(request.headers.get('Content-Length') || 0) > maxBytes) return { error: 'payload_too_large' };
-    const raw = await request.text();
-    if (new TextEncoder().encode(raw).byteLength > maxBytes) return { error: 'payload_too_large' };
-    try { const value = JSON.parse(raw); return value && typeof value === 'object' && !Array.isArray(value) ? { value } : { error: 'invalid_body' }; }
+    const reader = request.body?.getReader();
+    if (!reader) return { error: 'bad_json' };
+    const chunks = []; let total = 0;
+    try {
+        while (true) {
+            const part = await reader.read();
+            if (part.done) break;
+            total += part.value.byteLength;
+            if (total > maxBytes) { await reader.cancel(); return { error: 'payload_too_large' }; }
+            chunks.push(part.value);
+        }
+    } catch { return { error: 'bad_json' }; }
+    const bytes = new Uint8Array(total); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    try { const value = JSON.parse(new TextDecoder().decode(bytes)); return value && typeof value === 'object' && !Array.isArray(value) ? { value } : { error: 'invalid_body' }; }
     catch { return { error: 'bad_json' }; }
 }
 
@@ -516,16 +528,19 @@ function validUsername(u) {
     return typeof u === 'string' && u.length >= 3 && u.length <= 24 && !/\s/.test(u);
 }
 
-function publicUser(rec) {
-    return {
+function publicUser(rec, includeLists = true) {
+    const result = {
         username: rec.username,
         displayName: rec.displayName || rec.username,
         email: rec.email || null,
         emailVerified: rec.emailVerified === true,
-        favorites: rec.favorites || [],
-        likes: rec.likes || [],
         passwordSetupRequired: rec.passwordSetupRequired === true,
     };
+    if (includeLists) {
+        result.favorites = Array.isArray(rec.favorites) ? rec.favorites : [];
+        result.likes = Array.isArray(rec.likes) ? rec.likes : [];
+    }
+    return result;
 }
 
 async function getSessionUser(request, env) {
@@ -719,7 +734,8 @@ async function handleLogout(request, env) {
 async function handleMe(request, env) {
     const s = await getSessionUser(request, env);
     if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401, { 'Set-Cookie': sessionCookie('', 0) });
-    return json(request, { user: publicUser(s.rec) });
+    const identityOnly = new URL(request.url).searchParams.get('scope') === 'identity';
+    return json(request, { user: publicUser(s.rec, !identityOnly) });
 }
 
 async function handleProfile(request, env) {

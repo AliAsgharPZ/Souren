@@ -69,6 +69,12 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn("final lk = widget.initialArioMode ? null : await SharedFiles.readJson('liked.json')", MAIN)
         self.assertIn("final learned = widget.initialArioMode ? null : await SharedFiles.readJson('learned.json')", MAIN)
         self.assertIn("allowLocalUpdate = true", STORE)
+        self.assertIn("AccountApi.me(identityOnly: widget.initialArioMode)", MAIN)
+        self.assertIn("/api/auth/me?scope=identity", STORE)
+        self.assertIn("publicUser(s.rec, !identityOnly)", WORKER)
+        self.assertIn("function escapeAdminHtml(value)", ADMIN_WEB)
+        self.assertIn("MAX_ADMIN_BODY_BYTES", WORKER)
+        self.assertIn("reader.read()", WORKER)
     def test_internal_auth_errors_do_not_expose_exception_details(self):
         self.assertNotIn("detail: String((e && e.message)", WORKER)
         self.assertIn("خطای داخلی سرویس حساب", WORKER)

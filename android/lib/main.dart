@@ -2006,7 +2006,7 @@ class _ShellState extends State<Shell> {
 
   Future<void> _restoreAccount() async {
     try {
-      final user = await AccountApi.me();
+      final user = await AccountApi.me(identityOnly: widget.initialArioMode);
       if (user == null || !mounted) return;
       setState(() => accountUser = user);
     } catch (_) {

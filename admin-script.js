@@ -92,7 +92,13 @@ function showLogoMessage(text, type = 'success') {
     }, 4000);
 }
 
-// ===== مدیریت ادمین‌ها =====
+function escapeAdminHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>\"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[char]);
+}
+
+// ===== نمایش امن دیکشنری =====
 function renderTable(words) {
     if (!tableBody) return;
 
@@ -103,13 +109,14 @@ function renderTable(words) {
 
     let html = '';
     words.forEach((item, index) => {
-        const meaningsHtml = item.meanings.map(m => `<span>${m}</span>`).join(' ');
+        const meanings = Array.isArray(item.meanings) ? item.meanings : [];
+        const meaningsHtml = meanings.map(m => `<span>${escapeAdminHtml(m)}</span>`).join(' ');
         html += `
             <tr>
                 <td>${index + 1}</td>
-                <td><strong>${item.arabic}</strong></td>
+                <td><strong>${escapeAdminHtml(item.arabic)}</strong></td>
                 <td><div class="meanings-list">${meaningsHtml}</div></td>
-                <td>${item.concept ? `<span class="concept-text" title="${item.concept}">${item.concept}</span>` : '-'}</td>
+                <td>${item.concept ? `<span class="concept-text" title="${escapeAdminHtml(item.concept)}">${escapeAdminHtml(item.concept)}</span>` : '-'}</td>
                 <td>
                     <div class="action-buttons">
                         <button class="btn-danger delete-word" data-index="${index}">🗑️ حذف</button>
@@ -150,12 +157,21 @@ async function addNewWord() {
         return;
     }
 
+    if (word.length > 128 || meaningsRaw.length > 6000 || concept.length > 2000) {
+        showAdminMessage('طول کلمه یا توضیحات بیش از حد مجاز است.', 'error');
+        return;
+    }
+
     if (dictionary.some(entry => entry.arabic === word)) {
         showAdminMessage('این کلمه قبلاً وجود دارد.', 'error');
         return;
     }
 
     const meanings = meaningsRaw.split(',').map(m => m.trim()).filter(m => m);
+    if (meanings.length > 20 || meanings.some(m => m.length > 256)) {
+        showAdminMessage('حداکثر ۲۰ معنی و حداکثر ۲۵۶ نویسه برای هر معنی مجاز است.', 'error');
+        return;
+    }
     if (meanings.length === 0) {
         showAdminMessage('حداقل یک معنی وارد کنید.', 'error');
         return;

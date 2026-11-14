@@ -467,8 +467,8 @@ class AccountApi {
     }
   }
 
-  static Future<Map<String, dynamic>?> me() async {
-    final result = await _request('/api/auth/me');
+  static Future<Map<String, dynamic>?> me({bool identityOnly = false}) async {
+    final result = await _request(identityOnly ? '/api/auth/me?scope=identity' : '/api/auth/me');
     if (result['status'] == 401) {
       _cookie = null;
       await SharedFiles.deleteSecureString(_secureCookieKey);
