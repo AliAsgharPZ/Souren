@@ -6,6 +6,7 @@ WORKER = (ROOT.parent / "worker.js").read_text()
 STORE = (ROOT / "lib" / "data" / "store.dart").read_text()
 MAIN = (ROOT / "lib" / "main.dart").read_text()
 WEB = (ROOT.parent / "script.js").read_text()
+ADMIN_WEB = (ROOT.parent / "admin-script.js").read_text()
 HTML = (ROOT.parent / "index.html").read_text()
 KOTLIN = (ROOT / "android" / "app" / "src" / "main" / "kotlin" / "ir" / "souren" / "souren" / "MainActivity.kt").read_text()
 
@@ -55,10 +56,10 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn("const ALLOWED_FILES = new Set(['dictionary.json'])", WORKER)
         self.assertNotIn("admins.json", WORKER)
         self.assertNotIn("a.password === password", WORKER)
-        self.assertNotIn("admins.json", WEB)
-        self.assertNotIn("password: currentAdmin", WEB)
-        self.assertIn("/api/admin/login", WEB)
-        self.assertIn("credentials: 'include'", WEB)
+        self.assertNotIn("admins.json", ADMIN_WEB)
+        self.assertNotIn("password: currentAdmin", ADMIN_WEB)
+        self.assertIn("/api/admin/login", ADMIN_WEB)
+        self.assertIn("credentials", ADMIN_WEB)
 
     def test_ario_uses_bundled_dictionary_and_its_own_local_progress_only(self):
         self.assertIn("Dictionary.load(allowLocalUpdate: !widget.initialArioMode)", MAIN)

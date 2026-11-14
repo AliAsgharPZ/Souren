@@ -101,7 +101,7 @@ function adminSessionCookie(token, maxAge) {
 
 function readAdminToken(request) {
     const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(new RegExp('(?:^|;\\\\s*)' + ADMIN_SESSION_COOKIE + '=([0-9a-f]{64})(?:;|$)'));
+    const match = cookie.match(new RegExp('(?:^|;\\s*)' + ADMIN_SESSION_COOKIE + '=([0-9a-f]{64})(?:;|$)'));
     return match ? match[1] : null;
 }
 
