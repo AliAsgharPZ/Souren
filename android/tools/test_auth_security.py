@@ -79,6 +79,7 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn("AccountApi.identityScope = true", MAIN)
         self.assertIn("if (identityScope && uri.path.startsWith('/api/auth/'))", STORE)
         self.assertIn("publicUserForRequest(request, s.rec)", WORKER)
+        self.assertNotIn("user: publicUser(", WORKER)
         self.assertIn("function escapeAdminHtml(value)", ADMIN_WEB)
         self.assertIn("MAX_ADMIN_BODY_BYTES", WORKER)
         self.assertIn("reader.read()", WORKER)
