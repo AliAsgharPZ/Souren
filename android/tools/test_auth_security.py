@@ -53,6 +53,8 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn("case '/api/admin/login'", WORKER)
         self.assertIn("case '/api/admin/logout'", WORKER)
         self.assertIn("admin:sess:", WORKER)
+        self.assertIn("credentialVersion", WORKER)
+        self.assertIn("adminCredentialVersion(env)", WORKER)
         self.assertIn("const ALLOWED_FILES = new Set(['dictionary.json'])", WORKER)
         self.assertNotIn("admins.json", WORKER)
         self.assertNotIn("a.password === password", WORKER)

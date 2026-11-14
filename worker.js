@@ -122,6 +122,9 @@ async function getAdminSession(request, env) {
     if (!token) return null;
     const record = await env.USERS.get('admin:sess:' + token, 'json');
     if (!record || typeof record.username !== 'string' || !record.createdAt || Date.now() - Number(record.createdAt) > ADMIN_SESSION_TTL * 1000) return null;
+    if (!readAdminCredentials(env)) return null;
+    const currentVersion = await adminCredentialVersion(env);
+    if (record.credentialVersion !== currentVersion) return null;
     return { token, username: record.username };
 }
 
@@ -145,6 +148,11 @@ function readAdminCredentials(env) {
         }
         return records;
     } catch { return null; }
+}
+
+async function adminCredentialVersion(env) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(env.ADMIN_CREDENTIALS || ''));
+    return b64(new Uint8Array(digest));
 }
 
 async function adminRateKey(request) {
@@ -173,7 +181,8 @@ async function handleAdminLogin(request, env) {
     }
     await env.USERS.delete(rateKey);
     const token = randomToken();
-    await env.USERS.put('admin:sess:' + token, JSON.stringify({ username, createdAt: Date.now() }), { expirationTtl: ADMIN_SESSION_TTL });
+    const credentialVersion = await adminCredentialVersion(env);
+    await env.USERS.put('admin:sess:' + token, JSON.stringify({ username, createdAt: Date.now(), credentialVersion }), { expirationTtl: ADMIN_SESSION_TTL });
     return json(request, { success: true, admin: { username } }, 200, { 'Set-Cookie': adminSessionCookie(token, ADMIN_SESSION_TTL) });
 }
 
