@@ -27,6 +27,7 @@ jobs:
         run: |
           node --check ../worker.js
           node --check ../script.js
+          node --check ../admin-script.js
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -52,7 +53,9 @@ jobs:
         run: |
           grep -F 'version: 0.4.7+31' pubspec.yaml
       - name: Account and session security regression tests
-        run: python3 -m unittest discover -s tools -p 'test_auth_security.py'
+        run: |
+          python3 -m py_compile tools/generate_admin_credentials.py
+          python3 -m unittest discover -s tools -p 'test_auth_security.py'
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
