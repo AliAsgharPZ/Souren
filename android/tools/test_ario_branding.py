@@ -2,8 +2,8 @@ import pathlib
 import unittest
 import xml.etree.ElementTree as ET
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-ANDROID = ROOT / "android" / "android" / "app" / "src" / "main"
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+ANDROID = ROOT / "android" / "app" / "src" / "main"
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
 class ArioBrandingTests(unittest.TestCase):
@@ -37,7 +37,7 @@ class ArioBrandingTests(unittest.TestCase):
 
     def test_ario_startup_uses_ario_wordmark_not_souren_wordmark(self):
         source = (ROOT / "android/lib/main.dart").read_text()
-        self.assertIn("widget.initialArioMode\n                        ? const ArioLogo(width: 190, color: pal.ink)\n                        : const SourenLogo(width: 190)", source)
+        self.assertIn("widget.initialArioMode\n                        ? ArioLogo(width: 190, color: pal.ink)\n                        : const SourenLogo(width: 190)", source)
 
 if __name__ == "__main__":
     unittest.main()
