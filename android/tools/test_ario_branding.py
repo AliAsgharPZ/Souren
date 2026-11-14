@@ -37,7 +37,7 @@ class ArioBrandingTests(unittest.TestCase):
 
     def test_ario_startup_uses_ario_wordmark_not_souren_wordmark(self):
         source = (ROOT / "android/lib/main.dart").read_text()
-        self.assertIn("widget.initialArioMode\n                        ? ArioLogo(width: 190, color: pal.ink)\n                        : SourenLogo(width: 190)", source)
+        self.assertIn("widget.initialArioMode\n                        ? const ArioLogo(width: 190, color: pal.ink)\n                        : const SourenLogo(width: 190)", source)
 
 if __name__ == "__main__":
     unittest.main()
