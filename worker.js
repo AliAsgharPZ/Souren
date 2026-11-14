@@ -7,18 +7,22 @@
 const GH_USER = 'AliAsgharPZ';
 const GH_REPO = 'Souren';
 const GH_BRANCH = 'main';
-const ALLOWED_FILES = new Set(['dictionary.json', 'admins.json']);
+const ALLOWED_FILES = new Set(['dictionary.json']);
 const SESSION_COOKIE = 'souren_session';
 const SESSION_TTL = 60 * 60 * 24 * 30; // ۳۰ روز
+const ADMIN_SESSION_COOKIE = 'souren_admin';
+const ADMIN_SESSION_TTL = 60 * 60 * 8;
+const ADMIN_LOGIN_LIMIT = 5;
+const ADMIN_LOGIN_WINDOW = 900;
+const MAX_ADMIN_BODY_BYTES = 1_500_000;
 
 // ---------- CORS (سایت روی pages.dev است، API روی workers.dev) ----------
 function allowedOrigin(request) {
     const origin = request.headers.get('Origin') || '';
     try {
         const host = new URL(origin).hostname;
-        if (host === 'souren.pages.dev' || host.endsWith('.souren.pages.dev')) return origin;
-        if (host === 'souren.aliasgharpanahizare.workers.dev') return origin;
-        if (host === 'localhost' || host === '127.0.0.1') return origin;
+        if (host === 'souren.pages.dev' && new URL(origin).protocol === 'https:') return origin;
+        if ((host === 'localhost' || host === '127.0.0.1') && new URL(origin).protocol === 'http:') return origin;
     } catch { /* ignore */ }
     return null;
 }
@@ -75,55 +79,126 @@ function b64decodeUtf8(b64) {
     return new TextDecoder().decode(bytes);
 }
 
-// ---------- Admin upload (از نسخهٔ اول، بدون تغییر رفتار) ----------
-async function isAdmin(env, username, password) {
-    const res = await gh(env, 'admins.json');
-    if (!res.ok) return false;
-    const file = await res.json();
-    const data = JSON.parse(b64decodeUtf8(file.content));
-    return (data.admins || []).some((a) => a.username === username && a.password === password);
+// ---------- Admin authentication and constrained dictionary writes ----------
+function trustedAdminOrigin(request) {
+    const origin = request.headers.get('Origin') || '';
+    try { const parsed = new URL(origin); return parsed.origin === 'https://souren.pages.dev' || (parsed.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(parsed.hostname)); }
+    catch { return false; }
+}
+
+async function readJsonBody(request, maxBytes) {
+    if (!(request.headers.get('Content-Type') || '').toLowerCase().startsWith('application/json')) return { error: 'content_type_required' };
+    if (Number(request.headers.get('Content-Length') || 0) > maxBytes) return { error: 'payload_too_large' };
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).byteLength > maxBytes) return { error: 'payload_too_large' };
+    try { const value = JSON.parse(raw); return value && typeof value === 'object' && !Array.isArray(value) ? { value } : { error: 'invalid_body' }; }
+    catch { return { error: 'bad_json' }; }
+}
+
+function adminSessionCookie(token, maxAge) {
+    return ADMIN_SESSION_COOKIE + '=' + token + '; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=' + maxAge;
+}
+
+function readAdminToken(request) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(new RegExp('(?:^|;\\\\s*)' + ADMIN_SESSION_COOKIE + '=([0-9a-f]{64})(?:;|$)'));
+    return match ? match[1] : null;
+}
+
+async function getAdminSession(request, env) {
+    const token = readAdminToken(request);
+    if (!token) return null;
+    const record = await env.USERS.get('admin:sess:' + token, 'json');
+    if (!record || typeof record.username !== 'string' || !record.createdAt || Date.now() - Number(record.createdAt) > ADMIN_SESSION_TTL * 1000) return null;
+    return { token, username: record.username };
+}
+
+function constantTimeTextEqual(left, right) {
+    const a = new TextEncoder().encode(String(left)); const b = new TextEncoder().encode(String(right));
+    let diff = a.length ^ b.length; const length = Math.max(a.length, b.length);
+    for (let i = 0; i < length; i++) diff |= (a[i] || 0) ^ (b[i] || 0);
+    return diff === 0;
+}
+
+function readAdminCredentials(env) {
+    if (typeof env.ADMIN_CREDENTIALS !== 'string' || env.ADMIN_CREDENTIALS.length > 12000) return null;
+    try {
+        const records = JSON.parse(env.ADMIN_CREDENTIALS);
+        if (!Array.isArray(records) || records.length !== 3) return null;
+        const names = new Set();
+        for (const item of records) {
+            if (!item || !validUsername(item.username) || typeof item.salt !== 'string' || typeof item.hash !== 'string' ||
+                !/^[A-Za-z0-9+/]{20,32}={0,2}$/.test(item.salt) || !/^[A-Za-z0-9+/]{40,48}={0,2}$/.test(item.hash) || names.has(item.username)) return null;
+            names.add(item.username);
+        }
+        return records;
+    } catch { return null; }
+}
+
+async function adminRateKey(request) {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+    return 'admin:login:rate:' + b64(new Uint8Array(digest)).replace(/[^A-Za-z0-9]/g, '').slice(0, 32);
+}
+
+async function handleAdminLogin(request, env) {
+    if (!trustedAdminOrigin(request)) return json(request, { error: 'origin_not_allowed' }, 403);
+    const credentials = readAdminCredentials(env);
+    if (!credentials) return json(request, { error: 'admin_auth_not_configured' }, 503);
+    const parsed = await readJsonBody(request, 8192);
+    if (parsed.error) return json(request, { error: parsed.error }, parsed.error === 'payload_too_large' ? 413 : 400);
+    const username = typeof parsed.value.username === 'string' ? parsed.value.username.trim() : '';
+    const password = typeof parsed.value.password === 'string' ? parsed.value.password : '';
+    if (!validUsername(username) || password.length < 16 || password.length > 256) return json(request, { error: 'invalid_credentials' }, 401);
+    const rateKey = await adminRateKey(request);
+    const attempts = Number(await env.USERS.get(rateKey) || 0);
+    if (attempts >= ADMIN_LOGIN_LIMIT) return json(request, { error: 'too_many_attempts' }, 429);
+    const record = credentials.find((item) => item.username === username);
+    const candidate = await hashPassword(password, record ? record.salt : 'MDEyMzQ1Njc4OWFiY2RlZg==');
+    if (!record || !constantTimeTextEqual(candidate, record.hash)) {
+        await env.USERS.put(rateKey, String(attempts + 1), { expirationTtl: ADMIN_LOGIN_WINDOW });
+        return json(request, { error: 'invalid_credentials' }, 401);
+    }
+    await env.USERS.delete(rateKey);
+    const token = randomToken();
+    await env.USERS.put('admin:sess:' + token, JSON.stringify({ username, createdAt: Date.now() }), { expirationTtl: ADMIN_SESSION_TTL });
+    return json(request, { success: true, admin: { username } }, 200, { 'Set-Cookie': adminSessionCookie(token, ADMIN_SESSION_TTL) });
+}
+
+async function handleAdminLogout(request, env) {
+    if (!trustedAdminOrigin(request)) return json(request, { error: 'origin_not_allowed' }, 403);
+    const token = readAdminToken(request); if (token) await env.USERS.delete('admin:sess:' + token);
+    return json(request, { success: true }, 200, { 'Set-Cookie': adminSessionCookie('', 0) });
+}
+
+function validDictionaryPayload(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.dictionary) || data.dictionary.length > 10000) return false;
+    return data.dictionary.every((entry) => entry && typeof entry === 'object' && !Array.isArray(entry) &&
+        typeof entry.arabic === 'string' && entry.arabic.trim().length > 0 && entry.arabic.length <= 128 &&
+        Array.isArray(entry.meanings) && entry.meanings.length > 0 && entry.meanings.length <= 20 &&
+        entry.meanings.every((meaning) => typeof meaning === 'string' && meaning.trim().length > 0 && meaning.length <= 256) &&
+        (entry.concept === undefined || (typeof entry.concept === 'string' && entry.concept.length <= 2000)));
 }
 
 async function handleUpload(request, env) {
     if (request.method !== 'POST') return json(request, { success: false, error: 'method_not_allowed' }, 405);
+    if (!trustedAdminOrigin(request)) return json(request, { success: false, error: 'origin_not_allowed' }, 403);
+    const admin = await getAdminSession(request, env);
+    if (!admin) return json(request, { success: false, error: 'unauthorized' }, 401);
     if (!env.GITHUB_TOKEN) return json(request, { success: false, error: 'server_token_missing' }, 500);
-
-    let body;
-    try {
-        body = await request.json();
-    } catch {
-        return json(request, { success: false, error: 'bad_json' }, 400);
-    }
-
-    const { filename, data, username, password } = body || {};
+    const parsed = await readJsonBody(request, MAX_ADMIN_BODY_BYTES);
+    if (parsed.error) return json(request, { success: false, error: parsed.error }, parsed.error === 'payload_too_large' ? 413 : 400);
+    const filename = parsed.value.filename; const data = parsed.value.data;
     if (!ALLOWED_FILES.has(filename)) return json(request, { success: false, error: 'file_not_allowed' }, 403);
-    if (!username || !password || !(await isAdmin(env, username, password))) {
-        return json(request, { success: false, error: 'unauthorized' }, 401);
-    }
-
-    let sha = null;
+    if (!validDictionaryPayload(data)) return json(request, { success: false, error: 'invalid_dictionary' }, 400);
     const check = await gh(env, filename);
-    if (check.ok) sha = (await check.json()).sha;
-
-    const putBody = {
-        message: `آپدیت ${filename} - ${new Date().toLocaleString('fa-IR')}`,
-        content: b64encodeUtf8(JSON.stringify(data, null, 2)),
-        branch: GH_BRANCH,
-    };
-    if (sha) putBody.sha = sha;
-
-    const put = await gh(env, filename, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(putBody),
-    });
-    if (!put.ok) {
-        const err = await put.json().catch(() => ({}));
-        return json(request, { success: false, error: err.message || 'github_error' }, 502);
-    }
+    if (!check.ok) return json(request, { success: false, error: 'github_read_failed' }, 502);
+    const existing = await check.json();
+    const putBody = { message: 'Update dictionary.json via authenticated admin session (' + admin.username + ')', content: b64encodeUtf8(JSON.stringify(data, null, 2)), branch: GH_BRANCH, sha: existing.sha };
+    const put = await gh(env, filename, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(putBody) });
+    if (!put.ok) return json(request, { success: false, error: 'github_write_failed' }, 502);
     return json(request, { success: true });
 }
-
 // ---------- Dictionary (منبع زنده: همان فایلی که ادمین آپدیت می‌کند) ----------
 async function handleDictionary(request, env) {
     if (!env.GITHUB_TOKEN) return json(request, { error: 'server_token_missing' }, 500);
@@ -733,6 +808,10 @@ export default {
         const methodNotAllowed = () =>
             json(request, { error: 'method_not_allowed' }, 405);
         switch (url.pathname) {
+            case '/api/admin/login': return request.method === 'POST'
+                ? handleAdminLogin(request, env) : methodNotAllowed();
+            case '/api/admin/logout': return request.method === 'POST'
+                ? handleAdminLogout(request, env) : methodNotAllowed();
             case '/api/upload': return request.method === 'POST'
                 ? handleUpload(request, env) : methodNotAllowed();
             case '/api/dictionary': return request.method === 'GET'

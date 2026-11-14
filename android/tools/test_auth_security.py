@@ -47,6 +47,27 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn('KeyStore.getInstance("AndroidKeyStore")', KOTLIN)
         self.assertIn('Cipher.getInstance("AES/GCM/NoPadding")', KOTLIN)
 
+    def test_admin_passwords_are_worker_secret_backed_and_legacy_file_is_not_used(self):
+        self.assertIn("env.ADMIN_CREDENTIALS", WORKER)
+        self.assertIn("case '/api/admin/login'", WORKER)
+        self.assertIn("case '/api/admin/logout'", WORKER)
+        self.assertIn("admin:sess:", WORKER)
+        self.assertIn("const ALLOWED_FILES = new Set(['dictionary.json'])", WORKER)
+        self.assertNotIn("admins.json", WORKER)
+        self.assertNotIn("a.password === password", WORKER)
+        self.assertNotIn("admins.json", WEB)
+        self.assertNotIn("password: currentAdmin", WEB)
+        self.assertIn("/api/admin/login", WEB)
+        self.assertIn("credentials: 'include'", WEB)
+
+    def test_ario_uses_bundled_dictionary_and_its_own_local_progress_only(self):
+        self.assertIn("Dictionary.load(allowLocalUpdate: !widget.initialArioMode)", MAIN)
+        self.assertIn("if (!widget.initialArioMode) _syncDictionary(d)", MAIN)
+        self.assertIn("final ario = await SharedFiles.readJson('ario_learning.json')", MAIN)
+        self.assertIn("final fav = widget.initialArioMode ? null : await SharedFiles.readJson('favorites.json')", MAIN)
+        self.assertIn("final lk = widget.initialArioMode ? null : await SharedFiles.readJson('liked.json')", MAIN)
+        self.assertIn("final learned = widget.initialArioMode ? null : await SharedFiles.readJson('learned.json')", MAIN)
+        self.assertIn("allowLocalUpdate = true", STORE)
     def test_internal_auth_errors_do_not_expose_exception_details(self):
         self.assertNotIn("detail: String((e && e.message)", WORKER)
         self.assertIn("خطای داخلی سرویس حساب", WORKER)

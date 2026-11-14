@@ -1926,21 +1926,21 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _load() async {
-    final d = await Dictionary.load();
+    final d = await Dictionary.load(allowLocalUpdate: !widget.initialArioMode);
     final curriculum = await ArioCurriculum.load();
     final s = await SettingsStore.ensureLoaded();
-    final cats = await Categories.load();
-    final loadedProverbs = await Proverbs.load();
-    final fav = await SharedFiles.readJson('favorites.json');
-    final lk = await SharedFiles.readJson('liked.json');
-    final learned = await SharedFiles.readJson('learned.json');
+    final cats = widget.initialArioMode ? null : await Categories.load();
+    final loadedProverbs = widget.initialArioMode ? null : await Proverbs.load();
+    final fav = widget.initialArioMode ? null : await SharedFiles.readJson('favorites.json');
+    final lk = widget.initialArioMode ? null : await SharedFiles.readJson('liked.json');
+    final learned = widget.initialArioMode ? null : await SharedFiles.readJson('learned.json');
     final ario = await SharedFiles.readJson('ario_learning.json');
     setState(() {
       dict = d;
       arioCurriculum = curriculum;
       settings = s;
-      categories = cats;
-      proverbs = loadedProverbs;
+      if (cats != null) categories = cats;
+      if (loadedProverbs != null) proverbs = loadedProverbs;
       if (fav != null && fav['words'] is List) {
         favorites = (fav['words'] as List).map((e) => e.toString()).toSet();
       }
@@ -1988,7 +1988,8 @@ class _ShellState extends State<Shell> {
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
       }
     });
-    _syncDictionary(d);
+    if (!widget.initialArioMode) _syncDictionary(d);
+    // Ario uses only the public account identity API; learning data stays local.
     _restoreAccount();
   }
 

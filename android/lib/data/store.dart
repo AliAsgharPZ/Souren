@@ -143,10 +143,10 @@ class Dictionary {
   }
 
   /// Updated dataset in filesDir wins over the bundled asset.
-  static Future<Dictionary> load() async {
+  static Future<Dictionary> load({bool allowLocalUpdate = true}) async {
     final raw = await rootBundle.loadString('assets/db/dataset.json');
     final bundled = _parse(jsonDecode(raw) as Map<String, dynamic>, false);
-    final updated = await SharedFiles.readJson('dataset_updated.json');
+    final updated = allowLocalUpdate ? await SharedFiles.readJson('dataset_updated.json') : null;
     if (updated != null) {
       try {
         final candidate = _parse(updated, true);
