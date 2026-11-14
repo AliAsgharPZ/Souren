@@ -1,7 +1,7 @@
 name: souren
 description: «سورن» — دیکشنری عربی به فارسی و کیبورد فارسیِ درست‌نویس (اندروید)
 publish_to: 'none'
-version: 0.4.7+29 # Souren v0.4.7.6
+version: 0.4.7+30 # Souren v0.4.7.7
 
 environment:
   sdk: ^3.13.5
@@ -28,6 +28,7 @@ flutter:
     - assets/db/proverbs.json
     - assets/branding/souren-logo.svg
     - assets/branding/ario-logo.svg
+    - assets/branding/ario-app-icon.svg
   fonts:
     - family: Abar
       fonts:

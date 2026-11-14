@@ -1692,7 +1692,11 @@ class _SourenAppState extends State<SourenApp> {
             : const KeyedSubtree(
                 key: ValueKey('loading'),
                 child: Scaffold(
-                  body: Center(child: SourenLogo(width: 190)),
+                  body: Center(
+                    child: widget.initialArioMode
+                        ? ArioLogo(width: 190, color: pal.ink)
+                        : SourenLogo(width: 190),
+                  ),
                 ),
               ),
       ),

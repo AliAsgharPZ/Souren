@@ -10,6 +10,7 @@
             android:label="Ario"
             android:launchMode="singleTask"
             android:taskAffinity="ir.souren.souren.ario"
+            android:icon="@mipmap/ario_launcher"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -23,7 +24,8 @@
             android:targetActivity=".ArioActivity"
             android:enabled="false"
             android:exported="true"
-            android:icon="@drawable/ario_launcher"
+            android:icon="@mipmap/ario_launcher"
+            android:roundIcon="@mipmap/ario_launcher"
             android:label="Ario">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
