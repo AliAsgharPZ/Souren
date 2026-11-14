@@ -112,7 +112,7 @@ jobs:
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='30' versionName='0.4.7.8'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='31' versionName='0.4.7.8'"
           for ABI in armeabi-v7a arm64-v8a x86_64; do unzip -l "$APK" | grep -q "lib/$ABI/"; done
           cp "$APK" Souren-v0.4.7.8.apk
       - name: Kotlin unit tests (IME corrector)
@@ -149,7 +149,10 @@ jobs:
           test "$HEALTH_STATUS" = "200"
           node -e "const fs=require('node:fs');const x=JSON.parse(fs.readFileSync('/tmp/souren-health.json','utf8'));if(x.service!=='souren-worker'||x.status!=='ok')process.exit(1)"
           probe /api/auth/request-otp '{"email":"invalid-email","purpose":"register"}' otp
+          probe /api/auth/request-otp '{"email":"probe@example.invalid","purpose":"invalid"}' otp-purpose
+          probe /api/auth/login '{}' login
           probe /api/auth/reset-password '{}' reset
+          probe /api/auth/change-password '{}' change-password
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

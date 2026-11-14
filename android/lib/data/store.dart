@@ -403,7 +403,12 @@ class AccountApi {
 
   static Future<void> _loadCookie() async {
     if (_loaded) return;
-    final secure = await SharedFiles.readSecureString(_secureCookieKey);
+    String? secure;
+    try {
+      secure = await SharedFiles.readSecureString(_secureCookieKey);
+    } catch (_) {
+      await SharedFiles.deleteSecureString(_secureCookieKey);
+    }
     if (secure != null && secure.isNotEmpty) {
       _cookie = secure;
       _loaded = true;

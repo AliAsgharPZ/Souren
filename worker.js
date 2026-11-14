@@ -537,6 +537,7 @@ async function handleChangePassword(request, env) {
     if (!session) return json(request, { error: 'نشست معتبر نیست؛ دوباره وارد شوید' }, 401);
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
     const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
     if (newPassword.length < 8 || newPassword.length > 256) {
@@ -561,6 +562,7 @@ async function handleChangePassword(request, env) {
 async function handlePasswordReset(request, env) {
     let body;
     try { body = await request.json(); } catch { return json(request, { error: 'درخواست نامعتبر است' }, 400); }
+    if (!body || typeof body !== 'object') return json(request, { error: 'درخواست نامعتبر است' }, 400);
     const email = normalizeEmail(body.email);
     const token = typeof body.passwordResetToken === 'string' ? body.passwordResetToken : '';
     const password = typeof body.password === 'string' ? body.password : '';

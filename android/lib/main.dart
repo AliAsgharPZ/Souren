@@ -2054,7 +2054,11 @@ class _ShellState extends State<Shell> {
                 busy = false;
                 sent = result['status'] == 200 && result['success'] == true;
                 success = sent;
-                message = sent ? 'کد به ایمیل شما فرستاده شد؛ صندوق ورودی و هرزنامه را بررسی کنید.' : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
+                message = sent
+                    ? ((mode == 'loginOtp' || mode == 'reset')
+                        ? 'اگر این ایمیل به حساب تأییدشده‌ای متصل باشد، کد ارسال می‌شود؛ صندوق ورودی و هرزنامه را بررسی کنید.'
+                        : 'کد به ایمیل شما فرستاده شد؛ صندوق ورودی و هرزنامه را بررسی کنید.')
+                    : (result['error']?.toString() ?? 'ارسال کد انجام نشد.');
               });
             } catch (_) {
               if (!dialogContext.mounted) return;
@@ -2158,8 +2162,8 @@ class _ShellState extends State<Shell> {
                 return;
               }
 
-              if (newPassword.text.length < 6) {
-                setDialogState(() { busy = false; message = 'گذرواژهٔ تازه باید دست‌کم ۶ نویسه باشد.'; success = false; });
+              if (newPassword.text.length < 8) {
+                setDialogState(() { busy = false; message = 'گذرواژهٔ تازه باید دست‌کم ۸ نویسه باشد.'; success = false; });
                 return;
               }
               final verified = await AccountApi.verifyOtp(email.text, code.text, purpose: 'reset');
@@ -2251,7 +2255,7 @@ class _ShellState extends State<Shell> {
                     field(email, 'نشانی ایمیل حساب', keyboard: TextInputType.emailAddress),
                     if (sent) ...[
                       field(code, 'کد شش‌رقمی بازیابی', keyboard: TextInputType.number),
-                      field(newPassword, 'گذرواژهٔ تازه (دست‌کم ۶ نویسه)', obscure: true),
+                      field(newPassword, 'گذرواژهٔ تازه (دست‌کم ۸ نویسه)', obscure: true),
                     ],
                   ],
                   if (message.isNotEmpty) ...[
@@ -2268,7 +2272,7 @@ class _ShellState extends State<Shell> {
               else if (!sent)
                 FilledButton(onPressed: busy ? null : requestCode, child: Text(busy ? 'در حال ارسال…' : 'ارسال کد'))
               else
-                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال بررسی…' : mode == 'register' ? 'تأیید و ساخت حساب' : mode == 'link' ? 'تأیید و اتصال' : 'تأیید و تغییر گذرواژه')),
+                FilledButton(onPressed: busy ? null : submit, child: Text(busy ? 'در حال بررسی…' : mode == 'register' ? 'تأیید و ساخت حساب' : mode == 'link' ? 'تأیید و اتصال' : mode == 'loginOtp' ? 'تأیید و ورود' : 'تأیید و تغییر گذرواژه')),
             ],
           );
         },
