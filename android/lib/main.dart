@@ -2251,7 +2251,7 @@ class _ShellState extends State<Shell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final pages = arioMode
-        ? <Widget>[_arioHome(d), _arioPractice(d), _arioReview(d), _arioProfile(d), _arioSettings()]
+        ? <Widget>[_arioHome(d), _arioActivities(d), _arioLab(d), _arioProfile(d), _arioSettings()]
         : <Widget>[_home(d), _likedPage(d), _sectionsPage(d), _favoritesPage(d), _profilePage(d), _settingsPage(d)];
     return Scaffold(
       extendBody: true,
@@ -2315,8 +2315,8 @@ class _ShellState extends State<Shell> {
     final items = arioMode
         ? <(IconData, String)>[
             (Symbols.home_rounded, 'پیشگاه'),
-            (Symbols.quiz_rounded, 'تمرین'),
-            (Symbols.history_edu_rounded, 'مرور'),
+            (Symbols.event_note_rounded, 'کارها'),
+            (Symbols.science_rounded, 'آزمایشگاه'),
             (Symbols.person_rounded, 'نمایه'),
             (Symbols.settings_rounded, 'پیکربندی'),
           ]
@@ -4854,7 +4854,7 @@ class _ShellState extends State<Shell> {
 
   Widget _arioHome(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa).toList();
-    final lessonCount = arioCurriculum?.stages.length ?? 100;
+    final lessonCount = arioCurriculum?.stages.length ?? 0;
     final completed = arioCompletedLessons.length;
     final currentLesson = _nextArioLesson(lessonCount);
     final progress = lessonCount == 0
@@ -4910,14 +4910,14 @@ class _ShellState extends State<Shell> {
             const SizedBox(height: 22),
             Row(children: [
               Expanded(child: Text('برنامهٔ آموزشی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
-              Text('۱۰۰ مرحله · ۱۰۰ درس', style: TextStyle(color: pal.muted, fontSize: 12)),
+              Text('${faNum(lessonCount)} مرحله', style: TextStyle(color: pal.muted, fontSize: 12)),
             ]),
             const SizedBox(height: 10),
             _arioCurriculum(d, currentLesson),
             const SizedBox(height: 18),
             if (daily != null)
               Pressable(
-                onTap: () => setState(() => tab = 1),
+                onTap: () => setState(() => tab = 2),
                 child: Container(
                   padding: const EdgeInsets.all(17),
                   decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
@@ -5051,6 +5051,33 @@ class _ShellState extends State<Shell> {
     ));
   }
 
+  Widget _arioActivities(Dictionary d) => _arioPageShell('کارها', edgeFade(child: ListView(
+    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+    children: [
+      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('فعالیت‌های یادگیری', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        Text('وضعیت و دستاوردهای تو در آریو', style: TextStyle(color: pal.muted, fontSize: 13)),
+      ])),
+      const SizedBox(height: 14),
+      _statCard('مرحله‌های تکمیل‌شده', arioCompletedLessons.length),
+      _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
+      _statCard('تمرین‌های انجام‌شده', arioQuizIndex),
+      const SizedBox(height: 10),
+      _arioAction('ادامهٔ یادگیری', 'بازگشت به مسیر اصلی درس‌ها', LucideIcons.award, () => setState(() => tab = 0)),
+      _arioAction('رفتن به آزمایشگاه', 'تمرین آزاد و مرور آموخته‌ها', LucideIcons.repeat, () => setState(() => tab = 2)),
+    ],
+  )));
+
+  Widget _arioLab(Dictionary d) => _arioPageShell('آزمایشگاه', edgeFade(child: ListView(
+    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+    children: [
+      Text('تمرین مستقل از مسیر اصلی', style: TextStyle(color: pal.muted, fontSize: 13)),
+      const SizedBox(height: 16),
+      _arioAction('تمرین آزاد واژه‌ها', 'سنجش واژگان با پرسش‌های چهارگزینه‌ای', LucideIcons.repeat, () => _open(_arioPractice(d))),
+      _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
+    ],
+  )));
   Widget _arioPractice(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa).toList();
     if (words.isEmpty) return _arioPageShell('تمرین', const SizedBox.shrink());
