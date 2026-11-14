@@ -38,7 +38,7 @@ class AccountSecurityTests(unittest.TestCase):
         self.assertIn('id="loginOtpForm"', HTML)
         self.assertIn('id="changePasswordPanel"', HTML)
         self.assertIn("password.length < 8", WEB)
-        self.assertIn(r"if (!/^\\d{6}$/.test(code))", WEB)
+        self.assertIn(r"if (!/^\d{6}$/.test(code))", WEB)
 
     def test_session_cookie_is_migrated_to_keystore_encryption(self):
         self.assertIn("readSecureString(_secureCookieKey)", STORE)
