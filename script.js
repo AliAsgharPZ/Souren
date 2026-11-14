@@ -744,7 +744,7 @@ async function doLoginOtp(e) {
     e.preventDefault();
     const email = document.getElementById('loginOtpEmail').value.trim().toLowerCase();
     const code = document.getElementById('loginOtpCode').value.trim();
-    if (!/^\\d{6}$/.test(code)) return showMsg('loginOtpMsg', 'کد باید شش‌رقمی باشد.', false);
+    if (!/^\d{6}$/.test(code)) return showMsg('loginOtpMsg', 'کد باید شش‌رقمی باشد.', false);
     try {
         const { res, data } = await api('/api/auth/verify-otp', {
             method: 'POST',
