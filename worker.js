@@ -663,7 +663,7 @@ async function handleChangePassword(request, env) {
     await env.USERS.put(`user:${session.rec.username}`, JSON.stringify(session.rec));
     await env.USERS.delete(`sess:${session.token}`);
     const token = await createSession(env, session.rec);
-    return json(request, { success: true, user: publicUser(session.rec) }, 200,
+    return json(request, { success: true, user: publicUserForRequest(request, session.rec) }, 200,
         { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
@@ -697,7 +697,7 @@ async function handlePasswordReset(request, env) {
     return json(request, {
         success: true,
         message: 'گذرواژه با موفقیت تغییر کرد',
-        user: publicUser(rec),
+        user: publicUserForRequest(request, rec),
     }, 200, { 'Set-Cookie': sessionCookie(sessionToken, SESSION_TTL) });
 }
 
@@ -739,7 +739,7 @@ async function loginInner(request, env) {
     }
     await env.USERS.delete(rateKey);
     const token = await createSession(env, rec);
-    return json(request, { user: publicUser(rec), passwordSetupRequired: rec.passwordSetupRequired === true }, 200,
+    return json(request, { user: publicUserForRequest(request, rec), passwordSetupRequired: rec.passwordSetupRequired === true }, 200,
         { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
@@ -752,7 +752,6 @@ async function handleLogout(request, env) {
 async function handleMe(request, env) {
     const s = await getSessionUser(request, env);
     if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401, { 'Set-Cookie': sessionCookie('', 0) });
-    const identityOnly = new URL(request.url).searchParams.get('scope') === 'identity';
     return json(request, { user: publicUserForRequest(request, s.rec) });
 }
 
