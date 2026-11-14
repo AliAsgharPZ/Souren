@@ -52,13 +52,18 @@ class ArioUnitPlan {
 class ArioStagePlan {
   final String id;
   final int level;
+  final int difficultyMin;
+  final int difficultyMax;
   final String title;
   final int phase;
   final String phaseTitle;
   final List<ArioUnitPlan> units;
-  const ArioStagePlan({required this.id, required this.level, required this.title, required this.phase, required this.phaseTitle, required this.units});
+  const ArioStagePlan({required this.id, required this.level, required this.difficultyMin, required this.difficultyMax, required this.title, required this.phase, required this.phaseTitle, required this.units});
   factory ArioStagePlan.fromJson(Map<String, dynamic> json) => ArioStagePlan(
-    id: json['id'] as String, level: (json['level'] as num).toInt(), title: json['title'] as String,
+    id: json['id'] as String, level: (json['level'] as num).toInt(),
+    difficultyMin: (json['difficultyMin'] as num?)?.toInt() ?? (json['level'] as num).toInt(),
+    difficultyMax: (json['difficultyMax'] as num?)?.toInt() ?? (json['level'] as num).toInt(),
+    title: json['title'] as String,
     phase: (json['phase'] as num).toInt(), phaseTitle: json['phaseTitle'] as String,
     units: (json['units'] as List).whereType<Map>().map((e) => ArioUnitPlan.fromJson(Map<String, dynamic>.from(e))).toList(growable: false),
   );

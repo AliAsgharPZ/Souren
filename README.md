@@ -2,7 +2,7 @@
 
 Souren is an Android Persian writing and language app that combines an Arabic-to-Persian dictionary, a Persian keyboard, spelling assistance, and Persian literary references.
 
-**Latest release:** [v0.4.7.2](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.7.2)  
+**Latest release:** [v0.4.7.6](https://github.com/AliAsgharPZ/Souren/releases/tag/v0.4.7.6)  
 **Website:** https://souren.pages.dev
 
 ## What Souren does
@@ -22,7 +22,7 @@ Souren is an Android Persian writing and language app that combines an Arabic-to
 
 ## Ario educational app
 
-Ario currently ships inside the Souren APK as an Android library module with a separate launcher alias. Tapping its icon opens the same Souren package and Flutter shell in Ario mode; it is not yet an independently installable APK. Its winding, Duolingo-style learning path, 12-word lessons, flashcards, multiple-choice practice, review list, and progress view use Souren's existing dictionary data and shared Ganjoor pack. Learning progress remains local to the device. Ario shares the signed-in account identity with Souren and the website.
+Ario currently ships inside the Souren APK as an Android library module with a separate launcher alias. Tapping its icon opens the same Souren package and Flutter shell in Ario mode; it is not yet an independently installable APK. Its winding, Duolingo-style learning path uses difficulty scores from 1 to 100 independently of stage numbering. Stages are generated from available content in five-entry lessons, so the stage count grows with the curriculum and is not capped at 100. Learning progress remains local to the device. Learning progress remains local to the device. Ario shares the signed-in account identity with Souren and the website.
 
 ## Website
 

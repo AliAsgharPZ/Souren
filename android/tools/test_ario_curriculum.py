@@ -18,12 +18,18 @@ class ArioCurriculumTest(unittest.TestCase):
         curriculum = build_curriculum(entries)
         self.assertEqual(len(entries), 552)
         self.assertEqual({entry["level"] for entry in entries}, set(range(1, 101)))
-        self.assertEqual(len(curriculum["stages"]), 100)
+        self.assertEqual(len(curriculum["stages"]), (len(entries) + 4) // 5)
+        self.assertGreater(len(curriculum["stages"]), 100)
+        self.assertEqual(curriculum["stageSize"], 5)
         words = [word for stage in curriculum["stages"] for unit in stage["units"] for lesson in unit["lessons"] for section in lesson["sections"] if section["type"] == "learn" for word in section["entryIds"]]
         self.assertEqual(len(words), 552)
         self.assertEqual(len(set(words)), 552)
-        for stage in curriculum["stages"]:
-            self.assertGreaterEqual(len(stage["units"][0]["lessons"][0]["sections"][2]["exercises"]), 15)
+        for index, stage in enumerate(curriculum["stages"], 1):
+            self.assertEqual(stage["level"], index)
+            self.assertGreaterEqual(stage["difficultyMin"], 1)
+            self.assertLessEqual(stage["difficultyMax"], 100)
+            self.assertLessEqual(stage["difficultyMin"], stage["difficultyMax"])
+            self.assertGreaterEqual(len(stage["units"][0]["lessons"][0]["sections"][2]["exercises"]), 3)
 
 if __name__ == "__main__":
     unittest.main()

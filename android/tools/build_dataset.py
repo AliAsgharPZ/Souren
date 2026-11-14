@@ -85,7 +85,7 @@ for item in canonical:
 
 curriculum = build_curriculum(entries)
 assert len(entries) == 552 and {entry["level"] for entry in entries} == set(range(1, 101))
-assert len(curriculum["stages"]) == 100
+assert len(curriculum["stages"]) == (len(entries) + 4) // 5
 covered = [word for stage in curriculum["stages"] for unit in stage["units"] for lesson in unit["lessons"] for section in lesson["sections"] if section["type"] == "learn" for word in section["entryIds"]]
 assert len(covered) == 552 and len(set(covered)) == 552
 

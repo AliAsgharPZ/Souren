@@ -204,27 +204,33 @@ def level_dictionary(entries, categories):
     return result
 
 def build_curriculum(entries):
-    by_level = {level: [] for level in range(1, 101)}
-    for entry in entries:
-        by_level[entry["level"]].append(entry["ar"])
+    ordered = sorted(enumerate(entries), key=lambda pair: (pair[1]["level"], pair[0]))
+    ordered_entries = [entry for _, entry in ordered]
     stages = []
-    for level in range(1, 101):
-        words = by_level[level]
-        phase = (level - 1) // 10
+    stage_size = 5
+    for offset in range(0, len(ordered_entries), stage_size):
+        stage_index = len(stages) + 1
+        stage_entries = ordered_entries[offset:offset + stage_size]
+        words = [entry["ar"] for entry in stage_entries]
+        levels = [int(entry["level"]) for entry in stage_entries]
+        difficulty_min, difficulty_max = min(levels), max(levels)
+        phase = min(10, max(1, (sum(levels) + len(levels) * 10 - 1) // (len(levels) * 10)))
         exercises = []
         for index, word in enumerate(words, 1):
             exercises.extend([
-                {"id": f"s{level}-e{index}-ar-fa", "type": "arabic_to_persian_choice", "entryId": word},
-                {"id": f"s{level}-e{index}-fa-ar", "type": "persian_to_arabic_recall", "entryId": word},
-                {"id": f"s{level}-e{index}-meaning", "type": "meaning_recall", "entryId": word},
+                {"id": f"st{stage_index}-e{index}-ar-fa", "type": "arabic_to_persian_choice", "entryId": word},
+                {"id": f"st{stage_index}-e{index}-fa-ar", "type": "persian_to_arabic_recall", "entryId": word},
+                {"id": f"st{stage_index}-e{index}-meaning", "type": "meaning_recall", "entryId": word},
             ])
         stages.append({
-            "id": f"stage-{level:03d}", "level": level, "title": f"مرحلهٔ {level}",
-            "phase": phase + 1, "phaseTitle": PHASES[phase],
+            "id": f"stage-{stage_index:03d}", "level": stage_index,
+            "title": f"مرحلهٔ {stage_index}", "difficultyMin": difficulty_min,
+            "difficultyMax": difficulty_max, "phase": phase,
+            "phaseTitle": PHASES[phase - 1],
             "units": [{
-                "id": f"unit-{level:03d}", "title": f"واحد {level}",
+                "id": f"unit-{stage_index:03d}", "title": f"واحد {stage_index}",
                 "lessons": [{
-                    "id": f"lesson-{level:03d}", "title": f"درس {level}",
+                    "id": f"lesson-{stage_index:03d}", "title": f"درس {stage_index}",
                     "sections": [
                         {"id": "learn", "title": "آشنایی با واژه‌ها", "type": "learn", "entryIds": words},
                         {"id": "recall", "title": "یادآوری و بازیابی", "type": "recall", "entryIds": words},
@@ -234,8 +240,9 @@ def build_curriculum(entries):
             }],
         })
     return {
-        "version": 1, "source": "Generated from the shared 552-entry leveled dictionary; every stage maps to exactly one dictionary level.",
-        "levelCount": 100, "entryCount": len(entries),
+        "version": 2, "levelCount": 100, "stageSize": stage_size,
+        "stageCount": len(stages), "entryCount": len(entries),
+        "source": "Generated from the complete shared dictionary. Entry difficulty remains 1-100; stage count grows with content volume and has no 100-stage cap.",
         "phases": [{"id": i + 1, "title": title, "firstLevel": i * 10 + 1, "lastLevel": (i + 1) * 10} for i, title in enumerate(PHASES)],
         "stages": stages,
     }
