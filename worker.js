@@ -135,6 +135,10 @@ function constantTimeTextEqual(left, right) {
     return diff === 0;
 }
 
+function validAdminUsername(username) {
+    return typeof username === 'string' && username.length >= 2 && username.length <= 24 && /^[A-Za-z0-9_.-]+$/.test(username);
+}
+
 function readAdminCredentials(env) {
     if (typeof env.ADMIN_CREDENTIALS !== 'string' || env.ADMIN_CREDENTIALS.length > 12000) return null;
     try {
@@ -142,7 +146,7 @@ function readAdminCredentials(env) {
         if (!Array.isArray(records) || records.length !== 3) return null;
         const names = new Set();
         for (const item of records) {
-            if (!item || !validUsername(item.username) || typeof item.salt !== 'string' || typeof item.hash !== 'string' ||
+            if (!item || !validAdminUsername(item.username) || typeof item.salt !== 'string' || typeof item.hash !== 'string' ||
                 !/^[A-Za-z0-9+/]{20,32}={0,2}$/.test(item.salt) || !/^[A-Za-z0-9+/]{40,48}={0,2}$/.test(item.hash) || names.has(item.username)) return null;
             names.add(item.username);
         }
@@ -169,7 +173,7 @@ async function handleAdminLogin(request, env) {
     if (parsed.error) return json(request, { error: parsed.error }, parsed.error === 'payload_too_large' ? 413 : 400);
     const username = typeof parsed.value.username === 'string' ? parsed.value.username.trim() : '';
     const password = typeof parsed.value.password === 'string' ? parsed.value.password : '';
-    if (!validUsername(username) || password.length < 16 || password.length > 256) return json(request, { error: 'invalid_credentials' }, 401);
+    if (!validAdminUsername(username) || password.length < 16 || password.length > 256) return json(request, { error: 'invalid_credentials' }, 401);
     const rateKey = await adminRateKey(request);
     const attempts = Number(await env.USERS.get(rateKey) || 0);
     if (attempts >= ADMIN_LOGIN_LIMIT) return json(request, { error: 'too_many_attempts' }, 429);

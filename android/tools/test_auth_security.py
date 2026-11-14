@@ -50,6 +50,8 @@ class AccountSecurityTests(unittest.TestCase):
 
     def test_admin_passwords_are_worker_secret_backed_and_legacy_file_is_not_used(self):
         self.assertIn("env.ADMIN_CREDENTIALS", WORKER)
+        self.assertIn("function validAdminUsername(username)", WORKER)
+        self.assertIn("username.length >= 2", WORKER)
         self.assertIn("case '/api/admin/login'", WORKER)
         self.assertIn("case '/api/admin/logout'", WORKER)
         self.assertIn("admin:sess:", WORKER)
