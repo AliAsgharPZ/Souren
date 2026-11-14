@@ -25,7 +25,6 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ario_launcher"
-            android:roundIcon="@mipmap/ario_launcher"
             android:label="Ario">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
