@@ -3,7 +3,7 @@ import unittest
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-ANDROID = ROOT / "android" / "app" / "src" / "main"
+ANDROID = ROOT / "android" / "android" / "app" / "src" / "main"
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
 
 class ArioBrandingTests(unittest.TestCase):
