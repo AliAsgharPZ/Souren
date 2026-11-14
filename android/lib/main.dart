@@ -1950,9 +1950,15 @@ class _ShellState extends State<Shell> {
       if (ario != null) {
         arioCompletedLessons.clear();
         final savedLessons = ((ario['completedLessons'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
-        if (ario['curriculumVersion'] == 3) {
+        if (ario['curriculumVersion'] == 4) {
           final savedStages = ((ario['completedStages'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
-          arioCompletedLessons.addAll(savedStages.where((level) => level >= 1 && level <= 100).map((level) => level - 1));
+          arioCompletedLessons.addAll(savedStages.where((stage) => stage >= 1 && stage <= curriculum.stages.length).map((stage) => stage - 1));
+        } else if (ario['curriculumVersion'] == 3) {
+          final savedDifficultyLevels = ((ario['completedStages'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
+          for (final stage in curriculum.stages) {
+            final covered = List<int>.generate(stage.difficultyMax - stage.difficultyMin + 1, (i) => stage.difficultyMin + i).every(savedDifficultyLevels.contains);
+            if (covered) arioCompletedLessons.add(stage.level - 1);
+          }
         } else if (ario['curriculumVersion'] == 2) {
           arioCompletedLessons.addAll(savedLessons.where((level) => level >= 0 && level < 100));
         } else {
@@ -1967,8 +1973,13 @@ class _ShellState extends State<Shell> {
           arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99).toInt();
         }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
-        if (ario['curriculumVersion'] == 2 || ario['curriculumVersion'] == 3) {
-          arioLastLesson = (ario['lastLesson'] as num?)?.toInt() ?? 0;
+        if (ario['curriculumVersion'] == 2) {
+          arioLastLesson = ((ario['lastLesson'] as num?)?.toInt() ?? 0).clamp(0, (curriculum.stages.length - 1).clamp(0, 999999)).toInt();
+        } else if (ario['curriculumVersion'] == 3) {
+          final oldLast = (ario['lastLesson'] as num?)?.toInt() ?? 0;
+          arioLastLesson = curriculum.stages.isEmpty ? 0 : ((oldLast * curriculum.stages.length) / 100).floor().clamp(0, curriculum.stages.length - 1).toInt();
+        } else if (ario['curriculumVersion'] == 4) {
+          arioLastLesson = ((ario['lastLesson'] as num?)?.toInt() ?? 0).clamp(0, (curriculum.stages.length - 1).clamp(0, 999999)).toInt();
         }
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
       }
@@ -4789,7 +4800,7 @@ class _ShellState extends State<Shell> {
 
 
   Future<void> _saveArioProgress() async => SharedFiles.writeJson('ario_learning.json', {
-    'curriculumVersion': 3,
+    'curriculumVersion': 4,
     'completedStages': arioCompletedLessons.map((index) => index + 1).toList()..sort(),
     'completedLessons': arioCompletedLessons.toList()..sort(),
     'knownWords': arioKnownWords.toList(),
@@ -4979,7 +4990,7 @@ class _ShellState extends State<Shell> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(child: Text(phaseStages.first.phaseTitle, style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 16))),
-                Text('مرحله‌های ${faNum(phase * 10 + 1)} تا ${faNum(phase * 10 + 10)}', style: TextStyle(color: pal.muted, fontSize: 11)),
+                Text('مرحله‌های ${faNum(phaseStages.first.level)} تا ${faNum(phaseStages.last.level)}', style: TextStyle(color: pal.muted, fontSize: 11)),
               ]),
               const SizedBox(height: 12),
               Wrap(spacing: 8, runSpacing: 8, children: [
