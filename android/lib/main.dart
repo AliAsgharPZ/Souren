@@ -1438,6 +1438,7 @@ void main() => runApp(const SourenApp());
 @pragma('vm:entry-point')
 void arioMain() {
   SettingsStore.fileName = 'ario_settings.json';
+  AccountApi.identityScope = true;
   runApp(const SourenApp(initialArioMode: true));
 }
 

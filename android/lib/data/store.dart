@@ -398,6 +398,7 @@ class AccountApi {
   static const base = 'https://souren.aliasgharpanahizare.workers.dev';
   static String? _cookie;
   static bool _loaded = false;
+  static bool identityScope = false;
 
   static const _secureCookieKey = 'account_session_cookie';
 
@@ -434,7 +435,11 @@ class AccountApi {
     await _loadCookie();
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
     try {
-      final request = await client.openUrl(method, Uri.parse('$base$path'))
+      var uri = Uri.parse('$base$path');
+      if (identityScope && uri.path.startsWith('/api/auth/')) {
+        uri = uri.replace(queryParameters: {...uri.queryParameters, 'scope': 'identity'});
+      }
+      final request = await client.openUrl(method, uri)
           .timeout(const Duration(seconds: 15));
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
       if (body != null) {

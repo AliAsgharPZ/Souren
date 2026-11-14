@@ -498,7 +498,7 @@ async function handleVerifyOtp(request, env) {
         session.rec.emailVerified = true;
         await env.USERS.put(`user:${session.rec.username}`, JSON.stringify(session.rec));
         await env.USERS.put(`email:${email}`, session.rec.username);
-        return json(request, { success: true, user: publicUser(session.rec) });
+        return json(request, { success: true, user: publicUserForRequest(request, session.rec) });
     }
 
     const username = await env.USERS.get(`email:${email}`);
@@ -507,7 +507,7 @@ async function handleVerifyOtp(request, env) {
         return json(request, { error: 'حسابی با این ایمیل تأییدشده پیدا نشد' }, 404);
     }
     const token = await createSession(env, user);
-    return json(request, { user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
+    return json(request, { user: publicUserForRequest(request, user) }, 200, { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
 // ---------- Auth (KV) — هش PBKDF2 و نشست تصادفی ----------
@@ -539,6 +539,11 @@ function randomToken() {
 
 function validUsername(u) {
     return typeof u === 'string' && u.length >= 3 && u.length <= 24 && !/\s/.test(u);
+}
+
+function publicUserForRequest(request, rec) {
+    const identityOnly = new URL(request.url).searchParams.get('scope') === 'identity';
+    return publicUser(rec, !identityOnly);
 }
 
 function publicUser(rec, includeLists = true) {
@@ -631,7 +636,7 @@ async function registerInner(request, env) {
     await env.USERS.put(`email:${email}`, username);
     await env.USERS.delete(`email-verified:${verificationToken}`);
     const token = await createSession(env, rec);
-    return json(request, { user: publicUser(rec), passwordSetupRequired: !password }, 201,
+    return json(request, { user: publicUserForRequest(request, rec), passwordSetupRequired: !password }, 201,
         { 'Set-Cookie': sessionCookie(token, SESSION_TTL) });
 }
 
@@ -748,7 +753,7 @@ async function handleMe(request, env) {
     const s = await getSessionUser(request, env);
     if (!s) return json(request, { error: 'وارد نشده‌اید' }, 401, { 'Set-Cookie': sessionCookie('', 0) });
     const identityOnly = new URL(request.url).searchParams.get('scope') === 'identity';
-    return json(request, { user: publicUser(s.rec, !identityOnly) });
+    return json(request, { user: publicUserForRequest(request, s.rec) });
 }
 
 async function handleProfile(request, env) {
@@ -770,7 +775,7 @@ async function handleProfile(request, env) {
             .map((f) => f.trim()))].slice(0, 5000);
     }
     await env.USERS.put(`user:${s.rec.username}`, JSON.stringify(s.rec));
-    return json(request, { user: publicUser(s.rec) });
+    return json(request, { user: publicUserForRequest(request, s.rec) });
 }
 
 // ---------- Likes (per-user only; no public/global counters) ----------
