@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
+import 'package:material_ui/material_ui.dart';
 import 'data/ario_curriculum.dart';
 
 class ArioWritingLessonResult {
-  final Set<String> missedExerciseIds;
+  final Set<String> reviewedExerciseIds, missedExerciseIds;
   final int correctAnswers, totalQuestions;
-  const ArioWritingLessonResult({required this.missedExerciseIds, required this.correctAnswers, required this.totalQuestions});
+  const ArioWritingLessonResult({required this.reviewedExerciseIds, required this.missedExerciseIds, required this.correctAnswers, required this.totalQuestions});
 }
 class ArioWritingReviewResult {
   final Set<String> reviewedExerciseIds, missedExerciseIds;
@@ -15,7 +17,7 @@ class ArioWritingPage extends StatefulWidget {
   final List<ArioWritingCoursePlan> courses;
   final Set<String> completedLessonIds;
   final Map<String, int> reviewDue;
-  final Future<void> Function(String, Set<String>) onLessonCompleted;
+  final Future<void> Function(String, Set<String>, Set<String>) onLessonCompleted;
   final Future<void> Function(Set<String>, Set<String>) onReviewCompleted;
   final Color backgroundColor, cardColor, pillColor, textColor, mutedColor, selectedColor, accentColor, dividerColor;
   const ArioWritingPage({super.key, required this.courses, required this.completedLessonIds, required this.reviewDue, required this.onLessonCompleted, required this.onReviewCompleted, required this.backgroundColor, required this.cardColor, required this.pillColor, required this.textColor, required this.mutedColor, required this.selectedColor, required this.accentColor, required this.dividerColor});
@@ -30,8 +32,12 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
     for (final c in widget.courses) for (final u in c.units) for (final l in u.lessons) for (final s in l.sections) ...s.exercises,
   ];
   List<ArioWritingExercisePlan> get _queued {
+    final now = DateTime.now().millisecondsSinceEpoch;
     final byId = {for (final e in _catalog) e.id: e};
-    return [for (final id in _reviewDue.keys) if (byId[id] != null) byId[id]!];
+    return [
+      for (final entry in _reviewDue.entries)
+        if (entry.value <= now && byId[entry.key] != null) byId[entry.key]!,
+    ];
   }
 
   Future<void> _openLesson(ArioWritingCoursePlan course, ArioWritingUnitPlan unit, ArioWritingLessonPlan lesson) async {
@@ -42,7 +48,7 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
         accentColor: widget.accentColor, dividerColor: widget.dividerColor),
     ));
     if (result == null || !mounted) return;
-    await widget.onLessonCompleted(lesson.id, result.missedExerciseIds);
+    await widget.onLessonCompleted(lesson.id, result.reviewedExerciseIds, result.missedExerciseIds);
     if (mounted) setState(() => _completed.add(lesson.id));
   }
 
@@ -83,7 +89,7 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
         Text('هر درس با آموزش آغاز می‌شود، با یادآوری ادامه پیدا می‌کند و با تمرین به پایان می‌رسد.', style: TextStyle(color: widget.mutedColor, height: 1.8)),
         const SizedBox(height: 14),
         Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: widget.cardColor, borderRadius: BorderRadius.circular(22)), child: Column(children: [
-          Row(children: [Expanded(child: Text('پیشرفت این مسیر', style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w700))), Text(_completed.length.toString() + ' از ' + total.toString() + ' درس', style: TextStyle(color: widget.mutedColor, fontSize: 12))]),
+          Row(children: [Expanded(child: Text('پیشرفت این مسیر', style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w700))), Text('${_completed.length} از $total درس', style: TextStyle(color: widget.mutedColor, fontSize: 12))]),
           const SizedBox(height: 10),
           ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: progress, minHeight: 8, backgroundColor: widget.dividerColor, color: widget.selectedColor)),
         ])),
@@ -91,7 +97,7 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
         Card(color: widget.cardColor, elevation: 0, child: ListTile(
           leading: Icon(Icons.history_rounded, color: widget.selectedColor),
           title: Text('مرور پاسخ‌های دشوار', style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w700)),
-          subtitle: Text(queued == 0 ? 'پاسخ نادرستی در صف مرور نیست.' : queued.toString() + ' تمرین برای مرور ذخیره شده است.', style: TextStyle(color: widget.mutedColor)),
+          subtitle: Text(queued == 0 ? 'پاسخ نادرستی در صف مرور نیست.' : '${queued} تمرین برای مرور ذخیره شده است.', style: TextStyle(color: widget.mutedColor)),
           trailing: Icon(Icons.chevron_left, color: widget.mutedColor), onTap: queued == 0 ? null : _openReview,
         )),
         const SizedBox(height: 14),
@@ -131,6 +137,7 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
   int _sectionIndex = 0, _questionIndex = 0, _correctAnswers = 0, _totalQuestions = 0;
   String? _selected;
   bool? _correct;
+  final Set<String> _reviewed = {};
   final Set<String> _missed = {};
   ArioWritingSectionPlan get _section => widget.lesson.sections[_sectionIndex];
   bool get _learning => _section.type == 'learn';
@@ -140,6 +147,7 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
     final correct = choice == exercise.answer;
     setState(() {
       _selected = choice; _correct = correct; _totalQuestions++;
+      _reviewed.add(exercise.id);
       if (correct) { _correctAnswers++; } else { _missed.add(exercise.id); }
     });
   }
@@ -158,7 +166,7 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
       setState(() { _sectionIndex++; _questionIndex = 0; _selected = null; _correct = null; });
       return;
     }
-    Navigator.of(context).pop(ArioWritingLessonResult(missedExerciseIds: {..._missed}, correctAnswers: _correctAnswers, totalQuestions: _totalQuestions));
+    Navigator.of(context).pop(ArioWritingLessonResult(reviewedExerciseIds: {..._reviewed}, missedExerciseIds: {..._missed}, correctAnswers: _correctAnswers, totalQuestions: _totalQuestions));
   }
 
   @override
@@ -172,9 +180,9 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
       appBar: AppBar(backgroundColor: widget.backgroundColor, foregroundColor: widget.textColor, elevation: 0, title: Text(widget.lesson.title)),
       body: SafeArea(child: Column(children: [
         Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.courseTitle + ' · ' + widget.unitTitle, style: TextStyle(color: widget.mutedColor, fontSize: 12)),
+          Text('${widget.courseTitle} · ${widget.unitTitle}', style: TextStyle(color: widget.mutedColor, fontSize: 12)),
           const SizedBox(height: 7),
-          Row(children: [Expanded(child: Text(_section.title, style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w800))), Text((_sectionIndex + 1).toString() + ' از ' + widget.lesson.sections.length.toString(), style: TextStyle(color: widget.mutedColor))]),
+          Row(children: [Expanded(child: Text(_section.title, style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w800))), Text('${_sectionIndex + 1} از ${widget.lesson.sections.length}', style: TextStyle(color: widget.mutedColor))]),
           const SizedBox(height: 8),
           ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: progress, minHeight: 7, backgroundColor: widget.dividerColor, color: widget.selectedColor)),
         ])),
@@ -205,7 +213,7 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
       Text(exercise.prompt, style: TextStyle(color: widget.textColor, fontSize: 17, fontWeight: FontWeight.w800, height: 1.8)),
     ])),
     const SizedBox(height: 14),
-    for (final option in exercise.options) Padding(padding: const EdgeInsets.only(bottom: 9), child: Material(color: Colors.transparent, child: InkWell(
+    for (final option in (List<String>.from(exercise.options)..shuffle(math.Random(exercise.id.hashCode)))) Padding(padding: const EdgeInsets.only(bottom: 9), child: Material(color: Colors.transparent, child: InkWell(
       borderRadius: BorderRadius.circular(16), onTap: _selected == null ? () => _answer(exercise, option) : null,
       child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         decoration: BoxDecoration(color: _selected != option ? widget.pillColor : (_correct == true ? widget.selectedColor : widget.accentColor),
@@ -214,7 +222,7 @@ class _ArioWritingLessonPageState extends State<ArioWritingLessonPage> {
     ))),
     if (_selected != null) Container(margin: const EdgeInsets.only(top: 8), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: widget.cardColor, borderRadius: BorderRadius.circular(16)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(_correct == true ? 'پاسخ درست است.' : 'پاسخ درست: ' + exercise.answer, style: TextStyle(color: _correct == true ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w800)),
+        Text(_correct == true ? 'پاسخ درست است.' : 'پاسخ درست: ${exercise.answer}', style: TextStyle(color: _correct == true ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w800)),
         const SizedBox(height: 6), Text(exercise.explanation, style: TextStyle(color: widget.mutedColor, height: 1.7)),
       ])),
   ]);
@@ -254,7 +262,7 @@ class _ArioWritingReviewPageState extends State<ArioWritingReviewPage> {
       backgroundColor: widget.backgroundColor,
       appBar: AppBar(backgroundColor: widget.backgroundColor, foregroundColor: widget.textColor, elevation: 0, title: const Text('مرور پاسخ‌های دشوار')),
       body: SafeArea(child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [
-        Row(children: [Expanded(child: Text('تمرین ' + (_index + 1).toString() + ' از ' + widget.exercises.length.toString(), style: TextStyle(color: widget.mutedColor)))]),
+        Row(children: [Expanded(child: Text('تمرین ${_index + 1} از ${widget.exercises.length}', style: TextStyle(color: widget.mutedColor)))]),
         const SizedBox(height: 8),
         ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: (_index + (_selected == null ? 0 : 1)) / widget.exercises.length, backgroundColor: widget.dividerColor, color: widget.selectedColor)),
         const SizedBox(height: 18),
@@ -262,7 +270,7 @@ class _ArioWritingReviewPageState extends State<ArioWritingReviewPage> {
           Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: widget.cardColor, borderRadius: BorderRadius.circular(22)),
             child: Text(exercise.prompt, style: TextStyle(color: widget.textColor, fontSize: 17, fontWeight: FontWeight.w800, height: 1.8))),
           const SizedBox(height: 14),
-          for (final option in exercise.options) Padding(padding: const EdgeInsets.only(bottom: 9), child: InkWell(
+          for (final option in (List<String>.from(exercise.options)..shuffle(math.Random(exercise.id.hashCode)))) Padding(padding: const EdgeInsets.only(bottom: 9), child: InkWell(
             borderRadius: BorderRadius.circular(16), onTap: _selected == null ? () => _choose(option) : null,
             child: Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(
               color: _selected != option ? widget.pillColor : (_correct == true ? widget.selectedColor : widget.accentColor),
@@ -271,7 +279,7 @@ class _ArioWritingReviewPageState extends State<ArioWritingReviewPage> {
           )),
           if (_selected != null) ...[
             const SizedBox(height: 8),
-            Text(_correct == true ? 'پاسخ درست است.' : 'پاسخ درست: ' + exercise.answer, style: TextStyle(color: _correct == true ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w800)),
+            Text(_correct == true ? 'پاسخ درست است.' : 'پاسخ درست: ${exercise.answer}', style: TextStyle(color: _correct == true ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6), Text(exercise.explanation, style: TextStyle(color: widget.mutedColor, height: 1.7)),
           ],
         ]))),

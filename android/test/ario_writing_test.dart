@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:souren/ario_writing.dart';
 import 'package:souren/data/ario_curriculum.dart';
@@ -7,7 +7,7 @@ void main() {
   testWidgets('writing lesson runs learn, recall and practice in order and returns missed items',
       (tester) async {
     ArioWritingLessonResult? result;
-    final lesson = ArioWritingLessonPlan(
+    const lesson = ArioWritingLessonPlan(
       id: 'spelling-demo',
       title: 'املای درست',
       summary: 'آموزش نمونه برای آزمون جریان درس',
@@ -130,6 +130,7 @@ void main() {
     expect(result, isNotNull);
     expect(result!.totalQuestions, 4);
     expect(result!.correctAnswers, 2);
+    expect(result!.reviewedExerciseIds, {'recall-1', 'recall-2', 'practice-1', 'practice-2'});
     expect(result!.missedExerciseIds, {'recall-2', 'practice-2'});
   });
 }

@@ -1469,7 +1469,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
 
   List<ArioExercisePlan> get activeExercises => widget.exercises.isNotEmpty
       ? widget.exercises
-      : [for (final word in widget.words) ArioExercisePlan(id: 'review-' + word.ar, type: 'arabic_to_persian_choice', entryId: word.ar)];
+      : [for (final word in widget.words) ArioExercisePlan(id: 'review-${word.ar}', type: 'arabic_to_persian_choice', entryId: word.ar)];
   Map<String, Entry> get wordMap => {for (final entry in widget.exercisePool) entry.ar: entry};
   Entry get exerciseEntry => wordMap[activeExercises[exerciseIndex].entryId] ?? widget.words.first;
 
@@ -1500,14 +1500,16 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
 
   List<String> _optionsFor(ArioExercisePlan exercise, Entry target) {
     final reverse = exercise.type == 'persian_to_arabic_recall';
-    final answer = reverse ? target.ar : target.fa.first;
+    final meaningRecall = exercise.type == 'meaning_recall';
+    final answer = reverse || meaningRecall ? target.ar : target.fa.first;
     final options = <String>{answer};
     for (final candidate in widget.exercisePool) {
       if (candidate.ar == target.ar || !candidate.hasFa) continue;
-      options.add(reverse ? candidate.ar : candidate.fa.first);
+      options.add(reverse || meaningRecall ? candidate.ar : candidate.fa.first);
       if (options.length >= 4) break;
     }
-    return options.toList(growable: false);
+    final shuffled = options.toList()..shuffle();
+    return shuffled;
   }
 
   void _rateRecall(bool remembered) {
@@ -1532,7 +1534,8 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
     final entry = phase == 0 ? widget.words[index] : phase == 1 ? widget.words[recallIndex] : exerciseEntry;
     final exercise = phase == 2 ? activeExercises[exerciseIndex] : null;
     final reverse = exercise?.type == 'persian_to_arabic_recall';
-    final options = exercise == null || reverse ? const <String>[] : _optionsFor(exercise, entry);
+    final meaningRecall = exercise?.type == 'meaning_recall';
+    final options = exercise == null || reverse == true ? const <String>[] : _optionsFor(exercise, entry);
     final progress = phase == 0
         ? index / (widget.words.length * 3)
         : phase == 1
@@ -1544,7 +1547,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
         Row(children: [
           Pressable(onTap: () => Navigator.of(context).pop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 24)),
           const SizedBox(width: 12),
-          Expanded(child: Text(widget.stageTitle + ' · ' + widget.unitTitle + ' · درس ' + faNum(widget.lesson), style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 16))),
+          Expanded(child: Text('${widget.stageTitle} · ${widget.unitTitle} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 16))),
           Text(phase == 0 ? 'آموزش' : phase == 1 ? 'یادآوری' : 'تمرین', style: TextStyle(color: pal.muted, fontSize: 12)),
         ]),
         const SizedBox(height: 14),
@@ -1553,7 +1556,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
         Expanded(child: SingleChildScrollView(child: Column(children: [
           if (phase == 0)
             Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))), child: Column(children: [
-              Text('واژهٔ ' + faNum(index + 1) + ' از ' + faNum(widget.words.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text('واژهٔ ${faNum(index + 1)} از ${faNum(widget.words.length)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 10),
               Text('واژهٔ عربی', style: TextStyle(color: pal.muted, fontSize: 13)),
               const SizedBox(height: 12),
@@ -1568,7 +1571,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
             ]))
           else if (phase == 1)
             Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))), child: Column(children: [
-              Text('واژهٔ ' + faNum(recallIndex + 1) + ' از ' + faNum(widget.words.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text('واژهٔ ${faNum(recallIndex + 1)} از ${faNum(widget.words.length)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
               Text('معادل فارسی را ببین و شکل عربی را از حافظه به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
               const SizedBox(height: 12),
@@ -1577,11 +1580,11 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
             ]))
           else
             Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))), child: Column(children: [
-              Text('تمرین ' + faNum(exerciseIndex + 1) + ' از ' + faNum(activeExercises.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              Text('تمرین ${faNum(exerciseIndex + 1)} از ${faNum(activeExercises.length)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Text(reverse ? 'معادل عربی این واژه کدام است؟' : 'معادل فارسی این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+              Text(meaningRecall == true ? 'این تعریف به کدام واژه مربوط است؟' : reverse == true ? 'معادل عربی این واژه کدام است؟' : 'معادل فارسی این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
               const SizedBox(height: 8),
-              Text(reverse ? entry.fa.first : entry.ar, style: TextStyle(color: pal.ink, fontSize: 30, fontWeight: FontWeight.w800)),
+              Text(meaningRecall == true ? (entry.concept.isNotEmpty ? entry.concept : entry.fa.join('، ')) : reverse == true ? entry.fa.join('، ') : entry.ar, textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: meaningRecall == true ? 17 : 30, height: 1.8, fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
               if (reverse) ...[
                 TextField(
@@ -1606,7 +1609,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
               ] else
                 for (final choice in options) Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
                   onTap: selectedAnswer == null ? () {
-                    final correct = choice == entry.fa.first;
+                    final correct = choice == (meaningRecall == true ? entry.ar : entry.fa.first);
                     setState(() {
                       selectedAnswer = choice; exerciseCorrect = correct; reviewedWords.add(entry.ar);
                       if (!correct) missedWords.add(entry.ar);
@@ -1617,7 +1620,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
                     child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600))),
                 )),
               if (selectedAnswer != null)
-                Text(exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ' + (reverse ? entry.ar : entry.fa.first), textAlign: TextAlign.center, style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
+                Text(exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ${reverse == true || meaningRecall == true ? entry.ar : entry.fa.first}', textAlign: TextAlign.center, style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
             ])),
         ]))),
         const SizedBox(height: 12),
@@ -5544,6 +5547,53 @@ class _ShellState extends State<Shell> {
     ));
   }
 
+  Future<void> _completeArioWritingLesson(String lessonId, Set<String> reviewed, Set<String> missed) async {
+    setState(() {
+      arioCompletedWritingLessons.add(lessonId);
+      final due = DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch;
+      for (final id in reviewed) {
+        if (missed.contains(id)) {
+          arioWritingReviewDue[id] = due;
+        } else {
+          arioWritingReviewDue.remove(id);
+        }
+      }
+    });
+    await _saveArioProgress();
+  }
+
+  Future<void> _completeArioWritingReview(Set<String> reviewed, Set<String> missed) async {
+    setState(() {
+      for (final id in reviewed) {
+        if (missed.contains(id)) {
+          arioWritingReviewDue[id] = DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch;
+        } else {
+          arioWritingReviewDue.remove(id);
+        }
+      }
+    });
+    await _saveArioProgress();
+  }
+
+  void _openArioWriting() {
+    final courses = arioCurriculum?.writingCourses ?? const <ArioWritingCoursePlan>[];
+    _open(ArioWritingPage(
+      courses: courses,
+      completedLessonIds: arioCompletedWritingLessons,
+      reviewDue: arioWritingReviewDue,
+      onLessonCompleted: _completeArioWritingLesson,
+      onReviewCompleted: _completeArioWritingReview,
+      backgroundColor: pal.bg,
+      cardColor: pal.cardC,
+      pillColor: pal.pillC,
+      textColor: pal.ink,
+      mutedColor: pal.muted,
+      selectedColor: pal.sel,
+      accentColor: pal.accent,
+      dividerColor: pal.div,
+    ));
+  }
+
   Widget _arioActivities(Dictionary d) => _arioPageShell('فعالیت‌ها', edgeFade(child: ListView(
     padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
     children: [
@@ -5576,7 +5626,7 @@ class _ShellState extends State<Shell> {
       _arioAction('تمرین آزاد واژه‌ها', 'سنجش واژگان با پرسش‌های چهارگزینه‌ای', LucideIcons.repeat, () => _open(_arioPractice(d))),
       _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
       if (arioReviewWords.isNotEmpty)
-        _arioAction('مرور واژه‌های دشوار', faNum(arioReviewWords.length) + ' واژه نیازمند تکرار', LucideIcons.refreshCw, () => _openArioWordReview(d)),
+        _arioAction('مرور واژه‌های دشوار', '${faNum(arioReviewWords.length)} واژه نیازمند تکرار', LucideIcons.refreshCw, () => _openArioWordReview(d)),
       _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.notebookPen, _openArioWriting),
       _arioAction('مسیر کامل درس‌ها', 'درس‌ها و تمرین‌های مرحله‌به‌مرحله', LucideIcons.compass, () => _open(_arioLearning(d))),
     ],
@@ -5661,7 +5711,7 @@ class _ShellState extends State<Shell> {
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
       children: [
         if (difficult.isNotEmpty) ...[
-          _arioAction('مرور واژه‌های دشوار', faNum(difficult.length) + ' واژه در صف مرور', LucideIcons.refreshCw, () => _openArioWordReview(d)),
+          _arioAction('مرور واژه‌های دشوار', '${faNum(difficult.length)} واژه در صف مرور', LucideIcons.refreshCw, () => _openArioWordReview(d)),
           const SizedBox(height: 12),
         ],
         if (words.isEmpty && difficult.isEmpty)
