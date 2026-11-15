@@ -5348,7 +5348,7 @@ class _ShellState extends State<Shell> {
           )),
         ])),
         const SizedBox(height: 18),
-        _arioAction('فارسی‌نویسی و ادبیات', 'املا، هکسره، نیم‌فاصله و آرایه‌های ادبی', LucideIcons.bookOpen, _openArioWriting),
+        _arioAction('فارسی‌نویسی و ادبیات', 'املا، هکسره، نیم‌فاصله و آرایه‌های ادبی', LucideIcons.notebookPen, _openArioWriting),
         const SizedBox(height: 10),
         _arioCurriculum(d, current),
       ],
@@ -5530,7 +5530,7 @@ class _ShellState extends State<Shell> {
       _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
       if (arioReviewWords.isNotEmpty)
         _arioAction('مرور واژه‌های دشوار', faNum(arioReviewWords.length) + ' واژه نیازمند تکرار', LucideIcons.refreshCw, () => _openArioWordReview(d)),
-      _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.bookOpen, _openArioWriting),
+      _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.notebookPen, _openArioWriting),
       _arioAction('مسیر کامل درس‌ها', 'درس‌ها و تمرین‌های مرحله‌به‌مرحله', LucideIcons.compass, () => _open(_arioLearning(d))),
     ],
   )));
