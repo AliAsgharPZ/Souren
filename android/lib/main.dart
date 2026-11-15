@@ -5941,7 +5941,7 @@ class _ShellState extends State<Shell> {
   Widget _arioReport() {
     final week = arioGame.weeklySummary();
     final month = arioGame.monthlySummary();
-    final achievements = ArioGamificationState.achievements;
+    const achievements = ArioGamificationState.achievements;
     return _arioPageShell('گزارش یادگیری', edgeFade(child: ListView(
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
       children: [
