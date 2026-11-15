@@ -48,8 +48,31 @@ class ArioPortalNavigationTests(unittest.TestCase):
         self.assertIn("مرور آموخته‌ها", workshop)
 
     def test_no_social_tab_or_social_feature_remains(self):
-        for forbidden in ("_arioCommunity", "_arioTopic", "Ghost Challenge", "اجتماع", "گروه‌های موضوعی", "ghostMode"):
+        for forbidden in ("_arioCommunity", "_arioTopic(", "Ghost Challenge", "اجتماع", "گروه‌های موضوعی", "ghostMode"):
             self.assertNotIn(forbidden, SOURCE)
+
+    def test_gamification_and_ghost_challenge_are_local_only(self):
+        model = (ROOT / "android" / "lib" / "data" / "ario_gamification.dart").read_text()
+        start = SOURCE.index("enum ArioChallengeMode")
+        end = SOURCE.index("class ArioLogo", start)
+        challenge = SOURCE[start:end]
+        self.assertIn("arioGame.toJson()", SOURCE)
+        self.assertIn("_openArioGhostChallenge", SOURCE)
+        self.assertIn("initialGhostTrack: arioGame.ghostBestTrack", SOURCE)
+        self.assertIn("onGhostRunCompleted: _recordArioGhostRun", SOURCE)
+        self.assertIn("چالش شبح", SOURCE)
+        for forbidden in ("HttpClient", "AccountApi", "Uri.parse", "workers.dev", "http://", "https://"):
+            self.assertNotIn(forbidden, model)
+            self.assertNotIn(forbidden, challenge)
+
+    def test_offline_missions_reports_events_topics_and_avatar_are_connected(self):
+        self.assertIn("arioGame.dailyMissions(today)", SOURCE)
+        self.assertIn("arioGame.weeklySummary()", SOURCE)
+        self.assertIn("arioGame.monthlySummary()", SOURCE)
+        self.assertIn("arioGame.offlineEvent()", SOURCE)
+        self.assertIn("topicPractice: true", SOURCE)
+        self.assertIn("_arioAvatarPicker()", SOURCE)
+        self.assertIn("arioGame.setAvatar", SOURCE)
 
 
 if __name__ == "__main__":
