@@ -2260,7 +2260,7 @@ class _ShellState extends State<Shell> {
       arioGame = savedGame;
       arioCurriculum = curriculum;
       settings = s;
-      if (cats != null) categories = cats;
+      categories = cats;
       if (loadedProverbs != null) proverbs = loadedProverbs;
       if (fav != null && fav['words'] is List) {
         favorites = (fav['words'] as List).map((e) => e.toString()).toSet();
