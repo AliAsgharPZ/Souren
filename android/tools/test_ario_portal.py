@@ -42,7 +42,7 @@ class ArioPortalNavigationTests(unittest.TestCase):
 
     def test_workshop_contains_independent_practice_and_review(self):
         start = SOURCE.index("Widget _arioWorkshop(Dictionary d)")
-        end = SOURCE.index("Widget _arioPractice(Dictionary d)", start)
+        end = SOURCE.index("Widget _arioPractice(", start)
         workshop = SOURCE[start:end]
         self.assertIn("تمرین آزاد واژه‌ها", workshop)
         self.assertIn("مرور آموخته‌ها", workshop)
