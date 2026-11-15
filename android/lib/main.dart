@@ -5243,14 +5243,14 @@ class _ShellState extends State<Shell> {
           const SizedBox(height: 18),
           Text('دسترسی سریع', style: TextStyle(color: pal.ink, fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: 9),
-          _arioAction('مسیر کامل درس‌ها', 'از سطح آغازین تا مرحله‌های پیشرفته', LucideIcons.route, () => setState(() => tab = 1)),
+          _arioAction('مسیر کامل درس‌ها', 'از سطح آغازین تا مرحله‌های پیشرفته', LucideIcons.compass, () => setState(() => tab = 1)),
           _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه برای مرور', LucideIcons.repeat, () => _open(_arioReview(d))),
-          _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی برای خواندن و یادگیری', LucideIcons.book, () => _open(_ganjoorPage(d))),
+          _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی برای خواندن و یادگیری', LucideIcons.notebookPen, () => _open(_ganjoorPage(d))),
           const SizedBox(height: 4),
           Row(children: [
             _arioMiniStat(LucideIcons.check, faNum(completed), 'درس'),
             const SizedBox(width: 8),
-            _arioMiniStat(LucideIcons.book, faNum(arioKnownWords.length), 'واژه'),
+            _arioMiniStat(LucideIcons.notebookPen, faNum(arioKnownWords.length), 'واژه'),
             const SizedBox(width: 8),
             _arioMiniStat(LucideIcons.zap, faNum(arioBestStreak), 'رکورد پیاپی'),
           ]),
@@ -5425,7 +5425,7 @@ class _ShellState extends State<Shell> {
         ]),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: () => setState(() => tab = 1),
-          icon: const Icon(LucideIcons.route, size: 17),
+          icon: const Icon(LucideIcons.compass, size: 17),
           label: const Text('رفتن به مسیر یادگیری'),
         )),
       ])),
@@ -5482,12 +5482,12 @@ class _ShellState extends State<Shell> {
         const SizedBox(height: 6),
         Text('موضوع مورد علاقه‌ات را برای تمرین انتخاب کن.', style: TextStyle(color: pal.muted, fontSize: 12)),
         const SizedBox(height: 12),
-        _arioAction('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله', LucideIcons.book, () => _open(_arioTopic('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله'))),
-        _arioAction('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها', LucideIcons.book, () => _open(_arioTopic('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها'))),
-        _arioAction('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن', LucideIcons.feather, () => _open(_arioTopic('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن'))),
+        _arioAction('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله', LucideIcons.notebookPen, () => _open(_arioTopic('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله'))),
+        _arioAction('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها', LucideIcons.notebookPen, () => _open(_arioTopic('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها'))),
+        _arioAction('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن', LucideIcons.fileText, () => _open(_arioTopic('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن'))),
       ])),
       const SizedBox(height: 14),
-      _arioAction('Ghost Challenge', 'رقابت با رکورد شخصی و بهترین زنجیرهٔ پاسخ درست', LucideIcons.ghost, () => _open(ArioSpeedChallengePage(
+      _arioAction('Ghost Challenge', 'رقابت با رکورد شخصی و بهترین زنجیرهٔ پاسخ درست', LucideIcons.users, () => _open(ArioSpeedChallengePage(
         entries: d.entries.where((entry) => entry.hasFa).toList(growable: false),
         initialBestStreak: arioBestStreak,
         onBestStreak: (value) {
