@@ -6,7 +6,7 @@ import 'package:souren/data/ario_curriculum.dart';
 void main() {
   testWidgets('a missed lesson answer enters review and a correct review clears it',
       (tester) async {
-    final lesson = const ArioWritingLessonPlan(
+    const lesson = ArioWritingLessonPlan(
       id: 'review-demo',
       title: 'درس آزمایشی',
       summary: 'آزمون چرخهٔ مرور',
