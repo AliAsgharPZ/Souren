@@ -56,6 +56,8 @@ jobs:
         run: |
           python3 -m py_compile tools/generate_admin_credentials.py
           python3 -m unittest discover -s tools -p 'test_auth_security.py'
+      - name: Ario portal navigation and daily learning regression tests
+        run: python3 -m unittest discover -s tools -p 'test_ario_portal.py'
       - name: Analyze
         run: flutter analyze
       - name: Dart tests (corrector engine + widgets)
