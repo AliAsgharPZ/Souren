@@ -5514,15 +5514,6 @@ class _ShellState extends State<Shell> {
     ]),
   )));
 
-  Widget _arioLab(Dictionary d) => _arioPageShell('آزمایشگاه', edgeFade(child: ListView(
-    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
-    children: [
-      Text('تمرین مستقل از مسیر اصلی', style: TextStyle(color: pal.muted, fontSize: 13)),
-      const SizedBox(height: 16),
-      _arioAction('تمرین آزاد واژه‌ها', 'سنجش واژگان با پرسش‌های چهارگزینه‌ای', LucideIcons.repeat, () => _open(_arioPractice(d))),
-      _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
-    ],
-  )));
   Widget _arioPractice(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa).toList();
     if (words.isEmpty) return _arioPageShell('تمرین', const SizedBox.shrink());
