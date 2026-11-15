@@ -1464,6 +1464,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
   bool revealed = false, recallRevealed = false;
   String? selectedAnswer;
   bool? exerciseCorrect;
+  final TextEditingController typedAnswer = TextEditingController();
   final Set<String> reviewedWords = {}, missedWords = {};
 
   List<ArioExercisePlan> get activeExercises => widget.exercises.isNotEmpty
@@ -1471,6 +1472,31 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
       : [for (final word in widget.words) ArioExercisePlan(id: 'review-' + word.ar, type: 'arabic_to_persian_choice', entryId: word.ar)];
   Map<String, Entry> get wordMap => {for (final entry in widget.exercisePool) entry.ar: entry};
   Entry get exerciseEntry => wordMap[activeExercises[exerciseIndex].entryId] ?? widget.words.first;
+
+  String _normalizeRecallAnswer(String value) => value
+      .replaceAll('ي', 'ی')
+      .replaceAll('ك', 'ک')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'\s+'), '')
+      .replaceAll(String.fromCharCode(0x200c), '')
+      .trim();
+
+  void _checkTypedRecall(Entry entry) {
+    if (selectedAnswer != null || typedAnswer.text.trim().isEmpty) return;
+    final correct = _normalizeRecallAnswer(typedAnswer.text) == _normalizeRecallAnswer(entry.ar);
+    setState(() {
+      selectedAnswer = typedAnswer.text.trim();
+      exerciseCorrect = correct;
+      reviewedWords.add(entry.ar);
+      if (!correct) missedWords.add(entry.ar);
+    });
+  }
+
+  @override
+  void dispose() {
+    typedAnswer.dispose();
+    super.dispose();
+  }
 
   List<String> _optionsFor(ArioExercisePlan exercise, Entry target) {
     final reverse = exercise.type == 'persian_to_arabic_recall';
@@ -1506,7 +1532,7 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
     final entry = phase == 0 ? widget.words[index] : phase == 1 ? widget.words[recallIndex] : exerciseEntry;
     final exercise = phase == 2 ? activeExercises[exerciseIndex] : null;
     final reverse = exercise?.type == 'persian_to_arabic_recall';
-    final options = exercise == null ? const <String>[] : _optionsFor(exercise, entry);
+    final options = exercise == null || reverse ? const <String>[] : _optionsFor(exercise, entry);
     final progress = phase == 0
         ? index / (widget.words.length * 3)
         : phase == 1
@@ -1557,18 +1583,39 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
               const SizedBox(height: 8),
               Text(reverse ? entry.fa.first : entry.ar, style: TextStyle(color: pal.ink, fontSize: 30, fontWeight: FontWeight.w800)),
               const SizedBox(height: 16),
-              for (final choice in options) Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
-                onTap: selectedAnswer == null ? () {
-                  final correct = choice == (reverse ? entry.ar : entry.fa.first);
-                  setState(() {
-                    selectedAnswer = choice; exerciseCorrect = correct; reviewedWords.add(entry.ar);
-                    if (!correct) missedWords.add(entry.ar);
-                  });
-                } : null,
-                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  decoration: BoxDecoration(color: selectedAnswer == choice ? (exerciseCorrect == true ? pal.sel : pal.accent) : pal.pillC, borderRadius: BorderRadius.circular(capR(28)), border: Border.all(color: pal.div)),
-                  child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600))),
-              )),
+              if (reverse) ...[
+                TextField(
+                  controller: typedAnswer,
+                  enabled: selectedAnswer == null,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: pal.ink, fontSize: 18),
+                  decoration: InputDecoration(
+                    hintText: 'واژهٔ عربی را بنویسید',
+                    filled: true,
+                    fillColor: pal.pillC,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(capR(28)), borderSide: BorderSide(color: pal.div)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(capR(28)), borderSide: BorderSide(color: pal.div)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(width: double.infinity, child: OutlinedButton(
+                  onPressed: selectedAnswer == null ? () => _checkTypedRecall(entry) : null,
+                  child: const Text('بررسی پاسخ'),
+                )),
+              ] else
+                for (final choice in options) Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
+                  onTap: selectedAnswer == null ? () {
+                    final correct = choice == entry.fa.first;
+                    setState(() {
+                      selectedAnswer = choice; exerciseCorrect = correct; reviewedWords.add(entry.ar);
+                      if (!correct) missedWords.add(entry.ar);
+                    });
+                  } : null,
+                  child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                    decoration: BoxDecoration(color: selectedAnswer == choice ? (exerciseCorrect == true ? pal.sel : pal.accent) : pal.pillC, borderRadius: BorderRadius.circular(capR(28)), border: Border.all(color: pal.div)),
+                    child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600))),
+                )),
               if (selectedAnswer != null)
                 Text(exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ' + (reverse ? entry.ar : entry.fa.first), textAlign: TextAlign.center, style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
             ])),
@@ -1586,14 +1633,14 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
                 ? () {
                     if (!revealed) { setState(() => revealed = true); }
                     else if (index + 1 < widget.words.length) { setState(() { index++; revealed = false; }); }
-                    else { setState(() { phase = 1; recallIndex = 0; recallRevealed = false; }); }
+                    else { setState(() { phase = 1; recallIndex = 0; recallRevealed = false; typedAnswer.clear(); }); }
                   }
                 : phase == 1
                     ? () => setState(() => recallRevealed = true)
                     : selectedAnswer == null
                         ? null
                         : exerciseIndex + 1 < activeExercises.length
-                            ? () => setState(() { exerciseIndex++; selectedAnswer = null; exerciseCorrect = null; })
+                            ? () => setState(() { exerciseIndex++; selectedAnswer = null; exerciseCorrect = null; typedAnswer.clear(); })
                             : _finish,
             child: Text(phase == 0
                 ? (!revealed ? 'نمایش پاسخ' : index + 1 < widget.words.length ? 'واژهٔ بعدی' : 'رفتن به یادآوری')
@@ -2198,7 +2245,7 @@ class _ShellState extends State<Shell> {
         arioCompletedWritingLessons..clear()..addAll(((ario['completedWritingLessons'] as List?) ?? []).map((e) => e.toString()));
         arioWritingReviewDue
           ..clear()
-          ..addAll((((ario['writingReviewDue'] as Map?) ?? {}).entries).map(
+          ..addEntries((((ario['writingReviewDue'] as Map?) ?? {}).entries).map(
             (entry) => MapEntry(entry.key.toString(), (entry.value as num).toInt()),
           ));
         if (ario['curriculumVersion'] == 2) {
