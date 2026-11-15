@@ -51,6 +51,9 @@ class ArioCurriculumTest(unittest.TestCase):
                     sections = lesson["sections"]
                     self.assertEqual([section["type"] for section in sections], ["learn", "recall", "practice"])
                     self.assertTrue(sections[0]["content"])
+                    for section in sections:
+                        self.assertIsInstance(section["examples"], list)
+                        self.assertTrue(all(isinstance(example, str) and example.strip() for example in section["examples"]))
                     self.assertTrue(sections[0]["examples"])
                     for section in sections[1:]:
                         self.assertGreaterEqual(len(section["exercises"]), 2)
