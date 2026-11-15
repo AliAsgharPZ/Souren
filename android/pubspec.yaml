@@ -24,6 +24,7 @@ flutter:
   assets:
     - assets/db/dataset.json
     - assets/db/ario_curriculum.json
+    - assets/db/ario_writing.json
     - assets/db/categories.json
     - assets/db/proverbs.json
     - assets/branding/souren-logo.svg

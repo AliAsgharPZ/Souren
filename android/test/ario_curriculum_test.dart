@@ -4,6 +4,25 @@ import 'package:souren/data/store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('writing curriculum links four skills to complete lessons and exercises', () async {
+    final curriculum = await ArioCurriculum.load();
+    expect(curriculum.writingCourses, hasLength(4));
+    final lessons = curriculum.writingCourses.expand((course) => course.units).expand((unit) => unit.lessons).toList();
+    expect(lessons, hasLength(18));
+    for (final lesson in lessons) {
+      expect(lesson.sections.map((section) => section.type).toList(), ['learn', 'recall', 'practice']);
+      expect(lesson.sections.first.content, isNotEmpty);
+      expect(lesson.sections.first.examples, isNotEmpty);
+      for (final section in lesson.sections.skip(1)) {
+        expect(section.exercises.length, greaterThanOrEqualTo(2));
+        for (final exercise in section.exercises) {
+          expect(exercise.options, contains(exercise.answer));
+          expect(exercise.explanation, isNotEmpty);
+        }
+      }
+    }
+  });
+
   test('Ario difficulty is 1-100 while stage count grows with dictionary content', () async {
     final dictionary = await Dictionary.load();
     final curriculum = await ArioCurriculum.load();

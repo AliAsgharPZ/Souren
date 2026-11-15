@@ -31,5 +31,37 @@ class ArioCurriculumTest(unittest.TestCase):
             self.assertLessEqual(stage["difficultyMin"], stage["difficultyMax"])
             self.assertGreaterEqual(len(stage["units"][0]["lessons"][0]["sections"][2]["exercises"]), 3)
 
+    def test_writing_curriculum_is_complete_and_linked(self):
+        path = os.path.join(ROOT, "assets/db/ario_writing.json")
+        with open(path, encoding="utf-8") as source:
+            writing = json.load(source)
+        courses = writing["courses"]
+        self.assertEqual({course["id"] for course in courses}, {"spelling", "hekasre", "half-space", "literary-devices"})
+        self.assertEqual(len(courses), 4)
+        lesson_ids, exercise_ids = set(), set()
+        lesson_count = 0
+        for course in courses:
+            self.assertTrue(course["units"])
+            for unit in course["units"]:
+                self.assertTrue(unit["lessons"])
+                for lesson in unit["lessons"]:
+                    lesson_count += 1
+                    self.assertNotIn(lesson["id"], lesson_ids)
+                    lesson_ids.add(lesson["id"])
+                    sections = lesson["sections"]
+                    self.assertEqual([section["type"] for section in sections], ["learn", "recall", "practice"])
+                    self.assertTrue(sections[0]["content"])
+                    self.assertTrue(sections[0]["examples"])
+                    for section in sections[1:]:
+                        self.assertGreaterEqual(len(section["exercises"]), 2)
+                        for exercise in section["exercises"]:
+                            self.assertNotIn(exercise["id"], exercise_ids)
+                            exercise_ids.add(exercise["id"])
+                            self.assertIn(exercise["answer"], exercise["options"])
+                            self.assertGreaterEqual(len(set(exercise["options"])), 3)
+                            self.assertTrue(exercise["explanation"])
+        self.assertEqual(lesson_count, 18)
+        self.assertEqual(len(exercise_ids), 72)
+
 if __name__ == "__main__":
     unittest.main()

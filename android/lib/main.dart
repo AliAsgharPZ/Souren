@@ -16,6 +16,7 @@ import 'share.dart';
 
 import 'data/store.dart';
 import 'data/ario_curriculum.dart';
+import 'ario_writing.dart';
 import 'data/ganjoor_pack.dart';
 import 'data/persian_roots.dart';
 import 'engine/corrector.dart';
@@ -1450,145 +1451,156 @@ class ArioLessonPage extends StatefulWidget {
   final String unitTitle;
   final List<Entry> words;
   final List<Entry> exercisePool;
+  final List<ArioExercisePlan> exercises;
+  final Future<void> Function(Set<String>, Set<String>)? onResult;
   final Future<void> Function() onComplete;
-  const ArioLessonPage({
-    super.key,
-    required this.lesson,
-    required this.stageTitle,
-    required this.unitTitle,
-    required this.words,
-    required this.exercisePool,
-    required this.onComplete,
-  });
+  const ArioLessonPage({super.key, required this.lesson, required this.stageTitle, required this.unitTitle, required this.words, required this.exercisePool, required this.exercises, this.onResult, required this.onComplete});
   @override
   State<ArioLessonPage> createState() => _ArioLessonPageState();
 }
 
 class _ArioLessonPageState extends State<ArioLessonPage> {
-  int index = 0;
-  bool revealed = false;
-  bool exerciseMode = false;
-  int exerciseIndex = 0;
+  int phase = 0, index = 0, recallIndex = 0, exerciseIndex = 0;
+  bool revealed = false, recallRevealed = false;
   String? selectedAnswer;
   bool? exerciseCorrect;
+  final Set<String> reviewedWords = {}, missedWords = {};
+
+  List<ArioExercisePlan> get activeExercises => widget.exercises.isNotEmpty
+      ? widget.exercises
+      : [for (final word in widget.words) ArioExercisePlan(id: 'review-' + word.ar, type: 'arabic_to_persian_choice', entryId: word.ar)];
+  Map<String, Entry> get wordMap => {for (final entry in widget.exercisePool) entry.ar: entry};
+  Entry get exerciseEntry => wordMap[activeExercises[exerciseIndex].entryId] ?? widget.words.first;
+
+  List<String> _optionsFor(ArioExercisePlan exercise, Entry target) {
+    final reverse = exercise.type == 'persian_to_arabic_recall';
+    final answer = reverse ? target.ar : target.fa.first;
+    final options = <String>{answer};
+    for (final candidate in widget.exercisePool) {
+      if (candidate.ar == target.ar || !candidate.hasFa) continue;
+      options.add(reverse ? candidate.ar : candidate.fa.first);
+      if (options.length >= 4) break;
+    }
+    return options.toList(growable: false);
+  }
+
+  void _rateRecall(bool remembered) {
+    final entry = widget.words[recallIndex];
+    reviewedWords.add(entry.ar);
+    if (!remembered) missedWords.add(entry.ar);
+    if (recallIndex + 1 < widget.words.length) {
+      setState(() { recallIndex++; recallRevealed = false; });
+    } else {
+      setState(() { phase = 2; exerciseIndex = 0; selectedAnswer = null; exerciseCorrect = null; });
+    }
+  }
+
+  Future<void> _finish() async {
+    await widget.onResult?.call(reviewedWords, missedWords);
+    await widget.onComplete();
+    if (mounted) Navigator.of(context).pop();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final entry = widget.words[index];
-    final exerciseCount = widget.words.length.clamp(1, widget.words.length).toInt();
-    final exerciseEntry = widget.words[exerciseIndex % widget.words.length];
-    final exerciseOptions = <String>{exerciseEntry.fa.first};
-    for (final candidate in widget.exercisePool) {
-      if (candidate.fa.isNotEmpty) exerciseOptions.add(candidate.fa.first);
-      if (exerciseOptions.length >= 4) break;
-    }
-    final progress = exerciseMode
-        ? 0.5 + (exerciseIndex + (selectedAnswer == null ? 0 : 1)) / (exerciseCount * 2)
-        : (index + (revealed ? 1 : 0)) / (widget.words.length * 2);
+    final entry = phase == 0 ? widget.words[index] : phase == 1 ? widget.words[recallIndex] : exerciseEntry;
+    final exercise = phase == 2 ? activeExercises[exerciseIndex] : null;
+    final reverse = exercise?.type == 'persian_to_arabic_recall';
+    final options = exercise == null ? const <String>[] : _optionsFor(exercise, entry);
+    final progress = phase == 0
+        ? index / (widget.words.length * 3)
+        : phase == 1
+            ? (widget.words.length + recallIndex) / (widget.words.length * 3)
+            : (widget.words.length * 2 + exerciseIndex + (selectedAnswer == null ? 0 : 1)) / (widget.words.length * 2 + activeExercises.length);
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       backgroundColor: pal.bg,
       body: SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(22, 12, 22, 24), child: Column(children: [
         Row(children: [
           Pressable(onTap: () => Navigator.of(context).pop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 24)),
           const SizedBox(width: 12),
-          Expanded(child: Text('${widget.stageTitle} · ${widget.unitTitle} · درس ${faNum(widget.lesson)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 17))),
-          Text(
-            exerciseMode
-                ? 'تمرین ${faNum(exerciseIndex + 1)} از ${faNum(exerciseCount)}'
-                : '${faNum(index + 1)} از ${faNum(widget.words.length)}',
-            style: TextStyle(color: pal.muted, fontSize: 12),
-          ),
+          Expanded(child: Text(widget.stageTitle + ' · ' + widget.unitTitle + ' · درس ' + faNum(widget.lesson), style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700, fontSize: 16))),
+          Text(phase == 0 ? 'آموزش' : phase == 1 ? 'یادآوری' : 'تمرین', style: TextStyle(color: pal.muted, fontSize: 12)),
         ]),
         const SizedBox(height: 14),
         ClipRRect(borderRadius: BorderRadius.circular(capR(18)), child: LinearProgressIndicator(value: progress.clamp(0.0, 1.0).toDouble(), minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
-        const Spacer(),
-        if (!exerciseMode)
-          AnimatedSwitcher(duration: Motion.base, switchInCurve: Motion.curve, child: Container(
-            key: ValueKey('word_${index}_$revealed'),
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
-            decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))),
-            child: Column(children: [
-              Text('بخش ${faNum(index ~/ 2 + 1)} از ${faNum((widget.words.length + 1) ~/ 2)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 5),
+        const SizedBox(height: 12),
+        Expanded(child: SingleChildScrollView(child: Column(children: [
+          if (phase == 0)
+            Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(58))), child: Column(children: [
+              Text('واژهٔ ' + faNum(index + 1) + ' از ' + faNum(widget.words.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
               Text('واژهٔ عربی', style: TextStyle(color: pal.muted, fontSize: 13)),
-              const SizedBox(height: 14),
-              Text(entry.ar, style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 20),
-              AnimatedSize(duration: Motion.base, curve: Motion.curve, child: revealed
-                ? Column(children: [
-                    Divider(color: pal.div),
-                    const SizedBox(height: 12),
-                    Text('برابر فارسی', style: TextStyle(color: pal.muted, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    Text(entry.fa.join('، '), textAlign: TextAlign.center, style: TextStyle(color: pal.sel, fontSize: 20, fontWeight: FontWeight.w700, height: 1.6)),
-                  ])
-                : Text('پیش از دیدن پاسخ، خودت معنی واژه را به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7))),
-            ]),
-          ))
-        else
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
-            decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))),
-            child: Column(children: [
-              Text('تمرین بخش ${faNum(exerciseIndex + 1)}', style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
-              Text('معنی درست این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
-              const SizedBox(height: 8),
-              Text(exerciseEntry.ar, style: TextStyle(color: pal.ink, fontSize: 32, fontWeight: FontWeight.w800)),
+              Text(entry.ar, style: TextStyle(color: pal.ink, fontSize: 36, fontWeight: FontWeight.w800)),
               const SizedBox(height: 18),
-              for (final choice in exerciseOptions)
-                Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
-                  onTap: selectedAnswer == null ? () => setState(() {
-                    selectedAnswer = choice;
-                    exerciseCorrect = exerciseEntry.fa.contains(choice);
-                  }) : null,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                    decoration: BoxDecoration(
-                      color: selectedAnswer == choice
-                          ? (exerciseCorrect == true ? pal.sel : pal.accent)
-                          : pal.pillC,
-                      borderRadius: BorderRadius.circular(capR(28)),
-                      border: Border.all(color: pal.div),
-                    ),
-                    child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600)),
-                  ),
-                )),
+              if (revealed) ...[
+                Divider(color: pal.div), const SizedBox(height: 10),
+                Text('برابر فارسی', style: TextStyle(color: pal.muted, fontSize: 13)),
+                const SizedBox(height: 8),
+                Text(entry.fa.join('، '), textAlign: TextAlign.center, style: TextStyle(color: pal.sel, fontSize: 20, fontWeight: FontWeight.w700, height: 1.6)),
+              ] else Text('پیش از دیدن پاسخ، معنی واژه را به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
+            ]))
+          else if (phase == 1)
+            Container(width: double.infinity, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))), child: Column(children: [
+              Text('واژهٔ ' + faNum(recallIndex + 1) + ' از ' + faNum(widget.words.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Text('معادل فارسی را ببین و شکل عربی را از حافظه به یاد بیاور.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
+              const SizedBox(height: 12),
+              Text(entry.fa.join('، '), textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: 22, fontWeight: FontWeight.w800, height: 1.7)),
+              if (recallRevealed) ...[const SizedBox(height: 16), Divider(color: pal.div), Text(entry.ar, style: TextStyle(color: pal.sel, fontSize: 28, fontWeight: FontWeight.w800))],
+            ]))
+          else
+            Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(48))), child: Column(children: [
+              Text('تمرین ' + faNum(exerciseIndex + 1) + ' از ' + faNum(activeExercises.length), style: TextStyle(color: pal.sel, fontSize: 12, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Text(reverse ? 'معادل عربی این واژه کدام است؟' : 'معادل فارسی این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+              const SizedBox(height: 8),
+              Text(reverse ? entry.fa.first : entry.ar, style: TextStyle(color: pal.ink, fontSize: 30, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 16),
+              for (final choice in options) Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
+                onTap: selectedAnswer == null ? () {
+                  final correct = choice == (reverse ? entry.ar : entry.fa.first);
+                  setState(() {
+                    selectedAnswer = choice; exerciseCorrect = correct; reviewedWords.add(entry.ar);
+                    if (!correct) missedWords.add(entry.ar);
+                  });
+                } : null,
+                child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                  decoration: BoxDecoration(color: selectedAnswer == choice ? (exerciseCorrect == true ? pal.sel : pal.accent) : pal.pillC, borderRadius: BorderRadius.circular(capR(28)), border: Border.all(color: pal.div)),
+                  child: Text(choice, textAlign: TextAlign.center, style: TextStyle(color: selectedAnswer == choice ? pal.bg : pal.ink, fontWeight: FontWeight.w600))),
+              )),
               if (selectedAnswer != null)
-                Text(
-                  exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ${exerciseEntry.fa.join('، ')}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700),
-                ),
-            ]),
-          ),
-        const Spacer(),
-        SizedBox(width: double.infinity, child: FilledButton(
-          onPressed: exerciseMode && selectedAnswer == null ? null : () async {
-            if (!exerciseMode) {
-              if (!revealed) {
-                setState(() => revealed = true);
-              } else if (index + 1 < widget.words.length) {
-                setState(() { index++; revealed = false; });
-              } else {
-                setState(() { exerciseMode = true; exerciseIndex = 0; selectedAnswer = null; exerciseCorrect = null; });
-              }
-            } else if (exerciseIndex + 1 < exerciseCount) {
-              setState(() { exerciseIndex++; selectedAnswer = null; exerciseCorrect = null; });
-            } else {
-              await widget.onComplete();
-              if (context.mounted) Navigator.of(context).pop();
-            }
-          },
-          child: Text(
-            !exerciseMode
-                ? (!revealed ? 'نمایش پاسخ' : index + 1 < widget.words.length ? 'واژهٔ بعدی' : 'شروع تمرین درس')
-                : (selectedAnswer == null ? 'یک پاسخ را انتخاب کنید' : exerciseIndex + 1 < exerciseCount ? 'سؤال بعدی' : 'پایان درس'),
-          ),
-        )),
+                Text(exerciseCorrect == true ? 'پاسخ درست است.' : 'پاسخ درست: ' + (reverse ? entry.ar : entry.fa.first), textAlign: TextAlign.center, style: TextStyle(color: exerciseCorrect == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
+            ])),
+        ]))),
+        const SizedBox(height: 12),
+        if (phase == 1 && recallRevealed)
+          Row(children: [
+            Expanded(child: OutlinedButton(onPressed: () => _rateRecall(false), child: const Text('نیاز به مرور'))),
+            const SizedBox(width: 10),
+            Expanded(child: FilledButton(onPressed: () => _rateRecall(true), child: const Text('یادم بود'))),
+          ])
+        else
+          SizedBox(width: double.infinity, child: FilledButton(
+            onPressed: phase == 0
+                ? () {
+                    if (!revealed) { setState(() => revealed = true); }
+                    else if (index + 1 < widget.words.length) { setState(() { index++; revealed = false; }); }
+                    else { setState(() { phase = 1; recallIndex = 0; recallRevealed = false; }); }
+                  }
+                : phase == 1
+                    ? () => setState(() => recallRevealed = true)
+                    : selectedAnswer == null
+                        ? null
+                        : exerciseIndex + 1 < activeExercises.length
+                            ? () => setState(() { exerciseIndex++; selectedAnswer = null; exerciseCorrect = null; })
+                            : _finish,
+            child: Text(phase == 0
+                ? (!revealed ? 'نمایش پاسخ' : index + 1 < widget.words.length ? 'واژهٔ بعدی' : 'رفتن به یادآوری')
+                : phase == 1
+                    ? 'نمایش پاسخ'
+                    : selectedAnswer == null ? 'یک پاسخ را انتخاب کنید' : exerciseIndex + 1 < activeExercises.length ? 'سؤال بعدی' : 'پایان درس'),
+          )),
       ]))),
     ));
   }
@@ -2085,6 +2097,9 @@ class _ShellState extends State<Shell> {
   final Set<int> arioCompletedLessons = {};
   ArioCurriculum? arioCurriculum;
   final Set<String> arioKnownWords = {};
+  final Set<String> arioReviewWords = {};
+  final Set<String> arioCompletedWritingLessons = {};
+  final Map<String, int> arioWritingReviewDue = {};
   int arioLastLesson = 0;
   int arioQuizIndex = 0;
   int arioBestStreak = 0;
@@ -2179,6 +2194,13 @@ class _ShellState extends State<Shell> {
           arioLastLesson = totalWords == 0 ? 0 : ((oldLast * 12 * 100) / totalWords).floor().clamp(0, 99).toInt();
         }
         arioKnownWords..clear()..addAll(((ario['knownWords'] as List?) ?? []).map((e) => e.toString()));
+        arioReviewWords..clear()..addAll(((ario['reviewWords'] as List?) ?? []).map((e) => e.toString()));
+        arioCompletedWritingLessons..clear()..addAll(((ario['completedWritingLessons'] as List?) ?? []).map((e) => e.toString()));
+        arioWritingReviewDue
+          ..clear()
+          ..addAll((((ario['writingReviewDue'] as Map?) ?? {}).entries).map(
+            (entry) => MapEntry(entry.key.toString(), (entry.value as num).toInt()),
+          ));
         if (ario['curriculumVersion'] == 2) {
           arioLastLesson = ((ario['lastLesson'] as num?)?.toInt() ?? 0).clamp(0, (curriculum.stages.length - 1).clamp(0, 999999)).toInt();
         } else if (ario['curriculumVersion'] == 3) {
@@ -5086,6 +5108,9 @@ class _ShellState extends State<Shell> {
     'completedStages': arioCompletedLessons.map((index) => index + 1).toList()..sort(),
     'completedLessons': arioCompletedLessons.toList()..sort(),
     'knownWords': arioKnownWords.toList(),
+    'reviewWords': arioReviewWords.toList()..sort(),
+    'completedWritingLessons': arioCompletedWritingLessons.toList()..sort(),
+    'writingReviewDue': arioWritingReviewDue,
     'lastLesson': arioLastLesson,
     'quizIndex': arioQuizIndex,
     'bestStreak': arioBestStreak,
@@ -5323,6 +5348,8 @@ class _ShellState extends State<Shell> {
           )),
         ])),
         const SizedBox(height: 18),
+        _arioAction('فارسی‌نویسی و ادبیات', 'املا، هکسره، نیم‌فاصله و آرایه‌های ادبی', LucideIcons.bookOpen, _openArioWriting),
+        const SizedBox(height: 10),
         _arioCurriculum(d, current),
       ],
     )));
@@ -5422,6 +5449,8 @@ class _ShellState extends State<Shell> {
     final words = stage.entryIds.map((word) => byWord[word]).whereType<Entry>().toList(growable: false);
     if (words.isEmpty) return;
     final unit = stage.units.first;
+    final lessonPlan = unit.lessons.first;
+    final practice = lessonPlan.sections.firstWhere((section) => section.type == 'practice');
     setState(() => arioLastLesson = lesson);
     _saveArioProgress();
     _open(ArioLessonPage(
@@ -5430,10 +5459,41 @@ class _ShellState extends State<Shell> {
       unitTitle: unit.title,
       words: words,
       exercisePool: allWords,
+      exercises: practice.exercises,
+      onResult: (reviewed, missed) async {
+        setState(() {
+          arioReviewWords.removeAll(reviewed.difference(missed));
+          arioReviewWords.addAll(missed);
+        });
+        await _saveArioProgress();
+      },
       onComplete: () async {
         setState(() { arioCompletedLessons.add(lesson); arioKnownWords.addAll(words.map((e) => e.ar)); });
         await _saveArioProgress();
       },
+    ));
+  }
+
+  void _openArioWordReview(Dictionary d) {
+    final pool = d.entries.where((entry) => entry.hasFa).toList(growable: false);
+    final byWord = {for (final entry in pool) entry.ar: entry};
+    final words = arioReviewWords.map((word) => byWord[word]).whereType<Entry>().toList(growable: false);
+    if (words.isEmpty) return;
+    _open(ArioLessonPage(
+      lesson: 0,
+      stageTitle: 'مرور آموخته‌ها',
+      unitTitle: 'واژه‌های نیازمند مرور',
+      words: words,
+      exercisePool: pool,
+      exercises: const <ArioExercisePlan>[],
+      onResult: (reviewed, missed) async {
+        setState(() {
+          arioReviewWords.removeAll(reviewed.difference(missed));
+          arioReviewWords.addAll(missed);
+        });
+        await _saveArioProgress();
+      },
+      onComplete: () async {},
     ));
   }
 
@@ -5468,6 +5528,9 @@ class _ShellState extends State<Shell> {
       const SizedBox(height: 16),
       _arioAction('تمرین آزاد واژه‌ها', 'سنجش واژگان با پرسش‌های چهارگزینه‌ای', LucideIcons.repeat, () => _open(_arioPractice(d))),
       _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
+      if (arioReviewWords.isNotEmpty)
+        _arioAction('مرور واژه‌های دشوار', faNum(arioReviewWords.length) + ' واژه نیازمند تکرار', LucideIcons.refreshCw, () => _openArioWordReview(d)),
+      _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.bookOpen, _openArioWriting),
       _arioAction('مسیر کامل درس‌ها', 'درس‌ها و تمرین‌های مرحله‌به‌مرحله', LucideIcons.compass, () => _open(_arioLearning(d))),
     ],
   )));
@@ -5522,7 +5585,12 @@ class _ShellState extends State<Shell> {
         for (final choice in options)
           Padding(padding: const EdgeInsets.only(bottom: 9), child: Pressable(onTap: arioSelectedAnswer == null ? () {
             final correct = current.fa.contains(choice);
-            setState(() { arioSelectedAnswer = choice; arioAnswerCorrect = correct; if (correct) arioKnownWords.add(current.ar); });
+            setState(() {
+              arioSelectedAnswer = choice;
+              arioAnswerCorrect = correct;
+              if (correct) { arioKnownWords.add(current.ar); arioReviewWords.remove(current.ar); }
+              else { arioReviewWords.add(current.ar); }
+            });
             _saveArioProgress();
           } : null, child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
@@ -5541,15 +5609,29 @@ class _ShellState extends State<Shell> {
 
   Widget _arioReview(Dictionary d) {
     final words = d.entries.where((e) => e.hasFa && arioKnownWords.contains(e.ar)).toList();
-    return _arioPageShell('مرور آموخته‌ها', words.isEmpty
-      ? Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(LucideIcons.notebookPen, size: 38, color: pal.muted),
+    final difficult = d.entries.where((e) => e.hasFa && arioReviewWords.contains(e.ar)).toList();
+    return _arioPageShell('مرور آموخته‌ها', edgeFade(child: ListView(
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+      children: [
+        if (difficult.isNotEmpty) ...[
+          _arioAction('مرور واژه‌های دشوار', faNum(difficult.length) + ' واژه در صف مرور', LucideIcons.refreshCw, () => _openArioWordReview(d)),
           const SizedBox(height: 12),
-          Text('هنوز واژه‌ای برای مرور نداری', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+        ],
+        if (words.isEmpty && difficult.isEmpty)
+          Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(LucideIcons.notebookPen, size: 38, color: pal.muted),
+            const SizedBox(height: 12),
+            Text('هنوز واژه‌ای برای مرور نداری', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text('با گذراندن درس‌ها یا پاسخ درست به تمرین‌ها، واژه‌ها اینجا جمع می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
+          ])))
+        else if (words.isNotEmpty) ...[
+          Text('واژه‌های آموخته‌شده', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('با گذراندن درس‌ها یا پاسخ درست به تمرین‌ها، واژه‌ها اینجا جمع می‌شوند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.7)),
-        ])))
-      : Padding(padding: const EdgeInsets.symmetric(horizontal: 22), child: _pairList(words, bottomPad: kNavClearance, singleLine: true)));
+          _pairList(words, bottomPad: 12, singleLine: true),
+        ],
+      ],
+    )));
   }
 
   // The former word catalogue tab is now the learner profile.
