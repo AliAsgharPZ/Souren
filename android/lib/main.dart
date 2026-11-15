@@ -1847,64 +1847,78 @@ class _ArioSpeedChallengePageState extends State<ArioSpeedChallengePage> {
                   ),
                 ),
               ] else if (_finished) ...[
-                const Spacer(),
-                Icon(LucideIcons.award, color: pal.sel, size: 48),
-                const SizedBox(height: 12),
-                Text('پایان چالش', style: TextStyle(color: pal.ink, fontSize: 22, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 12),
-                Text('امتیاز: ${faNum(_score)}', style: TextStyle(color: pal.sel, fontSize: 30, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                Text('بهترین زنجیرهٔ پاسخ درست: ${faNum(_bestStreak)}', style: TextStyle(color: pal.muted)),
-                if (isGhost) ...[
-                  const SizedBox(height: 6),
-                  Text('رکورد قبلی خودت: ${faNum(previousGhostBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
-                  Text(_score > previousGhostBest ? 'رکورد شخصی تازه‌ای ثبت شد.' : 'این اجرا با رکورد قبلی خودت مقایسه شد.', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
-                ],
-                if (isDailyBoss) Text('بهترین امتیاز امروز: ${faNum(_score > widget.initialDailyBest ? _score : widget.initialDailyBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
-                const SizedBox(height: 22),
-                SizedBox(width: double.infinity, child: FilledButton(onPressed: _start, child: const Text('تلاش دوباره'))),
-                const Spacer(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(LucideIcons.award, color: pal.sel, size: 48),
+                        const SizedBox(height: 12),
+                        Text('پایان چالش', style: TextStyle(color: pal.ink, fontSize: 22, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 12),
+                        Text('امتیاز: ${faNum(_score)}', style: TextStyle(color: pal.sel, fontSize: 30, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 8),
+                        Text('بهترین زنجیرهٔ پاسخ درست: ${faNum(_bestStreak)}', style: TextStyle(color: pal.muted)),
+                        if (isGhost) ...[
+                          const SizedBox(height: 6),
+                          Text('رکورد قبلی خودت: ${faNum(previousGhostBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+                          Text(_score > previousGhostBest ? 'رکورد شخصی تازه‌ای ثبت شد.' : 'این اجرا با رکورد قبلی خودت مقایسه شد.', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
+                        ],
+                        if (isDailyBoss) Text('بهترین امتیاز امروز: ${faNum(_score > widget.initialDailyBest ? _score : widget.initialDailyBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+                        const SizedBox(height: 22),
+                        SizedBox(width: double.infinity, child: FilledButton(onPressed: _start, child: const Text('تلاش دوباره'))),
+                      ],
+                    ),
+                  ),
+                ),
               ] else if (current != null) ...[
-                Row(children: [
-                  Expanded(child: Text('امتیاز ${faNum(_score)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800))),
-                  Text('پیاپی ${faNum(_streak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
-                ]),
-                if (isGhost) ...[
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Expanded(child: Text('امتیاز اجرای تو', style: TextStyle(color: pal.muted, fontSize: 11))),
-                    Text('رکورد قبلی در این پرسش: ${faNum(ghostQuestionScore)}', style: TextStyle(color: pal.sel, fontSize: 11, fontWeight: FontWeight.w700)),
-                  ]),
-                ],
-                const SizedBox(height: 12),
-                ClipRRect(borderRadius: BorderRadius.circular(12), child: LinearProgressIndicator(value: _seconds / 30, minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
-                const Spacer(),
-                Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(50))), child: Column(children: [
-                  Text(isGhost ? 'این واژه را درست معنی کن و از رکورد قبلی خودت جلو بزن.' : 'معنی درست این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
-                  const SizedBox(height: 18),
-                  Text(current.ar, style: TextStyle(color: pal.ink, fontSize: 34, fontWeight: FontWeight.w900)),
-                ])),
-                const SizedBox(height: 14),
-                for (final option in _options)
-                  Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
-                    onTap: _selected == null ? () => _answer(option) : null,
-                    child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(
-                      color: _selected == option ? (_correct == true ? pal.sel : pal.accent) : pal.cardC,
-                      borderRadius: BorderRadius.circular(capR(36)),
-                      border: Border.all(color: pal.div),
-                    ), child: Text(option, textAlign: TextAlign.center, style: TextStyle(color: _selected == option ? pal.bg : pal.ink, fontWeight: FontWeight.w700))),
-                  )),
-                if (_selected != null) ...[
-                  const SizedBox(height: 4),
-                  Text(_correct == true ? 'درست بود!' : 'پاسخ درست: ${current.fa.join('، ')}', style: TextStyle(color: _correct == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 10),
-                  SizedBox(width: double.infinity, child: FilledButton(onPressed: _next, child: const Text('سؤال بعدی'))),
-                ],
-                const Spacer(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      children: [
+                        Row(children: [
+                          Expanded(child: Text('امتیاز ${faNum(_score)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800))),
+                          Text('پیاپی ${faNum(_streak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
+                        ]),
+                        if (isGhost) ...[
+                          const SizedBox(height: 6),
+                          Row(children: [
+                            Expanded(child: Text('امتیاز اجرای تو', style: TextStyle(color: pal.muted, fontSize: 11))),
+                            Text('رکورد قبلی در این پرسش: ${faNum(ghostQuestionScore)}', style: TextStyle(color: pal.sel, fontSize: 11, fontWeight: FontWeight.w700)),
+                          ]),
+                        ],
+                        const SizedBox(height: 12),
+                        ClipRRect(borderRadius: BorderRadius.circular(12), child: LinearProgressIndicator(value: _seconds / 30, minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
+                        const SizedBox(height: 16),
+                        Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(50))), child: Column(children: [
+                          Text(isGhost ? 'این واژه را درست معنی کن و از رکورد قبلی خودت جلو بزن.' : 'معنی درست این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+                          const SizedBox(height: 18),
+                          Text(current.ar, style: TextStyle(color: pal.ink, fontSize: 34, fontWeight: FontWeight.w900)),
+                        ])),
+                        const SizedBox(height: 14),
+                        for (final option in _options)
+                          Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
+                            onTap: _selected == null ? () => _answer(option) : null,
+                            child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(
+                              color: _selected == option ? (_correct == true ? pal.sel : pal.accent) : pal.cardC,
+                              borderRadius: BorderRadius.circular(capR(36)),
+                              border: Border.all(color: pal.div),
+                            ), child: Text(option, textAlign: TextAlign.center, style: TextStyle(color: _selected == option ? pal.bg : pal.ink, fontWeight: FontWeight.w700))),
+                          )),
+                        if (_selected != null) ...[
+                          const SizedBox(height: 4),
+                          Text(_correct == true ? 'درست بود!' : 'پاسخ درست: ${current.fa.join('، ')}', style: TextStyle(color: _correct == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 10),
+                          SizedBox(width: double.infinity, child: FilledButton(onPressed: _next, child: const Text('سؤال بعدی'))),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               ] else ...[
-                const Spacer(),
-                const Text('برای این چالش هنوز واژه‌ای در دسترس نیست.'),
-                const Spacer(),
+                const Expanded(child: Center(child: Text('برای این چالش هنوز واژه‌ای در دسترس نیست.'))),
               ],
             ]),
           ),
