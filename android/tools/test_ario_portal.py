@@ -20,7 +20,7 @@ class ArioPortalNavigationTests(unittest.TestCase):
         ]
         start = SOURCE.index("Widget _navBar()")
         end = SOURCE.index("Widget navItem(int i)", start)
-        nav = SOURCE[start:end]
+        nav = SOURCE[start:end].split(": <(IconData, String)>", 1)[0]
         positions = [nav.index(item) for item in expected]
         self.assertEqual(positions, sorted(positions))
         self.assertEqual(nav.count("(Symbols."), 5)
