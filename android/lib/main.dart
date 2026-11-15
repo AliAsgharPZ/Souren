@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -1593,6 +1594,208 @@ class _ArioLessonPageState extends State<ArioLessonPage> {
   }
 }
 
+class ArioSpeedChallengePage extends StatefulWidget {
+  final List<Entry> entries;
+  final int initialBestStreak;
+  final ValueChanged<int>? onBestStreak;
+  final bool ghostMode;
+
+  const ArioSpeedChallengePage({
+    super.key,
+    required this.entries,
+    this.initialBestStreak = 0,
+    this.onBestStreak,
+    this.ghostMode = false,
+  });
+
+  @override
+  State<ArioSpeedChallengePage> createState() => _ArioSpeedChallengePageState();
+}
+
+class _ArioSpeedChallengePageState extends State<ArioSpeedChallengePage> {
+  Timer? _timer;
+  int _seconds = 30;
+  int _score = 0;
+  int _streak = 0;
+  int _bestStreak = 0;
+  int _question = 0;
+  String? _selected;
+  bool? _correct;
+  bool _running = false;
+  bool _finished = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bestStreak = widget.initialBestStreak;
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Entry? get _current => widget.entries.isEmpty ? null : widget.entries[_question % widget.entries.length];
+
+  List<String> get _options {
+    final current = _current;
+    if (current == null) return const [];
+    final choices = <String>{current.fa.first};
+    for (var offset = 1; choices.length < 4 && offset < widget.entries.length; offset++) {
+      final candidate = widget.entries[(_question * 11 + offset * 7) % widget.entries.length];
+      if (candidate.fa.isNotEmpty) choices.add(candidate.fa.first);
+    }
+    return choices.toList(growable: false);
+  }
+
+  void _start() {
+    if (widget.entries.isEmpty) return;
+    _timer?.cancel();
+    setState(() {
+      _seconds = 30;
+      _score = 0;
+      _streak = 0;
+      _question = 0;
+      _selected = null;
+      _correct = null;
+      _running = true;
+      _finished = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_seconds <= 1) {
+        timer.cancel();
+        setState(() {
+          _seconds = 0;
+          _running = false;
+          _finished = true;
+        });
+      } else {
+        setState(() => _seconds--);
+      }
+    });
+  }
+
+  void _answer(String answer) {
+    if (!_running || _selected != null) return;
+    final current = _current;
+    if (current == null) return;
+    final correct = current.fa.contains(answer);
+    setState(() {
+      _selected = answer;
+      _correct = correct;
+      if (correct) {
+        _score++;
+        _streak++;
+        if (_streak > _bestStreak) {
+          _bestStreak = _streak;
+          widget.onBestStreak?.call(_bestStreak);
+        }
+      } else {
+        _streak = 0;
+      }
+    });
+  }
+
+  void _next() {
+    if (!_running || _selected == null) return;
+    setState(() {
+      _question++;
+      _selected = null;
+      _correct = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _current;
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: pal.bg,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+            child: Column(children: [
+              Row(children: [
+                Pressable(onTap: () => Navigator.of(context).maybePop(), child: Icon(LucideIcons.arrowRight, color: pal.ink, size: 23)),
+                const SizedBox(width: 12),
+                Expanded(child: Text(widget.ghostMode ? 'Ghost Challenge' : 'چالش سرعتی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
+                if (_running || _finished)
+                  Text('${faNum(_seconds)} ثانیه', style: TextStyle(color: _seconds <= 8 ? pal.accent : pal.sel, fontWeight: FontWeight.w800)),
+              ]),
+              const SizedBox(height: 16),
+              if (!_running && !_finished) ...[
+                const Spacer(),
+                Icon(LucideIcons.zap, color: pal.sel, size: 42),
+                const SizedBox(height: 14),
+                Text(widget.ghostMode ? 'رکورد خودت را شکست بده' : '۳۰ ثانیه؛ تا می‌توانی درست پاسخ بده', textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                Text('هر پاسخ درست امتیاز می‌دهد؛ پاسخ‌های درست پیاپی رکوردت را می‌سازند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.8, fontSize: 12.5)),
+                const SizedBox(height: 12),
+                Text('بهترین زنجیره: ${faNum(_bestStreak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 22),
+                SizedBox(width: double.infinity, child: FilledButton(onPressed: widget.entries.isEmpty ? null : _start, child: const Text('شروع چالش'))),
+                const Spacer(),
+              ] else if (_finished) ...[
+                const Spacer(),
+                Icon(LucideIcons.award, color: pal.sel, size: 48),
+                const SizedBox(height: 12),
+                Text('پایان چالش', style: TextStyle(color: pal.ink, fontSize: 22, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                Text('امتیاز: ${faNum(_score)}', style: TextStyle(color: pal.sel, fontSize: 30, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                Text('بهترین زنجیرهٔ پاسخ درست: ${faNum(_bestStreak)}', style: TextStyle(color: pal.muted)),
+                const SizedBox(height: 22),
+                SizedBox(width: double.infinity, child: FilledButton(onPressed: _start, child: const Text('تلاش دوباره'))),
+                const Spacer(),
+              ] else if (current != null) ...[
+                Row(children: [
+                  Expanded(child: Text('امتیاز ${faNum(_score)}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800))),
+                  Text('پیاپی ${faNum(_streak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
+                ]),
+                const SizedBox(height: 12),
+                ClipRRect(borderRadius: BorderRadius.circular(12), child: LinearProgressIndicator(value: _seconds / 30, minHeight: 7, backgroundColor: pal.div, color: pal.sel)),
+                const Spacer(),
+                Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(50))), child: Column(children: [
+                  Text('معنی درست این واژه کدام است؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+                  const SizedBox(height: 18),
+                  Text(current.ar, style: TextStyle(color: pal.ink, fontSize: 34, fontWeight: FontWeight.w900)),
+                ])),
+                const SizedBox(height: 14),
+                for (final option in _options)
+                  Padding(padding: const EdgeInsets.only(bottom: 8), child: Pressable(
+                    onTap: _selected == null ? () => _answer(option) : null,
+                    child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), decoration: BoxDecoration(
+                      color: _selected == option ? (_correct == true ? pal.sel : pal.accent) : pal.cardC,
+                      borderRadius: BorderRadius.circular(capR(36)),
+                      border: Border.all(color: pal.div),
+                    ), child: Text(option, textAlign: TextAlign.center, style: TextStyle(color: _selected == option ? pal.bg : pal.ink, fontWeight: FontWeight.w700))),
+                  )),
+                if (_selected != null) ...[
+                  const SizedBox(height: 4),
+                  Text(_correct == true ? 'درست بود!' : 'پاسخ درست: ${current.fa.join('، ')}', style: TextStyle(color: _correct == true ? pal.sel : pal.accent, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 10),
+                  SizedBox(width: double.infinity, child: FilledButton(onPressed: _next, child: const Text('سؤال بعدی'))),
+                ],
+                const Spacer(),
+              ] else ...[
+                const Spacer(),
+                const Text('برای این چالش هنوز واژه‌ای در دسترس نیست.'),
+                const Spacer(),
+              ],
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ArioLogo extends StatelessWidget {
   final double width;
   final Color? color;
@@ -1887,6 +2090,7 @@ class _ShellState extends State<Shell> {
   final Set<String> arioKnownWords = {};
   int arioLastLesson = 0;
   int arioQuizIndex = 0;
+  int arioBestStreak = 0;
   String? arioSelectedAnswer;
   bool? arioAnswerCorrect;
 
@@ -1987,6 +2191,7 @@ class _ShellState extends State<Shell> {
           arioLastLesson = ((ario['lastLesson'] as num?)?.toInt() ?? 0).clamp(0, (curriculum.stages.length - 1).clamp(0, 999999)).toInt();
         }
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
+        arioBestStreak = (ario['bestStreak'] as num?)?.toInt() ?? 0;
       }
     });
     if (!widget.initialArioMode) _syncDictionary(d);
@@ -2337,7 +2542,7 @@ class _ShellState extends State<Shell> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final pages = arioMode
-        ? <Widget>[_arioHome(d), _arioActivities(d), _arioLab(d), _arioProfile(d), _arioSettings()]
+        ? <Widget>[_arioHome(d), _arioLearning(d), _arioActivities(d), _arioCommunity(d), _arioProfile(d)]
         : <Widget>[_home(d), _likedPage(d), _sectionsPage(d), _favoritesPage(d), _profilePage(d), _settingsPage(d)];
     return Scaffold(
       extendBody: true,
@@ -2400,11 +2605,11 @@ class _ShellState extends State<Shell> {
   Widget _navBar() {
     final items = arioMode
         ? <(IconData, String)>[
-            (Symbols.home_rounded, 'پیشگاه'),
-            (Symbols.event_note_rounded, 'کارها'),
-            (Symbols.science_rounded, 'آزمایشگاه'),
+            (Symbols.home_rounded, 'خانه'),
+            (Symbols.school_rounded, 'یادگیری'),
+            (Symbols.event_note_rounded, 'فعالیت‌ها'),
+            (Symbols.groups_rounded, 'اجتماع'),
             (Symbols.person_rounded, 'نمایه'),
-            (Symbols.settings_rounded, 'پیکربندی'),
           ]
         : <(IconData, String)>[
             (Symbols.home_rounded, 'پیشگاه'),
@@ -4886,6 +5091,7 @@ class _ShellState extends State<Shell> {
     'knownWords': arioKnownWords.toList(),
     'lastLesson': arioLastLesson,
     'quizIndex': arioQuizIndex,
+    'bestStreak': arioBestStreak,
   });
 
   Future<void> _loadGanjoorPackState() async {
@@ -4923,20 +5129,33 @@ class _ShellState extends State<Shell> {
     }
   }
 
-  Widget _arioPageShell(String title, Widget body, {bool hideHeaderOnScroll = true}) => Directionality(
+  Widget _arioPageShell(String title, Widget body, {bool hideHeaderOnScroll = true, VoidCallback? headerAction}) => Directionality(
     textDirection: TextDirection.rtl,
     child: ScrollAwarePageShell(
       autoHide: hideHeaderOnScroll,
       headerHeight: 56,
       header: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 17, 20, 6),
         child: Row(children: [
           Expanded(
             child: title == 'آریو'
-                ? Align(alignment: Alignment.centerRight, child: ArioLogo(width: 82, color: pal.ink))
+                ? Align(alignment: Alignment.centerRight, child: ArioLogo(width: 78, color: pal.ink))
                 : Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700)),
           ),
+          if (headerAction != null)
+            Pressable(
+              onTap: headerAction,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: pal.sel, borderRadius: BorderRadius.circular(capR(32))),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.zap, color: pal.bg, size: 16),
+                  const SizedBox(width: 6),
+                  Text('چالش سرعتی', style: TextStyle(color: pal.bg, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                ]),
+              ),
+            ),
         ]),
       ),
       body: body,
@@ -4944,93 +5163,140 @@ class _ShellState extends State<Shell> {
   );
 
   Widget _arioHome(Dictionary d) {
-    final words = d.entries.where((e) => e.hasFa).toList();
     final lessonCount = arioCurriculum?.stages.length ?? 0;
     final completed = arioCompletedLessons.length;
     final currentLesson = _nextArioLesson(lessonCount);
-    final progress = lessonCount == 0
-        ? 0.0
-        : (completed / lessonCount).clamp(0.0, 1.0).toDouble();
+    final words = d.entries.where((entry) => entry.hasFa).toList(growable: false);
     final today = DateTime.now();
     final daily = words.isEmpty
         ? null
         : words[(today.year * 372 + today.month * 31 + today.day) % words.length];
+    final progress = lessonCount == 0 ? 0.0 : (completed / lessonCount).clamp(0.0, 1.0).toDouble();
+    final nextStages = arioCurriculum?.stages.where((stage) => stage.level == currentLesson + 1).toList() ?? const <ArioStagePlan>[];
+    final nextStage = nextStages.isEmpty ? null : nextStages.first;
     return _arioPageShell(
       'آریو',
-      ListView(
-          padding: const EdgeInsets.fromLTRB(22, 10, 22, 24 + kNavClearance),
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('سلام، آماده‌ای؟', style: TextStyle(color: pal.muted, fontSize: 13)),
-                      const SizedBox(height: 3),
-                      Text('مسیر یادگیری تو', style: TextStyle(color: pal.ink, fontSize: 22, fontWeight: FontWeight.w800)),
-                    ],
-                  ),
-                ),
-                _arioMiniStat(LucideIcons.zap, faNum(arioCompletedLessons.length), 'درس'),
-                const SizedBox(width: 8),
-                _arioMiniStat(LucideIcons.star, faNum(arioKnownWords.length), 'واژه'),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: pal.sel, borderRadius: BorderRadius.circular(capR(48))),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Expanded(child: Text('پیشرفت مسیر', style: TextStyle(color: pal.bg.withValues(alpha: .82), fontSize: 13))),
-                    Text('${faNum((progress * 100).round())}٪', style: TextStyle(color: pal.bg, fontSize: 17, fontWeight: FontWeight.w800)),
-                  ]),
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(value: progress, minHeight: 9, backgroundColor: pal.bg.withValues(alpha: .22), color: pal.bg),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('${faNum(completed)} از ${faNum(lessonCount)} درس گذرانده شده', style: TextStyle(color: pal.bg.withValues(alpha: .82), fontSize: 12)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(children: [
-              Expanded(child: Text('برنامهٔ آموزشی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800))),
-              Text('${faNum(lessonCount)} مرحله', style: TextStyle(color: pal.muted, fontSize: 12)),
-            ]),
-            const SizedBox(height: 10),
-            _arioCurriculum(d, currentLesson),
-            const SizedBox(height: 18),
-            if (daily != null)
+      edgeFade(child: ListView(
+        padding: const EdgeInsets.fromLTRB(22, 12, 22, 28 + kNavClearance),
+        children: [
+          Text('سلام، آماده‌ای ادامه بدهی؟', style: TextStyle(color: pal.muted, fontSize: 13)),
+          const SizedBox(height: 4),
+          Text('هر روز یک قدم جلوتر', style: TextStyle(color: pal.ink, fontSize: 23, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(color: pal.sel, borderRadius: BorderRadius.circular(capR(48))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text('مسیر یادگیری تو', style: TextStyle(color: pal.bg.withValues(alpha: .82), fontSize: 12.5))),
+                Text('${faNum((progress * 100).round())}٪', style: TextStyle(color: pal.bg, fontSize: 17, fontWeight: FontWeight.w800)),
+              ]),
+              const SizedBox(height: 9),
+              ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: progress, minHeight: 8, backgroundColor: pal.bg.withValues(alpha: .22), color: pal.bg)),
+              const SizedBox(height: 8),
+              Text('${faNum(completed)} از ${faNum(lessonCount)} درس تکمیل شده', style: TextStyle(color: pal.bg.withValues(alpha: .82), fontSize: 11.5)),
+              const SizedBox(height: 15),
               Pressable(
-                onTap: () => setState(() => tab = 2),
+                onTap: lessonCount == 0 ? null : () => _openArioLesson(d, currentLesson),
                 child: Container(
-                  padding: const EdgeInsets.all(17),
-                  decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                  decoration: BoxDecoration(color: pal.bg, borderRadius: BorderRadius.circular(capR(34))),
                   child: Row(children: [
-                    Container(width: 46, height: 46, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(42))), child: Icon(LucideIcons.calendar, color: pal.ink, size: 21)),
-                    const SizedBox(width: 12),
+                    Icon(LucideIcons.play, color: pal.sel, size: 18),
+                    const SizedBox(width: 9),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('تمرین روزانه', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 3),
-                      Text('${daily.ar}  ·  ${daily.fa.first}', style: TextStyle(color: pal.muted, fontSize: 12.5)),
+                      Text(completed == 0 ? 'شروع اولین درس' : 'ادامهٔ درس', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800, fontSize: 14)),
+                      const SizedBox(height: 2),
+                      Text(nextStage?.title ?? 'درس ${faNum(currentLesson + 1)}', style: TextStyle(color: pal.muted, fontSize: 11.5)),
                     ])),
-                    Icon(LucideIcons.chevronLeft, color: pal.muted),
+                    Icon(LucideIcons.chevronLeft, color: pal.muted, size: 19),
                   ]),
                 ),
               ),
-            const SizedBox(height: 12),
-            _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در حافظهٔ یادگیری', LucideIcons.repeat, () => setState(() => tab = 2)),
-            _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی در پایگاه مشترک سورن', LucideIcons.notebookPen, () => _open(_ganjoorPage(d))),
-          ],
-        ),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          Row(children: [
+            Expanded(child: Text('تمرین امروز', style: TextStyle(color: pal.ink, fontSize: 17, fontWeight: FontWeight.w800))),
+            Text('روزانه', style: TextStyle(color: pal.muted, fontSize: 11.5)),
+          ]),
+          const SizedBox(height: 9),
+          if (daily != null)
+            Pressable(
+              onTap: () => _open(_arioPractice(d)),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
+                child: Row(children: [
+                  Container(width: 44, height: 44, decoration: BoxDecoration(color: pal.pillC, borderRadius: BorderRadius.circular(capR(38))), child: Icon(LucideIcons.calendar, color: pal.ink, size: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('واژهٔ امروز: ${daily.ar}', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 3),
+                    Text('معنی: ${daily.fa.first} · برای تمرین وارد شو', style: TextStyle(color: pal.muted, fontSize: 11.5)),
+                  ])),
+                  Icon(LucideIcons.chevronLeft, color: pal.muted, size: 18),
+                ]),
+              ),
+            ),
+          const SizedBox(height: 18),
+          Text('دسترسی سریع', style: TextStyle(color: pal.ink, fontSize: 17, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 9),
+          _arioAction('مسیر کامل درس‌ها', 'از سطح آغازین تا مرحله‌های پیشرفته', LucideIcons.route, () => setState(() => tab = 1)),
+          _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه برای مرور', LucideIcons.repeat, () => _open(_arioReview(d))),
+          _arioAction('کتابخانهٔ گنجور', 'شعر و متن ادبی برای خواندن و یادگیری', LucideIcons.book, () => _open(_ganjoorPage(d))),
+          const SizedBox(height: 4),
+          Row(children: [
+            _arioMiniStat(LucideIcons.check, faNum(completed), 'درس'),
+            const SizedBox(width: 8),
+            _arioMiniStat(LucideIcons.book, faNum(arioKnownWords.length), 'واژه'),
+            const SizedBox(width: 8),
+            _arioMiniStat(LucideIcons.zap, faNum(arioBestStreak), 'رکورد پیاپی'),
+          ]),
+        ],
+      )),
       hideHeaderOnScroll: false,
+      headerAction: () => _open(ArioSpeedChallengePage(
+        entries: words,
+        initialBestStreak: arioBestStreak,
+        onBestStreak: (value) {
+          if (value <= arioBestStreak) return;
+          setState(() => arioBestStreak = value);
+          _saveArioProgress();
+        },
+      )),
     );
+  }
+
+  Widget _arioLearning(Dictionary d) {
+    final count = arioCurriculum?.stages.length ?? 0;
+    final current = _nextArioLesson(count);
+    final progress = count == 0 ? 0.0 : (arioCompletedLessons.length / count).clamp(0.0, 1.0).toDouble();
+    return _arioPageShell('یادگیری', edgeFade(child: ListView(
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+      children: [
+        Text('مسیر مرحله‌به‌مرحله', style: TextStyle(color: pal.ink, fontSize: 20, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        Text('درس‌ها را به ترتیب پیش ببر؛ تمرین هر درس در پایان همان درس انجام می‌شود.', style: TextStyle(color: pal.muted, fontSize: 12.5, height: 1.7)),
+        const SizedBox(height: 14),
+        Container(padding: const EdgeInsets.all(17), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text('پیشرفت کلی', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700))),
+            Text('${faNum(arioCompletedLessons.length)} / ${faNum(count)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+          ]),
+          const SizedBox(height: 9),
+          ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: progress, minHeight: 8, backgroundColor: pal.div, color: pal.sel)),
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: FilledButton(
+            onPressed: count == 0 ? null : () => _openArioLesson(d, current),
+            child: Text(arioCompletedLessons.isEmpty ? 'شروع یادگیری' : 'ادامهٔ درس ${faNum(current + 1)}'),
+          )),
+        ])),
+        const SizedBox(height: 18),
+        _arioCurriculum(d, current),
+      ],
+    )));
   }
 
   int _nextArioLesson(int lessonCount) {
@@ -5142,22 +5408,110 @@ class _ShellState extends State<Shell> {
     ));
   }
 
-  Widget _arioActivities(Dictionary d) => _arioPageShell('کارها', edgeFade(child: ListView(
+  Widget _arioActivities(Dictionary d) => _arioPageShell('فعالیت‌ها', edgeFade(child: ListView(
+    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+    children: [
+      Text('فعال بمان؛ پیشرفت با تمرین ساخته می‌شود.', style: TextStyle(color: pal.muted, fontSize: 13)),
+      const SizedBox(height: 14),
+      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('مأموریت روزانه', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Text('یک درس را کامل کن و یک دور مرور انجام بده.', style: TextStyle(color: pal.muted, fontSize: 12.5, height: 1.7)),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(child: _statCard('درس‌های تکمیل‌شده', arioCompletedLessons.length)),
+          const SizedBox(width: 8),
+          Expanded(child: _statCard('واژه‌های آموخته‌شده', arioKnownWords.length)),
+        ]),
+        SizedBox(width: double.infinity, child: OutlinedButton.icon(
+          onPressed: () => setState(() => tab = 1),
+          icon: const Icon(LucideIcons.route, size: 17),
+          label: const Text('رفتن به مسیر یادگیری'),
+        )),
+      ])),
+      const SizedBox(height: 14),
+      _arioAction('Daily Boss · غول روزانه', 'چالش زمان‌دار برای سنجش سرعت و دقت', LucideIcons.award, () => _open(ArioSpeedChallengePage(
+        entries: d.entries.where((entry) => entry.hasFa).toList(growable: false),
+        initialBestStreak: arioBestStreak,
+        onBestStreak: (value) {
+          if (value <= arioBestStreak) return;
+          setState(() => arioBestStreak = value);
+          _saveArioProgress();
+        },
+      ))),
+      _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.repeat, () => _open(_arioReview(d))),
+      _arioAction('گزارش هفتگی و ماهانه', 'مرور تعداد درس‌ها، واژه‌ها و رکوردها', LucideIcons.chartBar, () => _open(_arioReport())),
+      _arioAction('رویدادهای فصلی', 'چالش‌ها و موضوع‌های ویژهٔ هر فصل', LucideIcons.calendar, () => _open(_arioEvents())),
+    ],
+  )));
+
+  Widget _arioReport() => _arioPageShell('گزارش یادگیری', edgeFade(child: ListView(
+    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+    children: [
+      Text('خلاصهٔ عملکرد روی همین دستگاه', style: TextStyle(color: pal.muted, fontSize: 12.5)),
+      const SizedBox(height: 14),
+      _statCard('درس‌های تکمیل‌شده', arioCompletedLessons.length),
+      _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
+      _statCard('تمرین‌های انجام‌شده', arioQuizIndex),
+      _statCard('بیشترین پاسخ درست پیاپی', arioBestStreak),
+      const SizedBox(height: 10),
+      Text('گزارش‌ها بر پایهٔ پیشرفت محلی آریو هستند؛ آمار ساختگی یا دادهٔ سروری نمایش داده نمی‌شود.', style: TextStyle(color: pal.muted, fontSize: 12, height: 1.8)),
+    ],
+  )));
+
+  Widget _arioEvents() => _arioPageShell('رویدادهای فصلی', edgeFade(child: ListView(
     padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
     children: [
       Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('فعالیت‌های یادگیری', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 8),
-        Text('وضعیت و دستاوردهای تو در آریو', style: TextStyle(color: pal.muted, fontSize: 13)),
+        Icon(LucideIcons.calendar, color: pal.sel, size: 26),
+        const SizedBox(height: 10),
+        Text('رویدادهای موضوعی آریو', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 7),
+        Text('این بخش برای چالش‌های مناسبتی و ماهانه آماده شده است. رویداد فعالی در این نسخه تعریف نشده؛ به‌محض افزودن محتوای معتبر، اینجا نمایش داده می‌شود.', style: TextStyle(color: pal.muted, fontSize: 12.5, height: 1.8)),
+      ])),
+    ],
+  )));
+
+  Widget _arioCommunity(Dictionary d) => _arioPageShell('اجتماع', edgeFade(child: ListView(
+    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+    children: [
+      Text('یادگیری را به یک رقابت دوستانه تبدیل کن.', style: TextStyle(color: pal.muted, fontSize: 13)),
+      const SizedBox(height: 14),
+      Container(padding: const EdgeInsets.all(19), decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('گروه‌های موضوعی', style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Text('موضوع مورد علاقه‌ات را برای تمرین انتخاب کن.', style: TextStyle(color: pal.muted, fontSize: 12)),
+        const SizedBox(height: 12),
+        _arioAction('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله', LucideIcons.book, () => _open(_arioTopic('املاء و درست‌نویسی', 'تمرین املا، هکسره و نیم‌فاصله'))),
+        _arioAction('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها', LucideIcons.book, () => _open(_arioTopic('واژه‌شناسی', 'معنی، ریشه و کاربرد واژه‌ها'))),
+        _arioAction('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن', LucideIcons.feather, () => _open(_arioTopic('ادبیات و آرایه‌ها', 'آرایه‌های ادبی و درک متن'))),
       ])),
       const SizedBox(height: 14),
-      _statCard('مرحله‌های تکمیل‌شده', arioCompletedLessons.length),
-      _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
-      _statCard('تمرین‌های انجام‌شده', arioQuizIndex),
-      const SizedBox(height: 10),
-      _arioAction('ادامهٔ یادگیری', 'بازگشت به مسیر اصلی درس‌ها', LucideIcons.award, () => setState(() => tab = 0)),
-      _arioAction('رفتن به آزمایشگاه', 'تمرین آزاد و مرور آموخته‌ها', LucideIcons.repeat, () => setState(() => tab = 2)),
+      _arioAction('Ghost Challenge', 'رقابت با رکورد شخصی و بهترین زنجیرهٔ پاسخ درست', LucideIcons.ghost, () => _open(ArioSpeedChallengePage(
+        entries: d.entries.where((entry) => entry.hasFa).toList(growable: false),
+        initialBestStreak: arioBestStreak,
+        onBestStreak: (value) {
+          if (value <= arioBestStreak) return;
+          setState(() => arioBestStreak = value);
+          _saveArioProgress();
+        },
+        ghostMode: true,
+      ))),
+      _arioAction('رکورد پاسخ‌های متوالی', 'بهترین رکورد تو: ${faNum(arioBestStreak)} پاسخ درست', LucideIcons.zap, () => _open(_arioReport())),
     ],
+  )));
+
+  Widget _arioTopic(String title, String description) => _arioPageShell(title, Center(child: Padding(
+    padding: const EdgeInsets.all(28),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(LucideIcons.users, size: 34, color: pal.sel),
+      const SizedBox(height: 12),
+      Text(title, style: TextStyle(color: pal.ink, fontSize: 18, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 8),
+      Text(description, textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.8)),
+      const SizedBox(height: 10),
+      Text('گروه‌های گفت‌وگوی آنلاین هنوز به سرویس اجتماعی متصل نشده‌اند؛ محتوای این بخش فعلاً محلی است.', textAlign: TextAlign.center, style: TextStyle(color: pal.faint, fontSize: 11.5, height: 1.7)),
+    ]),
   )));
 
   Widget _arioLab(Dictionary d) => _arioPageShell('آزمایشگاه', edgeFade(child: ListView(
@@ -5247,6 +5601,9 @@ class _ShellState extends State<Shell> {
         _statCard('واژه‌های آموخته‌شده', arioKnownWords.length),
         _statCard('درصد پیشرفت', completed),
         _statCard('واژه‌های پایگاه آموزشی', words),
+        _statCard('رکورد پاسخ درست متوالی', arioBestStreak),
+        _arioAction('نمایش ویترین نمایه', 'دستاوردها و آمار یادگیری', LucideIcons.award, () => _open(_arioReport())),
+        _arioAction('تنظیمات آریو', 'پوسته و اندازهٔ نوشته‌ها', LucideIcons.settings, () => _open(_arioSettings())),
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(42))),
