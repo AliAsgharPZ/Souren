@@ -1821,23 +1821,31 @@ class _ArioSpeedChallengePageState extends State<ArioSpeedChallengePage> {
               ]),
               const SizedBox(height: 12),
               if (!_running && !_finished) ...[
-                const Spacer(),
-                Icon(isGhost ? LucideIcons.target : isDailyBoss ? LucideIcons.award : LucideIcons.zap, color: pal.sel, size: 42),
-                const SizedBox(height: 8),
-                Text('۳۰ ثانیه؛ تا می‌توانی درست پاسخ بده', textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text(isGhost
-                    ? 'این چالش انفرادی است و نتیجهٔ هر پرسش با همان بخش از بهترین اجرای قبلی خودت مقایسه می‌شود.'
-                    : isDailyBoss
-                        ? 'در ۳۰ ثانیه امتیاز بگیر و بهترین نتیجهٔ روز و رکورد شخصی خودت را ثبت کن.'
-                        : 'هر پاسخ درست امتیاز می‌دهد؛ پاسخ‌های درست پیاپی رکوردت را می‌سازند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.8, fontSize: 12.5)),
-                const SizedBox(height: 8),
-                Text('بهترین زنجیره: ${faNum(_bestStreak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
-                if (isDailyBoss) Text('بهترین امتیاز امروز: ${faNum(widget.initialDailyBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
-                if (isGhost) Text('رکورد قبلی خودت: ${faNum(previousGhostBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
-                const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: FilledButton(onPressed: widget.entries.isEmpty ? null : _start, child: Text(isGhost ? 'شروع چالش شبح' : isDailyBoss ? 'شروع Daily Boss' : 'شروع چالش'))),
-                const Spacer(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 8),
+                        Icon(isGhost ? LucideIcons.target : isDailyBoss ? LucideIcons.award : LucideIcons.zap, color: pal.sel, size: 42),
+                        const SizedBox(height: 8),
+                        Text('۳۰ ثانیه؛ تا می‌توانی درست پاسخ بده', textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        Text(isGhost
+                            ? 'این چالش انفرادی است و نتیجهٔ هر پرسش با همان بخش از بهترین اجرای قبلی خودت مقایسه می‌شود.'
+                            : isDailyBoss
+                                ? 'در ۳۰ ثانیه امتیاز بگیر و بهترین نتیجهٔ روز و رکورد شخصی خودت را ثبت کن.'
+                                : 'هر پاسخ درست امتیاز می‌دهد؛ پاسخ‌های درست پیاپی رکوردت را می‌سازند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.8, fontSize: 12.5)),
+                        const SizedBox(height: 8),
+                        Text('بهترین زنجیره: ${faNum(_bestStreak)}', style: TextStyle(color: pal.sel, fontWeight: FontWeight.w700)),
+                        if (isDailyBoss) Text('بهترین امتیاز امروز: ${faNum(widget.initialDailyBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+                        if (isGhost) Text('رکورد قبلی خودت: ${faNum(previousGhostBest)}', style: TextStyle(color: pal.muted, fontSize: 12)),
+                        const SizedBox(height: 12),
+                        SizedBox(width: double.infinity, child: FilledButton(onPressed: widget.entries.isEmpty ? null : _start, child: Text(isGhost ? 'شروع چالش شبح' : isDailyBoss ? 'شروع Daily Boss' : 'شروع چالش'))),
+                      ],
+                    ),
+                  ),
+                ),
               ] else if (_finished) ...[
                 const Spacer(),
                 Icon(LucideIcons.award, color: pal.sel, size: 48),
