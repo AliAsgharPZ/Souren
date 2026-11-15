@@ -1827,7 +1827,7 @@ class _ArioSpeedChallengePageState extends State<ArioSpeedChallengePage> {
                 Text('۳۰ ثانیه؛ تا می‌توانی درست پاسخ بده', textAlign: TextAlign.center, style: TextStyle(color: pal.ink, fontSize: 19, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 Text(isGhost
-                    ? 'در این چالش فقط با بهترین اجرای قبلی خودت مقایسه می‌شوی. هیچ رتبه‌بندی، حساب کاربری یا رقابت آنلاین وجود ندارد.'
+                    ? 'این چالش انفرادی است و نتیجهٔ هر پرسش با همان بخش از بهترین اجرای قبلی خودت مقایسه می‌شود.'
                     : isDailyBoss
                         ? 'در ۳۰ ثانیه امتیاز بگیر و بهترین نتیجهٔ روز و رکورد شخصی خودت را ثبت کن.'
                         : 'هر پاسخ درست امتیاز می‌دهد؛ پاسخ‌های درست پیاپی رکوردت را می‌سازند.', textAlign: TextAlign.center, style: TextStyle(color: pal.muted, height: 1.8, fontSize: 12.5)),
@@ -5496,15 +5496,7 @@ class _ShellState extends State<Shell> {
         ],
       )),
       hideHeaderOnScroll: false,
-      headerAction: () => _open(ArioSpeedChallengePage(
-        entries: words,
-        initialBestStreak: arioBestStreak,
-        onBestStreak: (value) {
-          if (value <= arioBestStreak) return;
-          setState(() => arioBestStreak = value);
-          _saveArioProgress();
-        },
-      )),
+      headerAction: () => _openArioDailyBoss(words),
     );
   }
 

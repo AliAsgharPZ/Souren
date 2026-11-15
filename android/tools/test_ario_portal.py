@@ -38,7 +38,7 @@ class ArioPortalNavigationTests(unittest.TestCase):
         self.assertIn("ادامهٔ یادگیری", home)
         self.assertIn("مأموریت روزانه", home)
         self.assertIn("تمرین امروز", home)
-        self.assertIn("headerAction: () => _open(ArioSpeedChallengePage(", home)
+        self.assertIn("headerAction: () => _openArioDailyBoss(words)", home)
 
     def test_workshop_contains_independent_practice_and_review(self):
         start = SOURCE.index("Widget _arioWorkshop(Dictionary d)")

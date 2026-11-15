@@ -80,7 +80,7 @@ void main() {
 
     expect(find.text('چالش شبح'), findsOneWidget);
     expect(find.text('رکورد قبلی خودت: ۳'), findsOneWidget);
-    expect(find.textContaining('هیچ رتبه‌بندی، حساب کاربری یا رقابت آنلاین وجود ندارد.'), findsOneWidget);
+    expect(find.textContaining('این چالش انفرادی است و نتیجهٔ هر پرسش با همان بخش از بهترین اجرای قبلی خودت مقایسه می‌شود.'), findsOneWidget);
     await tester.tap(find.text('شروع چالش شبح'));
     await tester.pump();
     expect(find.text('رکورد قبلی در این پرسش: ۱'), findsOneWidget);
