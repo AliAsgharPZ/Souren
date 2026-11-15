@@ -87,8 +87,10 @@ void main() {
 
     await tester.tap(find.text('کتاب'));
     await tester.pump();
+    await tester.ensureVisible(find.text('سؤال بعدی'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('سؤال بعدی'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('رکورد قبلی در این پرسش: ۲'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 30));
