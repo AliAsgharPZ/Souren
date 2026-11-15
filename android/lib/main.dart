@@ -5550,7 +5550,7 @@ class _ShellState extends State<Shell> {
   Future<void> _completeArioWritingLesson(String lessonId, Set<String> reviewed, Set<String> missed) async {
     setState(() {
       arioCompletedWritingLessons.add(lessonId);
-      final due = DateTime.now().add(const Duration(minutes: 10)).millisecondsSinceEpoch;
+      final due = DateTime.now().millisecondsSinceEpoch;
       for (final id in reviewed) {
         if (missed.contains(id)) {
           arioWritingReviewDue[id] = due;

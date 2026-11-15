@@ -49,7 +49,18 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
     ));
     if (result == null || !mounted) return;
     await widget.onLessonCompleted(lesson.id, result.reviewedExerciseIds, result.missedExerciseIds);
-    if (mounted) setState(() => _completed.add(lesson.id));
+    if (!mounted) return;
+    setState(() {
+      _completed.add(lesson.id);
+      final due = DateTime.now().millisecondsSinceEpoch;
+      for (final id in result.reviewedExerciseIds) {
+        if (result.missedExerciseIds.contains(id)) {
+          _reviewDue[id] = due;
+        } else {
+          _reviewDue.remove(id);
+        }
+      }
+    });
   }
 
   Future<void> _openReview() async {
@@ -97,7 +108,7 @@ class _ArioWritingPageState extends State<ArioWritingPage> {
         Card(color: widget.cardColor, elevation: 0, child: ListTile(
           leading: Icon(Icons.history_rounded, color: widget.selectedColor),
           title: Text('مرور پاسخ‌های دشوار', style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w700)),
-          subtitle: Text(queued == 0 ? 'پاسخ نادرستی در صف مرور نیست.' : '${queued} تمرین برای مرور ذخیره شده است.', style: TextStyle(color: widget.mutedColor)),
+          subtitle: Text(queued == 0 ? 'پاسخ نادرستی در صف مرور نیست.' : '$queued تمرین برای مرور ذخیره شده است.', style: TextStyle(color: widget.mutedColor)),
           trailing: Icon(Icons.chevron_left, color: widget.mutedColor), onTap: queued == 0 ? null : _openReview,
         )),
         const SizedBox(height: 14),

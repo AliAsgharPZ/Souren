@@ -11,7 +11,7 @@ void main() {
       id: 'spelling-demo',
       title: 'املای درست',
       summary: 'آموزش نمونه برای آزمون جریان درس',
-      sections: const [
+      sections: [
         ArioWritingSectionPlan(
           id: 'learn',
           title: 'آموزش',
@@ -76,7 +76,7 @@ void main() {
             onPressed: () async {
               result = await Navigator.of(context).push<ArioWritingLessonResult>(
                 MaterialPageRoute(
-                  builder: (_) => ArioWritingLessonPage(
+                  builder: (_) => const ArioWritingLessonPage(
                     courseTitle: 'املای درست',
                     unitTitle: 'نویسه‌های هم‌آوا',
                     lesson: lesson,
