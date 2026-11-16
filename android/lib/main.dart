@@ -2332,6 +2332,7 @@ class _ShellState extends State<Shell> {
     final ario = await SharedFiles.readJson('ario_learning.json');
     final savedGame = ArioGamificationState.fromJson(ario?['gamification']);
     final savedLab = ArioLabState.fromJson(ario?['lab']);
+    if (!mounted) return;
     setState(() {
       dict = d;
       arioGame = savedGame;
@@ -2402,7 +2403,9 @@ class _ShellState extends State<Shell> {
     });
     if (!widget.initialArioMode) _syncDictionary(d);
     await _refreshWidgetSnapshot(d);
+    if (!mounted) return;
     final initialWidgetAction = await SharedFiles.consumeWidgetAction();
+    if (!mounted) return;
     if (initialWidgetAction != null) _handleWidgetAction(initialWidgetAction);
     final pendingWidgetAction = _pendingWidgetAction;
     _pendingWidgetAction = null;
@@ -2418,6 +2421,7 @@ class _ShellState extends State<Shell> {
     final updated = await DictionarySync.syncWeekly(current);
     if (updated && mounted) {
       final refreshed = await Dictionary.load();
+      if (!mounted) return;
       setState(() => dict = refreshed);
       await _refreshWidgetSnapshot(refreshed);
     }
