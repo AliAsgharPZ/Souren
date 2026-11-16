@@ -63,8 +63,9 @@ void main() {
 
     test('derives daily goal, streak, weekly report and active offline event', () {
       final game = ArioGamificationState();
-      game.recordActivity(date, lessons: 1, answers: 5, correctAnswers: 4);
-      game.recordActivity(date.subtract(const Duration(days: 1)), answers: 2, correctAnswers: 2);
+      final streakDate = DateTime(2026, 11, 17, 12);
+      game.recordActivity(streakDate.subtract(const Duration(days: 1)), answers: 2, correctAnswers: 2);
+      game.recordActivity(streakDate, lessons: 1, answers: 5, correctAnswers: 4);
       game.refreshAchievements(knownWords: 50, completedLessons: 1);
       final snapshot = SourenWidgetSnapshot.build(
         words: const [(arabic: 'نور', meaning: 'روشنایی')],
@@ -77,7 +78,7 @@ void main() {
         game: game,
         lab: ArioLabState(),
         theme: 'dark',
-        now: date,
+        now: streakDate,
       ).toJson();
 
       expect(snapshot['dailyGoalProgress'], 2);
