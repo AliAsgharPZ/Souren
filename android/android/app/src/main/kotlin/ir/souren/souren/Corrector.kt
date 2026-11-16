@@ -216,8 +216,8 @@ object Corrector {
         return true to before.substring(previousStart, separator)
     }
 
-    private val leadingMarks = "«\\"'(‘“"
-    private val trailingMarks = "»\\")’”،.؟!؛:…"
+    private val leadingMarks = "«\"'(‘“"
+    private val trailingMarks = "»\")’”،.؟!؛:…"
 
     private fun splitMarks(word: String): Triple<String, String, String> {
         var lead = ""
