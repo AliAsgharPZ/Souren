@@ -88,7 +88,7 @@ internal object SourenWidgetContent {
             "records" -> SourenWidgetCopy(
                 "رکوردها و دستاوردها",
                 "استریک: ${n(values.number("currentStreak"))} روز · بهترین: ${n(values.number("bestStreak"))}",
-                "غول روزانه ${n(values.number("bestDailyBossScore"))} · شبح ${n(values.number("bestGhostScore"))}",
+                "زنجیرهٔ پاسخ ${n(values.number("bestAnswerStreak"))} · غول روزانه ${n(values.number("bestDailyBossScore"))} · شبح ${n(values.number("bestGhostScore"))}",
                 "${n(values.number("achievementCount"))} دستاورد بازشده",
                 action = "records",
             )
