@@ -14,6 +14,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedTextRequest
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
@@ -174,6 +175,8 @@ class SourenIME : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        // The dataset may have changed while the IME window was hidden.
+        KbData.load(this)
         KbData.readSettings(this)
         KbData.readLearned(this)
         applyKeyboardMode()
@@ -1047,10 +1050,29 @@ class SourenIME : InputMethodService() {
 
     private fun moveCursor(delta: Int) {
         val ic = currentInputConnection ?: return
-        val before = ic.getTextBeforeCursor(500, 0)?.length ?: return
-        val after = ic.getTextAfterCursor(500, 0)?.length ?: 0
-        val position = (before + delta).coerceIn(0, before + after)
-        ic.setSelection(position, position)
+        val extracted = try {
+            ic.getExtractedText(ExtractedTextRequest(), 0)
+        } catch (_: Exception) {
+            null
+        }
+        if (extracted?.text != null) {
+            val target = CursorMath.newSelection(
+                extracted.startOffset,
+                extracted.selectionStart,
+                extracted.selectionEnd,
+                extracted.text.length,
+                delta
+            )
+            ic.setSelection(target, target)
+            return
+        }
+        // Fallback for editors that do not expose ExtractedText.
+        val code = if (delta < 0) android.view.KeyEvent.KEYCODE_DPAD_LEFT
+            else android.view.KeyEvent.KEYCODE_DPAD_RIGHT
+        repeat(kotlin.math.abs(delta)) {
+            ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, code))
+            ic.sendKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, code))
+        }
     }
 
     private fun openApp() {
