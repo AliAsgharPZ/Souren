@@ -17,6 +17,57 @@ class SourenWidgetContentTest {
         assertEquals("word_day", copy.action)
     }
 
+    @Test fun wordDayIndexIsStableForLocalCalendarDate() {
+        val size = 7
+        val expected = Math.floorMod(2026 * 372 + 11 * 31 + 16, size)
+        assertEquals(expected, SourenWidgetContent.wordDayIndex(size, 2026, 11, 16))
+        assertEquals(-1, SourenWidgetContent.wordDayIndex(0, 2026, 11, 16))
+    }
+
+    @Test fun wordDayWidgetSelectsFromTheCachedLocalDictionary() {
+        val calendar = java.util.Calendar.getInstance()
+        val index = SourenWidgetContent.wordDayIndex(
+            2,
+            calendar.get(java.util.Calendar.YEAR),
+            calendar.get(java.util.Calendar.MONTH) + 1,
+            calendar.get(java.util.Calendar.DAY_OF_MONTH)
+        )
+        val words = listOf(
+            mapOf("arabic" to "كتاب", "meaning" to "کتاب"),
+            mapOf("arabic" to "قلم", "meaning" to "قلم")
+        )
+        val copy = SourenWidgetContent.build("word_day", mapOf("wordCatalog" to words))
+        assertEquals(words[index]["arabic"], copy.body)
+        assertEquals(words[index]["meaning"], copy.detail)
+    }
+
+    @Test fun dailyAndWeeklyWidgetsResetWhenTheSavedPeriodIsOld() {
+        val goal = SourenWidgetContent.build(
+            "daily_goal",
+            mapOf(
+                "snapshotDate" to "1900-01-01",
+                "dailyGoalProgress" to 3,
+                "dailyGoalTarget" to 3,
+                "dailyGoalNext" to "همه کامل شدند"
+            )
+        )
+        assertEquals("۰ از ۳ مأموریت", goal.body)
+        assertEquals("یک قدم دیگر بردار", goal.footer)
+
+        val weekly = SourenWidgetContent.build(
+            "weekly_report",
+            mapOf(
+                "snapshotWeekStart" to "1900-01-01",
+                "weeklyActiveDays" to 6,
+                "weeklyLessons" to 9,
+                "weeklyAnswers" to 80,
+                "weeklyCorrectAnswers" to 70
+            )
+        )
+        assertEquals("۰ روز فعال · ۰ درس", weekly.body)
+        assertEquals("۰ پاسخ · ۰ پاسخ درست", weekly.detail)
+    }
+
     @Test fun lessonWidgetShowsProgressAndPersianDigits() {
         val copy = SourenWidgetContent.build(
             "continue_lesson",
