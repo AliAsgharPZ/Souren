@@ -6,4 +6,10 @@
     <color name="widget_muted">#756F66</color>
     <color name="widget_accent">#6D58A6</color>
     <color name="widget_track">#E2DCD2</color>
+    <color name="widget_surface_dark">#211F27</color>
+    <color name="widget_title_dark">#C7B9E7</color>
+    <color name="widget_text_dark">#F3F0F7</color>
+    <color name="widget_muted_dark">#B4ADBF</color>
+    <color name="widget_accent_dark">#C1A9F2</color>
+    <color name="widget_track_dark">#494451</color>
 </resources>
