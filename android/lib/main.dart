@@ -96,6 +96,52 @@ PageRoute<T> _softRoute<T>(Widget page) =>
 /// keeps a whisper of its corners.
 double capR(double height) => height * 0.45;
 
+/// Advance a saved-content filter using physical swipe velocity in RTL layout.
+/// A leftward swipe moves forward; a rightward swipe moves backward.
+int nextRtlSwipeFilterIndex(
+  int current,
+  double velocity,
+  int itemCount, {
+  double minimumVelocity = 180,
+}) {
+  if (itemCount <= 0 || !velocity.isFinite || velocity.abs() < minimumVelocity) {
+    return current;
+  }
+  final index = ((current % itemCount) + itemCount) % itemCount;
+  final delta = velocity < 0 ? 1 : -1;
+  return (index + delta + itemCount) % itemCount;
+}
+
+class _SwipePageTransition extends StatelessWidget {
+  final Animation<double> animation;
+  final ValueNotifier<int> direction;
+  final Widget child;
+
+  const _SwipePageTransition({
+    required this.animation,
+    required this.direction,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: Listenable.merge([animation, direction]),
+    child: child,
+    builder: (context, child) {
+      final progress = animation.value.clamp(0.0, 1.0).toDouble();
+      final exiting = animation.status == AnimationStatus.reverse;
+      final sign = direction.value * (exiting ? -1 : 1);
+      return Opacity(
+        opacity: progress,
+        child: FractionalTranslation(
+          translation: Offset(sign * 0.06 * (1 - progress), 0),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
 /// Bottom clearance for tab-page scrollables: the floating nav bar is
 /// ~83px tall with a 14px bottom margin, so the last list item must end
 /// ~116px above the viewport floor to never hide behind the bar.
@@ -2205,6 +2251,7 @@ class _ShellState extends State<Shell> {
   int _metricIndex = 0;
   int _likedFilter = 0; // words, proverbs, poems, books, roots
   int _favoritesFilter = 0; // words, proverbs, poems, books, roots
+  final ValueNotifier<int> _savedFilterDirection = ValueNotifier<int>(1);
 
   // Search focus state (home): the word column expands and the back control appears.
   final _searchCtl = TextEditingController();
@@ -2269,6 +2316,7 @@ class _ShellState extends State<Shell> {
   void dispose() {
     _searchCtl.dispose();
     _searchFocus.dispose();
+    _savedFilterDirection.dispose();
     super.dispose();
   }
 
@@ -3954,6 +4002,47 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  Widget _savedFilterContent(int index, Widget content) => AnimatedSwitcher(
+    duration: Motion.base,
+    switchInCurve: Motion.curve,
+    switchOutCurve: Curves.easeInCubic,
+    transitionBuilder: (child, animation) => _SwipePageTransition(
+      animation: animation,
+      direction: _savedFilterDirection,
+      child: child,
+    ),
+    child: KeyedSubtree(key: ValueKey<int>(index), child: content),
+  );
+
+  void _changeSavedFilter({required bool likedPage, required int value}) {
+    final current = likedPage ? _likedFilter : _favoritesFilter;
+    if (value == current) return;
+    final forward = (value - current + 5) % 5;
+    final backward = (current - value + 5) % 5;
+    _savedFilterDirection.value = forward <= backward ? 1 : -1;
+    setState(() {
+      if (likedPage) {
+        _likedFilter = value;
+      } else {
+        _favoritesFilter = value;
+      }
+    });
+  }
+
+  void _swipeSavedFilter({required bool likedPage, required double velocity}) {
+    final current = likedPage ? _likedFilter : _favoritesFilter;
+    final next = nextRtlSwipeFilterIndex(current, velocity, 5);
+    if (next == current) return;
+    _savedFilterDirection.value = velocity < 0 ? 1 : -1;
+    setState(() {
+      if (likedPage) {
+        _likedFilter = next;
+      } else {
+        _favoritesFilter = next;
+      }
+    });
+  }
+
   // ---------- پسندیده‌ها ----------
   Widget _likedPage(Dictionary d) {
     final mine = d.entries.where((e) => liked.contains(e.ar)).toList();
@@ -3980,9 +4069,7 @@ class _ShellState extends State<Shell> {
       'پسندیده‌ها',
       GestureDetector(
         onHorizontalDragEnd: (details) {
-          final velocity = details.primaryVelocity ?? 0;
-          if (velocity.abs() < 180) return;
-          setState(() => _likedFilter = (_likedFilter + (velocity < 0 ? 1 : 4)) % 5);
+          _swipeSavedFilter(likedPage: true, velocity: details.primaryVelocity ?? 0);
         },
         child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -3990,35 +4077,38 @@ class _ShellState extends State<Shell> {
           children: [
             _savedFilterBar(
               selected: _likedFilter,
-              onChanged: (value) => setState(() => _likedFilter = value),
+              onChanged: (value) => _changeSavedFilter(likedPage: true, value: value),
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: isEmpty
-                  ? Center(
-                      child: Text(
-                        'موردی در این دسته پسندیده نشده است.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: pal.muted, height: 1.9),
+              child: _savedFilterContent(
+                _likedFilter,
+                isEmpty
+                    ? Center(
+                        child: Text(
+                          'موردی در این دسته پسندیده نشده است.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: pal.muted, height: 1.9),
+                        ),
+                      )
+                    : edgeFade(
+                        child: ListView(
+                          padding: const EdgeInsets.only(bottom: kNavClearance),
+                          children: [
+                            if (wordsVisible)
+                              for (final e in mine) _pairRow(e),
+                            if (rootsVisible)
+                              for (final row in savedRoots) _savedRootRow(row),
+                            if (proverbsVisible)
+                              for (final p in savedProverbs) _savedProverbRow(p),
+                            if (poemsVisible)
+                              for (final poem in savedPoems) _savedPoemRow(poem, d),
+                            if (booksVisible)
+                              for (final book in savedBooks) _savedBookRow(book, d),
+                          ],
+                        ),
                       ),
-                    )
-                  : edgeFade(
-                      child: ListView(
-                        padding: const EdgeInsets.only(bottom: kNavClearance),
-                        children: [
-                          if (wordsVisible)
-                            for (final e in mine) _pairRow(e),
-                          if (rootsVisible)
-                            for (final row in savedRoots) _savedRootRow(row),
-                          if (proverbsVisible)
-                            for (final p in savedProverbs) _savedProverbRow(p),
-                          if (poemsVisible)
-                            for (final poem in savedPoems) _savedPoemRow(poem, d),
-                          if (booksVisible)
-                            for (final book in savedBooks) _savedBookRow(book, d),
-                        ],
-                      ),
-                    ),
+              ),
             ),
           ],
         ),
@@ -4052,9 +4142,7 @@ class _ShellState extends State<Shell> {
       'نشان‌شده',
       GestureDetector(
         onHorizontalDragEnd: (details) {
-          final velocity = details.primaryVelocity ?? 0;
-          if (velocity.abs() < 180) return;
-          setState(() => _favoritesFilter = (_favoritesFilter + (velocity < 0 ? 1 : 4)) % 5);
+          _swipeSavedFilter(likedPage: false, velocity: details.primaryVelocity ?? 0);
         },
         child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -4062,35 +4150,38 @@ class _ShellState extends State<Shell> {
           children: [
             _savedFilterBar(
               selected: _favoritesFilter,
-              onChanged: (value) => setState(() => _favoritesFilter = value),
+              onChanged: (value) => _changeSavedFilter(likedPage: false, value: value),
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: isEmpty
-                  ? Center(
-                      child: Text(
-                        'موردی در این دسته نشان نشده است.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: pal.muted, height: 1.9),
+              child: _savedFilterContent(
+                _favoritesFilter,
+                isEmpty
+                    ? Center(
+                        child: Text(
+                          'موردی در این دسته نشان نشده است.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: pal.muted, height: 1.9),
+                        ),
+                      )
+                    : edgeFade(
+                        child: ListView(
+                          padding: const EdgeInsets.only(bottom: kNavClearance),
+                          children: [
+                            if (wordsVisible)
+                              for (final e in favs) _pairRow(e),
+                            if (rootsVisible)
+                              for (final row in savedRoots) _savedRootRow(row),
+                            if (proverbsVisible)
+                              for (final p in savedProverbs) _savedProverbRow(p),
+                            if (poemsVisible)
+                              for (final poem in savedPoems) _savedPoemRow(poem, d),
+                            if (booksVisible)
+                              for (final book in savedBooks) _savedBookRow(book, d),
+                          ],
+                        ),
                       ),
-                    )
-                  : edgeFade(
-                      child: ListView(
-                        padding: const EdgeInsets.only(bottom: kNavClearance),
-                        children: [
-                          if (wordsVisible)
-                            for (final e in favs) _pairRow(e),
-                          if (rootsVisible)
-                            for (final row in savedRoots) _savedRootRow(row),
-                          if (proverbsVisible)
-                            for (final p in savedProverbs) _savedProverbRow(p),
-                          if (poemsVisible)
-                            for (final poem in savedPoems) _savedPoemRow(poem, d),
-                          if (booksVisible)
-                            for (final book in savedBooks) _savedBookRow(book, d),
-                        ],
-                      ),
-                    ),
+              ),
             ),
           ],
         ),
