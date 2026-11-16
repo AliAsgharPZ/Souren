@@ -5313,7 +5313,8 @@ class _ShellState extends State<Shell> {
       }
       final data = Map<String, dynamic>.of(check.data!);
       final importedVersion = (data['version'] as num?)?.toInt() ?? 0;
-      data['version'] = max((dict?.version ?? 1) + 1, importedVersion);
+      final nextVersion = (dict?.version ?? 1) + 1;
+      data['version'] = importedVersion > nextVersion ? importedVersion : nextVersion;
       await SharedFiles.writeJson('dataset_updated.json', data);
       await _load();
       final freshArs = <String>[];
