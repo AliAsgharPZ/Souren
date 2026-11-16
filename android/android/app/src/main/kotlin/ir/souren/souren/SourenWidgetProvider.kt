@@ -3,6 +3,7 @@ package ir.souren.souren
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.res.Configuration
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -73,7 +74,11 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
             widgetId: Int,
             kind: String,
         ) {
-            val copy = SourenWidgetContent.build(kind, readSnapshot(context))
+            val snapshot = readSnapshot(context)
+            val copy = SourenWidgetContent.build(kind, snapshot)
+            val systemNight = context.resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            val dark = snapshot["theme"]?.toString() == "dark" || systemNight
             val options = manager.getAppWidgetOptions(widgetId)
             val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110)
             val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 80)
@@ -84,11 +89,11 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_body, copy.body)
             views.setTextViewText(R.id.widget_detail, copy.detail)
             views.setTextViewText(R.id.widget_footer, copy.footer)
-            views.setTextColor(R.id.widget_title, context.getColor(R.color.widget_title))
-            views.setTextColor(R.id.widget_body, context.getColor(R.color.widget_text))
-            views.setTextColor(R.id.widget_detail, context.getColor(R.color.widget_muted))
-            views.setTextColor(R.id.widget_footer, context.getColor(R.color.widget_accent))
-            views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.souren_widget_background)
+            views.setTextColor(R.id.widget_title, context.resources.getColor(if (dark) R.color.widget_title_dark else R.color.widget_title))
+            views.setTextColor(R.id.widget_body, context.resources.getColor(if (dark) R.color.widget_text_dark else R.color.widget_text))
+            views.setTextColor(R.id.widget_detail, context.resources.getColor(if (dark) R.color.widget_muted_dark else R.color.widget_muted))
+            views.setTextColor(R.id.widget_footer, context.resources.getColor(if (dark) R.color.widget_accent_dark else R.color.widget_accent))
+            views.setInt(R.id.widget_root, "setBackgroundResource", if (dark) R.drawable.souren_widget_background_dark else R.drawable.souren_widget_background)
             views.setViewVisibility(
                 R.id.widget_detail,
                 if (expanded) View.VISIBLE else View.GONE,
