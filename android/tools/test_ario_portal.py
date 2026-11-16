@@ -44,7 +44,7 @@ class ArioPortalNavigationTests(unittest.TestCase):
         start = SOURCE.index("Widget _arioWorkshop(Dictionary d)")
         end = SOURCE.index("Widget _arioPractice(", start)
         workshop = SOURCE[start:end]
-        self.assertIn("تمرین آزاد واژه‌ها", workshop)
+        self.assertIn("تمرین آزاد واژگان", workshop)
         self.assertIn("مرور آموخته‌ها", workshop)
         for feature in (
             "مرور هوشمند",
