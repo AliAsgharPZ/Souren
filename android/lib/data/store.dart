@@ -12,6 +12,32 @@ class SharedFiles {
   static String? _dir;
   static const _channel = MethodChannel('souren/files');
   static const _arioChannel = MethodChannel('souren/ario');
+  static const _widgetsChannel = MethodChannel('souren/widgets');
+
+  static Future<String?> consumeWidgetAction() async {
+    try {
+      return await _arioChannel.invokeMethod<String>('consumeWidgetAction');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static void setWidgetActionHandler(ValueChanged<String> onAction) {
+    _arioChannel.setMethodCallHandler((call) async {
+      if (call.method == 'openWidgetAction' && call.arguments is String) {
+        onAction(call.arguments as String);
+      }
+    });
+  }
+
+  static Future<void> writeWidgetSnapshot(Map<String, dynamic> snapshot) async {
+    await writeJson('souren_widgets.json', snapshot);
+    try {
+      await _widgetsChannel.invokeMethod<bool>('refresh');
+    } catch (_) {
+      // File snapshots remain available; the launcher can refresh on its next update.
+    }
+  }
 
   static Future<bool> consumeArioLaunch() async {
     try {
