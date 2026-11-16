@@ -180,11 +180,10 @@ DatasetCheck validateDatasetMap(Map<String, dynamic>? json) {
   if (entries is! List || entries.isEmpty) {
     return const DatasetCheck(false, error: '«entries» باید فهرستی غیرخالی باشد');
   }
-  if (json.containsKey('version')) {
-    final version = json['version'];
-    if (version is! num || version <= 0 || version % 1 != 0) {
-      return const DatasetCheck(false, error: '«version» باید عدد صحیح مثبت باشد');
-    }
+  final version = json['version'];
+  if (version != null &&
+      (version is! num || version <= 0 || version % 1 != 0)) {
+    return const DatasetCheck(false, error: '«version» باید عدد صحیح مثبت باشد');
   }
 
   final seen = <String>{};
@@ -209,15 +208,15 @@ DatasetCheck validateDatasetMap(Map<String, dynamic>? json) {
     if (!seen.add(arabic.trim())) {
       return DatasetCheck(false, error: 'واژهٔ تکراری: «' + arabic.trim() + '»');
     }
-    if (entry.containsKey('concept') && entry['concept'] is! String) {
+    if (entry['concept'] != null && entry['concept'] is! String) {
       return DatasetCheck(false, error: '«concept» در مدخل «' + arabic.trim() + '» باید رشته باشد');
     }
-    if (entry.containsKey('frequencyMethod') && entry['frequencyMethod'] is! String) {
+    if (entry['frequencyMethod'] != null && entry['frequencyMethod'] is! String) {
       return DatasetCheck(false, error: '«frequencyMethod» باید رشته باشد');
     }
     for (final key in ['level', 'frequencyRankEstimate', 'difficultyScore']) {
-      if (entry.containsKey(key)) {
-        final value = entry[key];
+      final value = entry[key];
+      if (value != null) {
         if (value is! num || value % 1 != 0) {
           return DatasetCheck(false, error: '«' + key + '» در مدخل «' + arabic.trim() + '» باید عدد صحیح باشد');
         }
@@ -564,10 +563,12 @@ class DictionarySync {
             }(),
       ];
       if (entries.isEmpty || _sameAs(entries, current)) return false;
-      await SharedFiles.writeJson('dataset_updated.json', {
+      final candidate = {
         'version': current.version + 1,
         'entries': entries,
-      });
+      };
+      if (!validateDatasetMap(candidate).ok) return false;
+      await SharedFiles.writeJson('dataset_updated.json', candidate);
       return true;
     } catch (_) {
       return false;
