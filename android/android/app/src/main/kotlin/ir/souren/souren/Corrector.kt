@@ -257,7 +257,7 @@ object Corrector {
         }
 
         if (singleSpace && previous == "ساعت" && core == "چند") {
-            return (previous.length + 1 + rawLast.length) to ("چه زمانی" + trail)
+            return (previous.length + 1 + rawLast.length) to (lead + "چه زمانی" + trail)
         }
 
         val fix = correctWord(core, dictionary, replaceArabic)
