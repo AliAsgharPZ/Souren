@@ -2359,8 +2359,8 @@ class _ShellState extends State<Shell> {
     final pendingWidgetAction = _pendingWidgetAction;
     _pendingWidgetAction = null;
     if (pendingWidgetAction != null) _handleWidgetAction(pendingWidgetAction);
-    // Ario uses only the public account identity API; learning data stays local.
-    _restoreAccount();
+    // Widget launches use only the saved local snapshot and never trigger account/network work.
+    if (initialWidgetAction == null && pendingWidgetAction == null) _restoreAccount();
   }
 
   bool _dictSyncDone = false;
