@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:souren/ario_lab.dart';
 import 'package:souren/data/ario_lab.dart';
@@ -147,7 +147,7 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       home: ArioLabReviewPage(
-        entries: [const Entry('كتاب', ['کتاب'], concept: 'مجموعه‌ای از برگه‌های نوشته‌شده.')],
+        entries: const [Entry('كتاب', ['کتاب'], concept: 'مجموعه‌ای از برگه‌های نوشته‌شده.')],
         reviewState: state,
         onRated: (wordId, rating) async {
           expect(wordId, 'كتاب');

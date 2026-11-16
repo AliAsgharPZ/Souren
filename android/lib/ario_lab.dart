@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'data/ario_lab.dart';
 import 'data/store.dart';
 
@@ -132,7 +132,7 @@ class _ArioLabQuizPageState extends State<ArioLabQuizPage> {
                     ]),
                   ],
                   const SizedBox(height: 16),
-                  Text(poolCount.toString() + ' واژهٔ دارای معنی در دسترس است.', style: TextStyle(color: widget.mutedColor, fontSize: 12)),
+                  Text('${poolCount} واژهٔ دارای معنی در دسترس است.', style: TextStyle(color: widget.mutedColor, fontSize: 12)),
                 ]))
               else if (_finished)
                 _panel(Column(children: [
@@ -140,16 +140,16 @@ class _ArioLabQuizPageState extends State<ArioLabQuizPage> {
                   const SizedBox(height: 12),
                   Text('نتیجهٔ دور', style: TextStyle(color: widget.textColor, fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  Text(_correct.toString() + ' از ' + _questions.length.toString() + ' پاسخ درست', style: TextStyle(color: widget.selectedColor, fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('${_correct} از ${_questions.length} پاسخ درست', style: TextStyle(color: widget.selectedColor, fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
-                  Text('دقت ' + (_correct * 100 / _questions.length).round().toString() + '٪', style: TextStyle(color: widget.mutedColor)),
+                  Text('دقت ${(_correct * 100 / _questions.length).round()}٪', style: TextStyle(color: widget.mutedColor)),
                   const SizedBox(height: 12),
                   Text(widget.mixedChallenge ? 'بهترین درصد چالش ترکیبی در گزارش آزمایشگاه ذخیره می‌شود.' : 'واژه‌هایی که اشتباه پاسخ دادی به صف مرور هوشمند اضافه شدند.', textAlign: TextAlign.center, style: TextStyle(color: widget.mutedColor, height: 1.7)),
                 ]))
               else ...[
                 Row(children: [
-                  Expanded(child: Text('پرسش ' + (_index + 1).toString() + ' از ' + _questions.length.toString(), style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
-                  Text('درست: ' + _correct.toString(), style: TextStyle(color: widget.selectedColor, fontWeight: FontWeight.w800)),
+                  Expanded(child: Text('پرسش ${_index + 1} از ${_questions.length}', style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
+                  Text('درست: $_correct', style: TextStyle(color: widget.selectedColor, fontWeight: FontWeight.w800)),
                 ]),
                 const SizedBox(height: 9),
                 ClipRRect(borderRadius: BorderRadius.circular(20), child: LinearProgressIndicator(value: (_index + (_selected == null ? 0 : 1)) / _questions.length, minHeight: 7, backgroundColor: widget.dividerColor, color: widget.selectedColor)),
@@ -182,7 +182,7 @@ class _ArioLabQuizPageState extends State<ArioLabQuizPage> {
                   ),
                 if (_selected != null) ...[
                   const SizedBox(height: 4),
-                  Text(_selected == _questions[_index].answer ? 'پاسخ درست است.' : 'پاسخ درست: ' + _questions[_index].answer, style: TextStyle(color: _selected == _questions[_index].answer ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w700)),
+                  Text(_selected == _questions[_index].answer ? 'پاسخ درست است.' : 'پاسخ درست: ${_questions[_index].answer}', style: TextStyle(color: _selected == _questions[_index].answer ? widget.selectedColor : widget.accentColor, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
                   SizedBox(width: double.infinity, child: FilledButton(onPressed: _next, style: FilledButton.styleFrom(backgroundColor: widget.selectedColor, foregroundColor: widget.backgroundColor, padding: const EdgeInsets.symmetric(vertical: 14)), child: Text(_index + 1 == _questions.length ? 'دیدن نتیجه' : 'پرسش بعدی'))),
                 ],
@@ -245,7 +245,7 @@ class _ArioLabReviewPageState extends State<ArioLabReviewPage> {
                   const SizedBox(height: 9),
                   Text('برنامهٔ مرور', style: TextStyle(color: widget.textColor, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
-                  Text(nextDue == null ? 'با یادگیری واژه‌ها، کارت‌های مرور در این بخش ساخته می‌شوند.' : 'نوبت بعدی: ' + _formatDue(nextDue), textAlign: TextAlign.center, style: TextStyle(color: widget.mutedColor, height: 1.7)),
+                  Text(nextDue == null ? 'با یادگیری واژه‌ها، کارت‌های مرور در این بخش ساخته می‌شوند.' : 'نوبت بعدی: ${_formatDue(nextDue)}', textAlign: TextAlign.center, style: TextStyle(color: widget.mutedColor, height: 1.7)),
                 ])),
                 const SizedBox(height: 12),
                 Text(_queue.isEmpty ? 'فعلاً واژهٔ سررسیدشده‌ای نداری.' : 'مرور این نوبت تمام شد.', textAlign: TextAlign.center, style: TextStyle(color: widget.textColor, fontSize: 18, fontWeight: FontWeight.w800)),
@@ -253,7 +253,7 @@ class _ArioLabReviewPageState extends State<ArioLabReviewPage> {
                 Text('زمان‌بندی مرور به پاسخ‌های قبلی وابسته است و روی همین دستگاه نگهداری می‌شود.', textAlign: TextAlign.center, style: TextStyle(color: widget.mutedColor, height: 1.8)),
               ] else ...[
                 Row(children: [
-                  Expanded(child: Text('کارت ' + (_index + 1).toString() + ' از ' + _queue.length.toString(), style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
+                  Expanded(child: Text('کارت ${_index + 1} از ${_queue.length}', style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
                   Text('مرور فاصله‌دار', style: TextStyle(color: widget.selectedColor, fontSize: 12, fontWeight: FontWeight.w700)),
                 ]),
                 const SizedBox(height: 9),
@@ -302,9 +302,9 @@ class _ArioLabReviewPageState extends State<ArioLabReviewPage> {
   String _formatDue(DateTime date) {
     final now = DateTime.now();
     if (date.isBefore(now.add(const Duration(days: 1)))) {
-      return 'امروز، ساعت ' + date.hour.toString().padLeft(2, '0') + ':' + date.minute.toString().padLeft(2, '0');
+      return 'امروز، ساعت ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     }
-    return date.year.toString() + '/' + date.month.toString().padLeft(2, '0') + '/' + date.day.toString().padLeft(2, '0');
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
   }
 
   Widget _ratingButton(String label, ArioReviewRating rating, Color color) => OutlinedButton(
@@ -331,7 +331,7 @@ class ArioLabFlashcardsPage extends StatefulWidget {
 }
 
 class _ArioLabFlashcardsPageState extends State<ArioLabFlashcardsPage> {
-  late List<Entry> _order = [...widget.entries]..shuffle(math.Random());
+  late final List<Entry> _order = [...widget.entries]..shuffle(math.Random());
   int _index = 0;
   bool _revealed = false;
   Entry? get _current => _order.isEmpty ? null : _order[_index % _order.length];
@@ -352,7 +352,7 @@ class _ArioLabFlashcardsPageState extends State<ArioLabFlashcardsPage> {
                 Text('واژه‌ای برای نمایش وجود ندارد.', style: TextStyle(color: widget.mutedColor))
               else ...[
                 Row(children: [
-                  Expanded(child: Text('کارت ' + (_index % _order.length + 1).toString() + ' از ' + _order.length.toString(), style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
+                  Expanded(child: Text('کارت ${_index % _order.length + 1} از ${_order.length}', style: TextStyle(color: widget.mutedColor, fontWeight: FontWeight.w700))),
                   TextButton.icon(onPressed: () => setState(() { _order.shuffle(math.Random()); _index = 0; _revealed = false; }), icon: Icon(Icons.shuffle, color: widget.selectedColor, size: 18), label: Text('درهم‌ریزی', style: TextStyle(color: widget.selectedColor))),
                 ]),
                 const SizedBox(height: 10),
@@ -495,11 +495,11 @@ class _ArioLabExplorerPageState extends State<ArioLabExplorerPage> {
             ],
             const SizedBox(height: 14),
             Divider(color: widget.dividerColor),
-            Text('سطح واژه: ' + entry.level.toString() + ' از ۱۰۰', style: TextStyle(color: widget.mutedColor)),
+            Text('سطح واژه: ${entry.level} از ۱۰۰', style: TextStyle(color: widget.mutedColor)),
             const SizedBox(height: 6),
-            Text('شاخص دشواری: ' + entry.difficultyScore.toString(), style: TextStyle(color: widget.mutedColor)),
+            Text('شاخص دشواری: ${entry.difficultyScore}', style: TextStyle(color: widget.mutedColor)),
             const SizedBox(height: 6),
-            Text('رتبهٔ بسامد تخمینی: ' + entry.frequencyRankEstimate.toString(), style: TextStyle(color: widget.mutedColor)),
+            Text('رتبهٔ بسامد تخمینی: ${entry.frequencyRankEstimate}', style: TextStyle(color: widget.mutedColor)),
           ]),
         ),
       ),
