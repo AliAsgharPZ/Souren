@@ -132,7 +132,7 @@ class _ArioLabQuizPageState extends State<ArioLabQuizPage> {
                     ]),
                   ],
                   const SizedBox(height: 16),
-                  Text('${poolCount} واژهٔ دارای معنی در دسترس است.', style: TextStyle(color: widget.mutedColor, fontSize: 12)),
+                  Text('$poolCount واژهٔ دارای معنی در دسترس است.', style: TextStyle(color: widget.mutedColor, fontSize: 12)),
                 ]))
               else if (_finished)
                 _panel(Column(children: [
@@ -140,7 +140,7 @@ class _ArioLabQuizPageState extends State<ArioLabQuizPage> {
                   const SizedBox(height: 12),
                   Text('نتیجهٔ دور', style: TextStyle(color: widget.textColor, fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  Text('${_correct} از ${_questions.length} پاسخ درست', style: TextStyle(color: widget.selectedColor, fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('$_correct از ${_questions.length} پاسخ درست', style: TextStyle(color: widget.selectedColor, fontSize: 18, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
                   Text('دقت ${(_correct * 100 / _questions.length).round()}٪', style: TextStyle(color: widget.mutedColor)),
                   const SizedBox(height: 12),
