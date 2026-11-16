@@ -5436,7 +5436,7 @@ class _ShellState extends State<Shell> {
     }
     switch (action) {
       case 'word_day':
-        _open(_arioPractice(current));
+        _open(_dailyPage(current));
         break;
       case 'flashcard':
         _openArioLabFlashcards(current);
