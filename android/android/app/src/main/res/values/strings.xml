@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description_word_day">واژهٔ روز سورن</string>
+    <string name="widget_description_flashcard">فلش‌کارت آفلاین آریو</string>
+    <string name="widget_description_continue_lesson">ادامهٔ مسیر یادگیری آریو</string>
+    <string name="widget_description_smart_review">مرور هوشمند واژگان</string>
+    <string name="widget_description_daily_goal">هدف‌های روزانهٔ آموزشی</string>
+    <string name="widget_description_quick_challenge">چالش سریع و آفلاین</string>
+    <string name="widget_description_records">رکوردها و دستاوردهای شخصی</string>
+    <string name="widget_description_weekly_report">گزارش هفتگی یادگیری</string>
+    <string name="widget_description_active_event">رویداد آموزشی فعال روی دستگاه</string>
+</resources>
