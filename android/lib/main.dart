@@ -5307,26 +5307,14 @@ class _ShellState extends State<Shell> {
       for (final e in (dict?.entries ?? const <Entry>[])) e.ar,
     };
     try {
-      Map<String, dynamic> data;
-      if (content.trimLeft().startsWith('{')) {
-        data = jsonDecode(content) as Map<String, dynamic>;
-      } else {
-        final entries = <Map<String, dynamic>>[];
-        for (final line in const LineSplitter().convert(content)) {
-          final parts = line.split(RegExp(r'[,;\t]'));
-          if (parts.length >= 2 && parts[0].trim().isNotEmpty) {
-            entries.add({
-              'ar': parts[0].trim(),
-              'fa': parts
-                  .sublist(1)
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList(),
-            });
-          }
-        }
-        data = {'version': (dict?.version ?? 1) + 1, 'entries': entries};
+      final check = validateDatasetText(content);
+      if (!check.ok || check.data == null) {
+        throw FormatException(check.error ?? 'ساختار پایگاه معتبر نیست');
       }
+      final data = Map<String, dynamic>.of(check.data!);
+      final importedVersion = (data['version'] as num?)?.toInt() ?? 0;
+      final nextVersion = (dict?.version ?? 1) + 1;
+      data['version'] = importedVersion > nextVersion ? importedVersion : nextVersion;
       await SharedFiles.writeJson('dataset_updated.json', data);
       await _load();
       final freshArs = <String>[];
