@@ -92,9 +92,26 @@ class SharedFiles {
     return null;
   }
 
+  static final Map<String, Future<void>> _writeTails = <String, Future<void>>{};
+
+  /// Serialize writes per file and replace the destination atomically. This
+  /// prevents rapid taps or overlapping progress saves from exposing a
+  /// partially-written JSON document to the app, keyboard, or widgets.
   static Future<void> writeJson(String name, Object data) async {
-    final f = await file(name);
-    await f.writeAsString(jsonEncode(data));
+    final encoded = jsonEncode(data);
+    final previous = _writeTails[name] ?? Future<void>.value();
+    final pending = previous.catchError((_) {}).then((_) async {
+      final destination = await file(name);
+      final temporary = File('${destination.path}.tmp');
+      await temporary.writeAsString(encoded, flush: true);
+      await temporary.rename(destination.path);
+    });
+    _writeTails[name] = pending;
+    try {
+      await pending;
+    } finally {
+      if (identical(_writeTails[name], pending)) _writeTails.remove(name);
+    }
   }
 
   /// Sensitive account credentials are encrypted by Android Keystore-backed
