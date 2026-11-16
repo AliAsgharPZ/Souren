@@ -6,6 +6,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SourenWidgetContentTest {
+    private fun todayKey(): String =
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+
+    private fun weekStartKey(): String {
+        val calendar = java.util.Calendar.getInstance()
+        val mondayOffset = (calendar.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+        calendar.add(java.util.Calendar.DAY_OF_MONTH, -mondayOffset)
+        return java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(calendar.time)
+    }
+
     @Test fun wordOfDayUsesLocalSnapshotAndPersianNumbers() {
         val copy = SourenWidgetContent.build(
             "word_day",
@@ -88,6 +98,7 @@ class SourenWidgetContentTest {
         val copy = SourenWidgetContent.build(
             "records",
             mapOf(
+                "lastActiveDay" to todayKey(),
                 "currentStreak" to 3,
                 "bestStreak" to 8,
                 "bestAnswerStreak" to 14,
@@ -106,14 +117,25 @@ class SourenWidgetContentTest {
     @Test fun dailyGoalAndActiveEventClampProgress() {
         val goal = SourenWidgetContent.build(
             "daily_goal",
-            mapOf("dailyGoalProgress" to 4, "dailyGoalTarget" to 3, "dailyGoalNext" to "همه کامل شدند")
+            mapOf(
+                "snapshotDate" to todayKey(),
+                "dailyGoalProgress" to 4,
+                "dailyGoalTarget" to 3,
+                "dailyGoalNext" to "همه کامل شدند",
+            )
         )
         assertEquals(100, goal.progress)
         assertEquals("۴ از ۳ مأموریت", goal.body)
 
         val event = SourenWidgetContent.build(
             "active_event",
-            mapOf("eventTitle" to "هفتهٔ دقت", "eventProgress" to 7, "eventTarget" to 5, "eventPercent" to 1.4)
+            mapOf(
+                "snapshotWeekStart" to weekStartKey(),
+                "eventTitle" to "هفتهٔ دقت",
+                "eventProgress" to 7,
+                "eventTarget" to 5,
+                "eventPercent" to 1.4,
+            )
         )
         assertEquals(100, event.progress)
         assertEquals("هفتهٔ دقت", event.body)
