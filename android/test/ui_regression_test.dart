@@ -9,6 +9,18 @@ void main() {
     expect(capR(48), 21.6);
   });
 
+  test('daily word selection is stable and tolerates empty translations', () {
+    final date = DateTime(2026, 11, 16);
+    final entries = [
+      const Entry('كتاب', ['کتاب']),
+      const Entry('قلم', []),
+      const Entry('بيت', ['خانه']),
+    ];
+    expect(dailyWordFor(const [], date), isNull);
+    expect(dailyWordFor([const Entry('قلم', [])], date), isNull);
+    expect(dailyWordFor(entries, date), same(dailyWordFor(entries, date)));
+  });
+
   test('saved filters follow physical swipe direction in RTL', () {
     expect(nextRtlSwipeFilterIndex(0, -240, 5), 1);
     expect(nextRtlSwipeFilterIndex(0, 240, 5), 4);
