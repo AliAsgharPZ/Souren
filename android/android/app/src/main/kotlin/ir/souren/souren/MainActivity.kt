@@ -130,6 +130,17 @@ open class MainActivity : FlutterActivity() {
                 }
             }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/widgets")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "refresh" -> {
+                        SourenWidgetProvider.refreshAll(applicationContext)
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
         arioChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "souren/ario")
         arioChannel?.setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -141,6 +152,11 @@ open class MainActivity : FlutterActivity() {
                         val open = intent?.getBooleanExtra("souren_open_ario", false) == true
                         intent?.removeExtra("souren_open_ario")
                         result.success(open)
+                    }
+                    "consumeWidgetAction" -> {
+                        val action = intent?.getStringExtra("souren_widget_action")
+                        intent?.removeExtra("souren_widget_action")
+                        result.success(action)
                     }
                     "launcherEnabled" -> {
                         result.success(isArioLauncherEnabled())
@@ -210,6 +226,11 @@ open class MainActivity : FlutterActivity() {
         if (intent.getBooleanExtra("souren_open_ario", false)) {
             intent.removeExtra("souren_open_ario")
             arioChannel?.invokeMethod("openArio", null)
+        }
+        val widgetAction = intent.getStringExtra("souren_widget_action")
+        if (!widgetAction.isNullOrBlank()) {
+            intent.removeExtra("souren_widget_action")
+            arioChannel?.invokeMethod("openWidgetAction", widgetAction)
         }
     }
 
