@@ -1058,7 +1058,7 @@ class ShareCardImage extends StatelessWidget {
               decoration: BoxDecoration(color: pal.sel, borderRadius: BorderRadius.circular(capR(52))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Container(width: 48, height: 48, decoration: BoxDecoration(color: pal.bg.withValues(alpha: .16), borderRadius: BorderRadius.circular(capR(48)), border: Border.all(color: pal.bg.withValues(alpha: .35))), child: Icon(card.profileAvatarIcon ?? LucideIcons.user, color: card.profileAvatarColor ?? pal.bg, size: 25)),
+                  Container(width: 48, height: 48, decoration: BoxDecoration(color: card.profileAvatarColor ?? pal.bg.withValues(alpha: .16), borderRadius: BorderRadius.circular(capR(48)), border: Border.all(color: pal.bg.withValues(alpha: .35))), child: Icon(card.profileAvatarIcon ?? LucideIcons.user, color: pal.bg, size: 25)),
                   const Spacer(),
                   Icon(LucideIcons.sparkles, color: pal.bg.withValues(alpha: .8), size: 20),
                 ]),
