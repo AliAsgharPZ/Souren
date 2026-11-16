@@ -17,7 +17,9 @@ import 'share.dart';
 import 'data/store.dart';
 import 'data/ario_curriculum.dart';
 import 'data/ario_gamification.dart';
+import 'data/ario_lab.dart';
 import 'ario_writing.dart';
+import 'ario_lab.dart';
 import 'data/ganjoor_pack.dart';
 import 'data/persian_roots.dart';
 import 'engine/corrector.dart';
@@ -2224,6 +2226,7 @@ class _ShellState extends State<Shell> {
   final Set<String> arioCompletedWritingLessons = {};
   final Map<String, int> arioWritingReviewDue = {};
   ArioGamificationState arioGame = ArioGamificationState();
+  ArioLabState arioLab = ArioLabState();
   int arioLastLesson = 0;
   int arioQuizIndex = 0;
   int arioBestStreak = 0;
@@ -2277,9 +2280,11 @@ class _ShellState extends State<Shell> {
     final learned = widget.initialArioMode ? null : await SharedFiles.readJson('learned.json');
     final ario = await SharedFiles.readJson('ario_learning.json');
     final savedGame = ArioGamificationState.fromJson(ario?['gamification']);
+    final savedLab = ArioLabState.fromJson(ario?['lab']);
     setState(() {
       dict = d;
       arioGame = savedGame;
+      arioLab = savedLab;
       arioCurriculum = curriculum;
       settings = s;
       categories = cats;
@@ -2338,6 +2343,7 @@ class _ShellState extends State<Shell> {
         arioQuizIndex = (ario['quizIndex'] as num?)?.toInt() ?? 0;
         arioBestStreak = (ario['bestStreak'] as num?)?.toInt() ?? 0;
       }
+      arioLab.ensureWords({...arioKnownWords, ...arioReviewWords});
       arioGame.refreshAchievements(
         knownWords: arioKnownWords.length,
         completedLessons: arioCompletedLessons.length + arioCompletedWritingLessons.length,
@@ -5244,6 +5250,7 @@ class _ShellState extends State<Shell> {
     'lastLesson': arioLastLesson,
     'quizIndex': arioQuizIndex,
     'bestStreak': arioBestStreak,
+    'lab': arioLab.toJson(),
     'gamification': arioGame.toJson(),
   });
 
@@ -5663,6 +5670,9 @@ class _ShellState extends State<Shell> {
         setState(() {
           arioReviewWords.removeAll(reviewed.difference(missed));
           arioReviewWords.addAll(missed);
+          arioLab.ensureWords(reviewed);
+          for (final word in reviewed.difference(missed)) { arioLab.rateWord(word, ArioReviewRating.good); }
+          for (final word in missed) { arioLab.rateWord(word, ArioReviewRating.again); }
           arioGame.recordActivity(
             DateTime.now(),
             answers: reviewed.length,
@@ -5679,6 +5689,7 @@ class _ShellState extends State<Shell> {
         setState(() {
           arioCompletedLessons.add(lesson);
           arioKnownWords.addAll(words.map((e) => e.ar));
+          arioLab.ensureWords(words.map((e) => e.ar));
           arioGame.recordActivity(DateTime.now(), lessons: 1);
           arioGame.refreshAchievements(knownWords: arioKnownWords.length, completedLessons: arioCompletedLessons.length);
         });
@@ -5703,6 +5714,9 @@ class _ShellState extends State<Shell> {
         setState(() {
           arioReviewWords.removeAll(reviewed.difference(missed));
           arioReviewWords.addAll(missed);
+          arioLab.ensureWords(reviewed);
+          for (final word in reviewed.difference(missed)) { arioLab.rateWord(word, ArioReviewRating.good); }
+          for (final word in missed) { arioLab.rateWord(word, ArioReviewRating.again); }
           arioGame.recordActivity(
             DateTime.now(),
             answers: reviewed.length,
@@ -5945,20 +5959,164 @@ class _ShellState extends State<Shell> {
     ],
   )));
 
-  Widget _arioWorkshop(Dictionary d) => _arioPageShell('کارگاه', edgeFade(child: ListView(
-    padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
-    children: [
-      Text('تمرین مستقل از مسیر اصلی یادگیری', style: TextStyle(color: pal.muted, fontSize: 13)),
-      const SizedBox(height: 16),
-      _arioAction('تمرین آزاد واژه‌ها', 'سنجش واژگان با پرسش‌های چهارگزینه‌ای', LucideIcons.repeat, () => _open(_arioPractice(d))),
-      _arioAction('گروه‌بندی موضوعی', 'تمرین از میان گروه‌های معنایی واژگان', LucideIcons.folderOpen, () => _open(_arioTopics(d))),
-      _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست مرور', LucideIcons.notebookPen, () => _open(_arioReview(d))),
-      if (arioReviewWords.isNotEmpty)
-        _arioAction('مرور واژه‌های دشوار', '${faNum(arioReviewWords.length)} واژه نیازمند تکرار', LucideIcons.refreshCw, () => _openArioWordReview(d)),
-      _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.notebookPen, _openArioWriting),
-      _arioAction('مسیر کامل درس‌ها', 'درس‌ها و تمرین‌های مرحله‌به‌مرحله', LucideIcons.compass, () => _open(_arioLearning(d))),
-    ],
-  )));
+  Widget _arioWorkshop(Dictionary d) {
+    final reviewIds = {...arioKnownWords, ...arioReviewWords};
+    final dueReviewCount = arioLab.dueWordIds(reviewIds).length;
+    return _arioPageShell('کارگاه', edgeFade(child: ListView(
+      padding: const EdgeInsets.fromLTRB(22, 14, 22, 28 + kNavClearance),
+      children: [
+        Text('آزمایشگاه واژگان؛ مستقل از ترتیب درس‌ها و قابل استفاده به‌صورت آفلاین.', style: TextStyle(color: pal.muted, fontSize: 13, height: 1.7)),
+        const SizedBox(height: 16),
+        _arioAction('تمرین آزاد واژگان', 'تمرین ده‌پرسشی در جهت دلخواه یا حالت دوطرفه', LucideIcons.repeat, () => _openArioLabQuiz(d)),
+        _arioAction('مرور هوشمند', '${faNum(dueReviewCount)} واژه سررسیدشده · زمان‌بندی فاصله‌دار', LucideIcons.clock, () => _openArioLabReview(d)),
+        _arioAction('چالش ترکیبی', '۱۲ پرسش ترکیبی از ترجمه، یادآوری معکوس و تعریف واژه', LucideIcons.shuffle, () => _openArioLabQuiz(d, mixed: true)),
+        const SizedBox(height: 6),
+        Text('ابزارهای آموزشی', style: TextStyle(color: pal.ink, fontSize: 16, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 9),
+        _arioAction('فلش‌کارت واژگان', 'مرور دیداری، نمایش پاسخ و علامت‌گذاری دشواری', LucideIcons.layers, () => _openArioLabFlashcards(d)),
+        _arioAction('کاوشگر واژگان', 'جست‌وجوی عربی، معنی فارسی، تعریف و سطح دشواری', LucideIcons.search, () => _openArioLabExplorer(d)),
+        const SizedBox(height: 6),
+        Text('تمرین‌های تکمیلی', style: TextStyle(color: pal.ink, fontSize: 16, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 9),
+        _arioAction('گروه‌بندی موضوعی', 'تمرین از میان گروه‌های معنایی واژگان', LucideIcons.folderOpen, () => _open(_arioTopics(d))),
+        _arioAction('مرور آموخته‌ها', '${faNum(arioKnownWords.length)} واژه در فهرست آموخته‌ها', LucideIcons.notebookPen, () => _open(_arioReview(d))),
+        if (arioReviewWords.isNotEmpty)
+          _arioAction('مرور واژه‌های دشوار', '${faNum(arioReviewWords.length)} واژه نیازمند تمرین', LucideIcons.refreshCw, () => _openArioWordReview(d)),
+        _arioAction('فارسی‌نویسی و ادبیات', 'تمرین املا، اضافه، نیم‌فاصله و آرایه‌ها', LucideIcons.notebookPen, _openArioWriting),
+        _arioAction('مسیر کامل درس‌ها', 'بازگشت به مسیر مرحله‌به‌مرحلهٔ اصلی', LucideIcons.compass, () => _open(_arioLearning(d))),
+      ],
+    )));
+  }
+
+  List<Entry> _arioLabDictionary(Dictionary d) =>
+      d.entries.where((entry) => entry.hasFa).toList(growable: false);
+
+  List<Entry> _arioLabReviewEntries(Dictionary d) {
+    final ids = {...arioKnownWords, ...arioReviewWords, ...arioLab.cards.keys};
+    return d.entries.where((entry) => entry.hasFa && ids.contains(entry.ar)).toList(growable: false);
+  }
+
+  void _openArioLabQuiz(Dictionary d, {bool mixed = false}) {
+    _open(ArioLabQuizPage(
+      entries: _arioLabDictionary(d),
+      title: mixed ? 'چالش ترکیبی' : 'تمرین آزاد واژگان',
+      mixedChallenge: mixed,
+      onAnswered: _recordArioLabAnswer,
+      onFinished: _completeArioLabQuiz,
+      backgroundColor: pal.bg,
+      cardColor: pal.cardC,
+      pillColor: pal.pillC,
+      textColor: pal.ink,
+      mutedColor: pal.muted,
+      selectedColor: pal.sel,
+      accentColor: pal.accent,
+      dividerColor: pal.div,
+    ));
+  }
+
+  void _recordArioLabAnswer(Entry entry, bool correct) {
+    setState(() {
+      arioLab.ensureWords([entry.ar]);
+      if (correct) {
+        arioKnownWords.add(entry.ar);
+        arioReviewWords.remove(entry.ar);
+        arioLab.rateWord(entry.ar, ArioReviewRating.good);
+      } else {
+        arioReviewWords.add(entry.ar);
+        arioLab.rateWord(entry.ar, ArioReviewRating.again);
+      }
+      arioGame.recordActivity(
+        DateTime.now(),
+        answers: 1,
+        correctAnswers: correct ? 1 : 0,
+      );
+      arioGame.refreshAchievements(
+        knownWords: arioKnownWords.length,
+        completedLessons: arioCompletedLessons.length + arioCompletedWritingLessons.length,
+      );
+    });
+    _saveArioProgress();
+  }
+
+  Future<void> _completeArioLabQuiz(int answers, int correct, bool mixed) async {
+    setState(() => arioLab.recordQuiz(answers: answers, correct: correct, mixed: mixed));
+    await _saveArioProgress();
+  }
+
+  Future<void> _rateArioLabWord(
+    String wordId,
+    ArioReviewRating rating, {
+    bool flashcard = false,
+  }) async {
+    setState(() {
+      arioLab.ensureWords([wordId]);
+      arioLab.rateWord(wordId, rating);
+      if (rating == ArioReviewRating.again || rating == ArioReviewRating.hard) {
+        arioReviewWords.add(wordId);
+      } else {
+        arioReviewWords.remove(wordId);
+        arioKnownWords.add(wordId);
+      }
+      if (flashcard) arioLab.recordFlashcardReview();
+      arioGame.recordActivity(
+        DateTime.now(),
+        answers: 1,
+        correctAnswers: rating == ArioReviewRating.good || rating == ArioReviewRating.easy ? 1 : 0,
+      );
+      arioGame.refreshAchievements(
+        knownWords: arioKnownWords.length,
+        completedLessons: arioCompletedLessons.length + arioCompletedWritingLessons.length,
+      );
+    });
+    await _saveArioProgress();
+  }
+
+  void _openArioLabReview(Dictionary d) {
+    _open(ArioLabReviewPage(
+      entries: _arioLabReviewEntries(d),
+      reviewState: arioLab,
+      onRated: (wordId, rating) => _rateArioLabWord(wordId, rating),
+      backgroundColor: pal.bg,
+      cardColor: pal.cardC,
+      textColor: pal.ink,
+      mutedColor: pal.muted,
+      selectedColor: pal.sel,
+      accentColor: pal.accent,
+      dividerColor: pal.div,
+    ));
+  }
+
+  void _openArioLabFlashcards(Dictionary d) {
+    _open(ArioLabFlashcardsPage(
+      entries: _arioLabDictionary(d),
+      onRated: (wordId, rating) => _rateArioLabWord(wordId, rating, flashcard: true),
+      backgroundColor: pal.bg,
+      cardColor: pal.cardC,
+      textColor: pal.ink,
+      mutedColor: pal.muted,
+      selectedColor: pal.sel,
+      accentColor: pal.accent,
+      dividerColor: pal.div,
+    ));
+  }
+
+  void _recordArioLabExplorerSearch() {
+    setState(() => arioLab.recordExplorerSearch());
+    _saveArioProgress();
+  }
+
+  void _openArioLabExplorer(Dictionary d) {
+    _open(ArioLabExplorerPage(
+      entries: _arioLabDictionary(d),
+      onSearch: _recordArioLabExplorerSearch,
+      backgroundColor: pal.bg,
+      cardColor: pal.cardC,
+      textColor: pal.ink,
+      mutedColor: pal.muted,
+      selectedColor: pal.sel,
+      dividerColor: pal.div,
+    ));
+  }
 
   Widget _arioReport() {
     final week = arioGame.weeklySummary();
@@ -6087,8 +6245,9 @@ class _ShellState extends State<Shell> {
             setState(() {
               arioSelectedAnswer = choice;
               arioAnswerCorrect = correct;
-              if (correct) { arioKnownWords.add(current.ar); arioReviewWords.remove(current.ar); }
-              else { arioReviewWords.add(current.ar); }
+              arioLab.ensureWords([current.ar]);
+              if (correct) { arioKnownWords.add(current.ar); arioReviewWords.remove(current.ar); arioLab.rateWord(current.ar, ArioReviewRating.good); }
+              else { arioReviewWords.add(current.ar); arioLab.rateWord(current.ar, ArioReviewRating.again); }
             });
             _recordArioActivity(
               answers: 1,

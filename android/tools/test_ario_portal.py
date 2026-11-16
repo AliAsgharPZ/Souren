@@ -46,6 +46,25 @@ class ArioPortalNavigationTests(unittest.TestCase):
         workshop = SOURCE[start:end]
         self.assertIn("تمرین آزاد واژه‌ها", workshop)
         self.assertIn("مرور آموخته‌ها", workshop)
+        for feature in (
+            "مرور هوشمند",
+            "چالش ترکیبی",
+            "فلش‌کارت واژگان",
+            "کاوشگر واژگان",
+            "گروه‌بندی موضوعی",
+            "فارسی‌نویسی و ادبیات",
+        ):
+            self.assertIn(feature, workshop)
+
+    def test_laboratory_is_persisted_locally_and_has_no_remote_dependency(self):
+        self.assertIn("import 'data/ario_lab.dart';", SOURCE)
+        self.assertIn("'lab': arioLab.toJson()", SOURCE)
+        self.assertIn("ArioLabState.fromJson(ario?['lab'])", SOURCE)
+        ui = (ROOT / "android" / "lib" / "ario_lab.dart").read_text()
+        model = (ROOT / "android" / "lib" / "data" / "ario_lab.dart").read_text()
+        for forbidden in ("HttpClient", "AccountApi", "Uri.parse", "workers.dev", "http://", "https://"):
+            self.assertNotIn(forbidden, ui)
+            self.assertNotIn(forbidden, model)
 
     def test_no_social_tab_or_social_feature_remains(self):
         for forbidden in ("_arioCommunity", "_arioTopic(", "Ghost Challenge", "اجتماع", "گروه‌های موضوعی", "ghostMode"):
