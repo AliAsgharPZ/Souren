@@ -30,6 +30,10 @@ class SharedFiles {
     });
   }
 
+  static void clearWidgetActionHandler() {
+    _arioChannel.setMethodCallHandler(null);
+  }
+
   static Future<void> writeWidgetSnapshot(Map<String, dynamic> snapshot) async {
     await writeJson('souren_widgets.json', snapshot);
     try {
