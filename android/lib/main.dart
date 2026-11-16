@@ -96,6 +96,14 @@ PageRoute<T> _softRoute<T>(Widget page) =>
 /// keeps a whisper of its corners.
 double capR(double height) => height * 0.45;
 
+/// Return a deterministic daily word, or null when no translated entries exist.
+Entry? dailyWordFor(Iterable<Entry> entries, DateTime date) {
+  final available = entries.where((entry) => entry.hasFa).toList(growable: false);
+  if (available.isEmpty) return null;
+  final index = (date.year * 372 + date.month * 31 + date.day) % available.length;
+  return available[index];
+}
+
 /// Advance a saved-content filter using physical swipe velocity in RTL layout.
 /// A leftward swipe moves forward; a rightward swipe moves backward.
 int nextRtlSwipeFilterIndex(
@@ -4590,10 +4598,20 @@ class _ShellState extends State<Shell> {
 
   // ---------- واژهٔ روز ----------
   Widget _dailyPage(Dictionary d) {
-    final withFa = d.entries.where((e) => e.hasFa).toList();
-    final now = DateTime.now();
-    final idx = (now.year * 372 + now.month * 31 + now.day) % withFa.length;
-    final e = withFa[idx];
+    final e = dailyWordFor(d.entries, DateTime.now());
+    if (e == null) {
+      return _pageShell(
+        'واژهٔ روز',
+        Center(
+          child: Text(
+            'در پایگاه واژه‌ها، واژه‌ای با برابر فارسی موجود نیست.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: pal.muted, height: 1.8),
+          ),
+        ),
+        back: true,
+      );
+    }
     return _pageShell(
       'واژهٔ روز',
       Center(
