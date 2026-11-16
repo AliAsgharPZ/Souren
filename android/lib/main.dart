@@ -2322,6 +2322,7 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
+    SharedFiles.clearWidgetActionHandler();
     _searchCtl.dispose();
     _searchFocus.dispose();
     _savedFilterDirection.dispose();
