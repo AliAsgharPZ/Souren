@@ -58,6 +58,105 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <receiver
+            android:name=".SourenWordDayWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_word_day" />
+        </receiver>
+        <receiver
+            android:name=".SourenFlashcardWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_flashcard" />
+        </receiver>
+        <receiver
+            android:name=".SourenContinueLessonWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_continue_lesson" />
+        </receiver>
+        <receiver
+            android:name=".SourenSmartReviewWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_smart_review" />
+        </receiver>
+        <receiver
+            android:name=".SourenDailyGoalWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_daily_goal" />
+        </receiver>
+        <receiver
+            android:name=".SourenQuickChallengeWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_challenge" />
+        </receiver>
+        <receiver
+            android:name=".SourenRecordsWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_records" />
+        </receiver>
+        <receiver
+            android:name=".SourenWeeklyReportWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_weekly_report" />
+        </receiver>
+        <receiver
+            android:name=".SourenActiveEventWidget"
+            android:exported="true"
+            android:label="سورن">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_active_event" />
+        </receiver>
         <service
             android:name=".SourenIME"
             android:label="کیبورد سورن"
