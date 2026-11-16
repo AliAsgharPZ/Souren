@@ -76,8 +76,8 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
         ) {
             val snapshot = readSnapshot(context)
             val copy = SourenWidgetContent.build(kind, snapshot)
-            val systemNight = context.resources.configuration.uiMode and
-                Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            val systemNight = (context.resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             val dark = snapshot["theme"]?.toString() == "dark" || systemNight
             val options = manager.getAppWidgetOptions(widgetId)
             val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 110)
@@ -115,7 +115,8 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
                 )
             }
             views.setTextViewTextSize(R.id.widget_title, 0, if (width < 150) 12f else 13f)
-            views.setTextViewTextSize(R.id.widget_body, 0, if (width < 150) 17f else 20f)
+            views.setTextViewTextSize(R.id.widget_body, 0, if (height < 100) 15f else if (width < 150) 17f else 20f)
+            views.setInt(R.id.widget_body, "setMaxLines", if (height < 100) 1 else 2)
             views.setTextViewTextSize(R.id.widget_detail, 0, 11f)
 
             val intent = Intent(context, ArioActivity::class.java).apply {
