@@ -18,6 +18,7 @@ void main() {
         nextLessonTitle: 'ضمیرها',
         completedLessons: 2,
         lessonCount: 10,
+        bestAnswerStreak: 0,
         knownWords: {},
         reviewWords: {},
         game: game,
@@ -47,6 +48,7 @@ void main() {
         nextLessonTitle: 'آغاز',
         completedLessons: 0,
         lessonCount: 10,
+        bestAnswerStreak: 0,
         knownWords: {'قلم'},
         reviewWords: {'قلم', 'كتاب'},
         game: ArioGamificationState(),
@@ -73,6 +75,7 @@ void main() {
         nextLessonTitle: 'آغاز',
         completedLessons: 1,
         lessonCount: 4,
+        bestAnswerStreak: 9,
         knownWords: {},
         reviewWords: {},
         game: game,
@@ -85,6 +88,7 @@ void main() {
       expect(snapshot['dailyGoalTarget'], 3);
       expect(snapshot['currentStreak'], 2);
       expect(snapshot['bestStreak'], 2);
+      expect(snapshot['bestAnswerStreak'], 9);
       expect(snapshot['achievementCount'], greaterThan(0));
       expect(snapshot['weeklyActiveDays'], 2);
       expect(snapshot['weeklyLessons'], 1);
@@ -102,6 +106,7 @@ void main() {
         nextLessonTitle: 'هنوز درسی موجود نیست',
         completedLessons: 0,
         lessonCount: 0,
+        bestAnswerStreak: 0,
         knownWords: {},
         reviewWords: {},
         game: ArioGamificationState(),
