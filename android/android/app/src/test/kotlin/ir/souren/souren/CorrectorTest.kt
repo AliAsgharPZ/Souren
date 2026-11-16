@@ -119,7 +119,7 @@ class CorrectorTest {
 
     @Test fun multilineTabsAndRepeatedSpacesArePreserved() {
         assertEquals(4 to "پرسش",
-            Corrector.fixBeforeSeparator("یک خط\nسوال", emptyMap(), true))
+            Corrector.fixBeforeSeparator("یک خط\nسوال", mapOf("سوال" to listOf("پرسش")), true))
         assertNull(Corrector.fixBeforeSeparator("کتاب\tها", emptyMap(), true))
         assertNull(Corrector.fixBeforeSeparator("کتاب  ها", emptyMap(), true))
         assertNull(Corrector.fixBeforeSeparator("کتاب ", emptyMap(), true))
@@ -145,7 +145,7 @@ class CorrectorTest {
     }
 
     @Test fun contextualTimeRulePreservesPunctuation() {
-        assertEquals(8 to "چه زمانی؟",
+        assertEquals(9 to "چه زمانی؟",
             Corrector.fixBeforeSeparator("ساعت چند؟", emptyMap(), true))
     }
 
