@@ -116,4 +116,37 @@ class CorrectorTest {
     @Test fun noChangeNoFix() {
         assertNull(Corrector.fixBeforeSeparator("سلام", emptyMap(), true))
     }
+
+    @Test fun multilineTabsAndRepeatedSpacesArePreserved() {
+        assertEquals(4 to "پرسش",
+            Corrector.fixBeforeSeparator("یک خط\nسوال", emptyMap(), true))
+        assertNull(Corrector.fixBeforeSeparator("کتاب\tها", emptyMap(), true))
+        assertNull(Corrector.fixBeforeSeparator("کتاب  ها", emptyMap(), true))
+        assertNull(Corrector.fixBeforeSeparator("کتاب ", emptyMap(), true))
+    }
+
+    @Test fun punctuationAndQuotesAreReattached() {
+        val d = mapOf("اتفاق" to listOf("رویداد", "پیشامد"))
+        assertEquals(6 to "رویداد،",
+            Corrector.fixBeforeSeparator("اتفاق،", d, true))
+        assertEquals(7 to "«رویداد»",
+            Corrector.fixBeforeSeparator("«اتفاق»", d, true))
+        assertEquals("(رویداد)",
+            Corrector.fixBeforeSeparator("(اتفاق)", d, true)?.second)
+    }
+
+    @Test fun haMergeAndEzafeOnlyUseSingleOrdinarySpace() {
+        assertEquals(3 to "\u200Cها",
+            Corrector.fixBeforeSeparator("کتاب ها", emptyMap(), true))
+        assertNull(Corrector.fixBeforeSeparator("کتاب\nها", emptyMap(), true))
+        assertEquals(9 to "همهٔ افراد",
+            Corrector.fixBeforeSeparator("همه افراد", emptyMap(), true))
+        assertNull(Corrector.fixBeforeSeparator("همه\tافراد", emptyMap(), true))
+    }
+
+    @Test fun contextualTimeRulePreservesPunctuation() {
+        assertEquals(8 to "چه زمانی؟",
+            Corrector.fixBeforeSeparator("ساعت چند؟", emptyMap(), true))
+    }
+
 }
