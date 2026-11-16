@@ -2371,6 +2371,7 @@ class _ShellState extends State<Shell> {
     if (updated && mounted) {
       final refreshed = await Dictionary.load();
       setState(() => dict = refreshed);
+      await _refreshWidgetSnapshot(refreshed);
     }
   }
 
@@ -5419,6 +5420,7 @@ class _ShellState extends State<Shell> {
       nextLessonTitle: title,
       completedLessons: arioCompletedLessons.length,
       lessonCount: lessonCount,
+      bestAnswerStreak: arioBestStreak,
       knownWords: arioKnownWords,
       reviewWords: arioReviewWords,
       game: arioGame,
