@@ -40,12 +40,17 @@ class SourenWidgetSnapshot {
     final completedMissions = missions.where((mission) => mission.complete).length;
     final weekly = game.weeklySummary(date);
     final event = game.offlineEvent(date);
+    final day = DateTime(date.year, date.month, date.day);
+    final weekStart = day.subtract(Duration(days: day.weekday - DateTime.monday));
     final progress = lessonCount <= 0
         ? 0
         : (completedLessons * 100 / lessonCount).round().clamp(0, 100);
     return SourenWidgetSnapshot._({
       'schemaVersion': 1,
       'updatedAt': date.millisecondsSinceEpoch,
+      'snapshotDate': arioDateKey(day),
+      'snapshotWeekStart': arioDateKey(weekStart),
+      'wordCatalog': [for (final word in words) {'arabic': word.arabic, 'meaning': word.meaning}],
       'theme': theme == 'dark' ? 'dark' : 'light',
       'wordDayArabic': dailyWord?.arabic ?? '',
       'wordDayMeaning': dailyWord?.meaning ?? '',
@@ -74,6 +79,7 @@ class SourenWidgetSnapshot {
       'weeklyLessons': weekly.lessons,
       'weeklyAnswers': weekly.answers,
       'weeklyCorrectAnswers': weekly.correctAnswers,
+      'weeklyTopicAnswers': weekly.topicAnswers,
       'eventTitle': event.title,
       'eventDescription': event.description,
       'eventMetricLabel': event.metricLabel,
