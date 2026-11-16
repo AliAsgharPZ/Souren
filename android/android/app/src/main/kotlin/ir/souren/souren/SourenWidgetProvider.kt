@@ -50,10 +50,10 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
 
         fun refreshAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
+            val snapshot = readSnapshot(context)
             providers.forEach { (provider, kind) ->
                 val component = ComponentName(context, provider)
                 val ids = manager.getAppWidgetIds(component)
-                val snapshot = readSnapshot(context)
                 ids.forEach { render(context, manager, it, kind, snapshot) }
             }
         }
