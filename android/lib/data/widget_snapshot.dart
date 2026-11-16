@@ -70,6 +70,7 @@ class SourenWidgetSnapshot {
       ).title,
       'quickChallengeBestToday': game.dailyRecord(date).dailyBossBest,
       'currentStreak': game.streakOn(date),
+      'lastActiveDay': game.lastActiveDay ?? '',
       'bestStreak': game.bestStreak,
       'bestAnswerStreak': bestAnswerStreak,
       'bestDailyBossScore': game.bestDailyBossScore,
