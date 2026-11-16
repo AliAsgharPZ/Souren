@@ -22,6 +22,7 @@ import 'ario_writing.dart';
 import 'ario_lab.dart';
 import 'data/ganjoor_pack.dart';
 import 'data/persian_roots.dart';
+import 'data/widget_snapshot.dart';
 import 'engine/corrector.dart';
 
 /// App palette — pal.bg light theme, warm dark theme. `pal` is set from
@@ -2232,11 +2233,13 @@ class _ShellState extends State<Shell> {
   int arioBestStreak = 0;
   String? arioSelectedAnswer;
   bool? arioAnswerCorrect;
+  String? _pendingWidgetAction;
 
   @override
   void initState() {
     super.initState();
     arioMode = widget.initialArioMode;
+    SharedFiles.setWidgetActionHandler(_handleWidgetAction);
     _searchFocus.addListener(() {
       if (mounted) setState(() => _searchFocused = _searchFocus.hasFocus);
     });
@@ -2350,6 +2353,12 @@ class _ShellState extends State<Shell> {
       );
     });
     if (!widget.initialArioMode) _syncDictionary(d);
+    await _refreshWidgetSnapshot(d);
+    final initialWidgetAction = await SharedFiles.consumeWidgetAction();
+    if (initialWidgetAction != null) _handleWidgetAction(initialWidgetAction);
+    final pendingWidgetAction = _pendingWidgetAction;
+    _pendingWidgetAction = null;
+    if (pendingWidgetAction != null) _handleWidgetAction(pendingWidgetAction);
     // Ario uses only the public account identity API; learning data stays local.
     _restoreAccount();
   }
@@ -5080,7 +5089,7 @@ class _ShellState extends State<Shell> {
               value: settings.replaceArabic,
               onChanged: (v) async {
                 setState(() => settings.replaceArabic = v);
-                await SettingsStore.update(settings);
+                await _persistSettings();
               },
             ),
             _toggleRow(
@@ -5089,7 +5098,7 @@ class _ShellState extends State<Shell> {
               value: settings.autoCorrect,
               onChanged: (v) async {
                 setState(() => settings.autoCorrect = v);
-                await SettingsStore.update(settings);
+                await _persistSettings();
               },
             ),
             _toggleRow(
@@ -5118,7 +5127,7 @@ class _ShellState extends State<Shell> {
                 value: settings.kbHeight,
                 onChanged: (v) async {
                   setState(() => settings.kbHeight = v);
-                  await SettingsStore.update(settings);
+                  await _persistSettings();
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -5147,7 +5156,7 @@ class _ShellState extends State<Shell> {
                 value: settings.theme,
                 onChanged: (v) async {
                   setState(() => settings.theme = v);
-                  await SettingsStore.update(settings);
+                  await _persistSettings();
                 },
               ),
             ),
@@ -5171,7 +5180,7 @@ class _ShellState extends State<Shell> {
                 value: settings.textSize,
                 onChanged: (v) async {
                   setState(() => settings.textSize = v);
-                  await SettingsStore.update(settings);
+                  await _persistSettings();
                 },
               ),
             ),
@@ -5191,7 +5200,7 @@ class _ShellState extends State<Shell> {
                 value: settings.direction,
                 onChanged: (v) async {
                   setState(() => settings.direction = v);
-                  await SettingsStore.update(settings);
+                  await _persistSettings();
                 },
               ),
             ),
@@ -5373,20 +5382,95 @@ class _ShellState extends State<Shell> {
   }
 
 
-  Future<void> _saveArioProgress() async => SharedFiles.writeJson('ario_learning.json', {
-    'curriculumVersion': 4,
-    'completedStages': arioCompletedLessons.map((index) => index + 1).toList()..sort(),
-    'completedLessons': arioCompletedLessons.toList()..sort(),
-    'knownWords': arioKnownWords.toList(),
-    'reviewWords': arioReviewWords.toList()..sort(),
-    'completedWritingLessons': arioCompletedWritingLessons.toList()..sort(),
-    'writingReviewDue': arioWritingReviewDue,
-    'lastLesson': arioLastLesson,
-    'quizIndex': arioQuizIndex,
-    'bestStreak': arioBestStreak,
-    'lab': arioLab.toJson(),
-    'gamification': arioGame.toJson(),
-  });
+  Future<void> _saveArioProgress() async {
+    await SharedFiles.writeJson('ario_learning.json', {
+      'curriculumVersion': 4,
+      'completedStages': arioCompletedLessons.map((index) => index + 1).toList()..sort(),
+      'completedLessons': arioCompletedLessons.toList()..sort(),
+      'knownWords': arioKnownWords.toList(),
+      'reviewWords': arioReviewWords.toList()..sort(),
+      'completedWritingLessons': arioCompletedWritingLessons.toList()..sort(),
+      'writingReviewDue': arioWritingReviewDue,
+      'lastLesson': arioLastLesson,
+      'quizIndex': arioQuizIndex,
+      'bestStreak': arioBestStreak,
+      'lab': arioLab.toJson(),
+      'gamification': arioGame.toJson(),
+    });
+    final current = dict;
+    if (current != null) await _refreshWidgetSnapshot(current);
+  }
+
+  Future<void> _refreshWidgetSnapshot(Dictionary dictionary) async {
+    final lessonCount = arioCurriculum?.stages.length ?? 0;
+    final nextLesson = _nextArioLesson(lessonCount);
+    final stages = arioCurriculum?.stages
+            .where((stage) => stage.level == nextLesson + 1)
+            .toList() ??
+        const <ArioStagePlan>[];
+    final title = stages.isEmpty ? 'درس ${nextLesson + 1}' : stages.first.title;
+    final words = dictionary.entries
+        .where((entry) => entry.hasFa)
+        .map((entry) => (arabic: entry.ar, meaning: entry.fa.first))
+        .toList(growable: false);
+    final snapshot = SourenWidgetSnapshot.build(
+      words: words,
+      nextLesson: nextLesson,
+      nextLessonTitle: title,
+      completedLessons: arioCompletedLessons.length,
+      lessonCount: lessonCount,
+      knownWords: arioKnownWords,
+      reviewWords: arioReviewWords,
+      game: arioGame,
+      lab: arioLab,
+      theme: settings.theme,
+    );
+    await SharedFiles.writeWidgetSnapshot(snapshot.toJson());
+  }
+
+  void _handleWidgetAction(String action) {
+    final current = dict;
+    if (current == null) {
+      _pendingWidgetAction = action;
+      return;
+    }
+    switch (action) {
+      case 'word_day':
+        _open(_arioPractice(current));
+        break;
+      case 'flashcard':
+        _openArioLabFlashcards(current);
+        break;
+      case 'continue_lesson':
+        _openArioLesson(current, _nextArioLesson(arioCurriculum?.stages.length ?? 0));
+        break;
+      case 'smart_review':
+        _openArioLabReview(current);
+        break;
+      case 'quick_challenge':
+        _openArioDailyBoss(current.entries.where((entry) => entry.hasFa).toList(growable: false));
+        break;
+      case 'weekly_report':
+        _open(_arioReport());
+        break;
+      case 'active_event':
+        _open(_arioEvents());
+        break;
+      case 'records':
+        if (mounted) setState(() => tab = 3);
+        break;
+      case 'daily_goal':
+      case 'home':
+        if (mounted) setState(() => tab = 0);
+        break;
+    }
+  }
+
+  Future<void> _persistSettings() async {
+    await _persistSettings();
+    final current = dict;
+    if (current != null) await _refreshWidgetSnapshot(current);
+  }
 
   void _recordArioActivity({
     int lessons = 0,
@@ -6494,11 +6578,11 @@ class _ShellState extends State<Shell> {
         const SizedBox(height: 12),
         Text('پوستهٔ برنامه', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        capsuleGroup<String>(options: const [('light', 'روشن'), ('dark', 'تیره')], value: settings.theme, onChanged: (v) async { setState(() => settings.theme = v); await SettingsStore.update(settings); }),
+        capsuleGroup<String>(options: const [('light', 'روشن'), ('dark', 'تیره')], value: settings.theme, onChanged: (v) async { setState(() => settings.theme = v); await _persistSettings(); }),
         const SizedBox(height: 18),
         Text('اندازهٔ نوشته‌ها', style: TextStyle(color: pal.ink, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        capsuleGroup<String>(options: const [('small', 'کوچک'), ('normal', 'معمولی'), ('large', 'بزرگ')], value: settings.textSize, onChanged: (v) async { setState(() => settings.textSize = v); await SettingsStore.update(settings); }),
+        capsuleGroup<String>(options: const [('small', 'کوچک'), ('normal', 'معمولی'), ('large', 'بزرگ')], value: settings.textSize, onChanged: (v) async { setState(() => settings.textSize = v); await _persistSettings(); }),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(18),
