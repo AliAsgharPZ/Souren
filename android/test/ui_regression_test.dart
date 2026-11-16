@@ -18,6 +18,12 @@ void main() {
     expect(nextRtlSwipeFilterIndex(2, -240, 0), 2);
   });
 
+  testWidgets('shell bootstrap can be disposed before local loading completes', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Shell()));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('like stays on the RTL leading side before bookmark', (tester) async {
     var likes = 0;
     var bookmarks = 0;
