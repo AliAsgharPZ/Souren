@@ -5467,7 +5467,7 @@ class _ShellState extends State<Shell> {
   }
 
   Future<void> _persistSettings() async {
-    await _persistSettings();
+    await SettingsStore.update(settings);
     final current = dict;
     if (current != null) await _refreshWidgetSnapshot(current);
   }
