@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
@@ -21,7 +22,8 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        appWidgetIds.forEach { render(context, appWidgetManager, it, widgetKind) }
+        val snapshot = readSnapshot(context)
+        appWidgetIds.forEach { render(context, appWidgetManager, it, widgetKind, snapshot) }
     }
 
     override fun onAppWidgetOptionsChanged(
@@ -30,7 +32,7 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         newOptions: Bundle,
     ) {
-        render(context, appWidgetManager, appWidgetId, widgetKind)
+        render(context, appWidgetManager, appWidgetId, widgetKind, readSnapshot(context))
     }
 
     companion object {
@@ -51,8 +53,20 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
             providers.forEach { (provider, kind) ->
                 val component = ComponentName(context, provider)
                 val ids = manager.getAppWidgetIds(component)
-                ids.forEach { render(context, manager, it, kind) }
+                val snapshot = readSnapshot(context)
+                ids.forEach { render(context, manager, it, kind, snapshot) }
             }
+        }
+
+        private fun jsonValue(value: Any?): Any? = when (value) {
+            is JSONObject -> value.keys().asSequence().associateWith { key ->
+                jsonValue(value.opt(key))
+            }
+            is JSONArray -> (0 until value.length()).map { index ->
+                jsonValue(value.opt(index))
+            }
+            JSONObject.NULL -> null
+            else -> value
         }
 
         private fun readSnapshot(context: Context): Map<String, Any?> {
@@ -60,9 +74,7 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
                 val file = File(context.filesDir, "souren_widgets.json")
                 if (!file.isFile) return emptyMap()
                 val json = JSONObject(file.readText(Charsets.UTF_8))
-                json.keys().asSequence().associateWith { key ->
-                    json.opt(key).let { if (it == JSONObject.NULL) null else it }
-                }
+                jsonValue(json) as? Map<String, Any?> ?: emptyMap()
             } catch (_: Exception) {
                 emptyMap()
             }
@@ -73,8 +85,8 @@ abstract class SourenWidgetProvider : AppWidgetProvider() {
             manager: AppWidgetManager,
             widgetId: Int,
             kind: String,
+            snapshot: Map<String, Any?>,
         ) {
-            val snapshot = readSnapshot(context)
             val copy = SourenWidgetContent.build(kind, snapshot)
             val systemNight = (context.resources.configuration.uiMode and
                 Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
