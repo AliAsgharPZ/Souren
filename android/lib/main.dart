@@ -4693,7 +4693,10 @@ class _ShellState extends State<Shell> {
       corrections: learnedCorrections,
       score: score,
     )).length;
-    final earnedArioAchievements = arioGame.unlockedAchievements.length;
+    final earnedArioItems = ArioGamificationState.achievements
+        .where((achievement) => arioGame.unlockedAchievements.contains(achievement.id))
+        .toList(growable: false);
+    final earnedArioAchievements = earnedArioItems.length;
     final profileCard = ShareCardData(
       title: 'نمایهٔ شخصی من',
       lines: [
@@ -4734,7 +4737,6 @@ class _ShellState extends State<Shell> {
               ),
               child: Row(children: [
                 Pressable(
-                  tooltip: 'تغییر آواتار مشترک سورن و آریو',
                   onTap: () => _open(_arioAvatarPicker()),
                   child: CircleAvatar(
                     radius: 34,
@@ -4871,10 +4873,25 @@ class _ShellState extends State<Shell> {
                 _statRow('اصلاح‌های پذیرفته‌شده', learnedCorrections, last: true),
               ]),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('دستاوردهای آریو', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: pal.ink)),
+              Text('${faNum(earnedArioAchievements)} دریافت‌شده', style: TextStyle(fontSize: 11.5, color: pal.muted)),
+            ]),
+            const SizedBox(height: 9),
+            if (earnedArioItems.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: pal.cardC, borderRadius: BorderRadius.circular(capR(34))),
+                child: Text('هنوز دستاوردی باز نشده است؛ پیشرفت آموزشی آریو به‌تدریج اینجا ثبت می‌شود.', style: TextStyle(color: pal.muted, fontSize: 12, height: 1.7)),
+              )
+            else
+              for (final achievement in earnedArioItems.take(3))
+                _arioAchievementItem(achievement),
+            const SizedBox(height: 8),
             _arioAction(
-              'نمایش دستاوردهای آریو',
-              '${faNum(earnedArioAchievements)} دستاورد از ${faNum(ArioGamificationState.achievements.length)}',
+              'نمایش همهٔ دستاوردها و گزارش‌ها',
+              'رکوردها و سابقهٔ آموزشی ذخیره‌شده روی دستگاه',
               LucideIcons.award,
               () => _open(_arioReport()),
             ),
