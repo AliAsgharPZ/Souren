@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// Data for a shareable word, proverb or poem card. The same data feeds
@@ -20,6 +21,8 @@ class ShareCardData {
   final bool isProfile;
   final int? profileScore;
   final String? profileLevel;
+  final IconData? profileAvatarIcon;
+  final Color? profileAvatarColor;
 
   const ShareCardData({
     required this.title,
@@ -30,6 +33,8 @@ class ShareCardData {
     this.isProfile = false,
     this.profileScore,
     this.profileLevel,
+    this.profileAvatarIcon,
+    this.profileAvatarColor,
   });
 }
 
