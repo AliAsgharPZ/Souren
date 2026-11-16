@@ -190,35 +190,35 @@ DatasetCheck validateDatasetMap(Map<String, dynamic>? json) {
   for (var i = 0; i < entries.length; i++) {
     final entry = entries[i];
     if (entry is! Map) {
-      return DatasetCheck(false, error: 'مدخل ' + (i + 1).toString() + ' یک شیء نیست');
+      return DatasetCheck(false, error: 'مدخل ${i + 1} یک شیء نیست');
     }
     final arabic = entry['ar'];
     if (arabic is! String || arabic.trim().isEmpty) {
-      return DatasetCheck(false, error: 'مدخل ' + (i + 1).toString() + ' واژهٔ عربی معتبر ندارد');
+      return DatasetCheck(false, error: 'مدخل ${i + 1} واژهٔ عربی معتبر ندارد');
     }
     final meanings = entry['fa'];
     if (meanings is! List) {
-      return DatasetCheck(false, error: '«fa» در مدخل «' + arabic.trim() + '» فهرست نیست');
+      return DatasetCheck(false, error: '«fa» در مدخل «${arabic.trim()}» فهرست نیست');
     }
     for (final meaning in meanings) {
       if (meaning is! String) {
-        return DatasetCheck(false, error: 'برابرهای «' + arabic.trim() + '» باید رشته باشند');
+        return DatasetCheck(false, error: 'برابرهای «${arabic.trim()}» باید رشته باشند');
       }
     }
     if (!seen.add(arabic.trim())) {
-      return DatasetCheck(false, error: 'واژهٔ تکراری: «' + arabic.trim() + '»');
+      return DatasetCheck(false, error: 'واژهٔ تکراری: «${arabic.trim()}»');
     }
     if (entry['concept'] != null && entry['concept'] is! String) {
-      return DatasetCheck(false, error: '«concept» در مدخل «' + arabic.trim() + '» باید رشته باشد');
+      return DatasetCheck(false, error: '«concept» در مدخل «${arabic.trim()}» باید رشته باشد');
     }
     if (entry['frequencyMethod'] != null && entry['frequencyMethod'] is! String) {
-      return DatasetCheck(false, error: '«frequencyMethod» باید رشته باشد');
+      return const DatasetCheck(false, error: '«frequencyMethod» باید رشته باشد');
     }
     for (final key in ['level', 'frequencyRankEstimate', 'difficultyScore']) {
       final value = entry[key];
       if (value != null) {
         if (value is! num || value % 1 != 0) {
-          return DatasetCheck(false, error: '«' + key + '» در مدخل «' + arabic.trim() + '» باید عدد صحیح باشد');
+          return DatasetCheck(false, error: '«$key» در مدخل «${arabic.trim()}» باید عدد صحیح باشد');
         }
       }
     }
@@ -320,7 +320,7 @@ DatasetCheck validateDatasetText(String content) {
       }
       return validateDatasetMap(decoded);
     } catch (error) {
-      return DatasetCheck(false, error: 'ساختار JSON معتبر نیست: ' + error.toString());
+      return DatasetCheck(false, error: 'ساختار JSON معتبر نیست: $error');
     }
   }
 
@@ -341,14 +341,14 @@ DatasetCheck validateDatasetText(String content) {
       }
       firstNonEmpty = false;
       if (cells.length < 2) {
-        return DatasetCheck(false, error: 'سطر ' + (r + 1).toString() + ' دست‌کم دو ستون لازم دارد');
+        return DatasetCheck(false, error: 'سطر ${r + 1} دست‌کم دو ستون لازم دارد');
       }
       final arabic = cells.first;
       if (arabic.isEmpty) {
-        return DatasetCheck(false, error: 'سطر ' + (r + 1).toString() + ' واژهٔ عربی ندارد');
+        return DatasetCheck(false, error: 'سطر ${r + 1} واژهٔ عربی ندارد');
       }
       if (!seen.add(arabic)) {
-        return DatasetCheck(false, error: 'واژهٔ تکراری: «' + arabic + '»');
+        return DatasetCheck(false, error: 'واژهٔ تکراری: «$arabic»');
       }
       entries.add({
         'ar': arabic,
@@ -360,7 +360,7 @@ DatasetCheck validateDatasetText(String content) {
     }
     return DatasetCheck(true, data: {'version': 1, 'entries': entries});
   } on FormatException catch (error) {
-    return DatasetCheck(false, error: 'ساختار CSV معتبر نیست: ' + error.message);
+    return DatasetCheck(false, error: 'ساختار CSV معتبر نیست: ${error.message}');
   }
 }
 
