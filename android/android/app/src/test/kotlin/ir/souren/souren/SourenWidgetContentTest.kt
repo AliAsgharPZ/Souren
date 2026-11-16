@@ -33,6 +33,25 @@ class SourenWidgetContentTest {
         assertEquals(20, copy.progress)
     }
 
+    @Test fun recordsWidgetIncludesBothStreakTypesAndAchievements() {
+        val copy = SourenWidgetContent.build(
+            "records",
+            mapOf(
+                "currentStreak" to 3,
+                "bestStreak" to 8,
+                "bestAnswerStreak" to 14,
+                "bestDailyBossScore" to 20,
+                "bestGhostScore" to 17,
+                "achievementCount" to 4
+            )
+        )
+        assertTrue(copy.body.contains("۳ روز"))
+        assertTrue(copy.body.contains("۸"))
+        assertTrue(copy.detail.contains("۱۴"))
+        assertTrue(copy.detail.contains("۲۰"))
+        assertTrue(copy.footer.contains("۴"))
+    }
+
     @Test fun dailyGoalAndActiveEventClampProgress() {
         val goal = SourenWidgetContent.build(
             "daily_goal",
