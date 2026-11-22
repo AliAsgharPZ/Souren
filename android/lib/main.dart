@@ -3589,6 +3589,11 @@ class _ShellState extends State<Shell> {
             ('شاعر', stats['poets'] ?? 0),
             ('کتاب', stats['books'] ?? 0),
             ('شعر', stats['poems'] ?? 0),
+            ('شخص', stats['people'] ?? 0),
+            ('مکان', stats['locations'] ?? 0),
+            ('آرایه', stats['literaryDevices'] ?? 0),
+            ('مفهوم', stats['literaryConcepts'] ?? 0),
+            ('برچسب ادبی', stats['literaryTags'] ?? 0),
             ('ریشه', PersianRoots.index(d).length),
             ('دسته', catOrder.length),
           ];
@@ -8036,6 +8041,11 @@ class GanjoorData {
     var poets = fallbackStats['poets']!;
     var books = fallbackStats['books']!;
     var poems = fallbackPoemCount;
+    var people = 0;
+    var locations = 0;
+    var literaryDevices = 0;
+    var literaryConcepts = 0;
+    var literaryTags = 0;
     try {
       final manifest = await json('manifest.json');
       poets = _manifestCount(
@@ -8055,13 +8065,27 @@ class GanjoorData {
         ],
         fallback: fallbackPoemCount,
       );
+      people = _manifestCount(manifest, const ['PeopleCount'], fallback: 0);
+      locations = _manifestCount(manifest, const ['LocationsCount'], fallback: 0);
+      literaryDevices = _manifestCount(manifest, const ['LiteraryDevicesCount'], fallback: 0);
+      literaryConcepts = _manifestCount(manifest, const ['LiteraryConceptsCount'], fallback: 0);
+      literaryTags = _manifestCount(manifest, const ['LiteraryTagsCount'], fallback: 0);
     } catch (_) {
       // Keep the last published corpus count instead of replacing it with 0.
     }
     try {
       books = (await bookCatalog()).length;
     } catch (_) {}
-    return {'poets': poets, 'books': books, 'poems': poems};
+    return {
+      'poets': poets,
+      'books': books,
+      'poems': poems,
+      'people': people,
+      'locations': locations,
+      'literaryDevices': literaryDevices,
+      'literaryConcepts': literaryConcepts,
+      'literaryTags': literaryTags,
+    };
   }
 }
 
