@@ -7901,6 +7901,144 @@ class GanjoorData {
   };
   static final Map<String, Future<List<Map<String, dynamic>>>> _poemSearchCache = {};
 
+  static Future<dynamic> value(String path) async {
+    try {
+      final packed = await GanjoorPack.readJsonValue(path);
+      if (packed != null) return packed;
+    } catch (_) {
+      // Fall through to the current static CDN when the offline pack is old.
+    }
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
+    try {
+      final uri = Uri.parse('$_base$path');
+      final request = await client.getUrl(uri);
+      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      final response = await request.close().timeout(
+        const Duration(seconds: 25),
+      );
+      final body = await utf8.decoder.bind(response).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw HttpException('Ganjoor returned HTTP ${response.statusCode}', uri: uri);
+      }
+      return jsonDecode(body);
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  static Future<List<String>> literaryTagLines(
+    List<dynamic> tags,
+    int coupletIndex,
+    List<String> coupletLines,
+  ) async {
+    final applicable = tags.whereType<Map>().where((tag) {
+      final index = (tag['CoupletIndex'] as num?)?.toInt() ?? -2;
+      return index == coupletIndex || index == -1;
+    }).toList(growable: false);
+    if (applicable.isEmpty) return const [];
+
+    final metadata = await _literaryMetadata();
+    final devices = metadata['devices']!;
+    final concepts = metadata['concepts']!;
+    final slots = <int, Map<String, dynamic>>{};
+    for (final device in devices) {
+      for (final rawSlot in (device['Slots'] as List? ?? const [])) {
+        if (rawSlot is Map) {
+          final slot = Map<String, dynamic>.from(rawSlot);
+          final id = (slot['Id'] as num?)?.toInt();
+          if (id != null) slots[id] = slot;
+        }
+      }
+    }
+
+    final result = <String>['آرایه‌های ادبی'];
+    for (final rawTag in applicable) {
+      final tag = Map<String, dynamic>.from(rawTag);
+      final deviceId = (tag['DeviceId'] as num?)?.toInt();
+      Map<String, dynamic>? device;
+      for (final item in devices) {
+        if ((item['Id'] as num?)?.toInt() == deviceId) {
+          device = item;
+          break;
+        }
+      }
+      final deviceName = device?['Name']?.toString() ?? 'آرایهٔ ادبی';
+      final uncertain = tag['Uncertain'] == true;
+      result.add('${deviceName}${uncertain ? ' · نیازمند بررسی' : ''}');
+
+      final parts = (tag['Parts'] as List? ?? const [])
+          .whereType<Map>()
+          .map((part) => Map<String, dynamic>.from(part))
+          .toList();
+      for (final part in parts) {
+        final slotId = (part['SlotId'] as num?)?.toInt();
+        final slot = slotId == null ? null : slots[slotId];
+        final slotName = slot?['Name']?.toString() ?? 'جزئیات';
+        String value = (part['Text'] ?? '').toString().trim();
+
+        if (value.isEmpty) {
+          final conceptId = (part['ConceptId'] as num?)?.toInt();
+          if (conceptId != null) {
+            value = concepts[conceptId] ?? '';
+          }
+        }
+        if (value.isEmpty) {
+          final misra = (part['Misra'] as num?)?.toInt() ?? 0;
+          final start = (part['WordStart'] as num?)?.toInt();
+          final end = (part['WordEnd'] as num?)?.toInt();
+          if (misra >= 1 && misra <= coupletLines.length &&
+              start != null && end != null && start > 0 && end >= start) {
+            final words = coupletLines[misra - 1]
+                .trim()
+                .split(RegExp(r'\s+'));
+            if (start <= words.length) {
+              value = words.skip(start - 1).take(end - start + 1).join(' ');
+            }
+          }
+        }
+        if (value.isNotEmpty) result.add('  $slotName: $value');
+      }
+
+      final sourceKey = tag['SourceKey']?.toString().trim() ?? '';
+      final origin = tag['Origin']?.toString().trim() ?? '';
+      if (sourceKey.isNotEmpty) {
+        result.add('  منبع: $sourceKey');
+      } else if (origin.isNotEmpty) {
+        result.add('  خاستگاه: $origin');
+      }
+    }
+    return result;
+  }
+
+  static Future<Map<String, dynamic>> _literaryMetadata() =>
+      _literaryMetadataFuture ??= _loadLiteraryMetadata();
+
+  static Future<Map<String, dynamic>>? _literaryMetadataFuture;
+
+  static Future<Map<String, dynamic>> _loadLiteraryMetadata() async {
+    final values = await Future.wait([
+      value('literary-devices.json'),
+      value('literary-concepts.json'),
+    ]);
+    final deviceRows = values[0] is List
+        ? (values[0] as List).whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row)).toList()
+        : <Map<String, dynamic>>[];
+    final conceptRows = values[1] is List
+        ? (values[1] as List).whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row)).toList()
+        : <Map<String, dynamic>>[];
+    return {
+      'devices': deviceRows,
+      'concepts': {
+        for (final row in conceptRows)
+          if (row['Id'] is num)
+            (row['Id'] as num).toInt(): row['Name']?.toString() ?? '',
+      },
+    };
+  }
+
   static String _cacheName(String path) =>
       'ganjoor_${base64Url.encode(utf8.encode(path))}.json';
 
@@ -9034,19 +9172,26 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
     await SharedFiles.writeJson(file, {'words': values.toList()});
   }
 
-  void _showCouplet(
+  Future<void> _showCouplet(
     int index,
     List<String> lines, {
     String? meaning,
     String? breadcrumb,
-  }) {
+    List<dynamic> literaryTags = const [],
+  }) async {
+    final literaryLines = await GanjoorData.literaryTagLines(
+      literaryTags,
+      index,
+      lines,
+    );
+    if (!mounted) return;
     final key = 'poem:${widget.path}#$index';
     final related = _relatedEntries(lines.join(' '));
     final path = (breadcrumb ?? widget.title).replaceAll(' » ', ' > ');
     final summary = meaning?.trim();
     final card = ShareCardData(
       title: lines.join('\n'),
-      lines: const [],
+      lines: literaryLines,
       breadcrumb: path,
       meaning: summary == null || summary.isEmpty ? null : summary,
       caption: 'بیت ${faNum(index + 1)} · گنجور',
@@ -9203,6 +9348,7 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                   couplets[ordered[i]]!,
                                   meaning: coupletMeanings[ordered[i]],
                                   breadcrumb: fullTitle,
+                                  literaryTags: (data['LiteraryTags'] as List? ?? const []),
                                 ),
                                 borderRadius: BorderRadius.circular(capR(52)),
                                 child: Container(
