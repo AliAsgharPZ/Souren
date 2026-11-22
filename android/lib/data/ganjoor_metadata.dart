@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+
 import 'ganjoor_pack.dart';
 
 /// Schema-v4 Ganjoor reference data. The compressed offline pack is the
