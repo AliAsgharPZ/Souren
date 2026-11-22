@@ -7904,6 +7904,11 @@ class GanjoorData {
     'poets': 246,
     'books': 0,
     'poems': fallbackPoemCount,
+    'people': 662,
+    'locations': 200,
+    'literaryDevices': 17,
+    'literaryConcepts': 1261,
+    'literaryTags': 2987,
   };
   static final Map<String, Future<List<Map<String, dynamic>>>> _poemSearchCache = {};
 
