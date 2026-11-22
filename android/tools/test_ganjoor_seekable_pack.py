@@ -17,7 +17,7 @@ class SeekablePackTests(unittest.TestCase):
             output = root / "output"
             (source / "poets" / "test-poet").mkdir(parents=True)
             (source / "manifest.json").write_text(
-                json.dumps({"Poets": [{"Name": "آزمایشی"}]}), encoding="utf-8"
+                json.dumps({"SchemaVersion": 4, "GeneratedAtUtc": "2026-11-20T14:18:42Z", "Poets": [{"Name": "آزمایشی"}]}), encoding="utf-8"
             )
             (source / "poets" / "test-poet" / "poet.json").write_text(
                 json.dumps({"Id": 1, "Name": "آزمایشی"}), encoding="utf-8"
@@ -58,6 +58,8 @@ class SeekablePackTests(unittest.TestCase):
             self.assertIn("literary-concepts.json", index["files"])
             self.assertIn("people.json", index["files"])
             self.assertEqual(index["format"], 1)
+            self.assertEqual(index["schema_version"], 4)
+            self.assertEqual(index["generated_at_utc"], "2026-11-20T14:18:42Z")
 
 
 if __name__ == "__main__":
