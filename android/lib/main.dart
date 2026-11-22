@@ -21,6 +21,7 @@ import 'data/ario_lab.dart';
 import 'ario_writing.dart';
 import 'ario_lab.dart';
 import 'data/ganjoor_pack.dart';
+import 'data/ganjoor_metadata.dart';
 import 'data/persian_roots.dart';
 import 'data/widget_snapshot.dart';
 import 'engine/corrector.dart';
@@ -9255,6 +9256,30 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                           ),
                                         ),
                                       ],
+                                      Builder(
+                                        builder: (context) {
+                                          final coupletIndex = ordered[i];
+                                          final literaryTags = (data['LiteraryTags'] as List? ?? const [])
+                                              .whereType<Map>()
+                                              .map((row) => Map<String, dynamic>.from(row))
+                                              .where((tag) =>
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == coupletIndex ||
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == -1)
+                                              .toList(growable: false);
+                                          final contextTags = (data['Tags'] as List? ?? const [])
+                                              .whereType<Map>()
+                                              .map((row) => Map<String, dynamic>.from(row))
+                                              .where((tag) =>
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == coupletIndex ||
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == -1)
+                                              .toList(growable: false);
+                                          return GanjoorCoupletAnnotations(
+                                            literaryTags: literaryTags,
+                                            contextTags: contextTags,
+                                            lines: couplets[coupletIndex]!,
+                                          );
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ),
