@@ -9301,6 +9301,8 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                             literaryTags: literaryTags,
                                             contextTags: contextTags,
                                             lines: couplets[coupletIndex]!,
+                                            poemId: (data['Id'] as num?)?.toInt() ?? -1,
+                                            coupletIndex: coupletIndex,
                                           );
                                         },
                                       ),
