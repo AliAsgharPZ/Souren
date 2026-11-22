@@ -7894,9 +7894,9 @@ class GanjoorData {
       'https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/';
   static const _apiBase = 'https://api.ganjoor.net';
   static Future<Map<String, int>>? _statsFuture;
-  static const int fallbackPoemCount = 139042;
+  static const int fallbackPoemCount = 139417;
   static const Map<String, int> fallbackStats = {
-    'poets': 245,
+    'poets': 246,
     'books': 0,
     'poems': fallbackPoemCount,
   };
