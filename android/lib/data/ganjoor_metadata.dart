@@ -70,12 +70,16 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
   final List<Map<String, dynamic>> literaryTags;
   final List<Map<String, dynamic>> contextTags;
   final List<String> lines;
+  final int poemId;
+  final int coupletIndex;
 
   const GanjoorCoupletAnnotations({
     super.key,
     this.literaryTags = const [],
     this.contextTags = const [],
     required this.lines,
+    required this.poemId,
+    required this.coupletIndex,
   });
 
   static int _id(dynamic value) =>
@@ -218,8 +222,10 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
             }
             final birth = person['BirthYearInLHijri'];
             final death = person['DeathYearInLHijri'];
-            if (birth is num && birth != 0 || death is num && death != 0) {
-              contextLabels.add('زندگی: ${birth is num && birth != 0 ? 'حدود ' + birth.toString() : '؟'} تا ${death is num && death != 0 ? death.toString() : '؟'} قمری');
+            if ((birth is num && birth != 0) || (death is num && death != 0)) {
+              final birthLabel = birth is num && birth != 0 ? 'حدود ${birth.toString()}' : '؟';
+              final deathLabel = death is num && death != 0 ? death.toString() : '؟';
+              contextLabels.add('زندگی: $birthLabel تا $deathLabel قمری');
             }
             final personId = _id(person['Id']);
             final related = <String>[];
@@ -227,6 +233,13 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
               final first = _id(row['Person1Id']);
               final second = _id(row['Person2Id']);
               if (first != personId && second != personId) continue;
+              final evidence = (row['Evidence'] as List? ?? const [])
+                  .whereType<Map>();
+              final attestedHere = evidence.any((item) =>
+                  _id(item['PoemId']) == poemId &&
+                  (_id(item['CoupletIndex']) == coupletIndex ||
+                   _id(item['CoupletIndex']) == -1));
+              if (!attestedHere) continue;
               final other = people[first == personId ? second : first];
               if (other == null) continue;
               final rawType = (row['RelationType'] ?? row['AffiliationType'] ?? '').toString();
