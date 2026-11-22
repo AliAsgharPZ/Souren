@@ -208,8 +208,9 @@ class GanjoorPack {
     return decoded;
   }
 
-  /// Returns a decoded source JSON file, or null when the pack has no entry.
-  static Future<Map<String, dynamic>?> readJson(String path) async {
+  /// Returns any JSON value (object, array, scalar) from the pack.
+  /// Ganjoor's literary metadata endpoints are top-level JSON arrays.
+  static Future<dynamic> readJsonValue(String path) async {
     final index = await _loadIndex();
     if (index == null) return null;
     final files = index['files'] as Map<String, dynamic>;
@@ -224,6 +225,12 @@ class GanjoorPack {
       throw const FormatException('Ganjoor source range is out of bounds');
     }
     final bytes = chunk.sublist(offset, offset + length);
-    return jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
+    return jsonDecode(utf8.decode(bytes));
+  }
+
+  /// Backwards-compatible object reader used by poems, poets and categories.
+  static Future<Map<String, dynamic>?> readJson(String path) async {
+    final value = await readJsonValue(path);
+    return value is Map ? Map<String, dynamic>.from(value) : null;
   }
 }
