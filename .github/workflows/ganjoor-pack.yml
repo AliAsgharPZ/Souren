@@ -8,6 +8,8 @@ on:
     paths:
       - 'android/tools/build_ganjoor_seekable_pack.py'
       - 'android/lib/data/ganjoor_pack.dart'
+      - 'android/lib/data/ganjoor_metadata.dart'
+      - 'android/tools/build_ganjoor_seekable_pack.py'
       - 'android/tools/test_ganjoor_seekable_pack.py'
 
 permissions:
