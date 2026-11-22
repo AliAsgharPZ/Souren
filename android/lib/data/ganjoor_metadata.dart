@@ -115,8 +115,13 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
           final details = <String>[];
           for (final part in parts) {
             final slotId = _id(part['SlotId']);
-            final slot = slots.where((row) => _id(row['Id']) == slotId)
-                .firstOrNull;
+            Map<String, dynamic>? slot;
+            for (final candidate in slots) {
+              if (_id(candidate['Id']) == slotId) {
+                slot = candidate;
+                break;
+              }
+            }
             final slotName = slot?['Name']?.toString() ?? 'جزء';
             var value = part['Text']?.toString() ?? '';
             final concept = concepts[_id(part['ConceptId'])];
