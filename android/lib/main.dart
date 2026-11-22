@@ -8011,8 +8011,14 @@ class GanjoorData {
     return result;
   }
 
-  static Future<Map<String, dynamic>> _literaryMetadata() =>
-      _literaryMetadataFuture ??= _loadLiteraryMetadata();
+  static Future<Map<String, dynamic>> _literaryMetadata() async {
+    try {
+      return await (_literaryMetadataFuture ??= _loadLiteraryMetadata());
+    } catch (_) {
+      _literaryMetadataFuture = null;
+      rethrow;
+    }
+  }
 
   static Future<Map<String, dynamic>>? _literaryMetadataFuture;
 
