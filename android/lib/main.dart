@@ -9179,11 +9179,16 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
     String? breadcrumb,
     List<dynamic> literaryTags = const [],
   }) async {
-    final literaryLines = await GanjoorData.literaryTagLines(
-      literaryTags,
-      index,
-      lines,
-    );
+    List<String> literaryLines = const [];
+    try {
+      literaryLines = await GanjoorData.literaryTagLines(
+        literaryTags,
+        index,
+        lines,
+      );
+    } catch (_) {
+      // A metadata/CDN failure must never prevent opening the poem detail.
+    }
     if (!mounted) return;
     final key = 'poem:${widget.path}#$index';
     final related = _relatedEntries(lines.join(' '));
