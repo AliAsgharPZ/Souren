@@ -55,6 +55,10 @@ class GanjoorMetadata {
   static Future<List<Map<String, dynamic>>> people() => _load('people.json');
   static Future<List<Map<String, dynamic>>> locations() =>
       _load('locations.json');
+  static Future<List<Map<String, dynamic>>> relations() =>
+      _load('person-relations.json');
+  static Future<List<Map<String, dynamic>>> affiliations() =>
+      _load('person-affiliations.json');
   static Future<List<Map<String, dynamic>>> sources() =>
       _load('literary-sources.json');
 }
@@ -90,6 +94,8 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
         GanjoorMetadata.people(),
         GanjoorMetadata.locations(),
         GanjoorMetadata.sources(),
+        GanjoorMetadata.relations(),
+        GanjoorMetadata.affiliations(),
       ]),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
@@ -101,6 +107,8 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
           for (final row in snapshot.data![4])
             row['Key']?.toString() ?? '': row,
         };
+        final relations = snapshot.data![5];
+        final affiliations = snapshot.data![6];
         final sections = <Widget>[];
 
         for (final tag in literaryTags) {
@@ -204,6 +212,35 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
           final location = locations[_id(tag['LocationId'])];
           if (person != null) {
             contextLabels.add('شخص: ${person['Name'] ?? 'نامشخص'}');
+            final description = person['Description']?.toString();
+            if (description != null && description.trim().isNotEmpty) {
+              contextLabels.add(description.trim());
+            }
+            final birth = person['BirthYearInLHijri'];
+            final death = person['DeathYearInLHijri'];
+            if (birth is num && birth != 0 || death is num && death != 0) {
+              contextLabels.add('زندگی: ${birth is num && birth != 0 ? 'حدود ' + birth.toString() : '؟'} تا ${death is num && death != 0 ? death.toString() : '؟'} قمری');
+            }
+            final personId = _id(person['Id']);
+            final related = <String>[];
+            for (final row in [...relations, ...affiliations]) {
+              final first = _id(row['Person1Id']);
+              final second = _id(row['Person2Id']);
+              if (first != personId && second != personId) continue;
+              final other = people[first == personId ? second : first];
+              if (other == null) continue;
+              final rawType = (row['RelationType'] ?? row['AffiliationType'] ?? '').toString();
+              const typeNames = {
+                'Parent': 'والد/فرزند', 'Sibling': 'خواهر یا برادر',
+                'Spouse': 'همسر', 'Ancestor': 'نیا',
+                'Minister': 'وزیر', 'Patron': 'حامی', 'Panegyrized': 'ممدوح',
+                'Rival': 'رقیب', 'Courtier': 'درباری', 'Champion': 'پهلوان',
+                'Advisor': 'مشاور', 'Killer': 'کشنده', 'Other': 'ارتباط دیگر',
+              };
+              related.add('${typeNames[rawType] ?? rawType}: ${other['Name'] ?? ''}');
+              if (related.length >= 3) break;
+            }
+            contextLabels.addAll(related);
           }
           if (location != null) {
             contextLabels.add('مکان: ${location['Name'] ?? 'نامشخص'}');
