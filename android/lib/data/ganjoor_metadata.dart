@@ -80,6 +80,7 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
     if (literaryTags.isEmpty && contextTags.isEmpty) {
       return const SizedBox.shrink();
     }
+    final colors = Theme.of(context).colorScheme;
     return FutureBuilder<List<List<Map<String, dynamic>>>>(
       future: Future.wait([
         GanjoorMetadata.devices(),
@@ -157,7 +158,7 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
                         device['Name']?.toString() ?? 'آرایهٔ ادبی',
                         textDirection: TextDirection.rtl,
                         style: TextStyle(
-                          color: pal.sel,
+                          color: colors.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -169,20 +170,20 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
                       device['Definition'].toString(),
                       textDirection: TextDirection.rtl,
                       textAlign: TextAlign.right,
-                      style: TextStyle(color: pal.muted, fontSize: 11.5, height: 1.6),
+                      style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11.5, height: 1.6),
                     ),
                   for (final detail in details)
                     Text(
                       detail,
                       textDirection: TextDirection.rtl,
                       textAlign: TextAlign.right,
-                      style: TextStyle(color: pal.ink, fontSize: 11.5, height: 1.6),
+                      style: TextStyle(color: colors.onSurface, fontSize: 11.5, height: 1.6),
                     ),
                   if (source != null)
                     Text(
                       'منبع: ${source['Name'] ?? source['Key']} · ${source['License'] ?? ''}',
                       textDirection: TextDirection.rtl,
-                      style: TextStyle(color: pal.faint, fontSize: 10),
+                      style: TextStyle(color: colors.outline, fontSize: 10),
                     ),
                 ],
               ),
@@ -215,9 +216,9 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
           margin: const EdgeInsets.only(top: 9),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: pal.cardC.withValues(alpha: .72),
+            color: colors.surfaceContainerHighest.withValues(alpha: .72),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: pal.div.withValues(alpha: .7)),
+            border: Border.all(color: colors.outlineVariant.withValues(alpha: .7)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -226,7 +227,7 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
                 Text(
                   'آرایه‌های ادبی',
                   textDirection: TextDirection.rtl,
-                  style: TextStyle(color: pal.ink, fontSize: 11, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w800),
                 ),
               ...sections,
               if (contextLabels.isNotEmpty) ...[
@@ -234,13 +235,13 @@ class GanjoorCoupletAnnotations extends StatelessWidget {
                 Text(
                   'اشخاص و مکان‌ها',
                   textDirection: TextDirection.rtl,
-                  style: TextStyle(color: pal.ink, fontSize: 11, fontWeight: FontWeight.w800),
+                  style: TextStyle(color: colors.onSurface, fontSize: 11, fontWeight: FontWeight.w800),
                 ),
                 for (final label in contextLabels)
                   Text(
                     label,
                     textDirection: TextDirection.rtl,
-                    style: TextStyle(color: pal.muted, fontSize: 11.5, height: 1.6),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 11.5, height: 1.6),
                   ),
               ],
             ],
