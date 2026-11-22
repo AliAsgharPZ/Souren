@@ -38,6 +38,11 @@ class SeekablePackTests(unittest.TestCase):
                 json.dumps([{"Id": 1, "Name": "حافظ"}], ensure_ascii=False),
                 encoding="utf-8",
             )
+            for name in (
+                "literary-sources.json", "locations.json",
+                "person-relations.json", "person-affiliations.json", "geotags.json",
+            ):
+                (source / name).write_text("[]", encoding="utf-8")
             poem = {"Id": 3, "Title": "شعر آزمایشی", "Verses": [{"Text": "بیت اول"}]}
             (source / "poets" / "test-poet" / "3.json").write_text(
                 json.dumps(poem, ensure_ascii=False), encoding="utf-8"
