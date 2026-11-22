@@ -21,6 +21,7 @@ import 'data/ario_lab.dart';
 import 'ario_writing.dart';
 import 'ario_lab.dart';
 import 'data/ganjoor_pack.dart';
+import 'data/ganjoor_metadata.dart';
 import 'data/persian_roots.dart';
 import 'data/widget_snapshot.dart';
 import 'engine/corrector.dart';
@@ -3588,6 +3589,11 @@ class _ShellState extends State<Shell> {
             ('شاعر', stats['poets'] ?? 0),
             ('کتاب', stats['books'] ?? 0),
             ('شعر', stats['poems'] ?? 0),
+            ('شخص', stats['people'] ?? 0),
+            ('مکان', stats['locations'] ?? 0),
+            ('آرایه', stats['literaryDevices'] ?? 0),
+            ('مفهوم', stats['literaryConcepts'] ?? 0),
+            ('برچسب ادبی', stats['literaryTags'] ?? 0),
             ('ریشه', PersianRoots.index(d).length),
             ('دسته', catOrder.length),
           ];
@@ -7893,11 +7899,16 @@ class GanjoorData {
       'https://cdn.jsdelivr.net/gh/ganjoor/ganjoor-data@main/';
   static const _apiBase = 'https://api.ganjoor.net';
   static Future<Map<String, int>>? _statsFuture;
-  static const int fallbackPoemCount = 139042;
+  static const int fallbackPoemCount = 139417;
   static const Map<String, int> fallbackStats = {
-    'poets': 245,
+    'poets': 246,
     'books': 0,
     'poems': fallbackPoemCount,
+    'people': 662,
+    'locations': 200,
+    'literaryDevices': 17,
+    'literaryConcepts': 1261,
+    'literaryTags': 2987,
   };
   static final Map<String, Future<List<Map<String, dynamic>>>> _poemSearchCache = {};
 
@@ -8035,6 +8046,11 @@ class GanjoorData {
     var poets = fallbackStats['poets']!;
     var books = fallbackStats['books']!;
     var poems = fallbackPoemCount;
+    var people = 0;
+    var locations = 0;
+    var literaryDevices = 0;
+    var literaryConcepts = 0;
+    var literaryTags = 0;
     try {
       final manifest = await json('manifest.json');
       poets = _manifestCount(
@@ -8054,13 +8070,27 @@ class GanjoorData {
         ],
         fallback: fallbackPoemCount,
       );
+      people = _manifestCount(manifest, const ['PeopleCount'], fallback: 0);
+      locations = _manifestCount(manifest, const ['LocationsCount'], fallback: 0);
+      literaryDevices = _manifestCount(manifest, const ['LiteraryDevicesCount'], fallback: 0);
+      literaryConcepts = _manifestCount(manifest, const ['LiteraryConceptsCount'], fallback: 0);
+      literaryTags = _manifestCount(manifest, const ['LiteraryTagsCount'], fallback: 0);
     } catch (_) {
       // Keep the last published corpus count instead of replacing it with 0.
     }
     try {
       books = (await bookCatalog()).length;
     } catch (_) {}
-    return {'poets': poets, 'books': books, 'poems': poems};
+    return {
+      'poets': poets,
+      'books': books,
+      'poems': poems,
+      'people': people,
+      'locations': locations,
+      'literaryDevices': literaryDevices,
+      'literaryConcepts': literaryConcepts,
+      'literaryTags': literaryTags,
+    };
   }
 }
 
@@ -9255,6 +9285,32 @@ class _GanjoorPoemPageState extends State<GanjoorPoemPage> {
                                           ),
                                         ),
                                       ],
+                                      Builder(
+                                        builder: (context) {
+                                          final coupletIndex = ordered[i];
+                                          final literaryTags = (data['LiteraryTags'] as List? ?? const [])
+                                              .whereType<Map>()
+                                              .map((row) => Map<String, dynamic>.from(row))
+                                              .where((tag) =>
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == coupletIndex ||
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == -1)
+                                              .toList(growable: false);
+                                          final contextTags = (data['Tags'] as List? ?? const [])
+                                              .whereType<Map>()
+                                              .map((row) => Map<String, dynamic>.from(row))
+                                              .where((tag) =>
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == coupletIndex ||
+                                                  ((tag['CoupletIndex'] as num?)?.toInt() ?? -2) == -1)
+                                              .toList(growable: false);
+                                          return GanjoorCoupletAnnotations(
+                                            literaryTags: literaryTags,
+                                            contextTags: contextTags,
+                                            lines: couplets[coupletIndex]!,
+                                            poemId: (data['Id'] as num?)?.toInt() ?? -1,
+                                            coupletIndex: coupletIndex,
+                                          );
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ),

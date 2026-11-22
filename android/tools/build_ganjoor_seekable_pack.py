@@ -36,8 +36,22 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
         raise ValueError("--chunk-mib must be between 8 and 256")
 
     files = sorted(p for p in source.rglob("*.json") if p.is_file())
-    if not files or not (source / "manifest.json").is_file():
+    manifest_path = source / "manifest.json"
+    if not files or not manifest_path.is_file():
         raise RuntimeError("The complete Ganjoor export and manifest.json are required")
+    manifest = json.loads(manifest_path.read_bytes())
+    schema_version = int(manifest.get("SchemaVersion") or 0)
+    if schema_version >= 4:
+        required_v4 = {
+            "literary-devices.json", "literary-concepts.json",
+            "literary-sources.json", "people.json", "locations.json",
+            "person-relations.json", "person-affiliations.json",
+            "geotags.json",
+        }
+        present = {path.relative_to(source).as_posix() for path in files}
+        missing = sorted(required_v4 - present)
+        if missing:
+            raise RuntimeError("Ganjoor schema-v4 export is incomplete: " + ", ".join(missing))
 
     books = []
     for path in files:
@@ -133,6 +147,15 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
         "format": 1,
         "source": "https://github.com/ganjoor/ganjoor-data",
         "source_revision": os.environ.get("GANJOOR_SOURCE_SHA", "main"),
+        "schema_version": schema_version,
+        "generated_at_utc": manifest.get("GeneratedAtUtc"),
+        "corpus_counts": {
+            key: manifest.get(key) for key in (
+                "PoetsCount", "PoemsCount", "PeopleCount", "LocationsCount",
+                "GeoTagsCount", "PersonTagsCount", "LiteraryDevicesCount",
+                "LiteraryConceptsCount", "LiteraryTagsCount",
+            ) if manifest.get(key) is not None
+        },
         "chunk_mib": chunk_mib,
         "pack_bytes": pack_bytes,
         "source_files": len(files),
@@ -180,6 +203,8 @@ def build(source: Path, output: Path, chunk_mib: int, max_total_mib: int) -> dic
 
     report = {
         "format": 1,
+        "schema_version": schema_version,
+        "generated_at_utc": manifest.get("GeneratedAtUtc"),
         "chunk_mib": chunk_mib,
         "source_files": len(files),
         "source_bytes": source_bytes,

@@ -17,7 +17,7 @@ class SeekablePackTests(unittest.TestCase):
             output = root / "output"
             (source / "poets" / "test-poet").mkdir(parents=True)
             (source / "manifest.json").write_text(
-                json.dumps({"Poets": [{"Name": "آزمایشی"}]}), encoding="utf-8"
+                json.dumps({"SchemaVersion": 4, "GeneratedAtUtc": "2026-11-20T14:18:42Z", "Poets": [{"Name": "آزمایشی"}]}), encoding="utf-8"
             )
             (source / "poets" / "test-poet" / "poet.json").write_text(
                 json.dumps({"Id": 1, "Name": "آزمایشی"}), encoding="utf-8"
@@ -26,6 +26,23 @@ class SeekablePackTests(unittest.TestCase):
                 json.dumps({"Id": 2, "PoetId": 1, "Title": "دیوان", "FullUrl": "test-poet/cat"}),
                 encoding="utf-8",
             )
+            (source / "literary-devices.json").write_text(
+                json.dumps([{"Id": 1, "Name": "تشبیه", "Slots": []}], ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (source / "literary-concepts.json").write_text(
+                json.dumps([{"Id": 1, "Name": "ماه"}], ensure_ascii=False),
+                encoding="utf-8",
+            )
+            (source / "people.json").write_text(
+                json.dumps([{"Id": 1, "Name": "حافظ"}], ensure_ascii=False),
+                encoding="utf-8",
+            )
+            for name in (
+                "literary-sources.json", "locations.json",
+                "person-relations.json", "person-affiliations.json", "geotags.json",
+            ):
+                (source / name).write_text("[]", encoding="utf-8")
             poem = {"Id": 3, "Title": "شعر آزمایشی", "Verses": [{"Text": "بیت اول"}]}
             (source / "poets" / "test-poet" / "3.json").write_text(
                 json.dumps(poem, ensure_ascii=False), encoding="utf-8"
@@ -42,7 +59,12 @@ class SeekablePackTests(unittest.TestCase):
             index = json.loads(decoded_index.decode("utf-8"))
             self.assertIn("poets/test-poet/3.json", index["files"])
             self.assertIn("catalog/books.json", index["files"])
+            self.assertIn("literary-devices.json", index["files"])
+            self.assertIn("literary-concepts.json", index["files"])
+            self.assertIn("people.json", index["files"])
             self.assertEqual(index["format"], 1)
+            self.assertEqual(index["schema_version"], 4)
+            self.assertEqual(index["generated_at_utc"], "2026-11-20T14:18:42Z")
 
 
 if __name__ == "__main__":
