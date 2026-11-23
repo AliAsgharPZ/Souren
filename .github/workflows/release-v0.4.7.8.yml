@@ -1,0 +1,108 @@
+name: Release Souren v0.4.7.8
+
+on:
+  push:
+    branches:
+      - release/v0.4.7.8
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: souren-v0.4.7.8-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install Zstandard and validate datasets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+          set -o pipefail
+          python3 tools/build_dataset.py | sed -n '1p'
+          python3 -m unittest discover -s tools -p 'test_ario_curriculum.py'
+          python3 -m unittest discover -s tools -p 'test_ganjoor_seekable_pack.py'
+          python3 -m unittest discover -s tools -p 'test_auth_security.py'
+          python3 -m unittest discover -s tools -p 'test_ario_portal.py'
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Verify package version
+        run: grep -F 'version: 0.4.7+32' pubspec.yaml
+
+      - name: Flutter analysis and tests
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Configure production signing
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PW: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KS_B64" && test -n "$KS_PW" && test -n "$KEY_PW" && test -n "$KEY_ALIAS"
+          CLEAN=$(printf '%s' "$KS_B64" | tr -d '[:space:]')
+          printf '%s' "$CLEAN" | base64 -d > android/souren-release.keystore
+          test -s android/souren-release.keystore
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=souren-release.keystore\n' "$KS_PW" "$KEY_PW" "$KEY_ALIAS" > android/key.properties
+
+      - name: Build universal release APK
+        run: |
+          set -euo pipefail
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.8 --build-number=32
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
+          grep -q "Signer" /tmp/souren-apksigner.txt
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='32' versionName='0.4.7.8'"
+          for ABI in armeabi-v7a arm64-v8a x86_64; do unzip -l "$APK" | grep -q "lib/$ABI/"; done
+          cp "$APK" Souren-v0.4.7.8.apk
+
+      - name: Kotlin IME unit tests
+        working-directory: android/android
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.4.7.8
+          target_commitish: release/v0.4.7.8
+          name: Souren v0.4.7.8
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          overwrite_files: true
+          body: |
+            ## Souren v0.4.7.8
+
+            - Integrates the updated Ganjoor schema v4 corpus and its independently compressed, seekable Zstandard offline pack.
+            - Updates the Android package version to 0.4.7.8 (version code 32).
+            - Built after dataset validation, Flutter analysis and tests, Kotlin IME tests, production signing, and APK metadata verification.
+
+            Ganjoor offline pack: https://github.com/AliAsgharPZ/Souren/releases/tag/ganjoor-pack-latest
+          files: android/Souren-v0.4.7.8.apk
+          fail_on_unmatched_files: true
