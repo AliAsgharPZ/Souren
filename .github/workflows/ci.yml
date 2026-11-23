@@ -51,7 +51,7 @@ jobs:
         run: flutter pub get
       - name: Verify Souren package version
         run: |
-          grep -F 'version: 0.4.7+31' pubspec.yaml
+          grep -F 'version: 0.4.7+32' pubspec.yaml
       - name: Account and session security regression tests
         run: |
           python3 -m py_compile tools/generate_admin_credentials.py
@@ -70,7 +70,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && { [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/tags/v0.4.7.7" ]; }; then
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && { [ "$GITHUB_REF" = "refs/heads/main" ] || [ "$GITHUB_REF" = "refs/tags/v0.4.7.8" ]; }; then
             test -n "$KS_B64" && test -n "$KS_PW" && test -n "$KEY_PW" && test -n "$KEY_ALIAS"
           fi
           if [ -n "$KS_B64" ] && [ -n "$KS_PW" ] && [ -n "$KEY_PW" ] && [ -n "$KEY_ALIAS" ]; then
@@ -111,15 +111,15 @@ jobs:
       - name: Build release APK
         run: |
           set -euo pipefail
-          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.7 --build-number=31
+          flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --build-name=0.4.7.8 --build-number=32
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
           BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BT/apksigner" verify --print-certs "$APK" > /tmp/souren-apksigner.txt
           grep -q "Signer" /tmp/souren-apksigner.txt
-          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='31' versionName='0.4.7.7'"
+          "$ANDROID_HOME/build-tools/$BT/aapt" dump badging "$APK" | grep -F "package: name='ir.souren.souren' versionCode='32' versionName='0.4.7.8'"
           for ABI in armeabi-v7a arm64-v8a x86_64; do unzip -l "$APK" | grep -q "lib/$ABI/"; done
-          cp "$APK" Souren-v0.4.7.7.apk
+          cp "$APK" Souren-v0.4.7.8.apk
       - name: Kotlin unit tests (IME corrector)
         working-directory: android/android
         run: ./gradlew :app:testDebugUnitTest --stacktrace
@@ -160,5 +160,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Souren-v0.4.7.7-Universal-APK
-          path: android/Souren-v0.4.7.7.apk
+          name: Souren-v0.4.7.8-Universal-APK
+          path: android/Souren-v0.4.7.8.apk
