@@ -18,6 +18,7 @@ class DatasetValidatorTest {
     @Test fun malformedOrStructurallyInvalidUpdatesAreRejected() {
         assertTrue(DatasetValidator.validate("{broken", strictFa = true) is DatasetValidator.Result.Invalid)
         assertTrue(DatasetValidator.validate("""{"entries":"wrong"}""", strictFa = true) is DatasetValidator.Result.Invalid)
+        assertTrue(DatasetValidator.validate("""{"entries":[]}""", strictFa = true) is DatasetValidator.Result.Invalid)
         assertTrue(DatasetValidator.validate("""{"entries":[{"ar":"اتفاق","fa":[3]}]}""", strictFa = true) is DatasetValidator.Result.Invalid)
         assertTrue(DatasetValidator.validate("""{"entries":[{"ar":"اتفاق","fa":[]},{"ar":"اتفاق","fa":[]}]}""", strictFa = true) is DatasetValidator.Result.Invalid)
     }
