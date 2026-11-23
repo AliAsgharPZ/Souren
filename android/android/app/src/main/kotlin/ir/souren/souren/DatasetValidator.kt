@@ -22,6 +22,9 @@ object DatasetValidator {
         } catch (_: Exception) {
             return Result.Invalid("entries missing or not an array")
         }
+        if (entries.length() == 0) {
+            return Result.Invalid("entries array is empty")
+        }
         val version = root.opt("version")
         if (version != null) {
             val number = version as? Number
