@@ -24,40 +24,71 @@ object KbData {
     @Volatile private var syncingLearning = false
     @Volatile private var syncingModel = false
     @Volatile private var lastModelAttemptAt = 0L
-    private var loaded = false
+    /** Signature of the dataset currently in memory; null until a source loads. */
+    @Volatile private var datasetSig: String? = null
 
+    /** Re-check the shared file for each input activation, but parse only
+     *  when its SHA-256 content changes. This also notices same-size edits. */
     @Synchronized
     fun load(ctx: Context) {
-        if (loaded) return
-        loaded = true
-        // Dataset: updated file wins, else the bundled asset.
-        val jsonText: String? = try {
-            val upd = File(ctx.filesDir, "dataset_updated.json")
-            if (upd.exists()) upd.readText()
-            else ctx.assets.open("flutter_assets/assets/db/dataset.json")
-                .bufferedReader().readText()
-        } catch (e: Exception) { null }
-        if (jsonText != null) {
-            try {
-                val root = JSONObject(jsonText)
-                val arr = root.getJSONArray("entries")
-                val map = HashMap<String, List<String>>()
-                val words = ArrayList<String>()
-                for (i in 0 until arr.length()) {
-                    val e = arr.getJSONObject(i)
-                    val ar = e.getString("ar")
-                    words.add(ar)
-                    val faArr = e.optJSONArray("fa") ?: JSONArray()
-                    val fa = List(faArr.length()) { faArr.getString(it) }
-                    if (fa.isNotEmpty()) map[ar] = fa
-                    for (f in fa) words.add(f)
-                }
-                dictionary = map
-                vocab = words.distinct()
-            } catch (e: Exception) { /* keep empty; suggestions just stop */ }
+        refreshDataset(ctx, force = false)
+    }
+
+    /** Explicit reload hook for an import/update flow in the same process. */
+    @Synchronized
+    fun reload(ctx: Context) {
+        refreshDataset(ctx, force = true)
+    }
+
+    @Synchronized
+    private fun refreshDataset(ctx: Context, force: Boolean) {
+        val updatedFile = File(ctx.filesDir, "dataset_updated.json")
+        val exists = updatedFile.exists()
+        val updatedText = if (exists) {
+            try { updatedFile.readText() } catch (_: Exception) { null }
+        } else null
+        val updatedSig = when {
+            !exists -> null
+            updatedText != null -> DatasetValidator.signature(updatedText)
+            else -> "u|unreadable|${updatedFile.lastModified()}|${updatedFile.length()}"
         }
-        readSettings(ctx)
-        readLearned(ctx)
+        val updatedValid = updatedText != null && (
+            (!force && updatedSig == datasetSig) ||
+                DatasetValidator.validate(updatedText, strictFa = true) is DatasetValidator.Result.Valid
+            )
+        when (DatasetValidator.decide(updatedSig, updatedValid, datasetSig, force)) {
+            DatasetValidator.Source.KEEP -> return
+            DatasetValidator.Source.UPDATED -> {
+                val parsed = updatedText?.let { tryParseDataset(it) }
+                if (parsed != null) {
+                    dictionary = parsed.first
+                    vocab = parsed.second
+                    datasetSig = updatedSig!!
+                    return
+                }
+                applyBundledDataset(ctx)
+            }
+            DatasetValidator.Source.BUNDLED -> applyBundledDataset(ctx)
+        }
+    }
+
+    private fun tryParseDataset(text: String): Pair<Map<String, List<String>>, List<String>>? =
+        try { DatasetValidator.parse(text) } catch (_: Exception) { null }
+
+    @Synchronized
+    private fun applyBundledDataset(ctx: Context) {
+        try {
+            val text = ctx.assets.open("flutter_assets/assets/db/dataset.json")
+                .bufferedReader().use { it.readText() }
+            val parsed = tryParseDataset(text)
+            if (parsed != null) {
+                dictionary = parsed.first
+                vocab = parsed.second
+                datasetSig = DatasetValidator.BUNDLED_SIG
+            }
+        } catch (_: Exception) {
+            // Keep the last successfully loaded dataset if the asset is unavailable.
+        }
     }
 
     fun readSettings(ctx: Context) {

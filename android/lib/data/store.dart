@@ -189,16 +189,14 @@ class Dictionary {
     return Dictionary(list, (j['version'] as num?)?.toInt() ?? 1, fromUpdate);
   }
 
-  /// Updated dataset in filesDir wins over the bundled asset.
+  /// Updated data is accepted only after structural validation.
   static Future<Dictionary> load({bool allowLocalUpdate = true}) async {
     final raw = await rootBundle.loadString('assets/db/dataset.json');
     final bundled = _parse(jsonDecode(raw) as Map<String, dynamic>, false);
     final updated = allowLocalUpdate ? await SharedFiles.readJson('dataset_updated.json') : null;
-    if (updated != null) {
+    if (updated != null && validateDatasetMap(updated).ok) {
       try {
         final candidate = _parse(updated, true);
-        // A previously imported v1/v2 dataset must not hide the newer
-        // canonical 552-word v3 bundle after the app is upgraded.
         if (candidate.version > bundled.version ||
             (candidate.version == bundled.version &&
                 candidate.entries.length >= bundled.entries.length)) {
@@ -207,6 +205,209 @@ class Dictionary {
       } catch (_) {}
     }
     return bundled;
+  }
+}
+
+// ---------------- Dataset validation and CSV import ----------------
+
+class DatasetCheck {
+  final bool ok;
+  final String? error;
+  final Map<String, dynamic>? data;
+  const DatasetCheck(this.ok, {this.error, this.data});
+}
+
+/// Checks the imported dataset structure before it can replace a working
+/// local dictionary. Optional curriculum metadata is type-checked as well.
+DatasetCheck validateDatasetMap(Map<String, dynamic>? json) {
+  if (json == null) {
+    return const DatasetCheck(false, error: 'فایل یک شیء JSON نیست');
+  }
+  final entries = json['entries'];
+  if (entries is! List || entries.isEmpty) {
+    return const DatasetCheck(false, error: '«entries» باید فهرستی غیرخالی باشد');
+  }
+  final version = json['version'];
+  if (version != null &&
+      (version is! num || version <= 0 || version % 1 != 0)) {
+    return const DatasetCheck(false, error: '«version» باید عدد صحیح مثبت باشد');
+  }
+
+  final seen = <String>{};
+  for (var i = 0; i < entries.length; i++) {
+    final entry = entries[i];
+    if (entry is! Map) {
+      return DatasetCheck(false, error: 'مدخل ${i + 1} یک شیء نیست');
+    }
+    final arabic = entry['ar'];
+    if (arabic is! String || arabic.trim().isEmpty) {
+      return DatasetCheck(false, error: 'مدخل ${i + 1} واژهٔ عربی معتبر ندارد');
+    }
+    final meanings = entry['fa'];
+    if (meanings is! List) {
+      return DatasetCheck(false, error: '«fa» در مدخل «${arabic.trim()}» فهرست نیست');
+    }
+    for (final meaning in meanings) {
+      if (meaning is! String) {
+        return DatasetCheck(false, error: 'برابرهای «${arabic.trim()}» باید رشته باشند');
+      }
+    }
+    if (!seen.add(arabic.trim())) {
+      return DatasetCheck(false, error: 'واژهٔ تکراری: «${arabic.trim()}»');
+    }
+    if (entry['concept'] != null && entry['concept'] is! String) {
+      return DatasetCheck(false, error: '«concept» در مدخل «${arabic.trim()}» باید رشته باشد');
+    }
+    if (entry['frequencyMethod'] != null && entry['frequencyMethod'] is! String) {
+      return const DatasetCheck(false, error: '«frequencyMethod» باید رشته باشد');
+    }
+    for (final key in ['level', 'frequencyRankEstimate', 'difficultyScore']) {
+      final value = entry[key];
+      if (value != null) {
+        if (value is! num || value % 1 != 0) {
+          return DatasetCheck(false, error: '«$key» در مدخل «${arabic.trim()}» باید عدد صحیح باشد');
+        }
+      }
+    }
+  }
+  return DatasetCheck(true, data: json);
+}
+
+/// RFC-4180-style record parser. Quoted fields may contain delimiters,
+/// newlines and escaped quotes (""). Comma, semicolon and tab are accepted
+/// as separators for the two-column Persian/Arabic exports.
+List<List<String>> parseCsvRecords(String content) {
+  final rows = <List<String>>[];
+  final field = StringBuffer();
+  var row = <String>[];
+  var inQuotes = false;
+  var afterQuote = false;
+  var i = 0;
+
+  void endField() {
+    row.add(field.toString());
+    field.clear();
+    afterQuote = false;
+  }
+
+  void endRow() {
+    endField();
+    rows.add(row);
+    row = <String>[];
+  }
+
+  while (i < content.length) {
+    final char = content[i];
+    if (inQuotes) {
+      if (char == '"') {
+        if (i + 1 < content.length && content[i + 1] == '"') {
+          field.write('"');
+          i += 2;
+        } else {
+          inQuotes = false;
+          afterQuote = true;
+          i++;
+        }
+      } else {
+        field.write(char);
+        i++;
+      }
+      continue;
+    }
+
+    if (afterQuote) {
+      if (char == ',' || char == ';' || char == '\t') {
+        endField();
+        i++;
+      } else if (char == '\r') {
+        i++;
+      } else if (char == '\n') {
+        endRow();
+        i++;
+      } else if (char == ' ') {
+        i++;
+      } else {
+        throw const FormatException('Unexpected character after a quoted CSV field');
+      }
+      continue;
+    }
+
+    if (char == '"' && field.isEmpty) {
+      inQuotes = true;
+      i++;
+    } else if (char == '"') {
+      throw const FormatException('Quote inside an unquoted CSV field');
+    } else if (char == '\r') {
+      i++;
+    } else if (char == '\n') {
+      endRow();
+      i++;
+    } else if (char == ',' || char == ';' || char == '\t') {
+      endField();
+      i++;
+    } else {
+      field.write(char);
+      i++;
+    }
+  }
+
+  if (inQuotes) throw const FormatException('Unclosed quoted CSV field');
+  if (field.isNotEmpty || row.isNotEmpty || afterQuote) endRow();
+  return rows;
+}
+
+/// Decodes and validates JSON or CSV text without writing to disk.
+DatasetCheck validateDatasetText(String content) {
+  final trimmed = content.trimLeft();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      final decoded = jsonDecode(content);
+      if (decoded is! Map<String, dynamic>) {
+        return const DatasetCheck(false, error: 'بالای فایل باید یک شیء JSON باشد');
+      }
+      return validateDatasetMap(decoded);
+    } catch (error) {
+      return DatasetCheck(false, error: 'ساختار JSON معتبر نیست: $error');
+    }
+  }
+
+  try {
+    final rows = parseCsvRecords(content);
+    final entries = <Map<String, dynamic>>[];
+    final seen = <String>{};
+    var firstNonEmpty = true;
+    for (var r = 0; r < rows.length; r++) {
+      final cells = rows[r].map((cell) => cell.trim()).toList();
+      if (cells.every((cell) => cell.isEmpty)) continue;
+      if (firstNonEmpty &&
+          cells.length > 1 &&
+          cells[0].toLowerCase() == 'ar' &&
+          cells[1].toLowerCase() == 'fa') {
+        firstNonEmpty = false;
+        continue;
+      }
+      firstNonEmpty = false;
+      if (cells.length < 2) {
+        return DatasetCheck(false, error: 'سطر ${r + 1} دست‌کم دو ستون لازم دارد');
+      }
+      final arabic = cells.first;
+      if (arabic.isEmpty) {
+        return DatasetCheck(false, error: 'سطر ${r + 1} واژهٔ عربی ندارد');
+      }
+      if (!seen.add(arabic)) {
+        return DatasetCheck(false, error: 'واژهٔ تکراری: «$arabic»');
+      }
+      entries.add({
+        'ar': arabic,
+        'fa': cells.skip(1).where((cell) => cell.isNotEmpty).toList(),
+      });
+    }
+    if (entries.isEmpty) {
+      return const DatasetCheck(false, error: 'هیچ مدخلی در فایل نیست');
+    }
+    return DatasetCheck(true, data: {'version': 1, 'entries': entries});
+  } on FormatException catch (error) {
+    return DatasetCheck(false, error: 'ساختار CSV معتبر نیست: ${error.message}');
   }
 }
 
@@ -409,10 +610,12 @@ class DictionarySync {
             }(),
       ];
       if (entries.isEmpty || _sameAs(entries, current)) return false;
-      await SharedFiles.writeJson('dataset_updated.json', {
+      final candidate = {
         'version': current.version + 1,
         'entries': entries,
-      });
+      };
+      if (!validateDatasetMap(candidate).ok) return false;
+      await SharedFiles.writeJson('dataset_updated.json', candidate);
       return true;
     } catch (_) {
       return false;

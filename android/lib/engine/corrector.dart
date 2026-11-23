@@ -256,7 +256,32 @@ WordFix correctWord(
   return WordFix(w, suggestions);
 }
 
-/// Correct a full [text]: word fixes + ها-merge + ezafe + spacing.
+/// Leading/trailing marks around a word are preserved while the core is
+/// sent through the spelling and dictionary rules.
+const String _leadingMarks = '«"\'(‘“';
+const String _trailingMarks = '»"\')’”،.؟!؛:…';
+
+(String lead, String core, String trail) _splitMarks(String word) {
+  var lead = '';
+  var core = word;
+  while (core.isNotEmpty && core.length > lead.length + 1) {
+    final c = core[0];
+    if (!_leadingMarks.contains(c)) break;
+    lead += c;
+    core = core.substring(1);
+  }
+  var trail = '';
+  while (core.length > 1) {
+    final c = core[core.length - 1];
+    if (!_trailingMarks.contains(c)) break;
+    trail = c + trail;
+    core = core.substring(0, core.length - 1);
+  }
+  return (lead, core, trail);
+}
+
+/// Correct a full [text] without rewriting its separators. Spaces, repeated
+/// spaces, tabs, newlines and whitespace before punctuation remain verbatim.
 String correctText(
   String text, {
   Map<String, List<String>> dictionary = const {},
@@ -264,55 +289,64 @@ String correctText(
   Map<String, int> learnedPairs = const {},
 }) {
   var t = normalizeLetters(text);
-  // Contextual phrase: in a time question, «ساعت چند» means «چه زمانی».
-  t = t.replaceAll(RegExp(r'ساعت\s+چند'), 'چه زمانی');
-  t = t.replaceAllMapped(
-    RegExp(r'\s+([،.؟!؛:])'),
-    (m) => m.group(1)!,
-  );
-  final tokens = t.split(' ');
+  // This phrase rule is deliberately limited to one ordinary space.
+  t = t.replaceAll('ساعت چند', 'چه زمانی');
+
+  final wordRe = RegExp(r'\S+');
+  final matches = wordRe.allMatches(t).toList();
+  if (matches.isEmpty) return t;
+
+  final words = matches.map((m) => m.group(0)!).toList();
   final out = <String>[];
-  for (var i = 0; i < tokens.length; i++) {
-    var tok = tokens[i];
-    if (tok.isEmpty) continue;
-    if ((tok == 'ها' || tok == 'های' || tok == 'هایی') && out.isNotEmpty) {
-      out[out.length - 1] = '${out.last}$zwnj$tok';
+  final separators = <String>[];
+
+  for (var i = 0; i < words.length; i++) {
+    final sepBefore = i == 0
+        ? ''
+        : t.substring(matches[i - 1].end, matches[i].start);
+    var token = words[i];
+
+    // Merge «ها/های/هایی» only across one ordinary space.
+    if ((token == 'ها' || token == 'های' || token == 'هایی') &&
+        out.isNotEmpty &&
+        sepBefore == ' ') {
+      out[out.length - 1] = out[out.length - 1] + zwnj + token;
       continue;
     }
 
-    // Keep punctuation outside the dictionary lookup.
-    var punct = '';
-    while (tok.length > 1 && '،.؟!؛:'.contains(tok[tok.length - 1])) {
-      punct = tok[tok.length - 1] + punct;
-      tok = tok.substring(0, tok.length - 1);
-    }
-
-    final leftContext = i > 0
-        ? tokens[i - 1].replaceAll(RegExp(r'[،.؟!؛:]+$'), '')
-        : '';
-    final rightContext = i + 1 < tokens.length
-        ? tokens[i + 1].replaceAll(RegExp(r'^[،.؟!؛:]+|[،.؟!؛:]+$'), '')
-        : '';
+    final (lead, core, trail) = _splitMarks(token);
+    final leftContext = i > 0 ? _splitMarks(words[i - 1]).$2 : '';
+    final rightContext =
+        i + 1 < words.length ? _splitMarks(words[i + 1]).$2 : '';
     final fix = correctWord(
-      tok,
+      core,
       dictionary: dictionary,
       replaceArabic: replaceArabic,
       learnedPairs: learnedPairs,
       leftContext: leftContext,
       rightContext: rightContext,
     );
-    tok = fix.fixed + punct;
+    token = lead + fix.fixed + trail;
 
-    if (out.isNotEmpty) {
-      final prev = out.last;
-      final prevBare = prev.replaceAll(hamzaAbove, '');
-      if (prev.endsWith('ه') &&
-          ezafeHeads.contains(prevBare) &&
-          tok.length >= 2) {
-        out[out.length - 1] = '$prev$hamzaAbove';
+    if (out.isNotEmpty && sepBefore == ' ') {
+      final previous = out.last;
+      final previousBare = previous.replaceAll(hamzaAbove, '');
+      if (previous.endsWith('ه') &&
+          ezafeHeads.contains(previousBare) &&
+          core.length >= 2) {
+        out[out.length - 1] = previous + hamzaAbove;
       }
     }
-    out.add(tok);
+
+    if (out.isNotEmpty) separators.add(sepBefore);
+    out.add(token);
   }
-  return out.join(' ');
+
+  final result = StringBuffer(t.substring(0, matches.first.start));
+  for (var i = 0; i < out.length; i++) {
+    result.write(out[i]);
+    if (i < separators.length) result.write(separators[i]);
+  }
+  result.write(t.substring(matches.last.end));
+  return result.toString();
 }
